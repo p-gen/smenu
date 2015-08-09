@@ -1,0 +1,255 @@
+.TH smenu 1 "May 2015" "Version 0.9"
+.SH NAME
+smenu - filter that allows to interactively select a word from stdin
+and outputs the selection to stdout.
+.SH SYNOPSIS
+smenu [\fB-h\fP] [\fB-n\fP \fIlines\fP] [\fB-t\fP [\fIcols\fP]]
+[\fB-s\fP \fIpattern\fP] [\fB-m\fP \fImessage\fP] [\fB-w\fP] [\fB-d\fP]
+[\fB-c\fP] [\fB-e\fP] [\fB-b\fP] [\fB-g\fP] [\fB-q\fP]
+.SH DESCRIPTION
+This small utility acts as a filter (read from stdin and write to
+stdout). All the words taken from stdin are presented in a scrolling
+window on the terminal with a selection cursor initially positioned on
+the first word by default.
+.P
+If the \fBIFS\fP variable is set, each of its character (or multibyte
+sequence) will be used to delimit the words when reading them. Default
+delimiters are: \fISPACE\fP, \fI\\t\fP and \fI\\n\fP.
+.P
+Non printable characters in words that are not a delimiter are
+converted to their traditional form (\fI\\n\fP for end-of-line,
+\fI\\t\fP for tabulation...) by default. A single dot (\fI.\fP) is also
+used as a placeholder otherwise.
+.P
+\fBWarning\fP, \fBUTF-8\fP encoded codepoints are quietly converted
+into a dot (\fI.\fP) when the user locale is not \fBUTF-8\fP aware like
+\fBPOSIX\fP or \fBC\fP by example.
+.P
+If a word is only containing spaces, then all of them are 
+converted into underscores (\fI_\fP) so that we can see them.
+.P
+.SS "Moving among words"
+The cursor can then be moved in every directions by using the
+traditional arrow keys or the \fIvi\fP direction keys (\fBh\fP,
+\fBj\fP, \fBk\fP and \fBl\fP). \fBHOME\fP, \fBEND\fP, \fBPgDn\fP and
+\fBPGUp\fP can also be used if available and have their traditional
+meanings.
+.SS "Searching for a word"
+The \fB/\fP or \fB^F\fP (\fBCtrl-f\fP) can be used to initiate a
+research by prefix among the words after the cursor.
+.P
+After that the cursor attribute is modified and all the characters
+entered 7s after this change goes in a search buffer with the cursor
+moving immediately to the next word matching this prefix. Any character
+entered within 5s after that completes that buffer and resets the 5s
+timer and possibly moves the cursor again.
+.P
+As soon as the timer expiates, the search mode is ended and the
+cursor regains its initial appearance.
+.P
+The search buffer if persistent as long as the cursor is on a matching
+word when a new research is initialized.
+.br
+If the beginning of the word under the cursor does not match the
+previous search buffer, then the search buffer if erased.
+.P
+At any time in this mode you can move the cursor with the keys
+described above. \fBESC\fP ends this mode immediately.
+.P
+The \fBSPACE\fP or \fBn\fP keys repeats the last research if the search
+buffer is not empty. As in search mode, nothing happens if there is no
+matching word after the cursor.
+.P
+Note that only the \fBSPACE\fP key can be used when the search mode is
+active because the \fBn\fP character must be available if you want to
+search a word containing this character.
+.SS "Selection and Exit"
+Hitting \fBq\fP exits without outputting anything, nothing is selected.
+.P
+By default, hitting \fBENTER\fP writes the selected word to stdout when
+not in search mode. In search mode \fBENTER\fP ends this mode and do
+nothing more. If you want to be able to select a word \fIeven\fP in
+search mode, use the \fB-e\fP option to change this behavior.
+.SS Help
+A small help message can be displayed when hitting \fB?\fP. This display
+will last for 10s or until a valid key or \fBESC\fP is pressed.
+.SS Scrollbar
+A scroll bar is displayed at the left of the scrolling window. Its
+appearance is meant to be classical but it has some particularities:
+.IP * 2
+The scroll bar is displayed only if all the words could not be
+displayed on the terminal .
+.IP * 2
+When the scrolling window has only one line, the scroll bar has only 3
+states:
+.RS 2
+.IP - 2
+"\fBv\fP" when on all but the last line, indicating that you can go down
+to see more.
+.IP - 2
+"\fB^\fP" when on the last line.
+.IP - 2
+"\fB|\fP" otherwise.
+.RE
+.IP * 2
+When there is more than 1 line to display, "\fB/\fP" means that the window
+displays the first line, "\fB\\\fP" the last line. "\fB|\fP" is used to fill
+the gap, see below the different possibles configurations.
+.TS
+l l l l l
+l l l l l
+l l l l.
+\\	\\	^	^	\\ 
+|	|	|	|	/
+/	v	/	v
+.TE
+.P
+A "\fB+\fP" can also appear in the scroll bar in lieu of a "\fB|\fP",
+giving the relative position of the cursor line in the bunch of input
+words.
+.SS "Terminal resizing"
+The windows is redrawn is the terminal is resized. The redrawing is
+actually done only 1s after the end of the resizing to avoid artefacts
+on screen. The cursor will remain on the current selected word but may
+be displayed on another place in the window.
+.SS Unicode support
+This utility is Unicode aware and should be able to display correctly
+any Unicode character (even double-width ones) as long as the current
+encoding is \fBUTF-8\fP (\fBUTF-8\fP in the output of the \fIlocale\fP
+command).
+.SH OPTIONS
+.IP \fB-h\fP
+Display a shot help message and exists.
+.IP "\fB-n\fP \fIlines\fB"
+Gives the maximum number of lines in the scrolling selection window. By
+default five lines at most are displayed and the other ones, if
+any, need you to scroll the window.
+.IP "\fB-t\fP [\fIcolumns\fP]"
+This option sets the tabulation mode and, if a number is specified,
+limits the number of displayed columns to that number.
+.IP "\fB-s\fP \fIpattern\fP"
+Pre-Position the cursor to the specified pattern. \fIpattern\fP" can be:
+.RS
+.IP * 2
+A \fBnumber\fP giving the initial position of the cursor (counting from
+0). If this number if greater than the number of words, the cursor will
+be set on la last position.
+.IP * 2
+The string \fBlast\fP meaning that we want the initial position to be
+on the last word.
+.IP * 2
+A string starting with a "\fB/\fP" indicating that we want the cursor
+to be set on the first word matching the \fBprefix\fP string following
+the "\fB/\fP" (\fB/Ca\fP will match \fBCancel\fP by example).
+.PP
+Every failure will no nothing resulting with the cursor set on the
+first word.
+.RE
+.IP "\fB-m\fP \fImessage\fP"
+Permits to display a message above the window. Beware, it will be
+truncated to only being displayed on \fIone\fP line.
+.IP "\fB-w\fP"
+When \fB-t\fP is used, the default is to compact the columns so that
+they use the less terminal width as possible. This option enlarges the
+columns in order to cover the whole terminal width when a number of
+columns is specified.
+.P
+Notice that the column's size is only calculated once when the
+words are displayed for the first time. A terminal resize will not
+alter this value.  This choice permits a faster display.
+.P
+.RS
+Note that if this mode each column has the same width.
+.RE
+.IP \fB-d\fP
+Tells the program to clean up the display before quitting by removing
+the selection window after use as if it were never displayed. The
+terminal may have been scrolled up anyway if the previous window
+display needed it.
+.IP \fB-c\fP
+Sets the column mode. In this mode the lines of words do not wrap when
+the right border of the terminal is reached but only when a special
+character is read. Some words will not be displayed without an
+horizontal scrolling.
+.RS
+.P
+If such a scrolling is needed, an horizontal scroll bar will be
+displayed at the top of the window.
+.P
+In this mode, the width of each column is minimal to keep the maximum
+information visible on the terminal.
+.P
+The line terminator is "\fI\\n\fR" by default is the shell variable
+\fBIRS\fP is undefined. Otherwise its characters (or multibyte sequence)
+will be used as a line terminator. Characters (or multibyte sequences)
+in \fBIRS\fP are automatically added to the list of word delimiters.
+.RE
+.IP \fB-e\fP
+Enables \fBENTER\fP to validate the selection even in search mode.
+.IP \fB-b\fP
+Replace all non-printable characters by a blank.
+.IP \fB-g\fP
+Replaces the blank after each words in normal tabular mode by a vertical
+bar "\fB|\fP". Some users may find the output more readable like that.
+.IP \fB-q\fP
+Prevents the scrollbar display. Useful when all the input words can be
+displayed without the need of scrolling. by default the scrollbar is
+always displayed when there is more than one line. An absence of cursor
+in it gives a visual indication that all the input words are there.
+.SH NOTES
+If tabulations (\fI\\t\fP) are embedded in the input, there is no way
+to replace them with the original number of spaces. In this case use
+an other filter (like \fIexpand\fR) to pre-process the data.
+.SH EXAMPLES
+.SS 1
+Simple Yes/No/Cancel request with "No" as default choice:
+.P
+.nf
+In \fBbash\fP: \fBread R <<< $(echo "Yes No Cancel" \\
+                      | smenu  -d -m "Please choose:" -s /N)\fP
+
+      or \fBR=$(echo "Yes No Cancel" \\
+             | smenu -d -m "Please choose:" -s /N)\fP
+
+In \fBksh\fP:  \fBprint "Yes No Cancel"                \\
+         | smenu -d -m "Please choose:" -s /N \\
+         | read R\fP
+.fi
+.SS 2
+Get a 3 columns report about VM statistics for the current process in
+\fBbash\fP/\fBksh\fP on Linux:
+.P
+.nf
+\fBR=$(grep Vm /proc/$$/status | expand | IFS=$'\\n' smenu -b -t3 -g -d)\fB
+.P
+.fi
+.SS 3
+Create a one column selection window containing the list of the first
+20 LVM physical volumes. At end, the selection window will be erased.
+This example is written in \fBksh\fP).
+.P
+.nf
+\fBpvs -a -o pv_name --noheadings                 \\
+| smenu -m "PV list" -n20 -t1 -d -s //dev/root \\
+| read R\fP
+.fi
+.P
+The display will have a look similar to the following with the cursor
+set on the word \fI/dev/root\fP:
+.P
+.nf
+PV list
+/ /dev/md126
+| /dev/md127
+| /dev/root  <- cursor here
+| /dev/sda2
+| /dev/sdb2
+| /dev/sdc1
+| /dev/sdc2
+\\ /dev/system/homevol
+.fi
+.SH BUGS
+None that I am aware of. If you found one, please tell me.
+.SH AUTHOR
+\(co 2015 Pierre Gentile (p.gen.progs@gmail.com)
+.SH SEE ALSO
