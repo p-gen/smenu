@@ -1,4 +1,4 @@
-.TH smenu 1 "May 2015" "Version 0.9"
+.TH smenu 1 "May 2015" "Version beta"
 .SH NAME
 smenu - filter that allows to interactively select a word from stdin
 and outputs the selection to stdout.
@@ -30,10 +30,10 @@ converted into underscores (\fI_\fP) so that we can see them.
 .P
 .SS "Moving among words"
 The cursor can then be moved in every directions by using the
-traditional arrow keys or the \fIvi\fP direction keys (\fBh\fP,
-\fBj\fP, \fBk\fP and \fBl\fP). \fBHOME\fP, \fBEND\fP, \fBPgDn\fP and
-\fBPGUp\fP can also be used if available and have their traditional
-meanings.
+keyboard arrow keys (\fB\(<-\fP, \fB\(ua\fP,\fB\(da\fP,\fB\(->\fP)
+or the \fIvi\fP direction keys (\fBh\fP, \fBj\fP, \fBk\fP and \fBl\fP).
+\fBHOME\fP, \fBEND\fP, \fBPgDn\fP and \fBPGUp\fP can also be used if
+available and have their traditional meanings.
 .SS "Searching for a word"
 The \fB/\fP or \fB^F\fP (\fBCtrl-f\fP) can be used to initiate a
 research by prefix among the words after the cursor.
@@ -44,8 +44,8 @@ moving immediately to the next word matching this prefix. Any character
 entered within 5s after that completes that buffer and resets the 5s
 timer and possibly moves the cursor again.
 .P
-As soon as the timer expiates, the search mode is ended and the
-cursor regains its initial appearance.
+As soon as the timer ends, the search mode is ended and the cursor
+regains its initial appearance.
 .P
 The search buffer if persistent as long as the cursor is on a matching
 word when a new research is initialized.
@@ -56,7 +56,7 @@ previous search buffer, then the search buffer if erased.
 At any time in this mode you can move the cursor with the keys
 described above. \fBESC\fP ends this mode immediately.
 .P
-The \fBSPACE\fP or \fBn\fP keys repeats the last research if the search
+The \fBSPACE\fP or \fBn\fP key repeats the last research if the search
 buffer is not empty. As in search mode, nothing happens if there is no
 matching word after the cursor.
 .P
@@ -73,12 +73,15 @@ search mode, use the \fB-e\fP option to change this behavior.
 .SS Help
 A small help message can be displayed when hitting \fB?\fP. This display
 will last for 10s or until a valid key or \fBESC\fP is pressed.
-.SS Scrollbar
-A scroll bar is displayed at the left of the scrolling window. Its
+.SS Scroll bar
+A scroll bar is displayed at the right of the scrolling window. Its
 appearance is meant to be classical but it has some particularities:
 .IP * 2
-The scroll bar is displayed only if all the words could not be
-displayed on the terminal .
+The scroll bar is not displayed if all the input words fit on only one
+line.
+.IP * 2
+Otherwise, the scroll bar is always displayed except if the \fB-q\fP
+option is set. This option completely disable the scroll bar display.
 .IP * 2
 When the scrolling window has only one line, the scroll bar has only 3
 states:
@@ -92,9 +95,9 @@ to see more.
 "\fB|\fP" otherwise.
 .RE
 .IP * 2
-When there is more than 1 line to display, "\fB/\fP" means that the window
+When there is more than one line to display, "\fB/\fP" means that the window
 displays the first line, "\fB\\\fP" the last line. "\fB|\fP" is used to fill
-the gap, see below the different possibles configurations.
+the gap, see below the different possible configurations.
 .TS
 l l l l l
 l l l l l
@@ -119,7 +122,7 @@ encoding is \fBUTF-8\fP (\fBUTF-8\fP in the output of the \fIlocale\fP
 command).
 .SH OPTIONS
 .IP \fB-h\fP
-Display a shot help message and exists.
+Displays a short help message and exists.
 .IP "\fB-n\fP \fIlines\fB"
 Gives the maximum number of lines in the scrolling selection window. By
 default five lines at most are displayed and the other ones, if
@@ -127,8 +130,14 @@ any, need you to scroll the window.
 .IP "\fB-t\fP [\fIcolumns\fP]"
 This option sets the tabulation mode and, if a number is specified,
 limits the number of displayed columns to that number.
+.P
+.RS
+Note that if this mode each column has the same width.
+.RE
 .IP "\fB-s\fP \fIpattern\fP"
-Pre-Position the cursor to the specified pattern. \fIpattern\fP" can be:
+Pre-Position the cursor to the first word matching the specified pattern.
+
+\fIpattern\fP" can be:
 .RS
 .IP * 2
 A \fBnumber\fP giving the initial position of the cursor (counting from
@@ -142,30 +151,27 @@ A string starting with a "\fB/\fP" indicating that we want the cursor
 to be set on the first word matching the \fBprefix\fP string following
 the "\fB/\fP" (\fB/Ca\fP will match \fBCancel\fP by example).
 .PP
-Every failure will no nothing resulting with the cursor set on the
+Every failure will do nothing, resulting with the cursor set on the
 first word.
 .RE
 .IP "\fB-m\fP \fImessage\fP"
-Permits to display a message above the window. Beware, it will be
-truncated to only being displayed on \fIone\fP line.
+Displays a message above the window. Beware, it will truncated if it
+does not fit on a terminal line.
 .IP "\fB-w\fP"
-When \fB-t\fP is used, the default is to compact the columns so that
-they use the less terminal width as possible. This option enlarges the
-columns in order to cover the whole terminal width when a number of
-columns is specified.
-.P
-Notice that the column's size is only calculated once when the
-words are displayed for the first time. A terminal resize will not
-alter this value.  This choice permits a faster display.
+When \fB-t\fP is followed by a number of columns, the default is to
+compact the columns so that they use the less terminal width as
+possible. This option enlarges the columns in order to use the whole
+terminal width.
 .P
 .RS
-Note that if this mode each column has the same width.
+Note that the column's size is only calculated once when the words are
+displayed for the first time. A terminal resize will not alter this
+value.  This choice enables a faster display.
 .RE
+.P
 .IP \fB-d\fP
 Tells the program to clean up the display before quitting by removing
-the selection window after use as if it were never displayed. The
-terminal may have been scrolled up anyway if the previous window
-display needed it.
+the selection window after use as if it was never displayed.
 .IP \fB-c\fP
 Sets the column mode. In this mode the lines of words do not wrap when
 the right border of the terminal is reached but only when a special
@@ -173,16 +179,18 @@ character is read. Some words will not be displayed without an
 horizontal scrolling.
 .RS
 .P
-If such a scrolling is needed, an horizontal scroll bar will be
-displayed at the top of the window.
+If such a scrolling is needed, some indications may appear on the left
+and right edge of the window to help the user to reach the unseen words.
 .P
 In this mode, the width of each column is minimal to keep the maximum
 information visible on the terminal.
 .P
-The line terminator is "\fI\\n\fR" by default is the shell variable
-\fBIRS\fP is undefined. Otherwise its characters (or multibyte sequence)
-will be used as a line terminator. Characters (or multibyte sequences)
-in \fBIRS\fP are automatically added to the list of word delimiters.
+IF the shell variable \fBIRS\fP is undefined, then the end-of-line
+sequence is set to "\fI\\n\fR" by default. Otherwise its content will
+be used to specify the end-of-line sequences used in column mode.
+.P
+The characters (or multibyte sequences) in \fBIRS\fP are automatically
+added to the list of word delimiters.
 .RE
 .IP \fB-e\fP
 Enables \fBENTER\fP to validate the selection even in search mode.
@@ -192,8 +200,8 @@ Replace all non-printable characters by a blank.
 Replaces the blank after each words in normal tabular mode by a vertical
 bar "\fB|\fP". Some users may find the output more readable like that.
 .IP \fB-q\fP
-Prevents the scrollbar display. Useful when all the input words can be
-displayed without the need of scrolling. by default the scrollbar is
+Prevents the scroll bar display. Useful when all the input words can be
+displayed without the need of scrolling. by default the scroll bar is
 always displayed when there is more than one line. An absence of cursor
 in it gives a visual indication that all the input words are there.
 .SH NOTES
@@ -239,14 +247,14 @@ set on the word \fI/dev/root\fP:
 .P
 .nf
 PV list
-/ /dev/md126
-| /dev/md127
-| /dev/root  <- cursor here
-| /dev/sda2
-| /dev/sdb2
-| /dev/sdc1
-| /dev/sdc2
-\\ /dev/system/homevol
+/dev/md126           \\
+/dev/md127           |
+/dev/root            | <- cursor here.
+/dev/sda2            |
+/dev/sdb2            |
+/dev/sdc1            |
+/dev/sdc2            |
+/dev/system/homevol  /
 .fi
 .SH BUGS
 None that I am aware of. If you found one, please tell me.
