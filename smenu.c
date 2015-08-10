@@ -2257,7 +2257,7 @@ main(int argc, char *argv[])
   /* Command line options analysis */
   /* """"""""""""""""""""""""""""" */
   opterr = 0;
-  while ((opt = egetopt(argc, argv, "Vhqdbcwgn:t%:m:s:")) != -1)
+  while ((opt = egetopt(argc, argv, "Vhqdbcwegn:t%:m:s:")) != -1)
   {
     switch (opt)
     {
