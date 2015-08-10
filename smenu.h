@@ -28,7 +28,8 @@ void help(void);
 void usage(char *prog);
 
 int ll_append(ll_t * const list, void *const data);
-ll_node_t* ll_find(ll_t* const, void* const, int (*)(const void*, const void*));
+ll_node_t *ll_find(ll_t * const, void *const,
+                   int (*)(const void *, const void *));
 void ll_init(ll_t * list);
 ll_node_t *ll_new_node(void);
 ll_t *ll_new(void);
