@@ -659,6 +659,126 @@ count_leading_set_bits(unsigned char c)
     return 1;
 }
 
+/* =============================================================== */
+/* Thank you Neil (https://github.com/sheredom)                    */
+/* Returns 0 if the UTF-8 sequence is valid or the position of the */
+/* invalid utf8 codepoint on failure.                              */
+/* =============================================================== */
+void *
+validate_mb(const void *str)
+{
+  const char *s = (const char *) str;
+
+  while ('\0' != *s)
+  {
+    if (0xf0 == (0xf8 & *s))
+    {
+      /* ensure each of the 3 following bytes in this 4-byte */
+      /* utf8 codepoint began with 0b10xxxxxx                */
+      /* """"""""""""""""""""""""""""""""""""""""""""""""""" */
+      if ((0x80 != (0xc0 & s[1])) || (0x80 != (0xc0 & s[2]))
+          || (0x80 != (0xc0 & s[3])))
+      {
+        return (void *) s;
+      }
+
+      /* ensure that our utf8 codepoint ended after 4 bytes */
+      /* """""""""""""""""""""""""""""""""""""""""""""""""" */
+      if (0x80 == (0xc0 & s[4]))
+      {
+        return (void *) s;
+      }
+
+      /* ensure that the top 5 bits of this 4-byte utf8   */
+      /* codepoint were not 0, as then we could have used */
+      /* one of the smaller encodings                     */
+      /* """""""""""""""""""""""""""""""""""""""""""""""" */
+      if ((0 == (0x07 & s[0])) && (0 == (0x30 & s[1])))
+      {
+        return (void *) s;
+      }
+
+      /* 4-byte utf8 code point (began with 0b11110xxx) */
+      /* """""""""""""""""""""""""""""""""""""""""""""" */
+      s += 4;
+    }
+    else if (0xe0 == (0xf0 & *s))
+    {
+      /* ensure each of the 2 following bytes in this 3-byte */
+      /* utf8 codepoint began with 0b10xxxxxx                */
+      /* """"""""""""""""""""""""""""""""""""""""""""""""""" */
+      if ((0x80 != (0xc0 & s[1])) || (0x80 != (0xc0 & s[2])))
+      {
+        return (void *) s;
+      }
+
+      /* ensure that our utf8 codepoint ended after 3 bytes */
+      /* """""""""""""""""""""""""""""""""""""""""""""""""" */
+      if (0x80 == (0xc0 & s[3]))
+      {
+        return (void *) s;
+      }
+
+      /* ensure that the top 5 bits of this 3-byte utf8   */
+      /* codepoint were not 0, as then we could have used */
+      /* one of the smaller encodings                     */
+      /* """""""""""""""""""""""""""""""""""""""""""""""" */
+      if ((0 == (0x0f & s[0])) && (0 == (0x20 & s[1])))
+      {
+        return (void *) s;
+      }
+
+      /* 3-byte utf8 code point (began with 0b1110xxxx) */
+      /* """""""""""""""""""""""""""""""""""""""""""""" */
+      s += 3;
+    }
+    else if (0xc0 == (0xe0 & *s))
+    {
+      /* ensure the 1 following byte in this 2-byte */
+      /* utf8 codepoint began with 0b10xxxxxx       */
+      /* """""""""""""""""""""""""""""""""""""""""" */
+      if (0x80 != (0xc0 & s[1]))
+      {
+        return (void *) s;
+      }
+
+      /* ensure that our utf8 codepoint ended after 2 bytes */
+      /* """""""""""""""""""""""""""""""""""""""""""""""""" */
+      if (0x80 == (0xc0 & s[2]))
+      {
+        return (void *) s;
+      }
+
+      /* ensure that the top 4 bits of this 2-byte utf8   */
+      /* codepoint were not 0, as then we could have used */
+      /* one of the smaller encodings                     */
+      /* """""""""""""""""""""""""""""""""""""""""""""""" */
+      if (0 == (0x1e & s[0]))
+      {
+        return (void *) s;
+      }
+
+      /* 2-byte utf8 code point (began with 0b110xxxxx) */
+      /* """""""""""""""""""""""""""""""""""""""""""""" */
+      s += 2;
+    }
+    else if (0x00 == (0x80 & *s))
+    {
+      /* 1-byte ascii (began with 0b0xxxxxxx) */
+      /* """""""""""""""""""""""""""""""""""" */
+      s += 1;
+    }
+    else
+    {
+      /* we have an invalid 0b1xxxxxxx utf8 code point entry */
+      /* """"""""""""""""""""""""""""""""""""""""""""""""""" */
+      return (void *) s;
+    }
+  }
+
+  return 0;
+}
+
 /* =============================================== */
 /* Is the string str2 a prefix of the string str1? */
 /* =============================================== */
@@ -1099,6 +1219,16 @@ get_bytes(FILE * input, char *mb_buffer, ll_t * word_delims_list,
   }
   else
     mb_buffer[last] = '\0';
+
+  /* Replace an invalid UTF-8 byte sequence by a single dot.  */
+  /* In this case the original sequence is lost (unsupported  */
+  /* encoding).                                               */
+  /* """""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+  if (validate_mb(mb_buffer) != 0)
+  {
+    byte = mb_buffer[0] = '.';
+    mb_buffer[1] = '\0';
+  }
 
   return byte;
 }

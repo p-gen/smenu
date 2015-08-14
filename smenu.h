@@ -42,6 +42,7 @@ int get_cursor_position(int *const r, int *const c);
 void get_terminal_size(int *const r, int *const c);
 char *mb_strprefix(char *d, char *s, int n, int *pos);
 wchar_t *mb_strtowcs(char *s);
+void *validate_mb(const void *str);
 int outch(int c);
 void *pd_memmem(const void *buf, size_t buflen, const void *pattern,
                 size_t len);
