@@ -35,7 +35,9 @@
 #include <sys/time.h>
 #include "smenu.h"
 
-int bar_color;               /* scrollbar color                  */
+color_t bar_color;           /* scrollbar color                  */
+color_t search_color;        /* search mode colors               */
+
 int count = 0;               /* number of words read from stdin  */
 int current;                 /* index the current selection      *
                               * (under the cursor)               */
@@ -134,6 +136,14 @@ struct itimerval search_itv;
 struct itimerval hlp_itv;
 struct itimerval winch_itv;
 
+/* Structure containing the color components */
+/* """"""""""""""""""""""""""""""""""""""""" */
+struct color_s
+{
+  int fg;
+  int bg;
+};
+
 /* Structure containing some terminal characteristics */
 /* """""""""""""""""""""""""""""""""""""""""""""""""" */
 struct term_s
@@ -143,9 +153,12 @@ struct term_s
   int curs_column;           /* current cursor column                  */
   int curs_line;             /* current cursor line                    */
   int colors;                /* number of available colors             */
+  int color_method;          /* color method (0=classic (0-7), 1=ansi) */
 
   int has_setf;              /* has set_foreground terminfo capability */
   int has_setb;              /* has set_background terminfo capability */
+  int has_setaf;             /* idem for ansi                          */
+  int has_setab;             /* idem for ansi                          */
   int has_hpa;               /* has column_address terminfo capability */
 };
 
@@ -352,6 +365,215 @@ help(void)
   tputs(clr_eol, 1, outch);
   tputs(exit_attribute_mode, 1, outch);
   tputs(restore_cursor, 1, outch);
+}
+
+/* ******************** */
+/* ini parsing function */
+/* ******************** */
+
+/* ===================================================== */
+/* Callback function called when parsing each non-header */
+/* line of the ini file.                                 */
+/* Returns 0 if OK, 1 if not.                            */
+/* ===================================================== */
+int
+ini_cb(win_t * win, term_t * term, const char *section, const char *name,
+       const char *value)
+{
+  int error = 0;
+  int has_colors = (term->colors > 7);
+
+  if (strcmp(section, "colors") == 0)
+  {
+    int v;
+
+    if (has_colors)
+    {
+      if (strcmp(name, "method") == 0)
+      {
+        if (strcmp(value, "classic") == 0)
+          term->color_method = 0;
+        else if (strcmp(value, "ansi") == 0)
+          term->color_method = 1;
+        else
+        {
+          error = 1;
+          goto out;
+        }
+      }
+      else if (strcmp(name, "bar_foreground") == 0)
+      {
+        if (sscanf(value, "%d", &v) == 1 && v >= 0 && v <= term->colors)
+          bar_color.fg = v;
+        else
+        {
+          error = 1;
+          goto out;
+        }
+      }
+      else if (strcmp(name, "bar_background") == 0)
+      {
+        if (sscanf(value, "%d", &v) == 1 && v >= 0 && v <= term->colors)
+          bar_color.bg = v;
+        else
+        {
+          error = 1;
+          goto out;
+        }
+      }
+      else if (strcmp(name, "search_foreground") == 0)
+      {
+        if (sscanf(value, "%d", &v) == 1 && v >= 0 && v <= term->colors)
+          search_color.fg = v;
+        else
+        {
+          error = 1;
+          goto out;
+        }
+      }
+      else if (strcmp(name, "search_background") == 0)
+      {
+        if (sscanf(value, "%d", &v) == 1 && v >= 0 && v <= term->colors)
+          search_color.bg = v;
+        else
+        {
+          error = 1;
+          goto out;
+        }
+      }
+    }
+  }
+  else if (strcmp(section, "window") == 0)
+  {
+    int v;
+
+    if (strcmp(name, "lines") == 0)
+    {
+      if (sscanf(value, "%d", &v) == 1 && v > 0)
+        win->asked_max_lines = v;
+      else
+      {
+        error = 1;
+        goto out;
+      }
+    }
+  }
+
+out:
+
+  return error;
+}
+
+/* ========================================================================= */
+/* Load an .ini format file                                                  */
+/* filename - path to a file                                                 */
+/* report - callback can return non-zero to stop, the callback error code is */
+/*     returned from this function.                                          */
+/* return - return 0 on success                                              */
+/*                                                                           */
+/* This function is public domain. No copyright is claimed.                  */
+/* Jon Mayo April 2011                                                       */
+/* ========================================================================= */
+int
+ini_load(const char *filename, win_t * win, term_t * term,
+         int (*report) (win_t * win, term_t * term, const char *section,
+                        const char *name, const char *value))
+{
+  char name[64];
+  char value[256];
+  char section[128] = "";
+  char *s;
+  FILE *f;
+  int cnt;
+  int error;
+
+  /* If the filename is empty we skip this phase and use the default values */
+  /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+  if (filename == NULL)
+    return 0;
+
+  /* We do that if the file is not readable as well */
+  /* """""""""""""""""""""""""""""""""""""""""""""" */
+  f = fopen(filename, "r");
+  if (!f)
+    return 0;
+
+  error = 0;
+
+  /* skip blank lines */
+  /* """""""""""""""" */
+  while (fscanf(f, "%*[\n]") == 1)
+  {
+  }
+
+  while (!feof(f))
+  {
+    if (fscanf(f, "[%127[^];\n]]", section) == 1)
+    {
+    }
+    else if ((cnt = fscanf(f, " %63[^=;\n] = %255[^;\n]", name, value)))
+    {
+      if (cnt == 1)
+        *value = 0;
+      for (s = name + strlen(name) - 1; s > name && isspace(*s); s--)
+        *s = 0;
+      for (s = value + strlen(value) - 1; s > value && isspace(*s); s--)
+        *s = 0;
+      error = report(win, term, section, name, value);
+      if (error)
+        goto out;
+    }
+    fscanf(f, " ;%*[^\n]");
+
+    /* skip blank lines */
+    /* """""""""""""""" */
+    while (fscanf(f, "%*[\n]") == 1)
+    {
+    }
+  }
+
+out:
+  fclose(f);
+
+  if (error)
+    fprintf(stderr, "Invalid entry: %s=%s in %s, exiting.\n",
+            name, value, filename);
+
+  return error;
+}
+
+/* ======================================================= */
+/* Return the full path on the configuration file supposed */
+/* to be in the home directory of the user.                */
+/* NULL is returned if the built path is too large.        */
+/* ======================================================= */
+char *
+make_ini_path(char *name)
+{
+  char *path;
+  char *home = getenv("HOME");
+  int path_max = pathconf(".", _PC_PATH_MAX);
+  int len = strlen(home) + strlen(name) + 3;
+  char *conf;
+
+  if (path_max < 0)
+    path_max = 4096;         /* POSIX minimal value */
+
+  if (len <= path_max)
+  {
+    path = malloc(len);
+    conf = strrchr(name, '/');
+    if (conf != NULL)
+      conf++;
+    else
+      conf = name;
+
+    sprintf(path, "%s/.%s", home, conf);
+  }
+  else
+    path = NULL;
+
+  return path;
 }
 
 /* ********************* */
@@ -1456,6 +1678,30 @@ get_word(FILE * input, ll_t * word_delims_list, ll_t * record_delims_list,
   return temp;
 }
 
+/* ========================================================= */
+/* Set a foreground color according to terminal capabilities */
+/* ========================================================= */
+void
+set_foreground_color(term_t * term, int color)
+{
+  if (term->color_method == 0 && term->has_setf)
+    tputs(tparm(set_foreground, color), 1, outch);
+  else if (term->color_method == 1 && term->has_setaf)
+    tputs(tparm(set_a_foreground, color), 1, outch);
+}
+
+/* ========================================================= */
+/* Set a background color according to terminal capabilities */
+/* ========================================================= */
+void
+set_background_color(term_t * term, int color)
+{
+  if (term->color_method == 0 && term->has_setb)
+    tputs(tparm(set_background, color), 1, outch);
+  else if (term->color_method == 1 && term->has_setab)
+    tputs(tparm(set_a_background, color), 1, outch);
+}
+
 /* ======================================================= */
 /* Puts a scrolling symbol at the first column of the line */
 /* ======================================================= */
@@ -1463,8 +1709,12 @@ void
 left_margin_putp(char *s, term_t * term)
 {
   tputs(enter_bold_mode, 1, outch);
-  if (bar_color > 0 && term->has_setf)
-    tputs(tparm(set_foreground, bar_color), 1, outch);
+
+  if (bar_color.fg >= 0)
+    set_foreground_color(term, bar_color.fg);
+
+  if (bar_color.bg >= 0)
+    set_background_color(term, bar_color.bg);
 
   /* we won't print this symbol when not in column mode */
   /* """""""""""""""""""""""""""""""""""""""""""""""""" */
@@ -1483,8 +1733,11 @@ right_margin_putp(char *s1, char *s2, langinfo_t * langinfo, term_t * term,
 {
   tputs(enter_bold_mode, 1, outch);
 
-  if (bar_color > 0 && term->has_setf)
-    tputs(tparm(set_foreground, bar_color), 1, outch);
+  if (bar_color.fg >= 0)
+    set_foreground_color(term, bar_color.fg);
+
+  if (bar_color.bg >= 0)
+    set_background_color(term, bar_color.bg);
 
   if (term->has_hpa)
     tputs(tparm(column_address, term->ncolumns - 1), 1, outch);
@@ -1633,11 +1886,8 @@ disp_word(word_t * word_a, int pos, int search_mode, char *buffer,
 
       /* set the search cursor attribute */
       /* """"""""""""""""""""""""""""""" */
-      if (term->colors > 7 && term->has_setf && term->has_setb)
-      {
-        tputs(tparm(set_background, 4), 1, outch);
-        tputs(tparm(set_foreground, 0), 1, outch);
-      }
+      if (search_color.bg >= 0 && term->colors > 7)
+        set_background_color(term, search_color.bg);
       else
       {
         tputs(enter_underline_mode, 1, outch);
@@ -1646,13 +1896,6 @@ disp_word(word_t * word_a, int pos, int search_mode, char *buffer,
 
       mb_strprefix(tmp_max_word, word_a[pos].str, word_a[pos].mbytes - 1, &p);
       fputs(tmp_max_word, stdout);
-
-      /* set the buffer display attribute */
-      /* """""""""""""""""""""""""""""""" */
-      if (term->colors > 7 && term->has_setf && term->has_setb)
-        tputs(tparm(set_foreground, 7), 1, outch);
-      else
-        tputs(enter_bold_mode, 1, outch);
 
       /* Overwrite the beginning of the word with the search buffer */
       /* content if it is not empty                                 */
@@ -1672,6 +1915,13 @@ disp_word(word_t * word_a, int pos, int search_mode, char *buffer,
         /* '''''''''''''''''''''''''''''''''''''''''''' */
         for (i = 0; i < e - s + 1; i++)
           tputs(cursor_left, 1, outch);
+
+        /* set the buffer display attribute */
+        /* """""""""""""""""""""""""""""""" */
+        if (search_color.fg >= 0 && term->colors > 7)
+          set_foreground_color(term, search_color.fg);
+        else
+          tputs(enter_bold_mode, 1, outch);
 
         fputs(buffer, stdout);
 
@@ -1789,8 +2039,11 @@ disp_lines(word_t * word_a, win_t * win, toggle_t * toggle, int current,
       {
         tputs(enter_bold_mode, 1, outch);
 
-        if (bar_color > 0 && term->has_setf)
-          tputs(tparm(set_foreground, bar_color), 1, outch);
+        if (bar_color.fg >= 0)
+          set_foreground_color(term, bar_color.fg);
+
+        if (bar_color.bg >= 0)
+          set_background_color(term, bar_color.bg);
 
         if (langinfo->utf8)
           fputs(sbar_arr_right, stdout);
@@ -2322,6 +2575,8 @@ main(int argc, char *argv[])
   int is_last;
   char *charset;
 
+  char *ini_file;            /* init file full path                        */
+
   charsetinfo_t *charset_ptr;
   langinfo_t langinfo;
   int is_supported_charset;
@@ -2509,18 +2764,34 @@ main(int argc, char *argv[])
   setupterm((char *) 0, 1, (int *) 0);
 
   term.colors = ((colors = tigetnum("colors")) == -1) ? 0 : colors;
-  term.has_setb = (tigetstr("setb") == 0) ? 0 : 1;
   term.has_setf = (tigetstr("setf") == 0) ? 0 : 1;
+  term.has_setb = (tigetstr("setb") == 0) ? 0 : 1;
+  term.has_setaf = (tigetstr("setaf") == 0) ? 0 : 1;
+  term.has_setab = (tigetstr("setab") == 0) ? 0 : 1;
   term.has_hpa = (tigetstr("hpa") == 0) ? 0 : 1;
+  term.color_method = 1;     /* we default to setaf/setbf to set colors */
 
   get_terminal_size(&term.nlines, &term.ncolumns);
 
-  /* Sets the scrollbar color if possible */
-  /* """""""""""""""""""""""""""""""""""" */
-  bar_color = -1;
+  /* Build the full path of the ini file */
+  /* """"""""""""""""""""""""""""""""""" */
+  ini_file = make_ini_path(argv[0]);
 
+  /* If the ini file failed to provide custom colors or is inexistant */
+  /* or not readable then  set their defaut values                    */
+  /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
   if (term.colors > 7)
-    bar_color = 2;
+  {
+    bar_color.fg = 2;
+    bar_color.bg = 0;
+    search_color.fg = 0;
+    search_color.bg = 5;
+  }
+
+  /* Sets the colors from the config file if possible */
+  /* """""""""""""""""""""""""""""""""""""""""""""""" */
+  if (ini_load(ini_file, &win, &term, ini_cb))
+    exit(EXIT_FAILURE);
 
   /* Allocate the memory for out words structures */
   /* """""""""""""""""""""""""""""""""""""""""""" */

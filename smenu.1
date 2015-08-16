@@ -120,6 +120,41 @@ This utility is Unicode aware and should be able to display correctly
 any Unicode character (even double-width ones) as long as the current
 encoding is \fBUTF-8\fP (\fBUTF-8\fP in the output of the \fIlocale\fP
 command).
+.SS Configuration
+If a file with adequates permissions and the same name as the
+executable prefixed with a dot is present in the user home
+directory, then it will be parsed as a \fIini\fP file.
+.P
+For now, only color informations are considered.
+.P
+Here is an example giving the syntax and color names to use:
+.P
+.nf
+[colors]
+  ; The terminal must have at least 8 colors for this to be usefull
+  ; if not the following settings will be ignored.
+
+  method=ansi          ; classic | ansi
+
+  bar_foreground = 2   ; scroll bar foreground
+  bar_background=0     ; scroll bar background
+
+  search_foreground=11 ; search color foreground
+  search_background=1  ; search color background
+
+[window]
+  lines = 7            ; default number of lines of the window
+.fi
+.IP * 2
+The \fBmethod\fP keyword can take the two possible values displayed
+above and determines if you want to use the native method (limited to 8
+colors) of the \fBansi\fP method (ISO 8613-6) if your terminal supports
+more than 8 colors. The default value corresponds to \fBansi\fP.
+.IP * 2
+Spaces are allowed anywhere in the lines and between them, even around
+the \fB=\fP.
+.IP * 2
+Everything following a \fB;\fP is ignored.
 .SH OPTIONS
 .IP \fB-h\fP
 Displays a short help message and exists.

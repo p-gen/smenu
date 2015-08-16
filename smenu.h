@@ -23,6 +23,7 @@ typedef struct tst_node_s tst_node_t;
 typedef struct toggle_s toggle_t;
 typedef struct win_s win_t;
 typedef struct word_s word_t;
+typedef struct color_s color_t;
 
 void help(void);
 void usage(char *prog);
@@ -60,6 +61,16 @@ void *tst_prefix_search(tst_node_t * root, wchar_t * w,
 void *tst_search(tst_node_t * root, wchar_t * w);
 int tst_traverse(tst_node_t * p, int (*callback) (void *), int first_call);
 
+int ini_load(const char *filename, win_t * win, term_t * term,
+             int (*report) (win_t * win, term_t * term, const char *section,
+                            const char *name, const char *value));
+int ini_cb(win_t * win, term_t * term, const char *section, const char *name,
+           const char *value);
+char *make_ini_path(char *name);
+
+void set_foreground_color(term_t * term, int color);
+void set_background_color(term_t * term, int color);
+
 int build_metadata(word_t * word_a, term_t * term, int count, win_t * win);
 int disp_lines(word_t * word_a, win_t * win, toggle_t * toggle, int current,
                int count, int search_mode, char *search_buf, term_t * term,
@@ -84,3 +95,5 @@ int search_next(tst_node_t * tst, word_t * word_a, char *search_buf,
                 int after_only);
 void set_new_first_column(win_t * win, word_t * word_a);
 void sig_handler(int s);
+
+void set_new_first_column(win_t * win, word_t * word_a);
