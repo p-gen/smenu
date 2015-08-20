@@ -238,50 +238,53 @@ struct ll_s
 void
 usage(char *prog)
 {
-  fprintf(stderr, "Usage: %s [-h] [-n lines] [-c cols] [-s pattern] ", prog);
-  fprintf(stderr, "[-m message] \\\n       [-w] [-d] [-t] [-e] [-b] [-g]\n");
+  fprintf(stderr, "Usage: %s [-h] [-n lines] [-c] [-s pattern] ", prog);
+  fprintf(stderr, "[-m message] \\\n"
+                  "       [-w] [-d] [-t [cols]] [-e] [-b] [-g] [-V]\n");
   fprintf(stderr, "\nThis is a filter that gets words from stdin ");
   fprintf(stderr, "and outputs the\n");
-  fprintf(stderr, "selected word (or nothing) on stdout.\n");
-  fprintf(stderr, "A selection window is displayed on /dev/tty ");
-  fprintf(stderr, "to ease that.\n");
-  fprintf(stderr, "\n-h displays this help.\n");
+  fprintf(stderr, "selected word (or nothing) on stdout.\n\n");
+  fprintf(stderr, "The selection window appears on /dev/tty ");
+  fprintf(stderr, "immediately after the current line.\n\n");
+  fprintf(stderr, "The following options are available:\n\n");
+  fprintf(stderr, "-h displays this help.\n");
   fprintf(stderr, "-n sets the number of lines in the selection window.\n");
-  fprintf(stderr, "-c sets the number of columns in the selection window. ");
-  fprintf(stderr, "implies -t.\n");
-  fprintf(stderr, "-s sets the initial cursor position (read the manual for ");
-  fprintf(stderr, "details).\n");
+  fprintf(stderr, "-t tabulates the items. The number of columns can be "
+                  "limited with\n"
+                  "   an optional number.\n");
+  fprintf(stderr, "-s sets the initial cursor position (read the manual for "
+                  "details.\n");
   fprintf(stderr, "-m displays a one-line message above the window\n");
-  fprintf(stderr, "-w uses all the terminal width for the columns.\n");
+  fprintf(stderr, "-w uses all the terminal width for the columns if "
+                  "their numbers is given.\n");
   fprintf(stderr, "-d deletes the selection window on exit.\n");
-  fprintf(stderr, "-t tabulates the items in the selection window.\n");
-  fprintf(stderr,
-          "-e enables ENTER to validate the selection even "
-          "in search mode.\n");
+  fprintf(stderr, "-c is like -t without argument "
+                  "but respects end of lines.\n");
+  fprintf(stderr, "-e enables ENTER to validate the selection even "
+                  "in search mode.\n");
   fprintf(stderr, "-b displays the non printable characters as space.\n");
   fprintf(stderr, "-g separates columns with '|' in tabulate mode.\n");
   fprintf(stderr, "-q prevents the scrollbar display.\n");
-  fprintf(stderr, "-V displays the current version of this program.\n");
+  fprintf(stderr, "-V displays the current version and quits.\n");
   fprintf(stderr, "\nNavigation keys are:\n");
   fprintf(stderr, "  Left/Down/Up/Right arrows or h/j/k/l\n");
   fprintf(stderr, "  Home/End\n");
   fprintf(stderr, "  SPACE to search for the next match of a previously\n");
-  fprintf(stderr, "        entered search prefix, if any, see below\n");
-  fprintf(stderr, "\nExit key without output: q\n");
-  fprintf(stderr, "Selection key          : ENTER\n");
-  fprintf(stderr, "Cancel key             : ESC\n");
-  fprintf(stderr, "Search key             : / or CTRL-F\n");
-  fprintf(stderr, "\nThe search key activates a timed search mode in which\n");
+  fprintf(stderr, "        entered search prefix if any, see below.\n\n");
+  fprintf(stderr, "Exit key without output (do nothing): q\n");
+  fprintf(stderr, "Selection key                       : ENTER\n");
+  fprintf(stderr, "Cancel key                          : ESC\n");
+  fprintf(stderr, "Search key                          : / or CTRL-F\n\n");
+  fprintf(stderr, "The search key activates a timed search mode in which\n");
   fprintf(stderr, "you can enter the first letters of the searched word.\n");
   fprintf(stderr, "When entering this mode you have 7s to start typing\n");
   fprintf(stderr, "and each entered letter gives you 5 more seconds before\n");
-  fprintf(stderr, "the timeout. After that the search mode is ended.\n");
+  fprintf(stderr, "the timeout. After that the search mode is ended.\n\n");
   fprintf(stderr, "Notes:\n");
   fprintf(stderr, "- the timer can be cancelled by pressing ESC.\n");
   fprintf(stderr, "- a bad search letter can be removed with ");
-  fprintf(stderr, "CTRL-H or Backspace\n");
-  fprintf(stderr, "- ENTER and SPACE/n can be used even in search mode.\n");
-  fprintf(stderr, "\n(C) Pierre Gentile (2015).\n");
+  fprintf(stderr, "CTRL-H or Backspace\n\n");
+  fprintf(stderr, "(C) Pierre Gentile (2015).\n");
 
   exit(EXIT_FAILURE);
 }
