@@ -1,11 +1,11 @@
-.TH smenu 1 "May 2015" "Version beta"
+.TH smenu 1 "2015" "beta"
 .SH NAME
 smenu - filter that allows to interactively select a word from stdin
 and outputs the selection to stdout.
 .SH SYNOPSIS
 smenu [\fB-h\fP] [\fB-n\fP \fIlines\fP] [\fB-t\fP [\fIcols\fP]]
 [\fB-s\fP \fIpattern\fP] [\fB-m\fP \fImessage\fP] [\fB-w\fP] [\fB-d\fP]
-[\fB-c\fP] [\fB-e\fP] [\fB-b\fP] [\fB-g\fP] [\fB-q\fP]
+[\fB-c\fP] [\fB-e\fP] [\fB-b\fP] [\fB-g\fP] [\fB-q\fP] [\fB-V\fP]
 .SH DESCRIPTION
 This small utility acts as a filter (read from stdin and write to
 stdout). All the words taken from stdin are presented in a scrolling
@@ -239,6 +239,8 @@ Prevents the scroll bar display. Useful when all the input words can be
 displayed without the need of scrolling. by default the scroll bar is
 always displayed when there is more than one line. An absence of cursor
 in it gives a visual indication that all the input words are there.
+.IP \fB-V\fP
+Displays the current version and quits.
 .SH NOTES
 If tabulations (\fI\\t\fP) are embedded in the input, there is no way
 to replace them with the original number of spaces. In this case use
