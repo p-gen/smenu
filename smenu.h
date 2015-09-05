@@ -28,6 +28,10 @@ typedef struct color_s color_t;
 void help(void);
 void usage(char *prog);
 
+void *xmalloc(size_t size);
+void *xcalloc(size_t num, size_t size);
+void *xrealloc(void *ptr, size_t size);
+
 int ll_append(ll_t * const list, void *const data);
 ll_node_t *ll_find(ll_t * const, void *const,
                    int (*)(const void *, const void *));

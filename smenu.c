@@ -371,6 +371,81 @@ help(void)
   tputs(restore_cursor, 1, outch);
 }
 
+/* *************************** */
+/* Memory allocation functions */
+/* *************************** */
+
+/* Created by Kevin Locke (from numerous canonical examples)         */
+/*                                                                   */
+/* I hereby place this file in the public domain.  It may be freely  */
+/* reproduced, distributed, used, modified, built upon, or otherwise */
+/* employed by anyone for any purpose without restriction.           */
+/* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+
+/* ================= */
+/* Customized malloc */
+/* ================= */
+void *
+xmalloc(size_t size)
+{
+  void *allocated = malloc(size);
+
+  if (allocated == NULL)
+  {
+    fprintf(stderr, "Error:  Insufficient memory "
+            "(attempt to malloc %u bytes)\n", (unsigned int) size);
+
+    exit(EXIT_FAILURE);
+  }
+
+  return allocated;
+}
+
+/* ================= */
+/* Customized calloc */
+/* ================= */
+void *
+xcalloc(size_t num, size_t size)
+{
+  void *allocated = calloc(num, size);
+
+  if (allocated == NULL)
+  {
+    fprintf(stderr, "Error:  Insufficient memory "
+            "(attempt to calloc %u bytes)\n", (unsigned int) size);
+
+    exit(EXIT_FAILURE);
+  }
+
+  return allocated;
+}
+
+/* ================== */
+/* Customized realloc */
+/* ================== */
+void *
+xrealloc(void *ptr, size_t size)
+{
+  void *allocated;
+
+  /* Protect against non-standard behavior */
+  /* """"""""""""""""""""""""""""""""""""" */
+  if (ptr == NULL)
+    allocated = malloc(size);
+  else
+    allocated = realloc(ptr, size);
+
+  if (allocated == NULL)
+  {
+    fprintf(stderr, "Error:  Insufficient memory "
+            "(attempt to realloc %u bytes)\n", (unsigned int) size);
+
+    exit(EXIT_FAILURE);
+  }
+
+  return allocated;
+}
+
 /* ******************** */
 /* ini parsing function */
 /* ******************** */
@@ -575,7 +650,7 @@ make_ini_path(char *name)
 
   if (len <= path_max)
   {
-    path = malloc(len);
+    path = xmalloc(len);
     conf = strrchr(name, '/');
     if (conf != NULL)
       conf++;
@@ -600,7 +675,7 @@ make_ini_path(char *name)
 ll_t *
 ll_new(void)
 {
-  ll_t *ret = malloc(sizeof(ll_t));
+  ll_t *ret = xmalloc(sizeof(ll_t));
 
   if (ret)
     ll_init(ret);
@@ -627,7 +702,7 @@ ll_init(ll_t * list)
 ll_node_t *
 ll_new_node(void)
 {
-  ll_node_t *ret = malloc(sizeof(ll_node_t));
+  ll_node_t *ret = xmalloc(sizeof(ll_node_t));
 
   if (!ret)
     errno = ENOMEM;
@@ -1074,7 +1149,7 @@ mb_strtowcs(char *s)
   int size;
 
   size = strlen(s);
-  w = malloc((size + 1) * sizeof(wchar_t));
+  w = xmalloc((size + 1) * sizeof(wchar_t));
   w[0] = L'\0';
 
   wptr = w;
@@ -1107,7 +1182,7 @@ tst_insert(tst_node_t * p, wchar_t * w, void *data)
 {
   if (p == NULL)
   {
-    p = (tst_node_t *) malloc(sizeof(struct tst_node_s));
+    p = (tst_node_t *) xmalloc(sizeof(struct tst_node_s));
     p->splitchar = *w;
     p->lokid = p->eqkid = p->hikid = NULL;
     p->data = NULL;
@@ -1617,10 +1692,9 @@ get_word(FILE * input, ll_t * word_delims_list, ll_t * record_delims_list,
       return NULL;
   }
 
-  /* Allocate the initial word storage space */
-  /* """"""""""""""""""""""""""""""""""""""" */
-  if ((temp = malloc(wordsize = CHARSCHUNK)) == NULL)
-    return NULL;
+  /* allocate initial word storage space */
+  /* """"""""""""""""""""""""""""""""""" */
+  temp = xmalloc(wordsize = CHARSCHUNK);
 
   /* Start stashing bytes. stop when we meet a non delimiter or EOF */
   /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
@@ -1633,15 +1707,9 @@ get_word(FILE * input, ll_t * word_delims_list, ll_t * record_delims_list,
     while (mb_buffer[i] != '\0')
     {
       if (count >= wordsize - 1)
-      {
-        char *temp2;
+        temp = xrealloc(temp, wordsize +=
+                        (count / CHARSCHUNK + 1) * CHARSCHUNK);
 
-        if ((temp2 = realloc(temp, wordsize +=
-                             (count / CHARSCHUNK + 1) * CHARSCHUNK)) == NULL)
-          return NULL;
-        else
-          temp = temp2;
-      }
       *(temp + count++) = mb_buffer[i];
       i++;
     }
@@ -2542,7 +2610,7 @@ main(int argc, char *argv[])
   int opt;
   win_t win;
   toggle_t toggle;
-  word_t *word_a, *ptr;      /* Array contanings words data (size: count)  */
+  word_t *word_a;            /* Array contanings words data (size: count)  */
 
   int old_fd1;               /* backups of the old stdout file descriptor  */
   FILE *old_stdout;          /* The selecterd word will go there           */
@@ -2573,7 +2641,7 @@ main(int argc, char *argv[])
 
   char *pre_selection_index = NULL;     /* pattern used to set the initial *
                                          * cursor position                 */
-  unsigned char *buffer = malloc(16);   /* Input buffer                    */
+  unsigned char *buffer = xmalloc(16);  /* Input buffer                    */
 
   char *search_buf = NULL;   /* Search buffer                              */
   int search_pos = 0;        /* Current position in the search buffer      */
@@ -2811,7 +2879,7 @@ main(int argc, char *argv[])
 
   /* Allocate the memory for our words structures */
   /* """""""""""""""""""""""""""""""""""""""""""" */
-  word_a = malloc(WORDSCHUNK * sizeof(word_t));
+  word_a = xmalloc(WORDSCHUNK * sizeof(word_t));
 
   /* Fill an array of word_t elements obtained from stdin */
   /* """""""""""""""""""""""""""""""""""""""""""""""""""" */
@@ -2842,7 +2910,7 @@ main(int argc, char *argv[])
 
     while (mb_len != 0)
     {
-      tmp = malloc(mb_len + 1);
+      tmp = xmalloc(mb_len + 1);
       memcpy(tmp, ifs_ptr, mb_len);
       tmp[mb_len] = '\0';
       ll_append(word_delims_list, tmp);
@@ -2871,7 +2939,7 @@ main(int argc, char *argv[])
 
     while (mb_len != 0)
     {
-      tmp = malloc(mb_len + 1);
+      tmp = xmalloc(mb_len + 1);
       memcpy(tmp, irs_ptr, mb_len);
       tmp[mb_len] = '\0';
       ll_append(record_delims_list, tmp);
@@ -2891,8 +2959,8 @@ main(int argc, char *argv[])
   /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
   if (win.col_mode)
   {
-    col_real_max_size = malloc(COLSCHUNK * sizeof(int));
-    col_max_size = malloc(COLSCHUNK * sizeof(int));
+    col_real_max_size = xmalloc(COLSCHUNK * sizeof(int));
+    col_max_size = xmalloc(COLSCHUNK * sizeof(int));
 
     for (i = 0; i < COLSCHUNK; i++)
       col_real_max_size[i] = col_max_size[i] = 0;
@@ -2911,7 +2979,7 @@ main(int argc, char *argv[])
     wchar_t *tmpw;
     int s;
     ll_t *list = NULL;
-    char *dest = malloc(5 * strlen(word) + 1);
+    char *dest = xmalloc(5 * strlen(word) + 1);
     char *new_dest;
     size_t len;
     size_t word_len;
@@ -2946,29 +3014,13 @@ main(int argc, char *argv[])
         /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
         if (cols_number % COLSCHUNK == 0)
         {
-          int *tmp;
           int i;
 
-          tmp = realloc(col_real_max_size,
-                        (cols_number + COLSCHUNK) * sizeof(int));
+          col_real_max_size = xrealloc(col_real_max_size,
+                                       (cols_number + COLSCHUNK) * sizeof(int));
 
-          if (tmp == NULL)
-          {
-            perror("realloc");
-            exit(EXIT_FAILURE);
-          }
-          else
-            col_real_max_size = tmp;
-
-          tmp = realloc(col_max_size, (cols_number + COLSCHUNK) * sizeof(int));
-
-          if (tmp == NULL)
-          {
-            perror("realloc");
-            exit(EXIT_FAILURE);
-          }
-          else
-            col_max_size = tmp;
+          col_max_size =
+            xrealloc(col_max_size, (cols_number + COLSCHUNK) * sizeof(int));
 
           /* Initialize the max size for the new columns */
           /* """"""""""""""""""""""""""""""""""""""""""" */
@@ -3018,7 +3070,7 @@ main(int argc, char *argv[])
     else
       word_a[count].is_last = 0;
 
-    data = malloc(sizeof(int));
+    data = xmalloc(sizeof(int));
     *data = count;
 
     /* If we didn't already encounter this word, then create a new entry in */
@@ -3054,17 +3106,7 @@ main(int argc, char *argv[])
     /* """""""""""""""" */
     count++;
     if (count % WORDSCHUNK == 0)
-    {
-      ptr = realloc(word_a, (count + WORDSCHUNK) * sizeof(word_t));
-
-      if (ptr == NULL)
-      {
-        perror("malloc");
-        exit(EXIT_FAILURE);
-      }
-
-      word_a = ptr;
-    }
+      word_a = xrealloc(word_a, (count + WORDSCHUNK) * sizeof(word_t));
   }
 
   /* All input word have now been read */
@@ -3088,8 +3130,8 @@ main(int argc, char *argv[])
 
   /* Allocate the space for the satellites arrays */
   /* """""""""""""""""""""""""""""""""""""""""""" */
-  line_nb_of_word_a = malloc(count * sizeof(int));
-  first_word_in_line_a = malloc(count * sizeof(int));
+  line_nb_of_word_a = xmalloc(count * sizeof(int));
+  first_word_in_line_a = xmalloc(count * sizeof(int));
 
   /* When in column or tabulating mode, we need to adjust the length of   */
   /* all the words.                                                       */
@@ -3116,7 +3158,7 @@ main(int argc, char *argv[])
       word_width = mbstowcs(0, word_a[i].str, 0);
       s2 = wcswidth((w = mb_strtowcs(word_a[i].str)), word_width);
       free(w);
-      temp = calloc(1, col_real_max_size[col_index] + s1 - s2 + 1);
+      temp = xcalloc(1, col_real_max_size[col_index] + s1 - s2 + 1);
       memset(temp, ' ', col_max_size[col_index] + s1 - s2);
       memcpy(temp, word_a[i].str, s1);
       temp[col_real_max_size[col_index] + s1 - s2] = '\0';
@@ -3150,7 +3192,7 @@ main(int argc, char *argv[])
       word_width = mbstowcs(0, word_a[i].str, 0);
       s2 = wcswidth((w = mb_strtowcs(word_a[i].str)), word_width);
       free(w);
-      temp = calloc(1, tab_real_max_size + s1 - s2 + 1);
+      temp = xcalloc(1, tab_real_max_size + s1 - s2 + 1);
       memset(temp, ' ', tab_max_size + s1 - s2);
       memcpy(temp, word_a[i].str, s1);
       temp[tab_real_max_size + s1 - s2] = '\0';
@@ -3172,7 +3214,7 @@ main(int argc, char *argv[])
 
   /* We can now allocate the space for our tmp_max_word work variable */
   /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-  tmp_max_word = malloc(tab_real_max_size + 1);
+  tmp_max_word = xmalloc(tab_real_max_size + 1);
 
   win.start = 0;             /* index of the first element in the    *
                               * words array to be  displayed         */
@@ -3237,7 +3279,7 @@ main(int argc, char *argv[])
   /* Initialize the search buffer with tab_real_max_size+1 NULs */
   /* It wil never be reallocated, only cleared.                 */
   /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-  search_buf = calloc(1, tab_real_max_size + 1);
+  search_buf = xcalloc(1, tab_real_max_size + 1);
 
   /* Hide the cursor */
   /* """"""""""""""" */
@@ -4078,7 +4120,7 @@ main(int argc, char *argv[])
 
               int pos;
 
-              new_search_buf = calloc(1, tab_real_max_size + 1);
+              new_search_buf = xcalloc(1, tab_real_max_size + 1);
               mb_strprefix(new_search_buf, search_buf,
                            mbstowcs(0, search_buf, 0) - 1, &pos);
 
