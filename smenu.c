@@ -241,7 +241,7 @@ usage(char *prog)
 {
   fprintf(stderr, "Usage: %s [-h] [-n lines] [-c] [-s pattern] ", prog);
   fprintf(stderr, "[-m message] \\\n"
-                  "       [-w] [-d] [-t [cols]] [-e] [-b] [-g] [-V]\n");
+          "       [-w] [-d] [-t [cols]] [-e] [-b] [-g] [-V]\n");
   fprintf(stderr, "\nThis is a filter that gets words from stdin ");
   fprintf(stderr, "and outputs the\n");
   fprintf(stderr, "selected word (or nothing) on stdout.\n\n");
@@ -251,18 +251,18 @@ usage(char *prog)
   fprintf(stderr, "-h displays this help.\n");
   fprintf(stderr, "-n sets the number of lines in the selection window.\n");
   fprintf(stderr, "-t tabulates the items. The number of columns can be "
-                  "limited with\n"
-                  "   an optional number.\n");
+          "limited with\n");
+  fprintf(stderr,  "   an optional number.\n");
   fprintf(stderr, "-s sets the initial cursor position (read the manual for "
-                  "details.\n");
+          "details.\n");
   fprintf(stderr, "-m displays a one-line message above the window\n");
   fprintf(stderr, "-w uses all the terminal width for the columns if "
-                  "their numbers is given.\n");
+          "their numbers is given.\n");
   fprintf(stderr, "-d deletes the selection window on exit.\n");
   fprintf(stderr, "-c is like -t without argument "
-                  "but respects end of lines.\n");
+          "but respects end of lines.\n");
   fprintf(stderr, "-e enables ENTER to validate the selection even "
-                  "in search mode.\n");
+          "in search mode.\n");
   fprintf(stderr, "-b displays the non printable characters as space.\n");
   fprintf(stderr, "-g separates columns with '|' in tabulate mode.\n");
   fprintf(stderr, "-q prevents the scrollbar display.\n");
