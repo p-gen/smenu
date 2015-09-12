@@ -1636,16 +1636,6 @@ expand(char *src, char *dest, langinfo_t * langinfo)
           *(ptr++) = '\\';
           len += 2;
           break;
-        case '\"':
-          *(ptr++) = '\\';
-          *(ptr++) = '\"';
-          len += 2;
-          break;
-        case '\'':
-          *(ptr++) = '\\';
-          *(ptr++) = '\'';
-          len += 2;
-          break;
         default:
           if (my_isprint(c))
             *(ptr++) = c;
