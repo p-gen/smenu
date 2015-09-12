@@ -2800,12 +2800,6 @@ main(int argc, char *argv[])
     exit(EXIT_FAILURE);
   }
 
-  if (optind < argc)
-  {
-    fprintf(stderr, "Invalid option (%s).\n", argv[argc - 1]);
-    exit(EXIT_FAILURE);
-  }
-
   /* If we did not impose the number of columns, uwe the whole terminal width */
   /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
   if (!win.max_cols)
