@@ -240,8 +240,9 @@ void
 usage(char *prog)
 {
   fprintf(stderr, "Usage: %s [-h] [-n lines] [-c] [-s pattern] ", prog);
-  fprintf(stderr, "[-m message] \\\n"
-          "       [-w] [-d] [-t [cols]] [-e] [-b] [-g] [-V]\n");
+  fprintf(stderr, "[-m message] [-w] [-d] \\\n");
+  fprintf(stderr, "       [-t [cols]] [-e] [-b] [-g] [-W bytes] ");
+  fprintf(stderr, "[-L bytes] [-V]\n");
   fprintf(stderr, "\nThis is a filter that gets words from stdin ");
   fprintf(stderr, "and outputs the\n");
   fprintf(stderr, "selected word (or nothing) on stdout.\n\n");
@@ -266,6 +267,8 @@ usage(char *prog)
   fprintf(stderr, "-b displays the non printable characters as space.\n");
   fprintf(stderr, "-g separates columns with '|' in tabulate mode.\n");
   fprintf(stderr, "-q prevents the scrollbar display.\n");
+  fprintf(stderr, "-W sets the input words separators.\n");
+  fprintf(stderr, "-L sets the input lines separators.\n");
   fprintf(stderr, "-V displays the current version and quits.\n");
   fprintf(stderr, "\nNavigation keys are:\n");
   fprintf(stderr, "  Left/Down/Up/Right arrows or h/j/k/l\n");
@@ -2388,7 +2391,7 @@ int optchar = 0;             /* character that begins returned option */
 int optneed = NEEDSEP;       /* flag for mandatory argument */
 int optmaybe = MAYBESEP;     /* flag for optional argument */
 int opterrfd = ERRFD;        /* file descriptor for error text */
-char *optarg;                /* argument associated with option */
+char *optarg = NULL;         /* argument associated with option */
 char *optstart = START;      /* list of characters that start options */
 
 /* Macros. */
@@ -2401,7 +2404,6 @@ char *optstart = START;      /* list of characters that start options */
 #define TELL(S) { \
   if (opterr && opterrfd >= 0) { \
     char option = (char) optopt; \
-    write(opterrfd, *nargv, strlen(*nargv)); \
     write(opterrfd, (S), strlen(S)); \
     write(opterrfd, &option, 1); \
     write(opterrfd, "\n", 1); \
@@ -2465,7 +2467,7 @@ egetopt(int nargc, char **nargv, char *ostr)
     if (*place == '\0')
       ++optind;
 
-    TELL(": illegal option -- ");       /* byebye */
+    TELL("Illegal option -- ");       /* byebye */
   }
 
   /* If there is no argument indicator, then we don't even try to */
@@ -2509,7 +2511,7 @@ egetopt(int nargc, char **nargv, char *ostr)
       if (nargc <= ++optind)
       {
         place = EMSG;
-        TELL(": option requires an argument -- ");
+        TELL("Option requires an argument -- ");
       }
       else
         optarg = nargv[optind];
@@ -2638,7 +2640,7 @@ main(int argc, char *argv[])
 
   struct sigaction sa;       /* Signal structure                           */
 
-  char *ifs, *irs;
+  char *iws = NULL, *ils = NULL;
   ll_t *word_delims_list = NULL;
   ll_t *record_delims_list = NULL;
 
@@ -2713,12 +2715,10 @@ main(int argc, char *argv[])
 
   /* Command line options analysis */
   /* """"""""""""""""""""""""""""" */
-  opterr = 0;
-  while ((opt = egetopt(argc, argv, "Vhqdbcwegn:t%:m:s:")) != -1)
+  while ((opt = egetopt(argc, argv, "Vhqdbcwegn:t%m:s:W:L:")) != -1)
   {
     switch (opt)
     {
-
       case 'V':
         fprintf(stderr, "Version: " VERSION "\n");
         exit(0);
@@ -2728,8 +2728,8 @@ main(int argc, char *argv[])
           win.asked_max_lines = atoi(optarg);
         else
         {
+          fprintf(stderr,"Option requires an argument -- %c\n\n", (char)optopt);
           usage(argv[0]);
-          exit(EXIT_FAILURE);
         }
         break;
 
@@ -2742,8 +2742,8 @@ main(int argc, char *argv[])
           pre_selection_index = strdup(optarg);
         else
         {
+          fprintf(stderr,"Option requires an argument -- %c\n\n", (char)optopt);
           usage(argv[0]);
-          exit(EXIT_FAILURE);
         }
         break;
 
@@ -2782,22 +2782,39 @@ main(int argc, char *argv[])
         toggle.no_scrollbar = 1;
         break;
 
-      case '?':
-        fprintf(stderr, "Invalid option (%s).\n", argv[optind - 1]);
-        exit(EXIT_FAILURE);
+      case 'W':
+        if (optarg && *optarg != '-')
+          iws=optarg;
+        else
+        {
+          fprintf(stderr,"Option requires an argument -- %c\n\n", (char)optopt);
+          usage(argv[0]);
+        }
+        break;
 
+      case 'L':
+        if (optarg && *optarg != '-')
+          ils=optarg;
+        else
+        {
+          fprintf(stderr,"Option requires an argument -- %c\n\n", (char)optopt);
+          usage(argv[0]);
+        }
+        break;
+
+      case '?':
+        fputs("\n", stderr);
       case 'h':
-      default:              /* '?' */
+      default:
         usage(argv[0]);
-        exit(EXIT_FAILURE);
     }
     optarg = NULL;
   }
 
   if (optind < argc)
   {
-    fprintf(stderr, "Invalid option (%s).\n", argv[argc - 1]);
-    exit(EXIT_FAILURE);
+    fprintf(stderr, "Not an option -- %s\n\n", argv[argc - 1]);
+    usage(argv[0]);
   }
 
   /* If we did not impose the number of columns, uwe the whole terminal width */
@@ -2871,14 +2888,13 @@ main(int argc, char *argv[])
   tab_max_size = 0;
   min_size = 0;
 
-  /* Parse the IFS environment variable to set the delimiters. If IFS   */
-  /* is not set, then the standard delimiters (space, tab and EOL) are  */
-  /* used. Each of its multibyte sequences are stored in a linked list. */
+  /* Parse the word separators string (option -W). If it is empty then  */
+  /* the standard delimiters (space, tab and EOL) are used. Each of its */
+  /* multibyte sequences are stored in a linked list.                   */
   /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
   word_delims_list = ll_new();
-  ifs = getenv("IFS");
 
-  if (ifs == NULL)
+  if (iws == NULL)
   {
     ll_append(word_delims_list, " ");
     ll_append(word_delims_list, "\t");
@@ -2887,44 +2903,43 @@ main(int argc, char *argv[])
   else
   {
     int mb_len;
-    char *ifs_ptr = ifs;
+    char *iws_ptr = iws;
     char *tmp;
 
-    mb_len = mblen(ifs_ptr, 4);
+    mb_len = mblen(iws_ptr, 4);
 
     while (mb_len != 0)
     {
       tmp = xmalloc(mb_len + 1);
-      memcpy(tmp, ifs_ptr, mb_len);
+      memcpy(tmp, iws_ptr, mb_len);
       tmp[mb_len] = '\0';
       ll_append(word_delims_list, tmp);
 
-      ifs_ptr += mb_len;
-      mb_len = mblen(ifs_ptr, 4);
+      iws_ptr += mb_len;
+      mb_len = mblen(iws_ptr, 4);
     }
   }
 
-  /* Parse the IRS environment variable to set the delimiters. If IRS   */
-  /* is not set, then the standard delimiters (space, tab and EOL) are  */
-  /* used. Each of its multibyte sequences are stored in a linked list. */
-  /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+  /* Parse the line separators string (option -L). If it is empty then */
+  /* the standard delimiter (newline) is used. Each of its multibyte   */
+  /* sequences are stored in a linked list.                            */
+  /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
   record_delims_list = ll_new();
-  irs = getenv("IRS");
 
-  if (irs == NULL)
+  if (ils == NULL)
     ll_append(record_delims_list, "\n");
   else
   {
     int mb_len;
-    char *irs_ptr = irs;
+    char *ils_ptr = ils;
     char *tmp;
 
-    mb_len = mblen(irs_ptr, 4);
+    mb_len = mblen(ils_ptr, 4);
 
     while (mb_len != 0)
     {
       tmp = xmalloc(mb_len + 1);
-      memcpy(tmp, irs_ptr, mb_len);
+      memcpy(tmp, ils_ptr, mb_len);
       tmp[mb_len] = '\0';
       ll_append(record_delims_list, tmp);
 
@@ -2933,8 +2948,8 @@ main(int argc, char *argv[])
       if (ll_find(word_delims_list, tmp, delims_cmp) == NULL)
         ll_append(word_delims_list, tmp);
 
-      irs_ptr += mb_len;
-      mb_len = mblen(irs_ptr, 4);
+      ils_ptr += mb_len;
+      mb_len = mblen(ils_ptr, 4);
     }
   }
 

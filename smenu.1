@@ -5,15 +5,16 @@ and outputs the selection to stdout.
 .SH SYNOPSIS
 smenu [\fB-h\fP] [\fB-n\fP \fIlines\fP] [\fB-t\fP [\fIcols\fP]]
 [\fB-s\fP \fIpattern\fP] [\fB-m\fP \fImessage\fP] [\fB-w\fP] [\fB-d\fP]
-[\fB-c\fP] [\fB-e\fP] [\fB-b\fP] [\fB-g\fP] [\fB-q\fP] [\fB-V\fP]
+[\fB-c\fP] [\fB-e\fP] [\fB-b\fP] [\fB-g\fP] [\fB-q\fP]
+[\fB-W\fP bytes] [\fB-L\fP bytes] [\fB-V\fP]
 .SH DESCRIPTION
-This small utility acts as a filter (read from stdin and write to
+This small utility acts as a filter (reads from stdin and writes to
 stdout). All the words taken from stdin are presented in a scrolling
 window on the terminal with a selection cursor initially positioned on
 the first word by default.
 .P
-If the \fBIFS\fP variable is set, each of its character (or multibyte
-sequence) will be used to delimit the words when reading them. Default
+The \fB-W\fP option can be used to specify the characters (or multibyte
+sequences) which will be used to delimit the input words. The default
 delimiters are: \fISPACE\fP, \fI\\t\fP and \fI\\n\fP.
 .P
 Non printable characters in words that are not a delimiter are
@@ -220,12 +221,6 @@ and right edge of the window to help the user to reach the unseen words.
 In this mode, the width of each column is minimal to keep the maximum
 information visible on the terminal.
 .P
-IF the shell variable \fBIRS\fP is undefined, then the end-of-line
-sequence is set to "\fI\\n\fR" by default. Otherwise its content will
-be used to specify the end-of-line sequences used in column mode.
-.P
-The characters (or multibyte sequences) in \fBIRS\fP are automatically
-added to the list of word delimiters.
 .RE
 .IP \fB-e\fP
 Enables \fBENTER\fP to validate the selection even in search mode.
@@ -239,6 +234,20 @@ Prevents the scroll bar display. Useful when all the input words can be
 displayed without the need of scrolling. by default the scroll bar is
 always displayed when there is more than one line. An absence of cursor
 in it gives a visual indication that all the input words are there.
+.IP \fB-W\fP
+This option can be used to specify the characters (or multibyte
+sequences) which will be used to delimit the input words. The default
+delimiters are: \fISPACE\fP, \fI\\t\fP and \fI\\n\fP.
+.IP \fB-L\fP
+This option can be used to specify the characters (or multibyte
+sequences) which will be used to delimit the lines in the input stream.
+The default delimiter is: \fI\\n\fP.
+
+This option is only usefull when the \fB-c\fP option is also used.
+
+The characters (or multibyte sequences) passed to \fB-L\fP are
+automatically added to the list of word delimiters as if \fB-W\fP was
+also used.
 .IP \fB-V\fP
 Displays the current version and quits.
 .SH NOTES
@@ -265,7 +274,7 @@ Get a 3 columns report about VM statistics for the current process in
 \fBbash\fP/\fBksh\fP on Linux:
 .P
 .nf
-\fBR=$(grep Vm /proc/$$/status | expand | IFS=$'\\n' smenu -b -t3 -g -d)\fB
+\fBR=$(grep Vm /proc/$$/status | expand | smenu -b -W$'\\n' -t3 -g -d)\fB
 .P
 .fi
 .SS 3

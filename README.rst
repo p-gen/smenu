@@ -37,7 +37,7 @@ try to type the following line at a shell prompt (here: ``"$ "`` ):
 ::
 
   $ R=$(grep Vm /proc/$$/status \
-        | IFS=$':\n' smenu -n20 -q -c -b -g -s /VmH)
+        | smenu -n20 -W $':\n' -q -c -b -g -s /VmH)
   $ echo $R
 
 Something like this should now be displayed with the program waiting
