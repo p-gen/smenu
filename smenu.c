@@ -262,7 +262,7 @@ usage(char *prog)
   fprintf(stderr, "-d deletes the selection window on exit.\n");
   fprintf(stderr, "-c is like -t without argument "
           "but respects end of lines.\n");
-  fprintf(stderr, "-e enables ENTER to validate the selection even "
+  fprintf(stderr, "-r enables ENTER to validate the selection even "
           "in search mode.\n");
   fprintf(stderr, "-b displays the non printable characters as space.\n");
   fprintf(stderr, "-g separates columns with '|' in tabulate mode.\n");
@@ -2715,7 +2715,7 @@ main(int argc, char *argv[])
 
   /* Command line options analysis */
   /* """"""""""""""""""""""""""""" */
-  while ((opt = egetopt(argc, argv, "Vhqdbcwegn:t%m:s:W:L:")) != -1)
+  while ((opt = egetopt(argc, argv, "Vhqdbcwrgn:t%m:s:W:L:")) != -1)
   {
     switch (opt)
     {
@@ -2770,7 +2770,7 @@ main(int argc, char *argv[])
         message = optarg;
         break;
 
-      case 'e':
+      case 'r':
         toggle.enter_val_in_search = 1;
         break;
 
