@@ -254,7 +254,7 @@ usage(char *prog)
   fprintf(stderr, "-n sets the number of lines in the selection window.\n");
   fprintf(stderr, "-t tabulates the items. The number of columns can be "
           "limited with\n");
-  fprintf(stderr,  "   an optional number.\n");
+  fprintf(stderr, "   an optional number.\n");
   fprintf(stderr, "-s sets the initial cursor position (read the manual for "
           "details.\n");
   fprintf(stderr, "-m displays a one-line message above the window\n");
@@ -2488,7 +2488,7 @@ egetopt(int nargc, char **nargv, char *ostr)
     if (*place == '\0')
       ++optind;
 
-    TELL("Illegal option -- ");       /* byebye */
+    TELL("Illegal option -- "); /* byebye */
   }
 
   /* If there is no argument indicator, then we don't even try to */
@@ -2642,7 +2642,7 @@ main(int argc, char *argv[])
   int tab_real_max_size;     /* Maximum size in bytes of a column in       *
                               * tabular mode                               */
 
-  int *col_real_max_size = NULL;        /* Array of maximum sizes (bytes)  * 
+  int *col_real_max_size = NULL;        /* Array of maximum sizes (bytes)  *
                                          * of each  column in column mode  */
   int *col_max_size = NULL;  /* Array of maximum sizes of each column in   *
                               * column mode                                */
@@ -2749,7 +2749,8 @@ main(int argc, char *argv[])
           win.asked_max_lines = atoi(optarg);
         else
         {
-          fprintf(stderr,"Option requires an argument -- %c\n\n", (char)optopt);
+          fprintf(stderr, "Option requires an argument -- %c\n\n",
+                  (char) optopt);
           usage(argv[0]);
         }
         break;
@@ -2763,7 +2764,8 @@ main(int argc, char *argv[])
           pre_selection_index = strdup(optarg);
         else
         {
-          fprintf(stderr,"Option requires an argument -- %c\n\n", (char)optopt);
+          fprintf(stderr, "Option requires an argument -- %c\n\n",
+                  (char) optopt);
           usage(argv[0]);
         }
         break;
@@ -2805,20 +2807,22 @@ main(int argc, char *argv[])
 
       case 'W':
         if (optarg && *optarg != '-')
-          iws=optarg;
+          iws = optarg;
         else
         {
-          fprintf(stderr,"Option requires an argument -- %c\n\n", (char)optopt);
+          fprintf(stderr, "Option requires an argument -- %c\n\n",
+                  (char) optopt);
           usage(argv[0]);
         }
         break;
 
       case 'L':
         if (optarg && *optarg != '-')
-          ils=optarg;
+          ils = optarg;
         else
         {
-          fprintf(stderr,"Option requires an argument -- %c\n\n", (char)optopt);
+          fprintf(stderr, "Option requires an argument -- %c\n\n",
+                  (char) optopt);
           usage(argv[0]);
         }
         break;
@@ -3257,7 +3261,8 @@ main(int argc, char *argv[])
     wchar_t *w;
 
     new_current = count - 1;
-    if (NULL != tst_prefix_search(tst, w = mb_strtowcs(pre_selection_index + 1),
+    if (NULL != tst_prefix_search(tst,
+                                  w = mb_strtowcs(pre_selection_index + 1),
                                   tst_cb_cli))
       current = new_current;
     else
