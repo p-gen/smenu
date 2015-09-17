@@ -29,6 +29,7 @@
 #include <locale.h>
 #include <langinfo.h>
 #include <term.h>
+#include <regex.h>
 #include <errno.h>
 #include <wchar.h>
 #include <sys/ioctl.h>
@@ -175,6 +176,7 @@ struct word_s
   int start, end, mbytes;    /* start/end absolute horiz. word positions  *
                               * on the screen                             *
                               * mbytes: number of multibytes to display   */
+  int is_selectable;         /* word is is_selectable                     */
 };
 
 /* Structure describing the window in which the user */
@@ -266,6 +268,10 @@ usage(char *prog)
   fprintf(stderr, "-r enables ENTER to validate the selection even "
           "in search mode.\n");
   fprintf(stderr, "-b displays the non printable characters as space.\n");
+  fprintf(stderr, "-i sets the regex input filter to match the "
+          "selectable words.\n");
+  fprintf(stderr, "-e sets the regex input filter to match the "
+          "non-selectable words.\n");
   fprintf(stderr, "-g separates columns with '|' in tabulate mode.\n");
   fprintf(stderr, "-q prevents the scrollbar display.\n");
   fprintf(stderr, "-W sets the input words separators.\n");
@@ -2042,7 +2048,13 @@ disp_word(word_t * word_a, int pos, int search_mode, char *buffer,
     /* Display a normal word without any attribute */
     /* """"""""""""""""""""""""""""""""""""""""""" */
     mb_strprefix(tmp_max_word, word_a[pos].str, word_a[pos].mbytes - 1, &p);
+    if (!word_a[pos].is_selectable)
+    {
+      set_foreground_color(term, exclude_color.fg);
+      set_background_color(term, exclude_color.bg);
+    }
     fputs(tmp_max_word, stdout);
+    tputs(exit_attribute_mode, 1, outch);
   }
 }
 
@@ -2607,6 +2619,12 @@ main(int argc, char *argv[])
 {
   char *message = NULL;      /* One line message to be desplayed           *
                               * above the selection window                 */
+  char *include_pattern = ".";
+  char *exclude_pattern = NULL;
+
+  regex_t include_re;
+  regex_t exclude_re;
+
   int message_lines;
 
   int i;                     /* word index                                 */
@@ -2632,6 +2650,12 @@ main(int argc, char *argv[])
   int offset;                /* Used to correstly put the curson at the    *
                               * start of the selection window, even after  *
                               * a terminal vertical scroll                 */
+
+  int first_selectable;      /* Index of the first selectable word in the  *
+                              * input stream                               */
+  int last_selectable;       /* Index of the last selectable word in the   *
+                              * input stream                               */
+
   int s, e;                  /* word variable to contain the starting and  *
                               * ending terminal position of a word         */
   int min_size;              /* Minimum screen width of a column in        *
@@ -2736,7 +2760,7 @@ main(int argc, char *argv[])
 
   /* Command line options analysis */
   /* """"""""""""""""""""""""""""" */
-  while ((opt = egetopt(argc, argv, "Vhqdbcwrgn:t%m:s:W:L:")) != -1)
+  while ((opt = egetopt(argc, argv, "Vhqdbi:e:cwrgn:t%m:s:W:L:")) != -1)
   {
     switch (opt)
     {
@@ -2799,6 +2823,14 @@ main(int argc, char *argv[])
 
       case 'b':
         toggle.blank_nonprintable = 1;
+        break;
+
+      case 'i':
+        include_pattern = optarg;
+        break;
+
+      case 'e':
+        exclude_pattern = optarg;
         break;
 
       case 'q':
@@ -2994,6 +3026,20 @@ main(int argc, char *argv[])
     col_index = cols_number = 0;
   }
 
+  if (include_pattern
+      && regcomp(&include_re, include_pattern, REG_EXTENDED | REG_NOSUB) != 0)
+  {
+    fprintf(stderr, "Bad regular expression %s\n", include_pattern);
+    exit(EXIT_FAILURE);
+  }
+
+  if (exclude_pattern
+      && regcomp(&exclude_re, exclude_pattern, REG_EXTENDED | REG_NOSUB) != 0)
+  {
+    fprintf(stderr, "Bad regular expression %s\n", exclude_pattern);
+    exit(EXIT_FAILURE);
+  }
+
   /* Get and process the input stream words */
   /* """""""""""""""""""""""""""""""""""""" */
   while ((word = get_word(stdin, word_delims_list, record_delims_list,
@@ -3009,15 +3055,26 @@ main(int argc, char *argv[])
     char *new_dest;
     size_t len;
     size_t word_len;
+    int selectable;
+
+    /* Reduce the memory footprint of dest and store its new length */
+    /* after its potential expansion.                               */
+    /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+    if (include_pattern == NULL && exclude_pattern == NULL)
+      selectable = 1;
+    else if (exclude_pattern
+             && regexec(&exclude_re, word, (size_t) 0, NULL, 0) == 0)
+      selectable = 0;
+    else if (include_pattern
+             && regexec(&include_re, word, (size_t) 0, NULL, 0) == 0)
+      selectable = 1;
+    else
+      selectable = 0;
 
     /* Alter the word just read be replacing special chars  by their */
     /* escaped equivalents.                                          */
     /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
     len = expand(word, dest, &langinfo);
-
-    /* Reduce the memory footprint of dest and store its new length */
-    /* after its potential expansion.                               */
-    /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
     new_dest = strdup(dest);
     free(dest);
     dest = new_dest;
@@ -3080,6 +3137,7 @@ main(int argc, char *argv[])
     word_a[count].start = word_a[count].end = 0;
 
     word_a[count].str = dest;
+    word_a[count].is_selectable = selectable;
 
     if (strcmp(word, dest) != 0)
       word_a[count].orig = word;
@@ -3096,20 +3154,26 @@ main(int argc, char *argv[])
     else
       word_a[count].is_last = 0;
 
-    data = xmalloc(sizeof(int));
-    *data = count;
-
-    /* If we didn't already encounter this word, then create a new entry in */
-    /* the TST for it and store its index in its list.                      */
-    /* Otherwise, add its index in its index list.                          */
-    /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-    if (tst && (list = tst_search(tst, w)) != NULL)
-      ll_append(list, data);
-    else
+    /* If the word is selectable insert it in the TST tree */
+    /* with its associated index in the input stream.      */
+    /* """"""""""""""""""""""""""""""""""""""""""""""""""" */
+    if (word_a[count].is_selectable)
     {
-      list = ll_new();
-      ll_append(list, data);
-      tst = tst_insert(tst, w, list);
+      data = xmalloc(sizeof(int));
+      *data = count;
+
+      /* If we didn't already encounter this word, then create a new entry in */
+      /* the TST for it and store its index in its list.                      */
+      /* Otherwise, add its index in its index list.                          */
+      /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+      if (tst && (list = tst_search(tst, w)) != NULL)
+        ll_append(list, data);
+      else
+      {
+        list = ll_new();
+        ll_append(list, data);
+        tst = tst_insert(tst, w, list);
+      }
     }
 
     free(w);
@@ -3252,21 +3316,50 @@ main(int argc, char *argv[])
   /*   /pref     /+a regexp          put the cursor on the first     */
   /*                                 word matching the prefix "pref" */
   /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+
+  /* Find the first selectable word (if any) in the input stream */
+  /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+  for (first_selectable = 0;
+       first_selectable < count - 1
+       && !word_a[first_selectable].is_selectable; first_selectable++);
+
+  /* If not found, abort */
+  /* """"""""""""""""""" */
+  if (!word_a[first_selectable].is_selectable)
+  {
+    fprintf(stderr, "No selectable word found.\n");
+    exit(EXIT_FAILURE);
+  }
+
+  /* If not found, abort */
+  /* """"""""""""""""""" */
+  if (!word_a[first_selectable].is_selectable)
+  {
+    fprintf(stderr, "No selectable word found.\n");
+    exit(EXIT_FAILURE);
+  }
+
+  /* Else find the last selectable word in the input stream */
+  /* """""""""""""""""""""""""""""""""""""""""""""""""""""" */
+  for (last_selectable = count - 1;
+       last_selectable > 0
+       && !word_a[last_selectable].is_selectable; last_selectable--);
+
   if (pre_selection_index == NULL)
-    current = 0;
+    current = first_selectable;
   else if (strcmp(pre_selection_index, "last") == 0)
-    current = count - 1;
+    current = last_selectable;
   else if (*pre_selection_index == '/')
   {
     wchar_t *w;
 
-    new_current = count - 1;
+    new_current = last_selectable;
     if (NULL != tst_prefix_search(tst,
                                   w = mb_strtowcs(pre_selection_index + 1),
                                   tst_cb_cli))
       current = new_current;
     else
-      current = 0;
+      current = first_selectable;
     free(w);
   }
   else if (*pre_selection_index != '\0')
@@ -3274,6 +3367,8 @@ main(int argc, char *argv[])
     current = atoi(pre_selection_index);
     if (current >= count)
       current = count - 1;
+    if (!word_a[current].is_selectable)
+      current = first_selectable;
   }
 
   /* We can now build the metadata */

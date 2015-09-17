@@ -5,13 +5,20 @@ and outputs the selection to stdout.
 .SH SYNOPSIS
 smenu [\fB-h\fP] [\fB-n\fP \fIlines\fP] [\fB-t\fP [\fIcols\fP]]
 [\fB-s\fP \fIpattern\fP] [\fB-m\fP \fImessage\fP] [\fB-w\fP] [\fB-d\fP]
-[\fB-c\fP] [\fB-r\fP] [\fB-b\fP] [\fB-g\fP] [\fB-q\fP]
-[\fB-W\fP bytes] [\fB-L\fP bytes] [\fB-V\fP]
+[\fB-c\fP] [\fB-r\fP] [\fB-b\fP] [\fB-i\fP regex] [\fB-e\fP regex]
+[\fB-g\fP] [\fB-q\fP] [\fB-W\fP bytes] [\fB-L\fP bytes] [\fB-V\fP]
 .SH DESCRIPTION
 This small utility acts as a filter (reads from stdin and writes to
 stdout). All the words taken from stdin are presented in a scrolling
 window on the terminal with a selection cursor initially positioned on
 the first word by default.
+.P
+It is possible to filter the selectable words in the input stream by
+using an include regular expression to match the selectable words
+and un exclude regular expression to match the non-selectable words.
+.P
+Non-selectable words will be skipped when moving the selection cursor
+and will not be able to be serached.
 .P
 The \fB-W\fP option can be used to specify the characters (or multibyte
 sequences) which will be used to delimit the input words. The default
@@ -229,6 +236,12 @@ information visible on the terminal.
 Enables \fBENTER\fP to validate the selection even in search mode.
 .IP \fB-b\fP
 Replace all non-printable characters by a blank.
+.IP \fB-i regex\fP
+Sets the \fBi\fPnclude filter to match the selectable words.
+.IP \fB-e regex\fP
+Sets the \fBe\fPxclude filter to match the non-selectable words.
+
+This filter has a higher priority the the include filter.
 .IP \fB-g\fP
 Replaces the blank after each words in normal tabular mode by a vertical
 bar "\fB|\fP". Some users may find the output more readable like that.
