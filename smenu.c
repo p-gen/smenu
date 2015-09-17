@@ -37,6 +37,7 @@
 
 color_t bar_color;           /* scrollbar color                  */
 color_t search_color;        /* search mode colors               */
+color_t exclude_color;       /* non-selectable words colors      */
 
 int count = 0;               /* number of words read from stdin  */
 int current;                 /* index the current selection      *
@@ -519,6 +520,26 @@ ini_cb(win_t * win, term_t * term, const char *section, const char *name,
       {
         if (sscanf(value, "%d", &v) == 1 && v >= 0 && v <= term->colors)
           search_color.bg = v;
+        else
+        {
+          error = 1;
+          goto out;
+        }
+      }
+      else if (strcmp(name, "exclude_foreground") == 0)
+      {
+        if (sscanf(value, "%d", &v) == 1 && v >= 0 && v <= term->colors)
+          exclude_color.fg = v;
+        else
+        {
+          error = 1;
+          goto out;
+        }
+      }
+      else if (strcmp(name, "exclude_background") == 0)
+      {
+        if (sscanf(value, "%d", &v) == 1 && v >= 0 && v <= term->colors)
+          exclude_color.bg = v;
         else
         {
           error = 1;
@@ -2871,6 +2892,8 @@ main(int argc, char *argv[])
     bar_color.bg = 0;
     search_color.fg = 0;
     search_color.bg = 5;
+    exclude_color.fg = 3;
+    exclude_color.bg = 0;
   }
 
   /* Set the colors from the config file if possible */
