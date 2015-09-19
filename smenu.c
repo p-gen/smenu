@@ -185,7 +185,6 @@ struct word_s
 struct win_s
 {
   int start, end;
-  int count;
   int first_column;
   size_t cur_line;
   int asked_max_lines, max_lines, max_cols;
