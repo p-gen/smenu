@@ -955,7 +955,7 @@ strip_ansi_color(char *s, toggle_t * toggle)
     {
       while ((*s != '\0') && (*s++ != 'm'))
       {
-        ;                    /* do nothing */
+        /* do nothing */
       }
     }
     /* Convert a single \x1b in '.' */
@@ -1612,7 +1612,7 @@ expand(char *src, char *dest, langinfo_t * langinfo)
         /* """""""""""""""""""""""""""""""""""""""""""""""" */
         do
         {
-          ;                  /* skip this byte. */
+          /* skip this byte. */
         }
         while (--n && ('\0' != *(src++)));
 
@@ -2297,6 +2297,7 @@ sig_handler(int s)
     case SIGHUP:
       fputs("Interrupted!\n", stderr);
       restore_term(fileno(stdin));
+
       exit(EXIT_FAILURE);
 
       /* Terminal resize */
@@ -2741,6 +2742,7 @@ main(int argc, char *argv[])
   if (!is_supported_charset)
   {
     fprintf(stderr, "%s: %s\n", "Unsupported charset", charset);
+
     exit(EXIT_FAILURE);
   }
 
@@ -3029,6 +3031,7 @@ main(int argc, char *argv[])
       && regcomp(&include_re, include_pattern, REG_EXTENDED | REG_NOSUB) != 0)
   {
     fprintf(stderr, "Bad regular expression %s\n", include_pattern);
+
     exit(EXIT_FAILURE);
   }
 
@@ -3036,6 +3039,7 @@ main(int argc, char *argv[])
       && regcomp(&exclude_re, exclude_pattern, REG_EXTENDED | REG_NOSUB) != 0)
   {
     fprintf(stderr, "Bad regular expression %s\n", exclude_pattern);
+
     exit(EXIT_FAILURE);
   }
 
@@ -3327,6 +3331,7 @@ main(int argc, char *argv[])
   if (!word_a[first_selectable].is_selectable)
   {
     fprintf(stderr, "No selectable word found.\n");
+
     exit(EXIT_FAILURE);
   }
 
@@ -3335,6 +3340,7 @@ main(int argc, char *argv[])
   if (!word_a[first_selectable].is_selectable)
   {
     fprintf(stderr, "No selectable word found.\n");
+
     exit(EXIT_FAILURE);
   }
 
@@ -3745,6 +3751,7 @@ main(int argc, char *argv[])
 
           tputs(cursor_normal, 1, outch);
           restore_term(fileno(stdin));
+
           exit(EXIT_SUCCESS);
 
           /* n or <Space Bar> has been pressed */
