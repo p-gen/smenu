@@ -56,7 +56,7 @@ int (*my_isprint) (int);
 
 static int delims_cmp(const void *a, const void *b);
 
-/* UTF-8 usefull symbols */
+/* UTF-8 useful symbols */
 /* """"""""""""""""""""" */
 char *sbar_broken_line = "\xc2\xa6";    /* broken_bar                       */
 char *sbar_arr_left = "\xe2\x86\x90";   /* leftwards_arrow                  */
