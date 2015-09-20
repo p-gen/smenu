@@ -3424,6 +3424,24 @@ main(int argc, char *argv[])
   /* Display the words window for the first time */
   /* """"""""""""""""""""""""""""""""""""""""""" */
   message_lines = disp_message(message, &term);
+
+  if (win.col_mode)
+  {
+    int pos;
+    int len;
+
+    len = term.ncolumns - 3;
+
+    /* Adjust win.first_column if the cursor is no more visible */
+    /* """""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+    pos = first_word_in_line_a[line_nb_of_word_a[current]];
+
+    while (word_a[current].end - word_a[pos].start >= len)
+      pos++;
+
+    win.first_column = word_a[pos].start;
+  }
+
   nl = disp_lines(word_a, &win, &toggle, current, count, search_mode,
                   search_buf, &term, last_line, tmp_max_word, &langinfo,
                   cols_size);
