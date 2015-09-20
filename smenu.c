@@ -3374,7 +3374,15 @@ main(int argc, char *argv[])
     if (current >= count)
       current = count - 1;
     if (!word_a[current].is_selectable)
-      current = first_selectable;
+    {
+      if (current > last_selectable)
+        current = last_selectable;
+      else if (current < first_selectable)
+        current = first_selectable;
+      else
+        while (current > first_selectable && !word_a[current].is_selectable)
+          current--;
+    }
   }
 
   /* We can now build the metadata */
