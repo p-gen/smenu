@@ -238,12 +238,16 @@ information visible on the terminal.
 Enables \fBENTER\fP to validate the selection even in search mode.
 .IP \fB-b\fP
 Replace all non-printable characters by a blank.
-.IP \fB-i regex\fP
+.IP "\fB-i\fP \fIregex\fP"
 Sets the \fBi\fPnclude filter to match the selectable words.
-.IP \fB-e regex\fP
+.IP "\fB-e\fP \fIregex\fP"
 Sets the \fBe\fPxclude filter to match the non-selectable words.
 
 This filter has a higher priority the include filter.
+.P
+In the two previous options, \fIregex\fP is a \fBPOSIX\fP Extended
+Regular Expression. For details, refer to the manual page of the
+\fBegrep\fP command.
 .IP \fB-g\fP
 Replaces the blank after each words in normal tabular mode by a vertical
 bar "\fB|\fP". Some users may find the output more readable like that.
@@ -252,11 +256,11 @@ Prevents the scroll bar display. Useful when all the input words can be
 displayed without the need of scrolling. by default the scroll bar is
 always displayed when there is more than one line. An absence of cursor
 in it gives a visual indication that all the input words are there.
-.IP \fB-W\fP
+.IP "\fB-W\fP \fIbytes\fP"
 This option can be used to specify the characters (or multibyte
 sequences) which will be used to delimit the input words. The default
 delimiters are: \fISPACE\fP, \fI\\t\fP and \fI\\n\fP.
-.IP \fB-L\fP
+.IP "\fB-L\fP \fIbytes\fP"
 This option can be used to specify the characters (or multibyte
 sequences) which will be used to delimit the lines in the input stream.
 The default delimiter is: \fI\\n\fP.
