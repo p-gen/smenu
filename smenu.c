@@ -3634,14 +3634,8 @@ main(int argc, char *argv[])
 
               /* Find the first selectable word */
               /* """""""""""""""""""""""""""""" */
-              do
-              {
-                if (current < win.end && !word_a[current].is_selectable)
-                  current++;
-                else
-                  break;
-              }
-              while (1);
+              while (current < win.end && !word_a[current].is_selectable)
+                current++;
 
               /* In column mode we need to take care of the */
               /* horizontal scrolling                       */
@@ -3664,14 +3658,8 @@ main(int argc, char *argv[])
 
               /* Find the last selectable word */
               /* """"""""""""""""""""""""""""" */
-              do
-              {
-                if (current > win.start && !word_a[current].is_selectable)
-                  current--;
-                else
-                  break;
-              }
-              while (1);
+              while (current > win.start && !word_a[current].is_selectable)
+                current--;
 
               /* In column mode we need to take care of the */
               /* horizontal scrolling                       */
