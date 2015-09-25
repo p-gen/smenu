@@ -3082,9 +3082,8 @@ main(int argc, char *argv[])
     size_t word_len;
     int selectable;
 
-    /* Reduce the memory footprint of dest and store its new length */
-    /* after its potential expansion.                               */
-    /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+    /* Check if the word will be selectable or not */
+    /* """"""""""""""""""""""""""""""""""""""""""" */
     if (include_pattern == NULL && exclude_pattern == NULL)
       selectable = 1;
     else if (exclude_pattern
