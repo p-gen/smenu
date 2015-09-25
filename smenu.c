@@ -2816,7 +2816,14 @@ main(int argc, char *argv[])
         break;
 
       case 'm':
-        message = optarg;
+        if (optarg && *optarg != '-')
+          message = optarg;
+        else
+        {
+          fprintf(stderr, "Option requires an argument -- %c\n\n",
+                  (char) optopt);
+          usage(argv[0]);
+        }
         break;
 
       case 'r':
@@ -2828,11 +2835,25 @@ main(int argc, char *argv[])
         break;
 
       case 'i':
-        include_pattern = optarg;
+        if (optarg && *optarg != '-')
+          include_pattern = optarg;
+        else
+        {
+          fprintf(stderr, "Option requires an argument -- %c\n\n",
+                  (char) optopt);
+          usage(argv[0]);
+        }
         break;
 
       case 'e':
-        exclude_pattern = optarg;
+        if (optarg && *optarg != '-')
+          exclude_pattern = optarg;
+        else
+        {
+          fprintf(stderr, "Option requires an argument -- %c\n\n",
+                  (char) optopt);
+          usage(argv[0]);
+        }
         break;
 
       case 'q':
