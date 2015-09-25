@@ -101,3 +101,7 @@ void set_new_first_column(win_t * win, word_t * word_a);
 void sig_handler(int s);
 
 void set_new_first_column(win_t * win, word_t * word_a);
+
+int parse_replacement_string(char *str, regex_t * re, char **rs, int *global);
+int replace(char *orig, char *subst, regex_t * re, int global, char *buf,
+            size_t bufsiz);

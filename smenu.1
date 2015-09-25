@@ -5,7 +5,8 @@ and outputs the selection to stdout.
 .SH SYNOPSIS
 smenu [\fB-h\fP] [\fB-n\fP \fIlines\fP] [\fB-t\fP [\fIcols\fP]]
 [\fB-s\fP \fIpattern\fP] [\fB-m\fP \fImessage\fP] [\fB-w\fP] [\fB-d\fP]
-[\fB-c\fP] [\fB-r\fP] [\fB-b\fP] [\fB-i\fP regex] [\fB-e\fP regex]
+[\fB-c\fP] [\fB-r\fP] [\fB-b\fP] [\fB-i\fP regex]
+[\fB-e\fP regex] [\fB-I\fP /regex/string/[g]] [\fB-E\fP /regex/string/[g]]
 [\fB-g\fP] [\fB-q\fP] [\fB-W\fP bytes] [\fB-L\fP bytes] [\fB-V\fP]
 .SH DESCRIPTION
 This small utility acts as a filter (reads from stdin and writes to
@@ -225,15 +226,12 @@ Sets the column mode. In this mode the lines of words do not wrap when
 the right border of the terminal is reached but only when a special
 character is read. Some words will not be displayed without an
 horizontal scrolling.
-.RS
-.P
+
 If such a scrolling is needed, some indications may appear on the left
 and right edge of the window to help the user to reach the unseen words.
-.P
+
 In this mode, the width of each column is minimal to keep the maximum
 information visible on the terminal.
-.P
-.RE
 .IP \fB-r\fP
 Enables \fBENTER\fP to validate the selection even in search mode.
 .IP \fB-b\fP
@@ -245,9 +243,25 @@ Sets the \fBe\fPxclude filter to match the non-selectable words.
 
 This filter has a higher priority the include filter.
 .P
-In the two previous options, \fIregex\fP is a \fBPOSIX\fP Extended
-Regular Expression. For details, refer to the manual page of the
-\fBegrep\fP command.
+The \fIregex\fP selections above are done before the possible word
+alterations realized with \fB-I\fP or \fB-E\fP (see below).
+.IP "\fB-I\fP /\fIregex\fP/replacement string/[g]"
+Post-processes the \fBincluded\fP (or \fBselectable\fP) words by doing
+a regular expression based substitution. The argument must be formatted
+as in the \fBsed\fP editor. The optional trailing \fBg\fP means that
+all matched occurences must be replaced and not the first one only.
+.IP "\fB-E\fP /\fIregex\fP/replacement string/[g]"
+Post-processes the \fBexcluded\fP (or \fBnon-selectable\fP) words by
+doing a regular expression based substitution (see \fB-I\fP for
+details).
+.P
+The \fB/\fP separator that \fB-I\fP and \fB-E\fP are using above can be
+substituted by any other character except \fISPACE\fP, \fI\\t\fP,
+\fI\\f\fP, \fI\\n\fP, \fI\\r\fP and \fI\\v\fP.
+.P
+In the four previous options, \fIregex\fP is a \fBPOSIX\fP
+\fBE\fPxtended \fBR\fPegular \fBE\fPxpression. For details, refer to
+the \fBregex\fP manual page.
 .IP \fB-g\fP
 Replaces the blank after each words in normal tabular mode by a vertical
 bar "\fB|\fP". Some users may find the output more readable like that.

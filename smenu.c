@@ -272,6 +272,10 @@ usage(char *prog)
           "selectable words.\n");
   fprintf(stderr, "-e sets the regex input filter to match the "
           "non-selectable words.\n");
+  fprintf(stderr, "-I sets the post-processing action to apply to "
+          "selectable words.\n");
+  fprintf(stderr, "-E sets the post-processing action to apply to "
+          "non-selectable words.\n");
   fprintf(stderr, "-g separates columns with '|' in tabulate mode.\n");
   fprintf(stderr, "-q prevents the scrollbar display.\n");
   fprintf(stderr, "-W sets the input words separators.\n");
@@ -937,6 +941,187 @@ get_cursor_position(int *const r, int *const c)
 /* *********************************************** */
 /* Strings and multibyte strings utility functions */
 /* *********************************************** */
+
+/* ==================================================== */
+/* Parse the sed like sring passed as argument to -I/-E */
+/* ==================================================== */
+int
+parse_replacement_string(char *str, regex_t * re, char **rs, int *global)
+{
+  char sep;
+  char *first_sep_pos;
+  char *last_sep_pos;
+  char *buf;
+
+  if (strlen(str) < 4)
+    return 0;
+
+  /* Get the separator (the 1st character) */
+  /* """"""""""""""""""""""""""""""""""""" */
+  buf = strdup(str);
+  sep = buf[0];
+
+  /* Space like separators are not permited */
+  /* """""""""""""""""""""""""""""""""""""" */
+  if (isspace(sep))
+    goto err;
+
+  /* Get the extended regular expression */
+  /* """"""""""""""""""""""""""""""""""" */
+  if ((first_sep_pos = strchr(buf + 1, sep)) == NULL)
+    goto err;
+
+  *first_sep_pos = '\0';
+
+  /* Get the replacement string */
+  /* """""""""""""""""""""""""" */
+  if ((last_sep_pos = strchr(first_sep_pos + 1, sep)) == NULL)
+    goto err;
+
+  *last_sep_pos = '\0';
+
+  *rs = strdup(first_sep_pos + 1);
+
+  /* Get the global indicator (trailing g) */
+  /* """"""""""""""""""""""""""""""""""""" */
+  if (strcmp(last_sep_pos + 1, "g") == 0)
+    *global = 1;
+  else if (*(last_sep_pos + 1) == '\0')
+    *global = 0;
+  else
+    goto err;
+
+  /* Empty regular expression ? */
+  /* """""""""""""""""""""""""" */
+  if (*(buf + 1) == '\0')
+    goto err;
+
+  /* Compile the regular expression and abort on failure */
+  /* """"""""""""""""""""""""""""""""""""""""""""""""""" */
+  if (regcomp(re, buf + 1, REG_EXTENDED) != 0)
+    goto err;
+
+  free(buf);
+
+  return 1;
+
+err:
+  free(buf);
+
+  return 0;
+}
+
+/* ====================================================================== */
+/* Replace the part of a string matched by an extender regular expression */
+/* by the replacement string                                              */
+/* The regex used must have been previously compiled                      */
+/*                                                                        */
+/* orig:   original string                                                */
+/* subst:  substitute containing \n's                                     */
+/* re:     regcomp compiled extended RE                                   */
+/* global: 1 if all occurences must be replaced, else 0                   */
+/* buf:    destination buffer                                             */
+/* bufsiz: destination buffer max size                                    */
+/* ====================================================================== */
+int
+replace(char *orig, char *subst, regex_t * re, int global, char *buf,
+        size_t bufsiz)
+{
+  char *s;
+  regmatch_t match[10];      /* substrings from regexec */
+  size_t length = strlen(orig);
+  int j;
+
+  char *ptr_orig = orig;
+  char *ptr_subst;
+  int rc = 0;
+  int end_loop = 0;
+
+  /* Prepare to retry the replacement if global == 1 */
+  /* """"""""""""""""""""""""""""""""""""""""""""""" */
+  while (*ptr_orig && strlen(buf) < bufsiz)
+  {
+    s = buf + strlen(buf);
+    ptr_subst = subst;
+    match[0].rm_so = match[0].rm_eo = 0;
+
+    if (regexec(re, ptr_orig, 10, match, 0))
+      goto end;
+
+    for (j = 0; j < match[0].rm_so; j++)
+      *s++ = ptr_orig[j];
+
+    end_loop = 0;
+    for (; !end_loop && s < buf + bufsiz; s++)
+    {
+      switch (*s = *ptr_subst++)
+      {
+        case '\\':
+          switch (*s = *ptr_subst++)
+          {
+            case '0':
+            case '1':
+            case '2':
+            case '3':
+            case '4':
+            case '5':
+            case '6':
+            case '7':
+            case '8':
+            case '9':
+            {
+              int i;
+              regmatch_t *m = &match[*s - '0'];
+
+              if ((i = m->rm_so) >= 0)
+              {
+                if ((size_t) m->rm_eo > length)
+                {
+                  /* buggy GNU regexec!! */
+                  /* =================== */
+                  m->rm_eo = length;
+                }
+
+                while (i < m->rm_eo && s < buf + bufsiz)
+                  *s++ = ptr_orig[i++];
+              }
+              s--;
+              break;
+            }
+
+            case '\0':
+              ptr_orig += match[0].rm_eo;
+              end_loop = 1;
+              rc = 1;
+          }
+          break;
+
+        case '\0':
+          /* end of the substitution string */
+          /* """""""""""""""""""""""""""""" */
+          ptr_orig += match[0].rm_eo;
+          end_loop = 1;
+          rc = 1;
+      }
+    }
+    if (!global)
+      goto end;
+
+    /* In case of empty string matching */
+    /* """""""""""""""""""""""""""""""" */
+    if (match[0].rm_eo == 0)
+      ptr_orig++;
+  }
+
+end:
+
+  if (end_loop)
+    strcat(buf, ptr_orig);
+  else
+    strcat(buf, ptr_orig + match[0].rm_eo);
+
+  return rc;
+}
 
 /* ============================================================ */
 /* Remove all ANSI color codes from s and puts the result in d. */
@@ -2622,9 +2807,17 @@ main(int argc, char *argv[])
                               * above the selection window                 */
   char *include_pattern = ".";
   char *exclude_pattern = NULL;
+  char *include_sed_pattern = NULL;
+  char *exclude_sed_pattern = NULL;
+  char *include_replace_str = NULL;
+  char *exclude_replace_str = NULL;
+  int include_global_replace;
+  int exclude_global_replace;
 
   regex_t include_re;
   regex_t exclude_re;
+  regex_t include_sed_re;
+  regex_t exclude_sed_re;
 
   int message_lines;
 
@@ -2762,7 +2955,7 @@ main(int argc, char *argv[])
 
   /* Command line options analysis */
   /* """"""""""""""""""""""""""""" */
-  while ((opt = egetopt(argc, argv, "Vhqdbi:e:cwrgn:t%m:s:W:L:")) != -1)
+  while ((opt = egetopt(argc, argv, "Vhqdbi:e:I:E:cwrgn:t%m:s:W:L:")) != -1)
   {
     switch (opt)
     {
@@ -2848,6 +3041,28 @@ main(int argc, char *argv[])
       case 'e':
         if (optarg && *optarg != '-')
           exclude_pattern = optarg;
+        else
+        {
+          fprintf(stderr, "Option requires an argument -- %c\n\n",
+                  (char) optopt);
+          usage(argv[0]);
+        }
+        break;
+
+      case 'I':
+        if (optarg && *optarg != '-')
+          include_sed_pattern = optarg;
+        else
+        {
+          fprintf(stderr, "Option requires an argument -- %c\n\n",
+                  (char) optopt);
+          usage(argv[0]);
+        }
+        break;
+
+      case 'E':
+        if (optarg && *optarg != '-')
+          exclude_sed_pattern = optarg;
         else
         {
           fprintf(stderr, "Option requires an argument -- %c\n\n",
@@ -3065,6 +3280,32 @@ main(int argc, char *argv[])
     exit(EXIT_FAILURE);
   }
 
+  /* Parse the post-processing patterns and extract its values */
+  /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+  if (include_sed_pattern)
+    if (parse_replacement_string(include_sed_pattern,
+                                 &include_sed_re,
+                                 &include_replace_str,
+                                 &include_global_replace) == 0)
+    {
+      fprintf(stderr, "Bad -I argument. Must be something like: "
+              "/regex/repl_string/[g]\n");
+
+      exit(EXIT_FAILURE);
+    }
+
+  if (exclude_sed_pattern)
+    if (parse_replacement_string(exclude_sed_pattern,
+                                 &exclude_sed_re,
+                                 &exclude_replace_str,
+                                 &exclude_global_replace) == 0)
+    {
+      fprintf(stderr, "Bad -E argument. Must be something like: "
+              "/regex/repl_string/[g]\n");
+
+      exit(EXIT_FAILURE);
+    }
+
   /* Get and process the input stream words */
   /* """""""""""""""""""""""""""""""""""""" */
   while ((word = get_word(stdin, word_delims_list, record_delims_list,
@@ -3076,11 +3317,12 @@ main(int argc, char *argv[])
     wchar_t *tmpw;
     int s;
     ll_t *list = NULL;
-    char *dest = xmalloc(5 * strlen(word) + 1);
+    char *dest;
     char *new_dest;
     size_t len;
     size_t word_len;
     int selectable;
+    char buf[1024] = { 0 };
 
     /* Check if the word will be selectable or not */
     /* """"""""""""""""""""""""""""""""""""""""""" */
@@ -3095,9 +3337,40 @@ main(int argc, char *argv[])
     else
       selectable = 0;
 
+    /* Possibly modify the word acording to -I/-E arguments */
+    /* """""""""""""""""""""""""""""""""""""""""""""""""""" */
+    if (selectable && include_sed_pattern)
+    {
+      if (replace(word, include_replace_str, &include_sed_re,
+                  include_global_replace, buf, 1024))
+      {
+        free(word);
+
+        if (*buf == '\0')
+          word = strdup("_");
+        else
+          word = strdup(buf);
+      }
+    }
+
+    if (!selectable && exclude_sed_pattern)
+    {
+      if (replace(word, exclude_replace_str, &exclude_sed_re,
+                  exclude_global_replace, buf, 1024))
+      {
+        free(word);
+
+        if (*buf == '\0')
+          word = strdup("_");
+        else
+          word = strdup(buf);
+      }
+    }
+
     /* Alter the word just read be replacing special chars  by their */
     /* escaped equivalents.                                          */
     /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+    dest = xmalloc(5 * strlen(word) + 1);
     len = expand(word, dest, &langinfo);
     new_dest = strdup(dest);
     free(dest);
