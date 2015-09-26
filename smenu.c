@@ -242,10 +242,12 @@ void
 usage(char *prog)
 {
   fprintf(stderr, "Usage: %s [-h] [-n lines] [-c] [-s pattern] ", prog);
-  fprintf(stderr, "[-m message] [-w] [-d]       \\\n");
+  fprintf(stderr, "[-m message] [-w] [-d] \\\n");
   fprintf(stderr, "       [-t [cols]] [-r] [-b] [-i regex] [-e regex] ");
-  fprintf(stderr, "[-g] [-W bytes] [-L bytes] \\\n");
-  fprintf(stderr, "       [-V]\n");
+  fprintf(stderr, "[-I /regex/repl/[g]] \\\n");
+  fprintf(stderr, "       [-E /regex/repl/[g]] ");
+  fprintf(stderr, "[-g] [-W bytes] [-L bytes] ");
+  fprintf(stderr, "[-V]\n");
   fprintf(stderr, "\nThis is a filter that gets words from stdin ");
   fprintf(stderr, "and outputs the\n");
   fprintf(stderr, "selected word (or nothing) on stdout.\n\n");
