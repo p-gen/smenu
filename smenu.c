@@ -246,8 +246,9 @@ usage(char *prog)
   fprintf(stderr, "       [-t [cols]] [-r] [-b] [-i regex] [-e regex] ");
   fprintf(stderr, "[-I /regex/repl/[g]] \\\n");
   fprintf(stderr, "       [-E /regex/repl/[g]] ");
-  fprintf(stderr, "[-g] [-W bytes] [-L bytes] ");
-  fprintf(stderr, "[-V]\n");
+  fprintf(stderr, "[-A regex] [-Z regex] ");
+  fprintf(stderr, "[-g] [-W bytes]       \\\n");
+  fprintf(stderr, "       [-L bytes] [-V]\n");
   fprintf(stderr, "\nThis is a filter that gets words from stdin ");
   fprintf(stderr, "and outputs the\n");
   fprintf(stderr, "selected word (or nothing) on stdout.\n\n");
@@ -278,6 +279,10 @@ usage(char *prog)
           "selectable words.\n");
   fprintf(stderr, "-E sets the post-processing action to apply to "
           "non-selectable words.\n");
+  fprintf(stderr, "-A forces a class of words to be the first "
+          "of the line they appear in.\n");
+  fprintf(stderr, "-Z forces a class of words to be the latest "
+          "of the line they appear in.\n");
   fprintf(stderr, "-g separates columns with '|' in tabulate mode.\n");
   fprintf(stderr, "-q prevents the scrollbar display.\n");
   fprintf(stderr, "-W sets the input words separators.\n");
@@ -2811,6 +2816,8 @@ main(int argc, char *argv[])
   char *exclude_pattern = NULL;
   char *include_sed_pattern = NULL;
   char *exclude_sed_pattern = NULL;
+  char *first_word_pattern = NULL;
+  char *last_word_patternn = NULL;
   char *include_replace_str = NULL;
   char *exclude_replace_str = NULL;
   int include_global_replace;
@@ -2820,6 +2827,8 @@ main(int argc, char *argv[])
   regex_t exclude_re;
   regex_t include_sed_re;
   regex_t exclude_sed_re;
+  regex_t first_word_re;
+  regex_t last_word_re;
 
   int message_lines;
 
@@ -2957,7 +2966,7 @@ main(int argc, char *argv[])
 
   /* Command line options analysis */
   /* """"""""""""""""""""""""""""" */
-  while ((opt = egetopt(argc, argv, "Vhqdbi:e:I:E:cwrgn:t%m:s:W:L:")) != -1)
+  while ((opt = egetopt(argc, argv, "Vhqdbi:e:I:E:A:Z:cwrgn:t%m:s:W:L:")) != -1)
   {
     switch (opt)
     {
@@ -3075,6 +3084,28 @@ main(int argc, char *argv[])
 
       case 'q':
         toggle.no_scrollbar = 1;
+        break;
+
+      case 'A':
+        if (optarg && *optarg != '-')
+          first_word_pattern = optarg;
+        else
+        {
+          fprintf(stderr, "Option requires an argument -- %c\n\n",
+                  (char) optopt);
+          usage(argv[0]);
+        }
+        break;
+
+      case 'Z':
+        if (optarg && *optarg != '-')
+          last_word_patternn = optarg;
+        else
+        {
+          fprintf(stderr, "Option requires an argument -- %c\n\n",
+                  (char) optopt);
+          usage(argv[0]);
+        }
         break;
 
       case 'W':
@@ -3282,6 +3313,24 @@ main(int argc, char *argv[])
     exit(EXIT_FAILURE);
   }
 
+  if (first_word_pattern
+      && regcomp(&first_word_re, first_word_pattern,
+                 REG_EXTENDED | REG_NOSUB) != 0)
+  {
+    fprintf(stderr, "Bad regular expression %s\n", exclude_pattern);
+
+    exit(EXIT_FAILURE);
+  }
+
+  if (last_word_patternn
+      && regcomp(&last_word_re, last_word_patternn,
+                 REG_EXTENDED | REG_NOSUB) != 0)
+  {
+    fprintf(stderr, "Bad regular expression %s\n", exclude_pattern);
+
+    exit(EXIT_FAILURE);
+  }
+
   /* Parse the post-processing patterns and extract its values */
   /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""" */
   if (include_sed_pattern)
@@ -3325,6 +3374,21 @@ main(int argc, char *argv[])
     size_t word_len;
     int selectable;
     char buf[1024] = { 0 };
+    int is_first = 0;
+
+    /* Manipulates the is_last flag word indicator to make this word */
+    /* the first or last one of the current line in column mode      */
+    /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+    if (win.col_mode)
+    {
+      if (first_word_pattern
+          && regexec(&first_word_re, word, (size_t) 0, NULL, 0) == 0)
+        is_first = 1;
+
+      if (last_word_patternn
+          && !is_last && regexec(&last_word_re, word, (size_t) 0, NULL, 0) == 0)
+        is_last = 1;
+    }
 
     /* Check if the word will be selectable or not */
     /* """"""""""""""""""""""""""""""""""""""""""" */
@@ -3385,7 +3449,10 @@ main(int argc, char *argv[])
     /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
     if (win.col_mode)
     {
-      col_index++;
+      if (is_first)
+        col_index = 1;
+      else
+        col_index++;
 
       if (col_index > cols_number)
       {
@@ -3449,7 +3516,11 @@ main(int argc, char *argv[])
     /* Set the last word in line indicator when in column mode */
     /* """"""""""""""""""""""""""""""""""""""""""""""""""""""" */
     if (win.col_mode)
+    {
+      if (is_first && count > 0)
+        word_a[count - 1].is_last = 1;
       word_a[count].is_last = is_last;
+    }
     else
       word_a[count].is_last = 0;
 

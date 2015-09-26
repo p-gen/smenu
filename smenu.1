@@ -5,8 +5,10 @@ and outputs the selection to stdout.
 .SH SYNOPSIS
 smenu [\fB-h\fP] [\fB-n\fP \fIlines\fP] [\fB-t\fP [\fIcols\fP]]
 [\fB-s\fP \fIpattern\fP] [\fB-m\fP \fImessage\fP] [\fB-w\fP] [\fB-d\fP]
-[\fB-c\fP] [\fB-r\fP] [\fB-b\fP] [\fB-i\fP regex]
-[\fB-e\fP regex] [\fB-I\fP /regex/string/[g]] [\fB-E\fP /regex/string/[g]]
+[\fB-c\fP] [\fB-r\fP] [\fB-b\fP]
+[\fB-i\fP regex] [\fB-e\fP regex]
+[\fB-I\fP /regex/string/[g]] [\fB-E\fP /regex/string/[g]]
+[\fB-A\fP regex] [\fB-Z\fP regex
 [\fB-g\fP] [\fB-q\fP] [\fB-W\fP bytes] [\fB-L\fP bytes] [\fB-V\fP]
 .SH DESCRIPTION
 This small utility acts as a filter (reads from stdin and writes to
@@ -262,6 +264,14 @@ substituted by any other character except \fISPACE\fP, \fI\\t\fP,
 In the four previous options, \fIregex\fP is a \fBPOSIX\fP
 \fBE\fPxtended \fBR\fPegular \fBE\fPxpression. For details, refer to
 the \fBregex\fP manual page.
+.IP "\fB-A\fP \fIregex\fP"
+In column mode, forces all words matching the given regular expression
+to be the first one in the displayed line. If you want to only rely on
+this method to build the lines, just specify an empty
+\fBregex\fP to set the end-of-line separator with \fI-L ''\fP)
+.IP "\fB-Z\fP \fIregex\fP"
+Similar to \fB-A\fP but forces the word to be the latest of its line.
+The same trick with \fB-L\fP can also be used.
 .IP \fB-g\fP
 Replaces the blank after each words in normal tabular mode by a vertical
 bar "\fB|\fP". Some users may find the output more readable like that.
