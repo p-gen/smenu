@@ -7,6 +7,7 @@ smenu [\fB-h\fP] [\fB-n\fP \fIlines\fP] [\fB-t\fP [\fIcols\fP]]
 [\fB-s\fP \fIpattern\fP] [\fB-m\fP \fImessage\fP] [\fB-w\fP] [\fB-d\fP]
 [\fB-c\fP] [\fB-r\fP] [\fB-b\fP]
 [\fB-i\fP regex] [\fB-e\fP regex]
+[\fB-C\fP [a|A|s|S|r|R|d|D][col1[-col2],[col1[-col2]...
 [\fB-I\fP /regex/string/[g]] [\fB-E\fP /regex/string/[g]]
 [\fB-A\fP regex] [\fB-Z\fP regex
 [\fB-g\fP] [\fB-q\fP] [\fB-W\fP bytes] [\fB-L\fP bytes] [\fB-V\fP]
@@ -38,7 +39,7 @@ used as a placeholder otherwise.
 into a dot (\fI.\fP) when the user locale is not \fBUTF-8\fP aware like
 \fBPOSIX\fP or \fBC\fP by example.
 .P
-If a word is only containing spaces, then all of them are 
+If a word is only containing spaces, then all of them are
 converted into underscores (\fI_\fP) so that we can see them.
 .P
 .SS "Moving among words"
@@ -247,6 +248,25 @@ This filter has a higher priority the include filter.
 .P
 The \fIregex\fP selections above are done before the possible word
 alterations realized with \fB-I\fP or \fB-E\fP (see below).
+.IP "[\fB-C\fP [a|A|s|S|r|R|d|D][col1[-col2],[col1[-col2]..."
+In column mode, restricts the previous selections or deselection on a
+number of columns. If no selection is given via \fB-i\fP and \fB-e\fP
+this option gives the possibility to select entire columns by giving
+their numbers (1 based).
+
+\fBa\fP/\fBA\fP, \fBs\fP/\fBS\fP or nothing select the specified ranges
+of columns. \fBr\fP/\fBR\fP or \fBd\fP/\fBD\fP select all but the
+specified columns.
+
+Example of columns selection: \fI-a2,3,5-7\fP forces the cursor to only
+navigate in columns \fB2\fP,\fB3\fP,\fB5\fP,\fB6\fP and \fB7\fP. if
+\fBd\fP was used in place of \fBa\fP, all the columns would have been
+selected \fBexcept\fP the columns \fB2\fP,\fB3\fP,\fB5\fP,\fB6\fP and
+\fB7\fP.
+
+Spaces are allowed in the selection string if they are protected.
+
+Only the first 1024 columns can be selected by this mean.
 .IP "\fB-I\fP /\fIregex\fP/replacement string/[g]"
 Post-processes the \fBincluded\fP (or \fBselectable\fP) words by doing
 a regular expression based substitution. The argument must be formatted

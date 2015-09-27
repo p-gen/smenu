@@ -243,12 +243,14 @@ usage(char *prog)
 {
   fprintf(stderr, "Usage: %s [-h] [-n lines] [-c] [-s pattern] ", prog);
   fprintf(stderr, "[-m message] [-w] [-d] \\\n");
-  fprintf(stderr, "       [-t [cols]] [-r] [-b] [-i regex] [-e regex] ");
-  fprintf(stderr, "[-I /regex/repl/[g]] \\\n");
-  fprintf(stderr, "       [-E /regex/repl/[g]] ");
-  fprintf(stderr, "[-A regex] [-Z regex] ");
-  fprintf(stderr, "[-g] [-W bytes]       \\\n");
-  fprintf(stderr, "       [-L bytes] [-V]\n");
+  fprintf(stderr, "       [-t [cols]] [-r] [-b] [-i regex] [-e regex]");
+  fprintf(stderr, "                      \\\n");
+  fprintf(stderr, "       [-C [a|A|s|S|r|R|d|D]col1[-col2],[col1[-col2]]...] ");
+  fprintf(stderr, "              \\\n");
+  fprintf(stderr, "       [-I /regex/repl/[g]] ");
+  fprintf(stderr, "[-E /regex/repl/[g]] ");
+  fprintf(stderr, "[-A regex] [-Z regex]  \\\n");
+  fprintf(stderr, "       [-g] [-W bytes]  [-L bytes] [-V]\n");
   fprintf(stderr, "\nThis is a filter that gets words from stdin ");
   fprintf(stderr, "and outputs the\n");
   fprintf(stderr, "selected word (or nothing) on stdout.\n\n");
@@ -275,6 +277,7 @@ usage(char *prog)
           "selectable words.\n");
   fprintf(stderr, "-e sets the regex input filter to match the "
           "non-selectable words.\n");
+  fprintf(stderr, "-C sets column restrictions for selections.\n");
   fprintf(stderr, "-I sets the post-processing action to apply to "
           "selectable words.\n");
   fprintf(stderr, "-E sets the post-processing action to apply to "
@@ -948,6 +951,145 @@ get_cursor_position(int *const r, int *const c)
 /* *********************************************** */
 /* Strings and multibyte strings utility functions */
 /* *********************************************** */
+
+/* ====================================================================== */
+/* Parse a columns description string                                     */
+/* <letter><range1>,<range2>,...                                          */
+/* <range> is n1-n2 | n1 where n1 starts with 1                           */
+/*                                                                        */
+/* <letter> is a|A|s|S|r|R|u|U where                                      */
+/* a|A is for Add                                                         */
+/* s|S is for Select (same as Add)                                        */
+/* r|R is for Remove                                                      */
+/* d|D is for Deselect (same as Remove)                                   */
+/*                                                                        */
+/* unparsed is empty on success and contains the unpaserd part on failure */
+/* filter   is a string where each character is                           */
+/*          '1' if the column is selected or 'O' if not                   */
+/* A maximum of 1024 columns is allowed                                   */
+/* ====================================================================== */
+void
+parse_cols_selector(char *str, char **filter, char *unparsed)
+{
+  char def;                  /* default value */
+  char mark;                 /* Value to set */
+  char c;
+  int len;                   /* parsed string length */
+  int start = 1;             /* column string offset in the parsed string */
+  int offset1, offset2;      /* Positions in the parsed strings */
+  int n;                     /* number of successfully parsed values */
+  int first, second;         /* range starting and ending values */
+  char *ptr;                 /* pointer to the remaining string to parse */
+  int max;                   /* Max number of columns allowed */
+
+  len = strlen(str);
+  max = 1024;
+  *filter = xmalloc(max + 1);
+
+  /* Get the first character to see if this is */
+  /* an additive or restrictive operation.     */
+  /* """"""""""""""""""""""""""""""""""""""""" */
+  if (sscanf(str, "%c", &c) == 0)
+    return;
+
+  switch (c)
+  {
+    case 'a':
+    case 'A':
+    case 's':
+    case 'S':
+      def = '0';
+      mark = '1';
+      break;
+
+    case 'r':
+    case 'R':
+    case 'd':
+    case 'D':
+      def = '1';
+      mark = '0';
+      break;
+
+    case '1':
+    case '2':
+    case '3':
+    case '4':
+    case '5':
+    case '6':
+    case '7':
+    case '8':
+    case '9':
+      def = '0';
+      mark = '1';
+      start = 0;
+      break;
+
+    default:
+      return;
+  }
+
+  ptr = str + start;
+  first = second = -1;
+
+  /* Fill the array with the default value */
+  /* """"""""""""""""""""""""""""""""""""" */
+  memset(*filter, def, max);
+  (*filter)[max] = '\0';
+
+  /* Scan the comma separated ranges */
+  /* """"""""""""""""""""""""""""""" */
+  while ((n = sscanf(ptr, "%d %n-%d %n%*c",
+                     &first, &offset1, &second, &offset2)) >= 1)
+  {
+    int swap;
+
+    if (n == 1)
+    {
+      /* Only one value could have been read */
+      /* """"""""""""""""""""""""""""""""""" */
+      if (first < 1 || first > max)
+      {
+        strcpy(unparsed, ptr);
+
+        return;
+      }
+
+      ptr += offset1 + 1;
+      (*filter)[first - 1] = mark;
+    }
+    else if (n == 2)
+    {
+      /* The two range values have been read */
+      /* """"""""""""""""""""""""""""""""""" */
+      if (first < 1 || second < 1 || first > max || second > max)
+      {
+        strcpy(unparsed, ptr);
+
+        return;
+      }
+
+      /* swap the values if necessary */
+      /* """""""""""""""""""""""""""" */
+      if (second < first)
+      {
+        swap = first;
+        first = second;
+        second = swap;
+      }
+
+      ptr += offset2;
+      memset(*filter + first - 1, mark, second - first + 1);
+    }
+    first = second = -1;
+  }
+
+  /* Set the unparsed part of the string */
+  /* """"""""""""""""""""""""""""""""""" */
+  if (ptr - str <= len)
+    strcpy(unparsed, ptr);
+  else
+    *unparsed = '\0';
+}
 
 /* ==================================================== */
 /* Parse the sed like sring passed as argument to -I/-E */
@@ -2823,6 +2965,8 @@ main(int argc, char *argv[])
   int include_global_replace;
   int exclude_global_replace;
 
+  char *cols_selector = NULL;
+
   regex_t include_re;
   regex_t exclude_re;
   regex_t include_sed_re;
@@ -2923,6 +3067,10 @@ main(int argc, char *argv[])
   toggle.no_scrollbar = 0;
   toggle.blank_nonprintable = 0;
 
+  /* Columms seletion variables */
+  /* """""""""""""""""""""""""" */
+  char *cols_filter;
+
   /* Get the current locale */
   /* """""""""""""""""""""" */
   setlocale(LC_ALL, "");
@@ -2966,7 +3114,8 @@ main(int argc, char *argv[])
 
   /* Command line options analysis */
   /* """"""""""""""""""""""""""""" */
-  while ((opt = egetopt(argc, argv, "Vhqdbi:e:I:E:A:Z:cwrgn:t%m:s:W:L:")) != -1)
+  while ((opt = egetopt(argc, argv,
+                        "Vhqdbi:e:I:E:A:Z:C:cwrgn:t%m:s:W:L:")) != -1)
   {
     switch (opt)
     {
@@ -3052,6 +3201,17 @@ main(int argc, char *argv[])
       case 'e':
         if (optarg && *optarg != '-')
           exclude_pattern = optarg;
+        else
+        {
+          fprintf(stderr, "Option requires an argument -- %c\n\n",
+                  (char) optopt);
+          usage(argv[0]);
+        }
+        break;
+
+      case 'C':
+        if (optarg && *optarg != '-')
+          cols_selector = optarg;
         else
         {
           fprintf(stderr, "Option requires an argument -- %c\n\n",
@@ -3357,6 +3517,24 @@ main(int argc, char *argv[])
       exit(EXIT_FAILURE);
     }
 
+  /* Parse the column selection string if any */
+  /* """""""""""""""""""""""""""""""""""""""" */
+  if (cols_selector != NULL)
+  {
+    char *unparsed = strdup(cols_selector);
+
+    parse_cols_selector(cols_selector, &cols_filter, unparsed);
+
+    if (*unparsed != '\0')
+    {
+      fprintf(stderr, "Bad -C argument. Unparsed part: %s\n", unparsed);
+
+      exit(EXIT_FAILURE);
+    }
+
+    free(unparsed);
+  }
+
   /* Get and process the input stream words */
   /* """""""""""""""""""""""""""""""""""""" */
   while ((word = get_word(stdin, word_delims_list, record_delims_list,
@@ -3480,6 +3658,12 @@ main(int argc, char *argv[])
           }
         }
       }
+
+      /* Restricts the selection to certain columns */
+      /* """""""""""""""""""""""""""""""""""""""""" */
+      if (selectable == 1 && cols_selector != NULL)
+        if (cols_filter[col_index - 1] == '0')
+          selectable = 0;
 
       /* Update the max values of col_real_max_size[col_index - 1] */
       /* and col_max_size[col_index - 1]                           */
