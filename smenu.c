@@ -3542,7 +3542,7 @@ main(int argc, char *argv[])
   {
     int size;
     int *data;
-    wchar_t *w = mb_strtowcs(word);
+    wchar_t *w;
     wchar_t *tmpw;
     int s;
     ll_t *list = NULL;
@@ -3716,6 +3716,14 @@ main(int argc, char *argv[])
       data = xmalloc(sizeof(int));
       *data = count;
 
+      /* Create a wide characters string from the word string content */
+      /* to be able to store in in the TST.                           */
+      /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+      if (word_a[count].orig == NULL)
+        w = mb_strtowcs(word_a[count].str);
+      else
+        w = mb_strtowcs(word_a[count].orig);
+
       /* If we didn't already encounter this word, then create a new entry in */
       /* the TST for it and store its index in its list.                      */
       /* Otherwise, add its index in its index list.                          */
@@ -3728,9 +3736,8 @@ main(int argc, char *argv[])
         ll_append(list, data);
         tst = tst_insert(tst, w, list);
       }
+      free(w);
     }
-
-    free(w);
 
     /* Store the new max number of bytes in a word */
     /* """"""""""""""""""""""""""""""""""""""""""" */
