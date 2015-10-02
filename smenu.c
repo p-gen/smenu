@@ -3211,7 +3211,10 @@ main(int argc, char *argv[])
 
       case 'C':
         if (optarg && *optarg != '-')
+        {
           cols_selector = optarg;
+          win.col_mode = 1;
+        }
         else
         {
           fprintf(stderr, "Option requires an argument -- %c\n\n",
