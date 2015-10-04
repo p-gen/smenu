@@ -191,6 +191,8 @@ struct win_s
   int col_sep;
   int tab_mode;
   int col_mode;
+  int line_mode;
+  int max_width;
   int wide_columns;
 };
 
@@ -241,7 +243,7 @@ struct ll_s
 void
 usage(char *prog)
 {
-  fprintf(stderr, "Usage: %s [-h] [-n lines] [-c] [-s pattern] ", prog);
+  fprintf(stderr, "Usage: %s [-h] [-n lines] [-c] [-l] [-s pattern] ", prog);
   fprintf(stderr, "[-m message] [-w] [-d] \\\n");
   fprintf(stderr, "       [-t [cols]] [-r] [-b] [-i regex] [-e regex]");
   fprintf(stderr, "                      \\\n");
@@ -270,6 +272,7 @@ usage(char *prog)
   fprintf(stderr, "-d deletes the selection window on exit.\n");
   fprintf(stderr, "-c is like -t without argument "
           "but respects end of lines.\n");
+  fprintf(stderr, "-l is like -c without column alignments.\n");
   fprintf(stderr, "-r enables ENTER to validate the selection even "
           "in search mode.\n");
   fprintf(stderr, "-b displays the non printable characters as space.\n");
@@ -2164,8 +2167,8 @@ left_margin_putp(char *s, term_t * term)
 /* Put a scrolling symbol at the last column of the line */
 /* ===================================================== */
 void
-right_margin_putp(char *s1, char *s2, langinfo_t * langinfo, term_t * term,
-                  int line)
+right_margin_putp(char *s1, char *s2, langinfo_t * langinfo,
+                  term_t * term, win_t * win, int line)
 {
   tputs(enter_bold_mode, 1, outch);
 
@@ -2176,10 +2179,10 @@ right_margin_putp(char *s1, char *s2, langinfo_t * langinfo, term_t * term,
     set_background_color(term, bar_color.bg);
 
   if (term->has_hpa)
-    tputs(tparm(column_address, term->ncolumns - 1), 1, outch);
+    tputs(tparm(column_address, win->max_width + 1), 1, outch);
   else
     tputs(tparm(cursor_address,
-                term->curs_line + line - 2, term->ncolumns - 1), 1, outch);
+                term->curs_line + line - 2, win->max_width + 1), 1, outch);
 
   if (langinfo->utf8)
     fputs(s1, stdout);
@@ -2214,6 +2217,7 @@ build_metadata(word_t * word_a, term_t * term, int count, win_t * win)
 
   line_nb_of_word_a[0] = 0;
   first_word_in_line_a[0] = 0;
+  win->max_width = 0;
 
   /* Modify the max number of displayed lines if we do not have */
   /* enough place                                               */
@@ -2247,13 +2251,16 @@ build_metadata(word_t * word_a, term_t * term, int count, win_t * win)
     /* Look if there is enough remaining place on the line when not in column */
     /* mode or if we hit a record delimiter in column mode                    */
     /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-    if ((!win->col_mode && (len + word_width + 1) >= term->ncolumns - 1)
-        || (win->col_mode && i > 0 && word_a[i - 1].is_last))
+    if ((!win->col_mode && !win->line_mode
+         && (len + word_width + 1) >= term->ncolumns - 1)
+        || ((win->col_mode | win->line_mode) && i > 0 && word_a[i - 1].is_last))
     {
+
       /* We must build another line */
       /* """""""""""""""""""""""""" */
       line_nb_of_word_a[i] = ++last;
       first_word_in_line_a[last] = i;
+
       word_a[i].start = 0;
 
       len = word_width + 1;
@@ -2265,9 +2272,14 @@ build_metadata(word_t * word_a, term_t * term, int count, win_t * win)
       word_a[i].start = len;
       word_a[i].end = word_a[i].start + word_width - 1;
       word_a[i].mbytes = word_len + 1;
+
       line_nb_of_word_a[i] = last;
+
       len += word_width + 1;
     }
+
+    if (len > win->max_width)
+      win->max_width = len;
 
     i++;
   }
@@ -2424,8 +2436,7 @@ disp_message(char *message, term_t * term)
 int
 disp_lines(word_t * word_a, win_t * win, toggle_t * toggle, int current,
            int count, int search_mode, char *search_buf, term_t * term,
-           int last_line, char *tmp_max_word, langinfo_t * langinfo,
-           int cols_size)
+           int last_line, char *tmp_max_word, langinfo_t * langinfo)
 {
   int lines_disp;
   int i;
@@ -2441,7 +2452,7 @@ disp_lines(word_t * word_a, win_t * win, toggle_t * toggle, int current,
 
   i = win->start;
 
-  if (win->col_mode)
+  if (win->col_mode | win->line_mode)
     len = term->ncolumns - 3;
   else
     len = term->ncolumns - 2;
@@ -2451,7 +2462,8 @@ disp_lines(word_t * word_a, win_t * win, toggle_t * toggle, int current,
   /* display the left arrow indicating that the first displayed column    */
   /* is not the first one.                                                */
   /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-  if (len > 1 && win->col_mode && cols_size > term->ncolumns - 2)
+  if (len > 1 && ((win->col_mode | win->line_mode)
+                  && win->max_width > term->ncolumns - 2))
   {
     if (win->first_column > 0)
     {
@@ -2476,7 +2488,7 @@ disp_lines(word_t * word_a, win_t * win, toggle_t * toggle, int current,
 
       /* If there are more element to be displayed after the right margin */
       /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-      if (win->col_mode && i < count - 1
+      if ((win->col_mode | win->line_mode) && i < count - 1
           && word_a[i + 1].end >= len + win->first_column)
       {
         tputs(enter_bold_mode, 1, outch);
@@ -2531,26 +2543,31 @@ disp_lines(word_t * word_a, win_t * win, toggle_t * toggle, int current,
           if (line_nb_of_word_a[i] == 0)
           {
             if (win->max_lines > 1)
-              right_margin_putp(sbar_top, "\\", langinfo, term, lines_disp);
+              right_margin_putp(sbar_top, "\\", langinfo, term, win,
+                                lines_disp);
             else
-              right_margin_putp(sbar_arr_down, "^", langinfo, term, lines_disp);
+              right_margin_putp(sbar_arr_down, "^", langinfo, term, win,
+                                lines_disp);
           }
           else if (lines_disp == 1)
-            right_margin_putp(sbar_arr_up, "^", langinfo, term, lines_disp);
+            right_margin_putp(sbar_arr_up, "^", langinfo, term, win,
+                              lines_disp);
           else if (line_nb_of_word_a[i] == last_line)
           {
             if (win->max_lines > 1)
-              right_margin_putp(sbar_down, "/", langinfo, term, lines_disp);
+              right_margin_putp(sbar_down, "/", langinfo, term, win,
+                                lines_disp);
             else
-              right_margin_putp(sbar_arr_up, "^", langinfo, term, lines_disp);
+              right_margin_putp(sbar_arr_up, "^", langinfo, term, win,
+                                lines_disp);
           }
           else if (last_line + 1 > win->max_lines
                    && (int) ((float) (line_nb_of_word_a[current])
                              / (last_line + 1) * (win->max_lines - 2) + 2)
                    == lines_disp)
-            right_margin_putp(sbar_curs, "+", langinfo, term, lines_disp);
+            right_margin_putp(sbar_curs, "+", langinfo, term, win, lines_disp);
           else
-            right_margin_putp(sbar_line, "|", langinfo, term, lines_disp);
+            right_margin_putp(sbar_line, "|", langinfo, term, win, lines_disp);
         }
 
         /* Print a newline character if we are not at the end of */
@@ -2580,15 +2597,18 @@ disp_lines(word_t * word_a, win_t * win, toggle_t * toggle, int current,
           if (!toggle->no_scrollbar)
           {
             if (win->max_lines > 1)
-              right_margin_putp(sbar_down, "/", langinfo, term, lines_disp);
+              right_margin_putp(sbar_down, "/", langinfo, term, win,
+                                lines_disp);
             else
-              right_margin_putp(sbar_arr_up, "^", langinfo, term, lines_disp);
+              right_margin_putp(sbar_arr_up, "^", langinfo, term, win,
+                                lines_disp);
           }
         }
         else
         {
           if (!toggle->no_scrollbar)
-            right_margin_putp(sbar_arr_down, "v", langinfo, term, lines_disp);
+            right_margin_putp(sbar_arr_down, "v", langinfo, term, win,
+                              lines_disp);
           break;
         }
       }
@@ -3019,8 +3039,6 @@ main(int argc, char *argv[])
                                          * of each  column in column mode  */
   int *col_max_size = NULL;  /* Array of maximum sizes of each column in   *
                               * column mode                                */
-  int cols_size = 0;         /* Space taken by all the columns plus the    *
-                              * gutters in column mode                     */
   int col_index;             /* Index of the current column when reading   *
                               * words, used in column mode                 */
   int cols_number;           /* Number of columns in column mode           */
@@ -3058,6 +3076,7 @@ main(int argc, char *argv[])
   win.wide_columns = 0;
   win.tab_mode = 0;
   win.col_mode = 0;
+  win.line_mode = 0;
   win.first_column = 0;
 
   /* Toggles initialization */
@@ -3115,7 +3134,7 @@ main(int argc, char *argv[])
   /* Command line options analysis */
   /* """"""""""""""""""""""""""""" */
   while ((opt = egetopt(argc, argv,
-                        "Vhqdbi:e:I:E:A:Z:C:cwrgn:t%m:s:W:L:")) != -1)
+                        "Vhqdbi:e:I:E:A:Z:C:clwrgn:t%m:s:W:L:")) != -1)
   {
     switch (opt)
     {
@@ -3159,6 +3178,11 @@ main(int argc, char *argv[])
         win.tab_mode = 1;
         win.col_mode = 1;
         break;
+
+      case 'l':
+        win.line_mode = 1;
+        win.tab_mode = 0;
+        win.col_mode = 0;
 
       case 'g':
         win.col_sep = 1;
@@ -3560,7 +3584,7 @@ main(int argc, char *argv[])
     /* Manipulates the is_last flag word indicator to make this word */
     /* the first or last one of the current line in column mode      */
     /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-    if (win.col_mode)
+    if (win.col_mode | win.line_mode)
     {
       if (first_word_pattern
           && regexec(&first_word_re, word, (size_t) 0, NULL, 0) == 0)
@@ -3702,7 +3726,7 @@ main(int argc, char *argv[])
 
     /* Set the last word in line indicator when in column mode */
     /* """"""""""""""""""""""""""""""""""""""""""""""""""""""" */
-    if (win.col_mode)
+    if (win.col_mode | win.line_mode)
     {
       if (is_first && count > 0)
         word_a[count - 1].is_last = 1;
@@ -3799,7 +3823,7 @@ main(int argc, char *argv[])
     /* Total space taken by all the columns plus the gutter */
     /* """""""""""""""""""""""""""""""""""""""""""""""""""" */
     for (col_index = 0; col_index < cols_number; col_index++)
-      cols_size += col_max_size[col_index] + 1;
+      win.max_width += col_max_size[col_index] + 1;
 
     col_index = 0;
     for (i = 0; i < count; i++)
@@ -3857,8 +3881,8 @@ main(int argc, char *argv[])
 
   word_a[count].str = NULL;
 
-  if (win.col_mode && cols_size < term.ncolumns - 3)
-    term.ncolumns = cols_size + 3;
+  if (win.col_mode && win.max_width < term.ncolumns - 3)
+    term.ncolumns = win.max_width + 3;
   else
   {
     if (!win.wide_columns
@@ -3985,7 +4009,7 @@ main(int argc, char *argv[])
   /* """"""""""""""""""""""""""""""""""""""""""" */
   message_lines = disp_message(message, &term);
 
-  if (win.col_mode)
+  if (win.col_mode | win.line_mode)
   {
     int pos;
     int len;
@@ -4003,8 +4027,7 @@ main(int argc, char *argv[])
   }
 
   nl = disp_lines(word_a, &win, &toggle, current, count, search_mode,
-                  search_buf, &term, last_line, tmp_max_word, &langinfo,
-                  cols_size);
+                  search_buf, &term, last_line, tmp_max_word, &langinfo);
 
   /* Determine the number of lines to move the cursor up if the window */
   /* display needed a terminel scrolling                               */
@@ -4046,8 +4069,7 @@ main(int argc, char *argv[])
       setitimer(ITIMER_REAL, &hlp_itv, NULL);
 
       nl = disp_lines(word_a, &win, &toggle, current, count, search_mode,
-                      search_buf, &term, last_line, tmp_max_word, &langinfo,
-                      cols_size);
+                      search_buf, &term, last_line, tmp_max_word, &langinfo);
     }
 
     /* If an alarm has been tiggered and we are in search mode, try to    */
@@ -4063,8 +4085,7 @@ main(int argc, char *argv[])
       {
         search_mode = 0;
         nl = disp_lines(word_a, &win, &toggle, current, count, search_mode,
-                        search_buf, &term, last_line, tmp_max_word, &langinfo,
-                        cols_size);
+                        search_buf, &term, last_line, tmp_max_word, &langinfo);
       }
     }
 
@@ -4089,8 +4110,8 @@ main(int argc, char *argv[])
 
       get_terminal_size(&term.nlines, &term.ncolumns);
 
-      if (win.col_mode && cols_size < term.ncolumns - 3)
-        term.ncolumns = cols_size + 3;
+      if (win.col_mode && win.max_width < term.ncolumns - 3)
+        term.ncolumns = win.max_width + 3;
       else
       {
         if (!win.wide_columns
@@ -4124,7 +4145,7 @@ main(int argc, char *argv[])
       /* """""""""""""""""""""""""""""""""""""""""""""""""""" */
       last_line = build_metadata(word_a, &term, count, &win);
 
-      if (win.col_mode)
+      if (win.col_mode | win.line_mode)
       {
         int pos;
         int len;
@@ -4143,8 +4164,7 @@ main(int argc, char *argv[])
 
       message_lines = disp_message(message, &term);
       nl = disp_lines(word_a, &win, &toggle, current, count, search_mode,
-                      search_buf, &term, last_line, tmp_max_word, &langinfo,
-                      cols_size);
+                      search_buf, &term, last_line, tmp_max_word, &langinfo);
 
       /* Get new cursor position */
       /* """"""""""""""""""""""" */
@@ -4200,13 +4220,13 @@ main(int argc, char *argv[])
               /* In column mode we need to take care of the */
               /* horizontal scrolling                       */
               /* """""""""""""""""""""""""""""""""""""""""" */
-              if (win.col_mode)
+              if (win.col_mode | win.line_mode)
                 if (word_a[current].end < win.first_column)
                   win.first_column = word_a[current].start;
 
               nl = disp_lines(word_a, &win, &toggle, current, count,
                               search_mode, search_buf, &term, last_line,
-                              tmp_max_word, &langinfo, cols_size);
+                              tmp_max_word, &langinfo);
               break;
             }
 
@@ -4224,7 +4244,7 @@ main(int argc, char *argv[])
               /* In column mode we need to take care of the */
               /* horizontal scrolling                       */
               /* """""""""""""""""""""""""""""""""""""""""" */
-              if (win.col_mode)
+              if (win.col_mode | win.line_mode)
               {
                 int pos;
                 int len;
@@ -4256,7 +4276,7 @@ main(int argc, char *argv[])
 
               nl = disp_lines(word_a, &win, &toggle, current, count,
                               search_mode, search_buf, &term, last_line,
-                              tmp_max_word, &langinfo, cols_size);
+                              tmp_max_word, &langinfo);
               break;
             }
 
@@ -4305,7 +4325,7 @@ main(int argc, char *argv[])
               help_mode = 0;
               nl = disp_lines(word_a, &win, &toggle, current, count,
                               search_mode, search_buf, &term, last_line,
-                              tmp_max_word, &langinfo, cols_size);
+                              tmp_max_word, &langinfo);
               break;
             }
           }
@@ -4360,7 +4380,7 @@ main(int argc, char *argv[])
 
           nl = disp_lines(word_a, &win, &toggle, current, count,
                           search_mode, search_buf, &term, last_line,
-                          tmp_max_word, &langinfo, cols_size);
+                          tmp_max_word, &langinfo);
           break;
 
           /* <Enter> has been pressed */
@@ -4380,7 +4400,7 @@ main(int argc, char *argv[])
 
             nl = disp_lines(word_a, &win, &toggle, current, count, search_mode,
                             search_buf, &term, last_line, tmp_max_word,
-                            &langinfo, cols_size);
+                            &langinfo);
 
             if (!toggle.enter_val_in_search)
               break;
@@ -4511,7 +4531,7 @@ main(int argc, char *argv[])
                 /* In column mode we need to take care of the */
                 /* horizontal scrolling                       */
                 /* """""""""""""""""""""""""""""""""""""""""" */
-                if (win.col_mode)
+                if (win.col_mode | win.line_mode)
                 {
                   int pos;
 
@@ -4548,7 +4568,7 @@ main(int argc, char *argv[])
             if (current != old_current)
               nl = disp_lines(word_a, &win, &toggle, current, count,
                               search_mode, search_buf, &term, last_line,
-                              tmp_max_word, &langinfo, cols_size);
+                              tmp_max_word, &langinfo);
             break;
           }
           else
@@ -4593,7 +4613,7 @@ main(int argc, char *argv[])
                 /* In column mode we need to take care of the */
                 /* horizontal scrolling                       */
                 /* """""""""""""""""""""""""""""""""""""""""" */
-                if (win.col_mode)
+                if (win.col_mode | win.line_mode)
                 {
                   if (word_a[current].is_last)
                     win.first_column = 0;
@@ -4643,7 +4663,7 @@ main(int argc, char *argv[])
             if (current != old_current)
               nl = disp_lines(word_a, &win, &toggle, current, count,
                               search_mode, search_buf, &term, last_line,
-                              tmp_max_word, &langinfo, cols_size);
+                              tmp_max_word, &langinfo);
             break;
           }
           else
@@ -4777,7 +4797,7 @@ main(int argc, char *argv[])
             if (current != old_current)
               nl = disp_lines(word_a, &win, &toggle, current, count,
                               search_mode, search_buf, &term, last_line,
-                              tmp_max_word, &langinfo, cols_size);
+                              tmp_max_word, &langinfo);
 
             break;
           }
@@ -4927,7 +4947,7 @@ main(int argc, char *argv[])
             if (current != old_current)
               nl = disp_lines(word_a, &win, &toggle, current, count,
                               search_mode, search_buf, &term, last_line,
-                              tmp_max_word, &langinfo, cols_size);
+                              tmp_max_word, &langinfo);
 
             break;
           }
@@ -4961,7 +4981,7 @@ main(int argc, char *argv[])
 
             nl = disp_lines(word_a, &win, &toggle, current, count, search_mode,
                             search_buf, &term, last_line, tmp_max_word,
-                            &langinfo, cols_size);
+                            &langinfo);
             break;
           }
           else
@@ -4989,7 +5009,7 @@ main(int argc, char *argv[])
 
               nl = disp_lines(word_a, &win, &toggle, current, count,
                               search_mode, search_buf, &term, last_line,
-                              tmp_max_word, &langinfo, cols_size);
+                              tmp_max_word, &langinfo);
             }
           }
           break;
@@ -5041,7 +5061,7 @@ main(int argc, char *argv[])
 
               nl = disp_lines(word_a, &win, &toggle, current, count,
                               search_mode, search_buf, &term, last_line,
-                              tmp_max_word, &langinfo, cols_size);
+                              tmp_max_word, &langinfo);
             }
             else
             {

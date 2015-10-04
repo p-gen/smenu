@@ -78,8 +78,7 @@ void set_background_color(term_t * term, int color);
 int build_metadata(word_t * word_a, term_t * term, int count, win_t * win);
 int disp_lines(word_t * word_a, win_t * win, toggle_t * toggle, int current,
                int count, int search_mode, char *search_buf, term_t * term,
-               int last_line, char *tmp_max_word, langinfo_t * langinfo,
-               int cols_size);
+               int last_line, char *tmp_max_word, langinfo_t * langinfo);
 int disp_message(char *message, term_t * term);
 void disp_word(word_t * word_a, int pos, int search_mode, char *buffer,
                term_t * term, char *tmp_max_word);
@@ -94,7 +93,7 @@ char *get_word(FILE * input, ll_t * word_delims_list,
 void left_margin_putp(char *s, term_t * term);
 int main(int argc, char *argv[]);
 void right_margin_putp(char *s1, char *s2, langinfo_t * langinfo, term_t * term,
-                       int line);
+                       win_t * win, int line);
 int search_next(tst_node_t * tst, word_t * word_a, char *search_buf,
                 int after_only);
 void set_new_first_column(win_t * win, word_t * word_a);

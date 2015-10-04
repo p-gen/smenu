@@ -5,7 +5,7 @@ and outputs the selection to stdout.
 .SH SYNOPSIS
 smenu [\fB-h\fP] [\fB-n\fP \fIlines\fP] [\fB-t\fP [\fIcols\fP]]
 [\fB-s\fP \fIpattern\fP] [\fB-m\fP \fImessage\fP] [\fB-w\fP] [\fB-d\fP]
-[\fB-c\fP] [\fB-r\fP] [\fB-b\fP]
+[\fB-c\fP] [\fB-l\fP] [\fB-r\fP] [\fB-b\fP]
 [\fB-i\fP regex] [\fB-e\fP regex]
 [\fB-C\fP [a|A|s|S|r|R|d|D][col1[-col2],[col1[-col2]...
 [\fB-I\fP /regex/string/[g]] [\fB-E\fP /regex/string/[g]]
@@ -235,6 +235,9 @@ and right edge of the window to help the user to reach the unseen words.
 
 In this mode, the width of each column is minimal to keep the maximum
 information visible on the terminal.
+.IP \fB-l\fP
+Sets the line mode. This mode is the same as column mode but without
+any column alignment.
 .IP \fB-r\fP
 Enables \fBENTER\fP to validate the selection even in search mode.
 .IP \fB-b\fP
@@ -309,7 +312,8 @@ This option can be used to specify the characters (or multibyte
 sequences) which will be used to delimit the lines in the input stream.
 The default delimiter is: \fI\\n\fP.
 
-This option is only useful when the \fB-c\fP option is also used.
+This option is only useful when the \fB-c\fP or \fB-l\fP option is also
+set.
 
 The characters (or multibyte sequences) passed to \fB-L\fP are
 automatically added to the list of word delimiters as if \fB-W\fP was
