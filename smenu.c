@@ -2038,6 +2038,9 @@ get_word(FILE * input, ll_t * word_delims_list, ll_t * record_delims_list,
   char *temp = NULL;
   int byte, count = 0;       /* count chars used in current allocation */
   int wordsize;              /* size of current allocation in chars    */
+  int is_dquote;             /* double quote presence indicator        */
+  int is_squote;             /* single quote presence indicator        */
+  int is_special;            /* a character is special after a \       */
 
   /* Skip leading delimiters */
   /* """"""""""""""""""""""" */
@@ -2055,21 +2058,110 @@ get_word(FILE * input, ll_t * word_delims_list, ll_t * record_delims_list,
 
   /* Start stashing bytes. stop when we meet a non delimiter or EOF */
   /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-  for (count = 0;
-       byte != EOF && ll_find(word_delims_list, mb_buffer, delims_cmp) == NULL;
-       byte = get_bytes(input, mb_buffer, word_delims_list, toggle, langinfo))
+  count = 0;
+  is_dquote = 0;
+  is_squote = 0;
+  is_special = 0;
+
+  while (byte != EOF)
   {
     int i = 0;
 
+    if (byte == '\\' && !is_special)
+    {
+      is_special = 1;
+      goto next;
+    }
+
+    /* Parse special characters */
+    /* """""""""""""""""""""""" */
+    if (is_special)
+      switch (byte)
+      {
+        case 'a':
+          mb_buffer[0] = byte = '\a';
+          mb_buffer[1] = '\0';
+          break;
+
+        case 'b':
+          mb_buffer[0] = byte = '\b';
+          mb_buffer[1] = '\0';
+          break;
+
+        case 't':
+          mb_buffer[0] = byte = '\t';
+          mb_buffer[1] = '\0';
+          break;
+
+        case 'n':
+          mb_buffer[0] = byte = '\n';
+          mb_buffer[1] = '\0';
+          break;
+
+        case 'v':
+          mb_buffer[0] = byte = '\v';
+          mb_buffer[1] = '\0';
+          break;
+
+        case 'f':
+          mb_buffer[0] = byte = '\f';
+          mb_buffer[1] = '\0';
+          break;
+
+        case 'r':
+          mb_buffer[0] = byte = '\r';
+          mb_buffer[1] = '\0';
+          break;
+
+        case '\\':
+          mb_buffer[0] = byte = '\\';
+          mb_buffer[1] = '\0';
+          break;
+      }
+    else
+    {
+      /* manage double quotes */
+      /* """""""""""""""""""" */
+      if (byte == '"' && !is_squote)
+        is_dquote = !is_dquote;
+
+      /* manage single quotes */
+      /* """""""""""""""""""" */
+      if (byte == '\'' && !is_dquote)
+        is_squote = !is_squote;
+    }
+
+    /* Only consider delimiters when outside quotations */
+    /* """""""""""""""""""""""""""""""""""""""""""""""" */
+    if ((!is_dquote && !is_squote)
+        && ll_find(word_delims_list, mb_buffer, delims_cmp) != NULL)
+      break;
+
+    /* We no dot count the meaningfull quotes */
+    /* """""""""""""""""""""""""""""""""""""" */
+    if (!is_special
+        && ((byte == '"' && !is_squote) || (byte == '\'' && !is_dquote)))
+    {
+      is_special = 0;
+      goto next;
+    }
+
+    /* Feed temp with the content of mb_buffer */
+    /* """"""""""""""""""""""""""""""""""""""" */
     while (mb_buffer[i] != '\0')
     {
       if (count >= wordsize - 1)
-        temp = xrealloc(temp, wordsize +=
-                        (count / CHARSCHUNK + 1) * CHARSCHUNK);
+        temp = xrealloc(temp,
+                        wordsize += (count / CHARSCHUNK + 1) * CHARSCHUNK);
 
       *(temp + count++) = mb_buffer[i];
       i++;
     }
+
+    is_special = 0;
+
+  next:
+    byte = get_bytes(input, mb_buffer, word_delims_list, toggle, langinfo);
   }
 
   /* Nul-terminate the word to make it a string */

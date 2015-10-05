@@ -30,6 +30,13 @@ delimiters are: \fISPACE\fP, \fI\\t\fP and \fI\\n\fP.
 .P
 The \fB-L\fP has a similar meaning for lines.
 .P
+Special character sequences formed by a \fI\\\fP followed by one of the
+characters \fIa\fP \fIb\fP \fIt\fP \fIn\fP \fIv\fP \fIf\fP \fIr\fP and
+\fI\\\fP are undertood and have their traditional meanings.
+.P
+Quotations (single and double) in the input stream enable to ignore the
+word separators so that a group of words are taken as a single entity.
+.P
 Non printable characters in words that are not a delimiter are
 converted to their traditional form (\fI\\n\fP for end-of-line,
 \fI\\t\fP for tabulation...) by default. A single dot (\fI.\fP) is also
