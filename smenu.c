@@ -2040,12 +2040,15 @@ get_word(FILE * input, ll_t * word_delims_list, ll_t * record_delims_list,
 
   /* Skip leading delimiters */
   /* """"""""""""""""""""""" */
-  for (byte = get_bytes(input, mb_buffer, word_delims_list, toggle, langinfo);
-       byte == EOF || ll_find(word_delims_list, mb_buffer, delims_cmp) != NULL;
-       byte = get_bytes(input, mb_buffer, word_delims_list, toggle, langinfo))
+  byte = get_bytes(input, mb_buffer, word_delims_list, toggle, langinfo);
+
+  while (byte == EOF
+         || ll_find(word_delims_list, mb_buffer, delims_cmp) != NULL)
   {
     if (byte == EOF)
       return NULL;
+
+    byte = get_bytes(input, mb_buffer, word_delims_list, toggle, langinfo);
   }
 
   /* allocate initial word storage space */
