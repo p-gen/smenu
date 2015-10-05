@@ -1311,10 +1311,6 @@ strip_ansi_color(char *s, toggle_t * toggle)
     else
       *p++ = *s++;
   }
-  /* If the whole string has been stripped, leave a signe dot */
-  /* """""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-  if (s - p == len)
-    *p++ = '.';
 
   *p = '\0';
 }
@@ -3672,6 +3668,9 @@ main(int argc, char *argv[])
     int selectable;
     char buf[1024] = { 0 };
     int is_first = 0;
+
+    if (*word == '\0')
+      continue;
 
     /* Manipulates the is_last flag word indicator to make this word */
     /* the first or last one of the current line in column mode      */
