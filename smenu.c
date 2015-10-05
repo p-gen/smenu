@@ -4086,10 +4086,6 @@ main(int argc, char *argv[])
   /* """""""""""""""""""""""""""""""""""""" */
   setup_term(fileno(stdin));
 
-  /* Save the cursor line column */
-  /* """"""""""""""""""""""""""" */
-  get_cursor_position(&term.curs_line, &term.curs_column);
-
   /* Initialize the search buffer with tab_real_max_size+1 NULs */
   /* It wil never be reallocated, only cleared.                 */
   /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
@@ -4119,6 +4115,10 @@ main(int argc, char *argv[])
 
     win.first_column = word_a[pos].start;
   }
+
+  /* Save the cursor line column */
+  /* """"""""""""""""""""""""""" */
+  get_cursor_position(&term.curs_line, &term.curs_column);
 
   nl = disp_lines(word_a, &win, &toggle, current, count, search_mode,
                   search_buf, &term, last_line, tmp_max_word, &langinfo);
