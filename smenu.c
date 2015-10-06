@@ -243,17 +243,17 @@ struct ll_s
 /* Usage display and exit */
 /* ====================== */
 void
-usage(char *prog)
+usage(void)
 {
-  fprintf(stderr, "Usage: %s [-h] [-n lines] [-c] [-l] [-s pattern] ", prog);
+  fprintf(stderr, "Usage: smenu [-h] [-n lines] [-c] [-l] [-s pattern] ");
   fprintf(stderr, "[-m message] [-w] [-d] \\\n");
   fprintf(stderr, "       [-M] [-t [cols]] [-r] [-b] [-i regex] [-e regex]");
   fprintf(stderr, "                    \\\n");
   fprintf(stderr, "       [-C [a|A|s|S|r|R|d|D]col1[-col2],[col1[-col2]]...] ");
-  fprintf(stderr, "              \\\n");
+  fprintf(stderr, "                 \\\n");
   fprintf(stderr, "       [-I /regex/repl/[g]] ");
   fprintf(stderr, "[-E /regex/repl/[g]] ");
-  fprintf(stderr, "[-A regex] [-Z regex]  \\\n");
+  fprintf(stderr, "[-A regex] [-Z regex]     \\\n");
   fprintf(stderr, "       [-g] [-W bytes]  [-L bytes] [-V]\n");
   fprintf(stderr, "\nThis is a filter that gets words from stdin ");
   fprintf(stderr, "and outputs the\n");
@@ -3261,7 +3261,7 @@ main(int argc, char *argv[])
         {
           fprintf(stderr, "Option requires an argument -- %c\n\n",
                   (char) optopt);
-          usage(argv[0]);
+          usage();
         }
         break;
 
@@ -3280,7 +3280,7 @@ main(int argc, char *argv[])
         {
           fprintf(stderr, "Option requires an argument -- %c\n\n",
                   (char) optopt);
-          usage(argv[0]);
+          usage();
         }
         break;
 
@@ -3315,7 +3315,7 @@ main(int argc, char *argv[])
         {
           fprintf(stderr, "Option requires an argument -- %c\n\n",
                   (char) optopt);
-          usage(argv[0]);
+          usage();
         }
         break;
 
@@ -3334,7 +3334,7 @@ main(int argc, char *argv[])
         {
           fprintf(stderr, "Option requires an argument -- %c\n\n",
                   (char) optopt);
-          usage(argv[0]);
+          usage();
         }
         break;
 
@@ -3345,7 +3345,7 @@ main(int argc, char *argv[])
         {
           fprintf(stderr, "Option requires an argument -- %c\n\n",
                   (char) optopt);
-          usage(argv[0]);
+          usage();
         }
         break;
 
@@ -3359,7 +3359,7 @@ main(int argc, char *argv[])
         {
           fprintf(stderr, "Option requires an argument -- %c\n\n",
                   (char) optopt);
-          usage(argv[0]);
+          usage();
         }
         break;
 
@@ -3370,7 +3370,7 @@ main(int argc, char *argv[])
         {
           fprintf(stderr, "Option requires an argument -- %c\n\n",
                   (char) optopt);
-          usage(argv[0]);
+          usage();
         }
         break;
 
@@ -3381,7 +3381,7 @@ main(int argc, char *argv[])
         {
           fprintf(stderr, "Option requires an argument -- %c\n\n",
                   (char) optopt);
-          usage(argv[0]);
+          usage();
         }
         break;
 
@@ -3396,7 +3396,7 @@ main(int argc, char *argv[])
         {
           fprintf(stderr, "Option requires an argument -- %c\n\n",
                   (char) optopt);
-          usage(argv[0]);
+          usage();
         }
         break;
 
@@ -3407,7 +3407,7 @@ main(int argc, char *argv[])
         {
           fprintf(stderr, "Option requires an argument -- %c\n\n",
                   (char) optopt);
-          usage(argv[0]);
+          usage();
         }
         break;
 
@@ -3418,7 +3418,7 @@ main(int argc, char *argv[])
         {
           fprintf(stderr, "Option requires an argument -- %c\n\n",
                   (char) optopt);
-          usage(argv[0]);
+          usage();
         }
         break;
 
@@ -3429,7 +3429,7 @@ main(int argc, char *argv[])
         {
           fprintf(stderr, "Option requires an argument -- %c\n\n",
                   (char) optopt);
-          usage(argv[0]);
+          usage();
         }
         break;
 
@@ -3437,7 +3437,7 @@ main(int argc, char *argv[])
         fputs("\n", stderr);
       case 'h':
       default:
-        usage(argv[0]);
+        usage();
     }
     optarg = NULL;
   }
@@ -3445,7 +3445,7 @@ main(int argc, char *argv[])
   if (optind < argc)
   {
     fprintf(stderr, "Not an option -- %s\n\n", argv[argc - 1]);
-    usage(argv[0]);
+    usage();
   }
 
   /* If we did not impose the number of columns, uwe the whole terminal width */
