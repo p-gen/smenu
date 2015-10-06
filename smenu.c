@@ -194,6 +194,8 @@ struct win_s
   int line_mode;
   int max_width;
   int wide_columns;
+  int center;
+  int offset;
 };
 
 /* *************************************** */
@@ -245,8 +247,8 @@ usage(char *prog)
 {
   fprintf(stderr, "Usage: %s [-h] [-n lines] [-c] [-l] [-s pattern] ", prog);
   fprintf(stderr, "[-m message] [-w] [-d] \\\n");
-  fprintf(stderr, "       [-t [cols]] [-r] [-b] [-i regex] [-e regex]");
-  fprintf(stderr, "                      \\\n");
+  fprintf(stderr, "       [-M] [-t [cols]] [-r] [-b] [-i regex] [-e regex]");
+  fprintf(stderr, "                    \\\n");
   fprintf(stderr, "       [-C [a|A|s|S|r|R|d|D]col1[-col2],[col1[-col2]]...] ");
   fprintf(stderr, "              \\\n");
   fprintf(stderr, "       [-I /regex/repl/[g]] ");
@@ -270,6 +272,7 @@ usage(char *prog)
   fprintf(stderr, "-w uses all the terminal width for the columns if "
           "their numbers is given.\n");
   fprintf(stderr, "-d deletes the selection window on exit.\n");
+  fprintf(stderr, "-M centers the display if possible.\n");
   fprintf(stderr, "-c is like -t without argument "
           "but respects end of lines.\n");
   fprintf(stderr, "-l is like -c without column alignments.\n");
@@ -2259,7 +2262,7 @@ left_margin_putp(char *s, term_t * term)
 /* ===================================================== */
 void
 right_margin_putp(char *s1, char *s2, langinfo_t * langinfo,
-                  term_t * term, win_t * win, int line)
+                  term_t * term, win_t * win, int line, int offset)
 {
   tputs(enter_bold_mode, 1, outch);
 
@@ -2270,10 +2273,11 @@ right_margin_putp(char *s1, char *s2, langinfo_t * langinfo,
     set_background_color(term, bar_color.bg);
 
   if (term->has_hpa)
-    tputs(tparm(column_address, win->max_width + 1), 1, outch);
+    tputs(tparm(column_address, offset + win->max_width + 1), 1, outch);
   else
     tputs(tparm(cursor_address,
-                term->curs_line + line - 2, win->max_width + 1), 1, outch);
+                term->curs_line + line - 2, offset + win->max_width + 1), 1,
+          outch);
 
   if (langinfo->utf8)
     fputs(s1, stdout);
@@ -2374,6 +2378,11 @@ build_metadata(word_t * word_a, term_t * term, int count, win_t * win)
 
     i++;
   }
+
+  if (!win->center || win->max_width > term->ncolumns - 2)
+    win->offset = 0;
+  else
+    win->offset = (term->ncolumns - 2 - win->max_width) / 2;
 
   /* We need to recalculate win->start and win->end here */
   /* because of a possible terminal resizing             */
@@ -2499,7 +2508,7 @@ disp_word(word_t * word_a, int pos, int search_mode, char *buffer,
 /* Display a message line above the window */
 /* ======================================= */
 int
-disp_message(char *message, term_t * term)
+disp_message(char *message, term_t * term, win_t * win)
 {
   int message_lines = 0;
 
@@ -2512,6 +2521,8 @@ disp_message(char *message, term_t * term)
       *ptr = '\0';
 
     message_lines = strlen(message) / term->ncolumns + 1;
+    if (win->offset > 0)
+      printf("%*s", win->offset, " ");
     tputs(enter_bold_mode, 1, outch);
     fputs(message, stdout);
     tputs(exit_attribute_mode, 1, outch);
@@ -2566,6 +2577,11 @@ disp_lines(word_t * word_a, win_t * win, toggle_t * toggle, int current,
   }
   else
     scroll_symbol[0] = '\0';
+
+  /* Center the display ? */
+  /* """""""""""""""""""" */
+  if (win->offset > 0)
+    printf("%*s", win->offset, " ");
 
   left_margin_putp(scroll_symbol, term);
   while (len > 1 && i <= count - 1)
@@ -2635,30 +2651,32 @@ disp_lines(word_t * word_a, win_t * win, toggle_t * toggle, int current,
           {
             if (win->max_lines > 1)
               right_margin_putp(sbar_top, "\\", langinfo, term, win,
-                                lines_disp);
+                                lines_disp, win->offset);
             else
               right_margin_putp(sbar_arr_down, "^", langinfo, term, win,
-                                lines_disp);
+                                lines_disp, win->offset);
           }
           else if (lines_disp == 1)
             right_margin_putp(sbar_arr_up, "^", langinfo, term, win,
-                              lines_disp);
+                              lines_disp, win->offset);
           else if (line_nb_of_word_a[i] == last_line)
           {
             if (win->max_lines > 1)
               right_margin_putp(sbar_down, "/", langinfo, term, win,
-                                lines_disp);
+                                lines_disp, win->offset);
             else
               right_margin_putp(sbar_arr_up, "^", langinfo, term, win,
-                                lines_disp);
+                                lines_disp, win->offset);
           }
           else if (last_line + 1 > win->max_lines
                    && (int) ((float) (line_nb_of_word_a[current])
                              / (last_line + 1) * (win->max_lines - 2) + 2)
                    == lines_disp)
-            right_margin_putp(sbar_curs, "+", langinfo, term, win, lines_disp);
+            right_margin_putp(sbar_curs, "+", langinfo, term, win, lines_disp,
+                              win->offset);
           else
-            right_margin_putp(sbar_line, "|", langinfo, term, win, lines_disp);
+            right_margin_putp(sbar_line, "|", langinfo, term, win, lines_disp,
+                              win->offset);
         }
 
         /* Print a newline character if we are not at the end of */
@@ -2667,6 +2685,8 @@ disp_lines(word_t * word_a, win_t * win, toggle_t * toggle, int current,
         if (i < count - 1 && lines_disp < win->max_lines)
         {
           puts("");
+          if (win->offset > 0)
+            printf("%*s", win->offset, " ");
           left_margin_putp(scroll_symbol, term);
         }
 
@@ -2689,17 +2709,17 @@ disp_lines(word_t * word_a, win_t * win, toggle_t * toggle, int current,
           {
             if (win->max_lines > 1)
               right_margin_putp(sbar_down, "/", langinfo, term, win,
-                                lines_disp);
+                                lines_disp, win->offset);
             else
               right_margin_putp(sbar_arr_up, "^", langinfo, term, win,
-                                lines_disp);
+                                lines_disp, win->offset);
           }
         }
         else
         {
           if (!toggle->no_scrollbar)
             right_margin_putp(sbar_arr_down, "v", langinfo, term, win,
-                              lines_disp);
+                              lines_disp, win->offset);
           break;
         }
       }
@@ -3162,6 +3182,7 @@ main(int argc, char *argv[])
   /* """"""""""""""""""""""""" */
   win.max_lines = 5;
   win.asked_max_lines = 5;
+  win.center = 0;
   win.max_cols = 0;
   win.col_sep = 0;
   win.wide_columns = 0;
@@ -3225,7 +3246,7 @@ main(int argc, char *argv[])
   /* Command line options analysis */
   /* """"""""""""""""""""""""""""" */
   while ((opt = egetopt(argc, argv,
-                        "Vhqdbi:e:I:E:A:Z:C:clwrgn:t%m:s:W:L:")) != -1)
+                        "VhqdMbi:e:I:E:A:Z:C:clwrgn:t%m:s:W:L:")) != -1)
   {
     switch (opt)
     {
@@ -3246,6 +3267,10 @@ main(int argc, char *argv[])
 
       case 'd':
         toggle.del_line = 1;
+        break;
+
+      case 'M':
+        win.center = 1;
         break;
 
       case 's':
@@ -4097,7 +4122,7 @@ main(int argc, char *argv[])
 
   /* Display the words window for the first time */
   /* """"""""""""""""""""""""""""""""""""""""""" */
-  message_lines = disp_message(message, &term);
+  message_lines = disp_message(message, &term, &win);
 
   if (win.col_mode | win.line_mode)
   {
@@ -4256,7 +4281,7 @@ main(int argc, char *argv[])
         win.first_column = word_a[pos].start;
       }
 
-      message_lines = disp_message(message, &term);
+      message_lines = disp_message(message, &term, &win);
       nl = disp_lines(word_a, &win, &toggle, current, count, search_mode,
                       search_buf, &term, last_line, tmp_max_word, &langinfo);
 
