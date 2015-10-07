@@ -4000,15 +4000,6 @@ main(int argc, char *argv[])
 
   word_a[count].str = NULL;
 
-  if (win.col_mode && win.max_width < term.ncolumns - 3)
-    term.ncolumns = win.max_width + 3;
-  else
-  {
-    if (!win.wide_columns
-        && win.max_cols * (tab_max_size + 1) + 2 <= term.ncolumns)
-      term.ncolumns = win.max_cols * (tab_max_size + 1) + 2;
-  }
-
   /* We can now allocate the space for our tmp_max_word work variable */
   /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
   tmp_max_word = xmalloc(tab_real_max_size + 1);
@@ -4228,15 +4219,6 @@ main(int argc, char *argv[])
       got_winch_alrm = 0;
 
       get_terminal_size(&term.nlines, &term.ncolumns);
-
-      if (win.col_mode && win.max_width < term.ncolumns - 3)
-        term.ncolumns = win.max_width + 3;
-      else
-      {
-        if (!win.wide_columns
-            && win.max_cols * (tab_max_size + 1) + 2 <= term.ncolumns)
-          term.ncolumns = win.max_cols * (tab_max_size + 1) + 2;
-      }
 
       /* Erase the current window */
       /* """""""""""""""""""""""" */
