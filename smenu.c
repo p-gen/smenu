@@ -4451,6 +4451,9 @@ main(int argc, char *argv[])
         case 'q':
         case 'Q':
         case 3:             /* ^C */
+          if (search_mode)
+            goto special_cmds_when_searching;
+
           for (i = 0; i < message_lines; i++)
             tputs(cursor_up, 1, outch);
 
