@@ -386,6 +386,42 @@ PV list
 /dev/sdc2            |
 /dev/system/homevol  /
 .fi
+.SS "4 (advanced)"
+Imagine a file named \fBsample.mnu\fP with the following content:
+
+.nf
+--8<---------------------------------
+[1] "First Entry" [3] "Third entry"
+[2] "Second entry" [4] "Fourth entry"
+@@@ @@@ [5] "Fifth entry"
+@@@
+[Quit] "Exit menu"
+--8<---------------------------------
+.fi
+
+Then this quite esoteric command will render it (centered on the screen) as:
+
+.nf
++--------------------------------+
+|Test menu                       |
+|1    First Entry  3 Third entry |
+|2    Second entry 4 Fourth entry|
+|                  5 Fifth entry |
+|                                |
+|Quit Exit menu                  |
++--------------------------------+
+.fi
+
+with the cursor on \fIQuit\fP and only the numbers and "Quit" selectable.
+
+\fBR=$(smenu -q -d -s/Q -M -n 30 -c               \\
+          -e "@+" -E '/@+//'                   \\
+          -i '\\[ *[^ ]+ *\\]' -I '/[][ ]//g'    \\
+          -m "Test menu" < sample.mnu)\fP
+
+The selected number or string will be available in \fBR\fP
+
+Try to undertand it as an exercise.
 .SH BUGS
 None that I am aware of. If you found one, please tell me.
 .SH AUTHOR
