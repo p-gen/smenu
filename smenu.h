@@ -89,7 +89,7 @@ int get_bytes(FILE * input, char *mb_buffer, ll_t * word_delims_list,
 int get_scancode(unsigned char *s, int max);
 char *get_word(FILE * input, ll_t * word_delims_list,
                ll_t * record_delims_list, char *mb_buffer, int *is_last,
-               toggle_t * toggle, langinfo_t * langinfo);
+               toggle_t * toggle, langinfo_t * langinfo, win_t * win);
 void left_margin_putp(char *s, term_t * term);
 int main(int argc, char *argv[]);
 void right_margin_putp(char *s1, char *s2, langinfo_t * langinfo, term_t * term,

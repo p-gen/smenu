@@ -2032,7 +2032,7 @@ expand(char *src, char *dest, langinfo_t * langinfo)
 char *
 get_word(FILE * input, ll_t * word_delims_list, ll_t * record_delims_list,
          char *mb_buffer, int *is_last, toggle_t * toggle,
-         langinfo_t * langinfo)
+         langinfo_t * langinfo, win_t * win)
 {
   char *temp = NULL;
   int byte, count = 0;       /* count chars used in current allocation */
@@ -2196,10 +2196,12 @@ get_word(FILE * input, ll_t * word_delims_list, ll_t * record_delims_list,
       ungetc(byte, stdin);
   }
 
-  /* Mark it as the last word of a record if its */
-  /* sequence matches a record delimiter         */
-  /* """"""""""""""""""""""""""""""""""""""""""" */
-  if (byte == EOF || ll_find(record_delims_list, mb_buffer, delims_cmp) != NULL)
+  /* Mark it as the last word of a record if its sequence matches a */
+  /* record delimiter except in tab mode                            */
+  /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+  if (byte == EOF
+      || ((win->col_mode | win->line_mode)
+          && ll_find(record_delims_list, mb_buffer, delims_cmp) != NULL))
     *is_last = 1;
   else
     *is_last = 0;
@@ -2308,6 +2310,8 @@ build_metadata(word_t * word_a, term_t * term, int count, win_t * win)
   int cur_line;
   int end_line;
   int word_width;
+  int tab_count;             /* Current number of words in the line, *
+                              * used in tab_mode                     */
   wchar_t *w;
 
   line_nb_of_word_a[0] = 0;
@@ -2322,6 +2326,7 @@ build_metadata(word_t * word_a, term_t * term, int count, win_t * win)
   else
     win->max_lines = win->asked_max_lines;
 
+  tab_count = 0;
   while (i < count)
   {
     /* Determine the number of screen positions used by the word */
@@ -2344,11 +2349,14 @@ build_metadata(word_t * word_a, term_t * term, int count, win_t * win)
     free(w);
 
     /* Look if there is enough remaining place on the line when not in column */
-    /* mode or if we hit a record delimiter in column mode                    */
+    /* mode. Force a break if the 'is_last' flag is set in all modes or if we */
+    /* hit the max number of allowed columns in tab mode                      */
     /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
     if ((!win->col_mode && !win->line_mode
          && (len + word_width + 1) >= term->ncolumns - 1)
-        || ((win->col_mode | win->line_mode) && i > 0 && word_a[i - 1].is_last))
+        || ((win->col_mode | win->line_mode | win->tab_mode)
+            && i > 0 && word_a[i - 1].is_last)
+        || (win->tab_mode && win->max_cols > 0 && tab_count >= win->max_cols))
     {
 
       /* We must build another line */
@@ -2358,7 +2366,9 @@ build_metadata(word_t * word_a, term_t * term, int count, win_t * win)
 
       word_a[i].start = 0;
 
-      len = word_width + 1;
+      len = word_width + 1;  /* Resets the current line length     */
+      tab_count = 1;         /* Resets the current number of words *
+                              * in the line                        */
       word_a[i].end = word_width - 1;
       word_a[i].mbytes = word_len + 1;
     }
@@ -2370,7 +2380,8 @@ build_metadata(word_t * word_a, term_t * term, int count, win_t * win)
 
       line_nb_of_word_a[i] = last;
 
-      len += word_width + 1;
+      len += word_width + 1; /* Increase line length */
+      tab_count++;           /* We've seen another word in the line */
     }
 
     if (len > win->max_width)
@@ -3681,7 +3692,8 @@ main(int argc, char *argv[])
   /* Get and process the input stream words */
   /* """""""""""""""""""""""""""""""""""""" */
   while ((word = get_word(stdin, word_delims_list, record_delims_list,
-                          mb_buffer, &is_last, &toggle, &langinfo)) != NULL)
+                          mb_buffer, &is_last, &toggle, &langinfo,
+                          &win)) != NULL)
   {
     int size;
     int *data;
@@ -3700,10 +3712,10 @@ main(int argc, char *argv[])
     if (*word == '\0')
       continue;
 
-    /* Manipulates the is_last flag word indicator to make this word */
-    /* the first or last one of the current line in column mode      */
-    /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-    if (win.col_mode | win.line_mode)
+    /* Manipulates the is_last flag word indicator to make this word     */
+    /* the first or last one of the current line in column/line/tab mode */
+    /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+    if (win.col_mode | win.line_mode | win.tab_mode)
     {
       if (first_word_pattern
           && regexec(&first_word_re, word, (size_t) 0, NULL, 0) == 0)
@@ -3843,9 +3855,9 @@ main(int argc, char *argv[])
       free(word);
     }
 
-    /* Set the last word in line indicator when in column mode */
-    /* """"""""""""""""""""""""""""""""""""""""""""""""""""""" */
-    if (win.col_mode | win.line_mode)
+    /* Set the last word in line indicator when in column/line/tab mode */
+    /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+    if (win.col_mode | win.line_mode | win.tab_mode)
     {
       if (is_first && count > 0)
         word_a[count - 1].is_last = 1;
