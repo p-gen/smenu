@@ -4053,9 +4053,9 @@ main(int argc, char *argv[])
 
   /* Else find the last selectable word in the input stream */
   /* """""""""""""""""""""""""""""""""""""""""""""""""""""" */
-  for (last_selectable = count - 1;
-       last_selectable > 0
-       && !word_a[last_selectable].is_selectable; last_selectable--);
+  last_selectable = count - 1;
+  while (last_selectable > 0 && !word_a[last_selectable].is_selectable)
+    last_selectable--;
 
   if (pre_selection_index == NULL)
     current = first_selectable;
