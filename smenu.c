@@ -3763,7 +3763,7 @@ main(int argc, char *argv[])
         free(word);
 
         if (*buf == '\0')
-          word = strdup("_");
+          word = strdup("");
         else
           word = strdup(buf);
       }
