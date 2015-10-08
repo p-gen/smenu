@@ -3512,11 +3512,11 @@ main(int argc, char *argv[])
   if (term.colors > 7)
   {
     bar_color.fg = 2;
-    bar_color.bg = 0;
+    bar_color.bg = -1;
     search_color.fg = 0;
     search_color.bg = 5;
     exclude_color.fg = 3;
-    exclude_color.bg = 0;
+    exclude_color.bg = -1;
   }
 
   /* Set the colors from the config file if possible */
