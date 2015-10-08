@@ -2507,8 +2507,10 @@ disp_word(word_t * word_a, int pos, int search_mode, char *buffer,
     mb_strprefix(tmp_max_word, word_a[pos].str, word_a[pos].mbytes - 1, &p);
     if (!word_a[pos].is_selectable)
     {
-      set_foreground_color(term, exclude_color.fg);
-      set_background_color(term, exclude_color.bg);
+      if (exclude_color.fg >= 0)
+        set_foreground_color(term, exclude_color.fg);
+      if (exclude_color.bg >= 0)
+        set_background_color(term, exclude_color.bg);
     }
     fputs(tmp_max_word, stdout);
     tputs(exit_attribute_mode, 1, outch);
