@@ -687,10 +687,10 @@ out:
 /* NULL is returned if the built path is too large.        */
 /* ======================================================= */
 char *
-make_ini_path(char *name)
+make_ini_path(char *name, char *base)
 {
   char *path;
-  char *home = getenv("HOME");
+  char *home = getenv(base);
   int path_max = pathconf(".", _PC_PATH_MAX);
   int len = strlen(home) + strlen(name) + 3;
   char *conf;
@@ -3185,7 +3185,8 @@ main(int argc, char *argv[])
   int is_last;
   char *charset;
 
-  char *ini_file;            /* init file full path                        */
+  char *home_ini_file;       /* init file full path                        */
+  char *local_ini_file;      /* init file full path                        */
 
   charsetinfo_t *charset_ptr;
   langinfo_t langinfo;
@@ -3504,7 +3505,8 @@ main(int argc, char *argv[])
 
   /* Build the full path of the ini file */
   /* """"""""""""""""""""""""""""""""""" */
-  ini_file = make_ini_path(argv[0]);
+  home_ini_file = make_ini_path(argv[0], "HOME");
+  local_ini_file = make_ini_path(argv[0], "PWD");
 
   /* If the ini file failed to provide custom colors or is inexistant */
   /* or not readable then  set their defaut values                    */
@@ -3521,8 +3523,9 @@ main(int argc, char *argv[])
 
   /* Set the colors from the config file if possible */
   /* """"""""""""""""""""""""""""""""""""""""""""""" */
-  if (ini_load(ini_file, &win, &term, ini_cb))
-    exit(EXIT_FAILURE);
+  if (ini_load(local_ini_file, &win, &term, ini_cb))
+    if (ini_load(home_ini_file, &win, &term, ini_cb))
+      exit(EXIT_FAILURE);
 
   /* Allocate the memory for our words structures */
   /* """""""""""""""""""""""""""""""""""""""""""" */

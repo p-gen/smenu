@@ -70,7 +70,7 @@ int ini_load(const char *filename, win_t * win, term_t * term,
                             const char *name, const char *value));
 int ini_cb(win_t * win, term_t * term, const char *section, const char *name,
            const char *value);
-char *make_ini_path(char *name);
+char *make_ini_path(char *name, char *base);
 
 void set_foreground_color(term_t * term, int color);
 void set_background_color(term_t * term, int color);
