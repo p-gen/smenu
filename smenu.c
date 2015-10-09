@@ -1685,7 +1685,7 @@ tst_prefix_search(tst_node_t * root, wchar_t * w, int (*callback) (void *))
 /* the words in the input flow. each page number is then used to detemine */
 /* the lower page greater than the cursor position                        */
 /* ---------------------------------------------------------------------- */
-/* Require new_current to be set to count at start                        */
+/* Require new_current to be set to count-1 at start                      */
 /* Update new_current to the smallest greater position than current       */
 /* ====================================================================== */
 int
@@ -4070,7 +4070,7 @@ main(int argc, char *argv[])
   {
     wchar_t *w;
 
-    new_current = last_selectable + 1;
+    new_current = last_selectable;
     if (NULL != tst_prefix_search(tst,
                                   w = mb_strtowcs(pre_selection_index + 1),
                                   tst_cb_cli))
