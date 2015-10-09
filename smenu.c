@@ -1204,8 +1204,6 @@ replace(char *orig, char *subst, regex_t * re, int global, char *buf,
   int rc = 0;
   int end_loop = 0;
 
-  /* Prepare to retry the replacement if global == 1 */
-  /* """"""""""""""""""""""""""""""""""""""""""""""" */
   match[0].rm_so = match[0].rm_eo = 0;
 
   while (*ptr_orig && strlen(buf) < bufsiz)
@@ -1272,6 +1270,9 @@ replace(char *orig, char *subst, regex_t * re, int global, char *buf,
           rc = 1;
       }
     }
+
+    /* Retry the replacement if global == 1 */
+    /* """""""""""""""""""""""""""""""""""" */
     if (!global)
       goto end;
 
