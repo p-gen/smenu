@@ -251,8 +251,8 @@ usage(void)
   fprintf(stderr, "                    \\\n");
   fprintf(stderr, "       [-C [a|A|s|S|r|R|d|D]col1[-col2],[col1[-col2]]...] ");
   fprintf(stderr, "                 \\\n");
-  fprintf(stderr, "       [-I /regex/repl/[g]] ");
-  fprintf(stderr, "[-E /regex/repl/[g]] ");
+  fprintf(stderr, "       [-I /regex/repl/[g][v]] ");
+  fprintf(stderr, "[-E /regex/repl/[g][v]] ");
   fprintf(stderr, "[-A regex] [-Z regex]     \\\n");
   fprintf(stderr, "       [-g] [-W bytes]  [-L bytes] [-V]\n");
   fprintf(stderr, "\nThis is a filter that gets words from stdin ");
@@ -1101,12 +1101,15 @@ parse_cols_selector(char *str, char **filter, char *unparsed)
 /* Parse the sed like sring passed as argument to -I/-E */
 /* ==================================================== */
 int
-parse_replacement_string(char *str, regex_t * re, char **rs, int *global)
+parse_replacement_string(char *str, regex_t * re, char **rs,
+                         int *global, int *visual)
 {
   char sep;
   char *first_sep_pos;
   char *last_sep_pos;
   char *buf;
+  int index;
+  char c;
 
   if (strlen(str) < 4)
     return 0;
@@ -1138,13 +1141,22 @@ parse_replacement_string(char *str, regex_t * re, char **rs, int *global)
   *rs = strdup(first_sep_pos + 1);
 
   /* Get the global indicator (trailing g) */
+  /* and the visual indicator (trailing v) */
   /* """"""""""""""""""""""""""""""""""""" */
-  if (strcmp(last_sep_pos + 1, "g") == 0)
-    *global = 1;
-  else if (*(last_sep_pos + 1) == '\0')
-    *global = 0;
-  else
-    goto err;
+  *global = *visual = 0;
+
+  index = 1;
+  while ((c = *(last_sep_pos + index)) != '\0')
+  {
+    if (c == 'g')
+      *global = 1;
+    else if (c == 'v')
+      *visual = 1;
+    else
+      goto err;
+
+    index++;
+  }
 
   /* Empty regular expression ? */
   /* """""""""""""""""""""""""" */
@@ -3098,25 +3110,31 @@ main(int argc, char *argv[])
 {
   char *message = NULL;      /* One line message to be desplayed           *
                               * above the selection window                 */
-  char *include_pattern = ".";
+  char *include_pattern = ".";  /* Used by -e/-i                           */
   char *exclude_pattern = NULL;
-  char *include_sed_pattern = NULL;
-  char *exclude_sed_pattern = NULL;
-  char *first_word_pattern = NULL;
-  char *last_word_patternn = NULL;
-  char *include_replace_str = NULL;
-  char *exclude_replace_str = NULL;
-  int include_global_replace;
-  int exclude_global_replace;
-
-  char *cols_selector = NULL;
-
   regex_t include_re;
   regex_t exclude_re;
+
+  char *include_sed_pattern = NULL;     /* used by -E/-I                   */
+  char *exclude_sed_pattern = NULL;
+  char *include_replace_str = NULL;
+  char *exclude_replace_str = NULL;
   regex_t include_sed_re;
   regex_t exclude_sed_re;
+
+  char *first_word_pattern = NULL;      /* used by -A/-Z                   */
+  char *last_word_patternn = NULL;
   regex_t first_word_re;
   regex_t last_word_re;
+
+  int include_global_replace;   /* control if we replace only the first    */
+  int exclude_global_replace;   /* instance                                */
+
+  int include_visual_only;   /* The original word read from stdin will be  */
+  int exclude_visual_only;   /* be restituted unaltered even if its visual *
+                              * representation was modified via -E/-I      */
+
+  char *cols_selector = NULL;
 
   int message_lines;
 
@@ -3656,10 +3674,11 @@ main(int argc, char *argv[])
     if (parse_replacement_string(include_sed_pattern,
                                  &include_sed_re,
                                  &include_replace_str,
-                                 &include_global_replace) == 0)
+                                 &include_global_replace,
+                                 &include_visual_only) == 0)
     {
       fprintf(stderr, "Bad -I argument. Must be something like: "
-              "/regex/repl_string/[g]\n");
+              "/regex/repl_string/[g][v]\n");
 
       exit(EXIT_FAILURE);
     }
@@ -3668,10 +3687,11 @@ main(int argc, char *argv[])
     if (parse_replacement_string(exclude_sed_pattern,
                                  &exclude_sed_re,
                                  &exclude_replace_str,
-                                 &exclude_global_replace) == 0)
+                                 &exclude_global_replace,
+                                 &exclude_visual_only) == 0)
     {
       fprintf(stderr, "Bad -E argument. Must be something like: "
-              "/regex/repl_string/[g]\n");
+              "/regex/repl_string/[g][v]\n");
 
       exit(EXIT_FAILURE);
     }
@@ -3713,6 +3733,7 @@ main(int argc, char *argv[])
     int selectable;
     char buf[1024] = { 0 };
     int is_first = 0;
+    char *unaltered_word;
 
     if (*word == '\0')
       continue;
@@ -3743,6 +3764,10 @@ main(int argc, char *argv[])
       selectable = 1;
     else
       selectable = 0;
+
+    /* Save the original word */
+    /* """""""""""""""""""""" */
+    unaltered_word = strdup(word);
 
     /* Possibly modify the word acording to -I/-E arguments */
     /* """""""""""""""""""""""""""""""""""""""""""""""""""" */
@@ -3915,6 +3940,19 @@ main(int argc, char *argv[])
       tab_max_size = size;
 
     free(tmpw);
+
+    /* When the visual only flag is set, we keep the unaltered word so */
+    /* that it can be restituted even if its visual ans dearchable     */
+    /* representation may have been altered by the previous code       */
+    /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+    if ((word_a[count].is_selectable & include_visual_only)
+        | ((!word_a[count].is_selectable) & exclude_visual_only))
+    {
+      free(word_a[count].orig);
+      word_a[count].orig = unaltered_word;
+    }
+    else
+      free(unaltered_word);
 
     /* One more word... */
     /* """""""""""""""" */

@@ -8,7 +8,7 @@ smenu [\fB-h\fP] [\fB-n\fP \fIlines\fP] [\fB-t\fP [\fIcols\fP]]
 [\fB-M\fP] [\fB-c\fP] [\fB-l\fP] [\fB-r\fP] [\fB-b\fP]
 [\fB-i\fP regex] [\fB-e\fP regex]
 [\fB-C\fP [a|A|s|S|r|R|d|D][col1[-col2],[col1[-col2]...
-[\fB-I\fP /regex/string/[g]] [\fB-E\fP /regex/string/[g]]
+[\fB-I\fP /regex/string/[g][v]] [\fB-E\fP /regex/string/[g][v]]
 [\fB-A\fP regex] [\fB-Z\fP regex
 [\fB-g\fP] [\fB-q\fP] [\fB-W\fP bytes] [\fB-L\fP bytes] [\fB-V\fP]
 .SH DESCRIPTION
@@ -32,7 +32,7 @@ The \fB-L\fP has a similar meaning for lines.
 .P
 Special character sequences formed by a \fI\\\fP followed by one of the
 characters \fIa\fP \fIb\fP \fIt\fP \fIn\fP \fIv\fP \fIf\fP \fIr\fP and
-\fI\\\fP are undertood and have their traditional meanings.
+\fI\\\fP are understood and have their traditional meanings.
 .P
 Quotations (single and double) in the input stream enable to ignore the
 word separators so that a group of words are taken as a single entity.
@@ -283,23 +283,37 @@ selected \fBexcept\fP the columns \fB2\fP,\fB3\fP,\fB5\fP,\fB6\fP and
 Spaces are allowed in the selection string if they are protected.
 
 Only the first 1024 columns can be selected by this mean.
-.IP "\fB-I\fP /\fIregex\fP/replacement string/[g]"
+.IP "\fB-I\fP /\fIregex\fP/replacement string/[g][v]"
 Post-processes the \fBincluded\fP (or \fBselectable\fP) words by doing
 a regular expression based substitution. The argument must be formatted
-as in the \fBsed\fP editor. The optional trailing \fBg\fP means that
-all matched occurences must be replaced and not the first one only.
-.IP "\fB-E\fP /\fIregex\fP/replacement string/[g]"
+as in the \fBsed\fP editor.
+
+The optional trailing \fBg\fP (for \fIg\fPlobal) means that all matched
+occurrences must be replaced and not the first one only.
+
+The optional trailing \fBv\fP (for \fIv\fPisual) means that the altered
+words will only be used for display and research. The modifications will
+\fInot\fP be reflected in the returned word.
+
+Small example:
+R=$(echo a b c | smenu -I /b/B/)
+will display "a B c" and \fBR\fP will contain \fIB\fP if \fI B\fP is
+selected meanwhile
+R=$(echo a b c | smenu -I /b/B/\fBv\fP)
+will display the same as above but \fBR\fP will contain the original
+word \fIb\fP if \fIB\fP is selected. In both cases, only the word
+\fIB\fP will be searchable and not \fIb\fP.
+.IP "\fB-E\fP /\fIregex\fP/replacement string/[g][v]"
 Post-processes the \fBexcluded\fP (or \fBnon-selectable\fP) words by
-doing a regular expression based substitution (see \fB-I\fP for
-details).
+doing a regular expression based substitution (see \fB-I\fP for details).
 .P
 The \fB/\fP separator that \fB-I\fP and \fB-E\fP are using above can be
 substituted by any other character except \fISPACE\fP, \fI\\t\fP,
 \fI\\f\fP, \fI\\n\fP, \fI\\r\fP and \fI\\v\fP.
 .P
 In the four previous options, \fIregex\fP is a \fBPOSIX\fP
-\fBE\fPxtended \fBR\fPegular \fBE\fPxpression. For details, refer to
-the \fBregex\fP manual page.
+\fBE\fPxtended \fBR\fPegular \fBE\fPxpression. For details, please refer
+to the \fBregex\fP manual page.
 .IP "\fB-A\fP \fIregex\fP"
 In column mode, forces all words matching the given regular expression
 to be the first one in the displayed line. If you want to only rely on
@@ -421,7 +435,7 @@ with the cursor on \fIQuit\fP and only the numbers and "Quit" selectable.
 
 The selected number or string will be available in \fBR\fP
 
-Try to undertand it as an exercise.
+Try to understand it as an exercise.
 .SH BUGS
 None that I am aware of. If you found one, please tell me.
 .SH AUTHOR
