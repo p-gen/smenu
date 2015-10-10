@@ -24,6 +24,7 @@ typedef struct toggle_s toggle_t;
 typedef struct win_s win_t;
 typedef struct word_s word_t;
 typedef struct color_s color_t;
+typedef struct limits_s limits_t;
 
 void help(void);
 void usage(void);
@@ -66,10 +67,14 @@ void *tst_search(tst_node_t * root, wchar_t * w);
 int tst_traverse(tst_node_t * p, int (*callback) (void *), int first_call);
 
 int ini_load(const char *filename, win_t * win, term_t * term,
-             int (*report) (win_t * win, term_t * term, const char *section,
-                            const char *name, const char *value));
-int ini_cb(win_t * win, term_t * term, const char *section, const char *name,
-           const char *value);
+             limits_t * limits, int (*report) (win_t * win, term_t * term,
+                                               limits_t * limits,
+                                               const char *section,
+                                               const char *name,
+                                               const char *value));
+int get_ini_color(const char *str, int *v, int max_color);
+int ini_cb(win_t * win, term_t * term, limits_t * limits, const char *section,
+           const char *name, const char *value);
 char *make_ini_path(char *name, char *base);
 
 void set_foreground_color(term_t * term, int color);
@@ -87,9 +92,9 @@ int expand(char *src, char *dest, langinfo_t * langinfo);
 int get_bytes(FILE * input, char *mb_buffer, ll_t * word_delims_list,
               toggle_t * toggle, langinfo_t * langinfo);
 int get_scancode(unsigned char *s, int max);
-char *get_word(FILE * input, ll_t * word_delims_list,
-               ll_t * record_delims_list, char *mb_buffer, int *is_last,
-               toggle_t * toggle, langinfo_t * langinfo, win_t * win);
+char *get_word(FILE * input, ll_t * word_delims_list, ll_t * record_delims_list,
+               char *mb_buffer, int *is_last, toggle_t * toggle,
+               langinfo_t * langinfo, win_t * win, limits_t * limits);
 void left_margin_putp(char *s, term_t * term, win_t * win);
 int main(int argc, char *argv[]);
 void right_margin_putp(char *s1, char *s2, langinfo_t * langinfo, term_t * term,

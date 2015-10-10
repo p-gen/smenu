@@ -88,6 +88,13 @@ struct toggle_s
                               * symbolic form else 0                       */
 };
 
+struct limits_s
+{
+  int word_length;
+  int words;
+  int cols;
+};
+
 /* Mapping of supported charsets and the number of bits used in them */
 /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
 charsetinfo_t all_supported_charsets[] = {
@@ -480,14 +487,29 @@ xrealloc(void *ptr, size_t size)
 /* ini parsing function */
 /* ******************** */
 
+/* ============================================================ */
+/* Extract a color from the passed string, return 1 on error or */
+/* if the color number is tool large                            */
+/* ============================================================ */
+int
+get_ini_color(const char *str, int *v, int max_color)
+{
+  int rc = 1;
+
+  if (sscanf(str, "%d", v) == 1 && *v >= 0 && *v <= max_color)
+    rc = 0;
+
+  return rc;
+}
+
 /* ===================================================== */
 /* Callback function called when parsing each non-header */
 /* line of the ini file.                                 */
 /* Returns 0 if OK, 1 if not.                            */
 /* ===================================================== */
 int
-ini_cb(win_t * win, term_t * term, const char *section, const char *name,
-       const char *value)
+ini_cb(win_t * win, term_t * term, limits_t * limits,
+       const char *section, const char *name, const char *value)
 {
   int error = 0;
   int has_colors = (term->colors > 7);
@@ -514,63 +536,45 @@ ini_cb(win_t * win, term_t * term, const char *section, const char *name,
       }
       else if (strcmp(name, "bar_foreground") == 0)
       {
-        if (sscanf(value, "%d", &v) == 1 && v >= 0 && v <= term->colors)
-          win->bar_color.fg = v;
-        else
-        {
-          error = 1;
+        if ((error = get_ini_color(value, &v, term->colors)))
           goto out;
-        }
+        else
+          win->bar_color.fg = v;
       }
       else if (strcmp(name, "bar_background") == 0)
       {
-        if (sscanf(value, "%d", &v) == 1 && v >= 0 && v <= term->colors)
-          win->bar_color.bg = v;
-        else
-        {
-          error = 1;
+        if ((error = get_ini_color(value, &v, term->colors)))
           goto out;
-        }
+        else
+          win->bar_color.bg = v;
       }
       else if (strcmp(name, "search_foreground") == 0)
       {
-        if (sscanf(value, "%d", &v) == 1 && v >= 0 && v <= term->colors)
-          win->search_color.fg = v;
-        else
-        {
-          error = 1;
+        if ((error = get_ini_color(value, &v, term->colors)))
           goto out;
-        }
+        else
+          win->search_color.fg = v;
       }
       else if (strcmp(name, "search_background") == 0)
       {
-        if (sscanf(value, "%d", &v) == 1 && v >= 0 && v <= term->colors)
-          win->search_color.bg = v;
-        else
-        {
-          error = 1;
+        if ((error = get_ini_color(value, &v, term->colors)))
           goto out;
-        }
+        else
+          win->search_color.bg = v;
       }
       else if (strcmp(name, "exclude_foreground") == 0)
       {
-        if (sscanf(value, "%d", &v) == 1 && v >= 0 && v <= term->colors)
-          win->exclude_color.fg = v;
-        else
-        {
-          error = 1;
+        if ((error = get_ini_color(value, &v, term->colors)))
           goto out;
-        }
+        else
+          win->exclude_color.fg = v;
       }
       else if (strcmp(name, "exclude_background") == 0)
       {
-        if (sscanf(value, "%d", &v) == 1 && v >= 0 && v <= term->colors)
-          win->exclude_color.bg = v;
-        else
-        {
-          error = 1;
+        if ((error = get_ini_color(value, &v, term->colors)))
           goto out;
-        }
+        else
+          win->exclude_color.bg = v;
       }
     }
   }
@@ -582,13 +586,38 @@ ini_cb(win_t * win, term_t * term, const char *section, const char *name,
     /* """""""""""""""" */
     if (strcmp(name, "lines") == 0)
     {
-      if (sscanf(value, "%d", &v) == 1 && v > 0)
-        win->asked_max_lines = v;
-      else
-      {
-        error = 1;
+      if ((error = !(sscanf(value, "%d", &v) == 1 && v > 0)))
         goto out;
-      }
+      else
+        win->max_lines = v;
+    }
+  }
+  else if (strcmp(section, "limits") == 0)
+  {
+    int v;
+
+    /* [limits] section */
+    /* """""""""""""""" */
+    if (strcmp(name, "word_length") == 0)
+    {
+      if ((error = !(sscanf(value, "%d", &v) == 1 && v > 0)))
+        goto out;
+      else
+        limits->word_length = v;
+    }
+    else if (strcmp(name, "words") == 0)
+    {
+      if ((error = !(sscanf(value, "%d", &v) == 1 && v > 0)))
+        goto out;
+      else
+        limits->words = v;
+    }
+    else if (strcmp(name, "columns") == 0)
+    {
+      if ((error = !(sscanf(value, "%d", &v) == 1 && v > 0)))
+        goto out;
+      else
+        limits->cols = v;
     }
   }
 
@@ -608,9 +637,10 @@ out:
 /* Jon Mayo April 2011                                                       */
 /* ========================================================================= */
 int
-ini_load(const char *filename, win_t * win, term_t * term,
-         int (*report) (win_t * win, term_t * term, const char *section,
-                        const char *name, const char *value))
+ini_load(const char *filename, win_t * win, term_t * term, limits_t * limits,
+         int (*report) (win_t * win, term_t * term, limits_t * limits,
+                        const char *section, const char *name,
+                        const char *value))
 {
   char name[64];
   char value[256];
@@ -657,7 +687,7 @@ ini_load(const char *filename, win_t * win, term_t * term,
 
       /* Callback funstion calling */
       /* """"""""""""""""""""""""" */
-      error = report(win, term, section, name, value);
+      error = report(win, term, limits, section, name, value);
 
       if (error)
         goto out;
@@ -2048,7 +2078,7 @@ expand(char *src, char *dest, langinfo_t * langinfo)
 char *
 get_word(FILE * input, ll_t * word_delims_list, ll_t * record_delims_list,
          char *mb_buffer, int *is_last, toggle_t * toggle,
-         langinfo_t * langinfo, win_t * win)
+         langinfo_t * langinfo, win_t * win, limits_t * limits)
 {
   char *temp = NULL;
   int byte, count = 0;       /* count chars used in current allocation */
@@ -2084,6 +2114,14 @@ get_word(FILE * input, ll_t * word_delims_list, ll_t * record_delims_list,
   while (byte != EOF)
   {
     int i = 0;
+
+    if (count >= limits->word_length)
+    {
+      fprintf(stderr, "A word's length has reached the limit "
+              "(%d), exiting.\n", limits->word_length);
+
+      exit(EXIT_FAILURE);
+    }
 
     if (byte == '\\' && !is_special)
     {
@@ -2337,10 +2375,8 @@ build_metadata(word_t * word_a, term_t * term, int count, win_t * win)
   /* Modify the max number of displayed lines if we do not have */
   /* enough place                                               */
   /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-  if (win->asked_max_lines > term->nlines - 1)
+  if (win->max_lines > term->nlines - 1)
     win->max_lines = term->nlines - 1;
-  else
-    win->max_lines = win->asked_max_lines;
 
   tab_count = 0;
   while (i < count)
@@ -3155,6 +3191,7 @@ main(int argc, char *argv[])
   int last_line = 0;         /* last logical line number (from 0)          */
   int opt;
   win_t win;
+  limits_t limits;
   toggle_t toggle;
   word_t *word_a;            /* Array contanings words data (size: count)  */
 
@@ -3217,7 +3254,7 @@ main(int argc, char *argv[])
   /* Win fields initialization */
   /* """"""""""""""""""""""""" */
   win.max_lines = 5;
-  win.asked_max_lines = 5;
+  win.asked_max_lines = -1;
   win.center = 0;
   win.max_cols = 0;
   win.col_sep = 0;
@@ -3226,6 +3263,12 @@ main(int argc, char *argv[])
   win.col_mode = 0;
   win.line_mode = 0;
   win.first_column = 0;
+
+  /* Defaulkt limts initialization */
+  /* """"""""""""""""""""""""""""" */
+  limits.words = 32767;
+  limits.cols = 256;
+  limits.word_length = 256;
 
   /* Toggles initialization */
   /* """""""""""""""""""""" */
@@ -3545,9 +3588,15 @@ main(int argc, char *argv[])
 
   /* Set the colors from the config file if possible */
   /* """"""""""""""""""""""""""""""""""""""""""""""" */
-  if (ini_load(local_ini_file, &win, &term, ini_cb))
-    if (ini_load(home_ini_file, &win, &term, ini_cb))
-      exit(EXIT_FAILURE);
+  if (ini_load(home_ini_file, &win, &term, &limits, ini_cb))
+    exit(EXIT_FAILURE);
+  if (ini_load(local_ini_file, &win, &term, &limits, ini_cb))
+    exit(EXIT_FAILURE);
+
+  /* Force the maximum number of window's line if -n is used */
+  /* """"""""""""""""""""""""""""""""""""""""""""""""""""""" */
+  if (win.asked_max_lines > 0)
+    win.max_lines = win.asked_max_lines;
 
   /* Allocate the memory for our words structures */
   /* """""""""""""""""""""""""""""""""""""""""""" */
@@ -3722,7 +3771,7 @@ main(int argc, char *argv[])
   /* """""""""""""""""""""""""""""""""""""" */
   while ((word = get_word(stdin, word_delims_list, record_delims_list,
                           mb_buffer, &is_last, &toggle, &langinfo,
-                          &win)) != NULL)
+                          &win, &limits)) != NULL)
   {
     int size;
     int *data;
@@ -3826,6 +3875,14 @@ main(int argc, char *argv[])
 
       if (col_index > cols_number)
       {
+        if (col_index == limits.cols)
+        {
+          fprintf(stderr, "The number of columns has reached the limit "
+                  "(%d), exiting.\n", limits.cols);
+
+          exit(EXIT_FAILURE);
+        }
+
         cols_number++;
 
         /* We have a new column, see if we need to enlarge the arrays */
@@ -3960,7 +4017,16 @@ main(int argc, char *argv[])
 
     /* One more word... */
     /* """""""""""""""" */
+    if (count == limits.words)
+    {
+      fprintf(stderr, "The number of read words has reached the limit "
+              "(%d), exiting.\n", limits.words);
+
+      exit(EXIT_FAILURE);
+    }
+
     count++;
+
     if (count % WORDSCHUNK == 0)
       word_a = xrealloc(word_a, (count + WORDSCHUNK) * sizeof(word_t));
   }
