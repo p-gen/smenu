@@ -36,10 +36,6 @@
 #include <sys/time.h>
 #include "smenu.h"
 
-color_t bar_color;           /* scrollbar color                  */
-color_t search_color;        /* search mode colors               */
-color_t exclude_color;       /* non-selectable words colors      */
-
 int count = 0;               /* number of words read from stdin  */
 int current;                 /* index the current selection      *
                               * (under the cursor)               */
@@ -196,6 +192,10 @@ struct win_s
   int wide_columns;
   int center;
   int offset;
+
+  color_t bar_color;         /* scrollbar color                  */
+  color_t search_color;      /* search mode colors               */
+  color_t exclude_color;     /* non-selectable words colors      */
 };
 
 /* *************************************** */
@@ -515,7 +515,7 @@ ini_cb(win_t * win, term_t * term, const char *section, const char *name,
       else if (strcmp(name, "bar_foreground") == 0)
       {
         if (sscanf(value, "%d", &v) == 1 && v >= 0 && v <= term->colors)
-          bar_color.fg = v;
+          win->bar_color.fg = v;
         else
         {
           error = 1;
@@ -525,7 +525,7 @@ ini_cb(win_t * win, term_t * term, const char *section, const char *name,
       else if (strcmp(name, "bar_background") == 0)
       {
         if (sscanf(value, "%d", &v) == 1 && v >= 0 && v <= term->colors)
-          bar_color.bg = v;
+          win->bar_color.bg = v;
         else
         {
           error = 1;
@@ -535,7 +535,7 @@ ini_cb(win_t * win, term_t * term, const char *section, const char *name,
       else if (strcmp(name, "search_foreground") == 0)
       {
         if (sscanf(value, "%d", &v) == 1 && v >= 0 && v <= term->colors)
-          search_color.fg = v;
+          win->search_color.fg = v;
         else
         {
           error = 1;
@@ -545,7 +545,7 @@ ini_cb(win_t * win, term_t * term, const char *section, const char *name,
       else if (strcmp(name, "search_background") == 0)
       {
         if (sscanf(value, "%d", &v) == 1 && v >= 0 && v <= term->colors)
-          search_color.bg = v;
+          win->search_color.bg = v;
         else
         {
           error = 1;
@@ -555,7 +555,7 @@ ini_cb(win_t * win, term_t * term, const char *section, const char *name,
       else if (strcmp(name, "exclude_foreground") == 0)
       {
         if (sscanf(value, "%d", &v) == 1 && v >= 0 && v <= term->colors)
-          exclude_color.fg = v;
+          win->exclude_color.fg = v;
         else
         {
           error = 1;
@@ -565,7 +565,7 @@ ini_cb(win_t * win, term_t * term, const char *section, const char *name,
       else if (strcmp(name, "exclude_background") == 0)
       {
         if (sscanf(value, "%d", &v) == 1 && v >= 0 && v <= term->colors)
-          exclude_color.bg = v;
+          win->exclude_color.bg = v;
         else
         {
           error = 1;
@@ -2257,15 +2257,15 @@ set_background_color(term_t * term, int color)
 /* Put a scrolling symbol at the first column of the line */
 /* ====================================================== */
 void
-left_margin_putp(char *s, term_t * term)
+left_margin_putp(char *s, term_t * term, win_t * win)
 {
   tputs(enter_bold_mode, 1, outch);
 
-  if (bar_color.fg >= 0)
-    set_foreground_color(term, bar_color.fg);
+  if (win->bar_color.fg >= 0)
+    set_foreground_color(term, win->bar_color.fg);
 
-  if (bar_color.bg >= 0)
-    set_background_color(term, bar_color.bg);
+  if (win->bar_color.bg >= 0)
+    set_background_color(term, win->bar_color.bg);
 
   /* We won't print this symbol when not in column mode */
   /* """""""""""""""""""""""""""""""""""""""""""""""""" */
@@ -2284,11 +2284,11 @@ right_margin_putp(char *s1, char *s2, langinfo_t * langinfo,
 {
   tputs(enter_bold_mode, 1, outch);
 
-  if (bar_color.fg >= 0)
-    set_foreground_color(term, bar_color.fg);
+  if (win->bar_color.fg >= 0)
+    set_foreground_color(term, win->bar_color.fg);
 
-  if (bar_color.bg >= 0)
-    set_background_color(term, bar_color.bg);
+  if (win->bar_color.bg >= 0)
+    set_background_color(term, win->bar_color.bg);
 
   if (term->has_hpa)
     tputs(tparm(column_address, offset + win->max_width + 1), 1, outch);
@@ -2438,7 +2438,7 @@ build_metadata(word_t * word_a, term_t * term, int count, win_t * win)
 /* ====================================================================== */
 void
 disp_word(word_t * word_a, int pos, int search_mode, char *buffer,
-          term_t * term, char *tmp_max_word)
+          term_t * term, win_t * win, char *tmp_max_word)
 {
   int s = word_a[pos].start;
   int e = word_a[pos].end;
@@ -2461,8 +2461,8 @@ disp_word(word_t * word_a, int pos, int search_mode, char *buffer,
 
       /* Set the search cursor attribute */
       /* """"""""""""""""""""""""""""""" */
-      if (search_color.bg >= 0 && term->colors > 7)
-        set_background_color(term, search_color.bg);
+      if (win->search_color.bg >= 0 && term->colors > 7)
+        set_background_color(term, win->search_color.bg);
       else
       {
         tputs(enter_underline_mode, 1, outch);
@@ -2493,8 +2493,8 @@ disp_word(word_t * word_a, int pos, int search_mode, char *buffer,
 
         /* Set the buffer display attribute */
         /* """""""""""""""""""""""""""""""" */
-        if (search_color.fg >= 0 && term->colors > 7)
-          set_foreground_color(term, search_color.fg);
+        if (win->search_color.fg >= 0 && term->colors > 7)
+          set_foreground_color(term, win->search_color.fg);
         else
           tputs(enter_bold_mode, 1, outch);
 
@@ -2523,10 +2523,10 @@ disp_word(word_t * word_a, int pos, int search_mode, char *buffer,
     mb_strprefix(tmp_max_word, word_a[pos].str, word_a[pos].mbytes - 1, &p);
     if (!word_a[pos].is_selectable)
     {
-      if (exclude_color.fg >= 0)
-        set_foreground_color(term, exclude_color.fg);
-      if (exclude_color.bg >= 0)
-        set_background_color(term, exclude_color.bg);
+      if (win->exclude_color.fg >= 0)
+        set_foreground_color(term, win->exclude_color.fg);
+      if (win->exclude_color.bg >= 0)
+        set_background_color(term, win->exclude_color.bg);
     }
     fputs(tmp_max_word, stdout);
     tputs(exit_attribute_mode, 1, outch);
@@ -2612,7 +2612,7 @@ disp_lines(word_t * word_a, win_t * win, toggle_t * toggle, int current,
   if (win->offset > 0)
     printf("%*s", win->offset, " ");
 
-  left_margin_putp(scroll_symbol, term);
+  left_margin_putp(scroll_symbol, term, win);
   while (len > 1 && i <= count - 1)
   {
     /* Display one word and the space ou symbol following it */
@@ -2620,7 +2620,7 @@ disp_lines(word_t * word_a, win_t * win, toggle_t * toggle, int current,
     if (word_a[i].start >= win->first_column
         && word_a[i].end < len + win->first_column)
     {
-      disp_word(word_a, i, search_mode, search_buf, term, tmp_max_word);
+      disp_word(word_a, i, search_mode, search_buf, term, win, tmp_max_word);
 
       /* If there are more element to be displayed after the right margin */
       /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
@@ -2629,11 +2629,11 @@ disp_lines(word_t * word_a, win_t * win, toggle_t * toggle, int current,
       {
         tputs(enter_bold_mode, 1, outch);
 
-        if (bar_color.fg >= 0)
-          set_foreground_color(term, bar_color.fg);
+        if (win->bar_color.fg >= 0)
+          set_foreground_color(term, win->bar_color.fg);
 
-        if (bar_color.bg >= 0)
-          set_background_color(term, bar_color.bg);
+        if (win->bar_color.bg >= 0)
+          set_background_color(term, win->bar_color.bg);
 
         if (langinfo->utf8)
           fputs(sbar_arr_right, stdout);
@@ -2716,7 +2716,7 @@ disp_lines(word_t * word_a, win_t * win, toggle_t * toggle, int current,
           puts("");
           if (win->offset > 0)
             printf("%*s", win->offset, " ");
-          left_margin_putp(scroll_symbol, term);
+          left_margin_putp(scroll_symbol, term, win);
         }
 
         /* We do not increment the number of lines seen after */
@@ -3535,12 +3535,12 @@ main(int argc, char *argv[])
   /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
   if (term.colors > 7)
   {
-    bar_color.fg = 2;
-    bar_color.bg = -1;
-    search_color.fg = 0;
-    search_color.bg = 5;
-    exclude_color.fg = 3;
-    exclude_color.bg = -1;
+    win.bar_color.fg = 2;
+    win.bar_color.bg = -1;
+    win.search_color.fg = 0;
+    win.search_color.bg = 5;
+    win.exclude_color.fg = 3;
+    win.exclude_color.bg = -1;
   }
 
   /* Set the colors from the config file if possible */
