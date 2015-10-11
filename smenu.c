@@ -331,9 +331,16 @@ usage(void)
 /* Help message display */
 /* ==================== */
 void
-help(void)
+help(win_t * win)
 {
+  int offset = 0;
+
   tputs(save_cursor, 1, outch);
+
+  if (win->offset > 0)
+    if ((offset = win->offset + win->max_width / 2 - 39) > 0)
+      printf("%*s", offset, " ");
+
   tputs(enter_reverse_mode, 1, outch);
   fputs("HLP", stdout);
   tputs(exit_attribute_mode, 1, outch);
@@ -5248,7 +5255,7 @@ main(int argc, char *argv[])
         case '?':
           if (!search_mode)
           {
-            help();
+            help(&win);
             help_mode = 1;
 
             /* Arm the help timer to 15s */

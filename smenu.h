@@ -26,7 +26,7 @@ typedef struct word_s word_t;
 typedef struct color_s color_t;
 typedef struct limits_s limits_t;
 
-void help(void);
+void help(win_t * win);
 void usage(void);
 
 void *xmalloc(size_t size);
