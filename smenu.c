@@ -331,9 +331,58 @@ usage(void)
 /* Help message display */
 /* ==================== */
 void
-help(win_t * win)
+help(win_t * win, term_t * term, int last_line)
 {
+  size_t index;
+  int line = 0;
+  int len = 0;
   int offset = 0;
+
+  struct entry_s
+  {
+    char attr;
+    char *str;
+    int len;
+  };
+
+  struct entry_s entries[] = {
+    {'r', "HLP", 3},
+    {'n', " ", 1},
+    {'n', "Move:", 5},
+    {'b', "Arrows", 6},
+    {'n', "|", 1},
+    {'b', "h", 1},
+    {'n', "/", 1},
+    {'b', "j", 1},
+    {'n', "/", 1},
+    {'b', "k", 1},
+    {'n', "/", 1},
+    {'b', "l", 1},
+    {'n', ",", 1},
+    {'b', "PgUp", 4},
+    {'n', "/", 1},
+    {'b', "PgDn", 4},
+    {'n', "/", 1},
+    {'b', "Home", 4},
+    {'n', "/", 1},
+    {'b', "End", 3},
+    {'n', " ", 1},
+    {'n', "Cancel:", 7},
+    {'b', "q", 1},
+    {'n', " ", 1},
+    {'n', "Confirm:", 8},
+    {'b', "CR", 2},
+    {'n', " ", 1},
+    {'n', "Search:", 7},
+    {'b', "/", 1},
+    {'n', "|", 1},
+    {'b', "^F", 2},
+    {'n', "|", 1},
+    {'b', "SP", 2},
+    {'n', "|", 1},
+    {'b', "n", 1},
+    {0, 0, 0}
+  };
 
   tputs(save_cursor, 1, outch);
 
@@ -341,77 +390,36 @@ help(win_t * win)
     if ((offset = win->offset + win->max_width / 2 - 39) > 0)
       printf("%*s", offset, " ");
 
-  tputs(enter_reverse_mode, 1, outch);
-  fputs("HLP", stdout);
-  tputs(exit_attribute_mode, 1, outch);
-  fputs(" ", stdout);
+  for (index = 0; index < sizeof(entries) / sizeof(struct entry_s) - 1; index++)
+  {
+    if ((len += entries[index].len) >= term->ncolumns - 2)
+    {
+      line++;
 
-  fputs("Move:", stdout);
-  tputs(enter_bold_mode, 1, outch);
-  fputs("Arrows", stdout);
-  tputs(exit_attribute_mode, 1, outch);
-  fputs("|", stdout);
-  tputs(enter_bold_mode, 1, outch);
-  fputs("h", stdout);
-  tputs(exit_attribute_mode, 1, outch);
-  fputs("/", stdout);
-  tputs(enter_bold_mode, 1, outch);
-  fputs("j", stdout);
-  tputs(exit_attribute_mode, 1, outch);
-  fputs("/", stdout);
-  tputs(enter_bold_mode, 1, outch);
-  fputs("k", stdout);
-  tputs(exit_attribute_mode, 1, outch);
-  fputs("/", stdout);
-  tputs(enter_bold_mode, 1, outch);
-  fputs("l", stdout);
-  tputs(exit_attribute_mode, 1, outch);
-  fputs(",", stdout);
-  tputs(enter_bold_mode, 1, outch);
-  fputs("PgUp", stdout);
-  tputs(exit_attribute_mode, 1, outch);
-  fputs("/", stdout);
-  tputs(enter_bold_mode, 1, outch);
-  fputs("PgDn", stdout);
-  tputs(exit_attribute_mode, 1, outch);
-  fputs("/", stdout);
-  tputs(enter_bold_mode, 1, outch);
-  fputs("Home", stdout);
-  tputs(exit_attribute_mode, 1, outch);
-  fputs("/", stdout);
-  tputs(enter_bold_mode, 1, outch);
-  fputs("End", stdout);
-  tputs(exit_attribute_mode, 1, outch);
+      if (line > last_line || line == win->max_lines)
+        break;
 
-  fputs(" Cancel:", stdout);
-  tputs(enter_bold_mode, 1, outch);
-  fputs("q", stdout);
-  tputs(exit_attribute_mode, 1, outch);
+      len = entries[index].len;
+      fputs("\n", stdout);
+    }
 
-  fputs(" Confirm:", stdout);
-  tputs(enter_bold_mode, 1, outch);
-  fputs("CR", stdout);
-  tputs(exit_attribute_mode, 1, outch);
+    switch (entries[index].attr)
+    {
+      case 'b':
+        tputs(enter_bold_mode, 1, outch);
+        break;
+      case 'r':
+        tputs(enter_reverse_mode, 1, outch);
+        break;
+      case 'n':
+        tputs(exit_attribute_mode, 1, outch);
+        break;
+    }
+    fputs(entries[index].str, stdout);
+  }
 
-  fputs(" Search:", stdout);
-  tputs(enter_bold_mode, 1, outch);
-  fputs("/", stdout);
   tputs(exit_attribute_mode, 1, outch);
-  fputs("|", stdout);
-  tputs(enter_bold_mode, 1, outch);
-  fputs("^F", stdout);
-  tputs(exit_attribute_mode, 1, outch);
-  fputs("|", stdout);
-  tputs(enter_bold_mode, 1, outch);
-  fputs("SP", stdout);
-  tputs(exit_attribute_mode, 1, outch);
-  fputs("|", stdout);
-  tputs(enter_bold_mode, 1, outch);
-  fputs("n", stdout);
-  tputs(exit_attribute_mode, 1, outch);
-
   tputs(clr_eol, 1, outch);
-  tputs(exit_attribute_mode, 1, outch);
   tputs(restore_cursor, 1, outch);
 }
 
@@ -5255,7 +5263,7 @@ main(int argc, char *argv[])
         case '?':
           if (!search_mode)
           {
-            help(&win);
+            help(&win, &term, last_line);
             help_mode = 1;
 
             /* Arm the help timer to 15s */
