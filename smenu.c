@@ -4343,8 +4343,8 @@ main(int argc, char *argv[])
     /* """""""""""""""""""""""""""""""" */
     if (got_winch)
     {
-      /* Re-arm winch timer to 10s */
-      /* """"""""""""""""""""""""" */
+      /* Re-arm winch timer to 1s */
+      /* """""""""""""""""""""""" */
       winch_itv.it_value.tv_sec = 1;
       winch_itv.it_value.tv_usec = 0;
       winch_itv.it_interval.tv_sec = 0;
