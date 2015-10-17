@@ -4040,8 +4040,8 @@ main(int argc, char *argv[])
           col_real_max_size = xrealloc(col_real_max_size,
                                        (cols_number + COLSCHUNK) * sizeof(int));
 
-          col_max_size =
-            xrealloc(col_max_size, (cols_number + COLSCHUNK) * sizeof(int));
+          col_max_size = xrealloc(col_max_size,
+                                  (cols_number + COLSCHUNK) * sizeof(int));
 
           /* Initialize the max size for the new columns */
           /* """"""""""""""""""""""""""""""""""""""""""" */
