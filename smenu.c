@@ -3307,9 +3307,10 @@ main(int argc, char *argv[])
   int include_global_replace;   /* control if we replace only the first    */
   int exclude_global_replace;   /* instance                                */
 
-  int include_visual_only;   /* The original word read from stdin will be  */
-  int exclude_visual_only;   /* be restituted unaltered even if its visual *
-                              * representation was modified via -E/-I      */
+  int include_visual_only = 0;  /* The original word read from stdin will  */
+  int exclude_visual_only = 0;  /* be restituted unaltered even if its     *
+                                 * visual representation was modified via  *
+                                 * -E/-I                                   */
 
   char *cols_selector = NULL;
 
