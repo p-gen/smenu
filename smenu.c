@@ -1532,6 +1532,23 @@ strprefix(char *str1, char *str2)
   return *str2 == '\0';
 }
 
+/* ====================== */
+/* Multibyte UTF-8 strlen */
+/* ====================== */
+int
+mb_strlen(char *str)
+{
+  int i = 0, j = 0;
+
+  while (str[i])
+  {
+    if ((str[i] & 0xc0) != 0x80)
+      j++;
+    i++;
+  }
+  return j;
+}
+
 /* ====================================================================== */
 /* Multibytes extraction of the prefix of n multibyte chars from a string */
 /* The destination string d must have been allocated before.              */
@@ -2362,6 +2379,70 @@ right_margin_putp(char *s1, char *s2, langinfo_t * langinfo,
 /* Core functions */
 /* ************** */
 
+/* ============================================================== */
+/* Split the lines of the message given to -m to a linked list of */
+/* multibytes lines.                                              */
+/* Also fill the maximum screen width and the maximum number      */
+/* of bytes of the longest line                                   */
+/* ============================================================== */
+void
+get_message_lines(char *message, ll_t * message_lines_list,
+                  int *message_max_width, int *message_max_len)
+{
+  char *str;
+  char *ptr;
+  char *cr_ptr;
+  int n;
+  wchar_t *w = NULL;
+
+  *message_max_width = 0;
+  *message_max_len = 0;
+  ptr = message;
+
+  /* For each line terminated with a EOL character */
+  /* """"""""""""""""""""""""""""""""""""""""""""" */
+  while (*ptr != 0 && (cr_ptr = strchr(ptr, '\n')) != NULL)
+  {
+    str = xmalloc(cr_ptr - ptr + 1);
+    str[cr_ptr - ptr] = '\0';
+    memcpy(str, ptr, cr_ptr - ptr);
+    ll_append(message_lines_list, str);
+
+    /* If needed, update the message maximum width */
+    /* """"""""""""""""""""""""""""""""""""""""""" */
+    n = wcswidth((w = mb_strtowcs(str)), mb_strlen(str));
+    if (n > *message_max_width)
+      *message_max_width = n;
+
+    /* If needed, update the message maximum number */
+    /* of bytes used by the longest line            */
+    /* """""""""""""""""""""""""""""""""""""""""""" */
+    if ((n = strlen(str)) > *message_max_len)
+      *message_max_len = n;
+
+    ptr = cr_ptr + 1;
+  }
+
+  /* For the last line */
+  /* """"""""""""""""" */
+  if (*ptr != 0)
+  {
+    ll_append(message_lines_list, strdup(ptr));
+
+    n = wcswidth((w = mb_strtowcs(ptr)), mb_strlen(ptr));
+    if (n > *message_max_width)
+      *message_max_width = n;
+
+    /* If needed, update the message maximum number */
+    /* of bytes used by the longest line            */
+    /* """""""""""""""""""""""""""""""""""""""""""" */
+    if ((n = strlen(ptr)) > *message_max_len)
+      *message_max_len = n;
+  }
+
+  free(w);
+}
+
 /* ========================================================================= */
 /* Set the metadata associated with a word, its starting and ending position */
 /* the line in which it is put and so on.                                    */
@@ -2588,27 +2669,62 @@ disp_word(word_t * word_a, int pos, int search_mode, char *buffer,
 /* Display a message line above the window */
 /* ======================================= */
 int
-disp_message(char *message, term_t * term, win_t * win)
+disp_message(ll_t * message_lines_list, int message_max_width,
+             int message_max_len, term_t * term, win_t * win)
 {
+  ll_node_t *node;
+  char *line;
+  char *buf;
+  int len;
+  int size;
   int message_lines = 0;
+  int offset;
+  wchar_t *w;
 
-  if (message)
+  /* Do nothing if thre is no message to display */
+  /* """"""""""""""""""""""""""""""""""""""""""" */
+  if (message_lines_list == NULL)
+    return 0;
+
+  node = message_lines_list->head;
+  buf = xmalloc(message_max_len + 1);
+
+  tputs(enter_bold_mode, 1, outch);
+
+  /* Follow the message lines list and display eachh line */
+  /* """""""""""""""""""""""""""""""""""""""""""""""""""" */
+  while (node != NULL)
   {
-    char *ptr;
+    line = node->data;
+    len = mb_strlen(line);
+    w = mb_strtowcs(line);
 
-    ptr = strchr(message, '\n');
-    if (ptr)
-      *ptr = '\0';
+    size = wcswidth(w, len);
+    while (len > 0 && size > term->ncolumns)
+      size = wcswidth(w, --len);
 
-    message_lines = strlen(message) / term->ncolumns + 1;
-    if (win->offset > 0)
-      printf("%*s", win->offset, " ");
-    tputs(enter_bold_mode, 1, outch);
-    fputs(message, stdout);
-    tputs(exit_attribute_mode, 1, outch);
-    tputs(clr_eol, 1, outch);
-    puts("");
+    free(w);
+
+    /* Compute the offset from the left screen border if -M option is set */
+    /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+    offset = (term->ncolumns - message_max_width) / 2;
+
+    if (win->offset > 0 && offset > 0)
+      printf("%*s", offset, "");
+
+    /* Only print the start of a line if the screen width if too small */
+    /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+    mb_strprefix(buf, line, len, &size);
+    printf("%s\n", buf);
+
+    node = node->next;
+    message_lines++;
   }
+
+  tputs(exit_attribute_mode, 1, outch);
+
+  free(buf);
+
   return message_lines;
 }
 
@@ -3163,8 +3279,14 @@ set_new_first_column(win_t * win, word_t * word_a)
 int
 main(int argc, char *argv[])
 {
-  char *message = NULL;      /* One line message to be desplayed           *
-                              * above the selection window                 */
+  char *message = NULL;      /* message to be desplayed above the          *
+                              * selection window                           */
+  ll_t *message_lines_list = NULL;      /* list of the lines in the        *
+                                           message to be displayed         */
+  int message_max_width;     /* total width of the message (longest line)  */
+  int message_max_len;       /* max number of bytes taken by a message     *
+                              * line                                       */
+
   char *include_pattern = ".";  /* Used by -e/-i                           */
   char *exclude_pattern = NULL;
   regex_t include_re;
@@ -3607,6 +3729,13 @@ main(int argc, char *argv[])
     exit(EXIT_FAILURE);
   if (ini_load(local_ini_file, &win, &term, &limits, ini_cb))
     exit(EXIT_FAILURE);
+
+  if (message != NULL)
+  {
+    message_lines_list = ll_new();
+    get_message_lines(message, message_lines_list,
+                      &message_max_width, &message_max_len);
+  }
 
   /* Force the maximum number of window's line if -n is used */
   /* """"""""""""""""""""""""""""""""""""""""""""""""""""""" */
@@ -4253,7 +4382,8 @@ main(int argc, char *argv[])
 
   /* Display the words window for the first time */
   /* """"""""""""""""""""""""""""""""""""""""""" */
-  message_lines = disp_message(message, &term, &win);
+  message_lines = disp_message(message_lines_list,
+                               message_max_width, message_max_len, &term, &win);
 
   if (win.col_mode | win.line_mode)
   {
@@ -4403,7 +4533,10 @@ main(int argc, char *argv[])
         win.first_column = word_a[pos].start;
       }
 
-      message_lines = disp_message(message, &term, &win);
+      message_lines = disp_message(message_lines_list,
+                                   message_max_width, message_max_len,
+                                   &term, &win);
+
       nl = disp_lines(word_a, &win, &toggle, current, count, search_mode,
                       search_buf, &term, last_line, tmp_max_word, &langinfo);
 

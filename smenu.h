@@ -84,7 +84,10 @@ int build_metadata(word_t * word_a, term_t * term, int count, win_t * win);
 int disp_lines(word_t * word_a, win_t * win, toggle_t * toggle, int current,
                int count, int search_mode, char *search_buf, term_t * term,
                int last_line, char *tmp_max_word, langinfo_t * langinfo);
-int disp_message(char *message, term_t * term, win_t * win);
+void get_message_lines(char *message, ll_t * message_lines_list,
+                       int *message_max_width, int *message_max_len);
+int disp_message(ll_t * message_lines_list, int width, int max_len,
+                 term_t * term, win_t * win);
 void disp_word(word_t * word_a, int pos, int search_mode, char *buffer,
                term_t * term, win_t * win, char *tmp_max_word);
 int egetopt(int nargc, char **nargv, char *ostr);
