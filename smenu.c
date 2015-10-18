@@ -445,7 +445,7 @@ xmalloc(size_t size)
   if (allocated == NULL)
   {
     fprintf(stderr, "Error:  Insufficient memory "
-            "(attempt to malloc %u bytes)\n", (unsigned int) size);
+            "(attempt to malloc %lu bytes)\n", (unsigned long int) size);
 
     exit(EXIT_FAILURE);
   }
@@ -464,7 +464,7 @@ xcalloc(size_t num, size_t size)
   if (allocated == NULL)
   {
     fprintf(stderr, "Error:  Insufficient memory "
-            "(attempt to calloc %u bytes)\n", (unsigned int) size);
+            "(attempt to calloc %lu bytes)\n", (unsigned long int) size);
 
     exit(EXIT_FAILURE);
   }
@@ -490,7 +490,7 @@ xrealloc(void *ptr, size_t size)
   if (allocated == NULL)
   {
     fprintf(stderr, "Error:  Insufficient memory "
-            "(attempt to realloc %u bytes)\n", (unsigned int) size);
+            "(attempt to realloc %lu bytes)\n", (unsigned long int) size);
 
     exit(EXIT_FAILURE);
   }
