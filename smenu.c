@@ -2411,6 +2411,8 @@ get_message_lines(char *message, ll_t * message_lines_list,
     /* If needed, update the message maximum width */
     /* """"""""""""""""""""""""""""""""""""""""""" */
     n = wcswidth((w = mb_strtowcs(str)), mb_strlen(str));
+    free(w);
+
     if (n > *message_max_width)
       *message_max_width = n;
 
@@ -2430,6 +2432,8 @@ get_message_lines(char *message, ll_t * message_lines_list,
     ll_append(message_lines_list, strdup(ptr));
 
     n = wcswidth((w = mb_strtowcs(ptr)), mb_strlen(ptr));
+    free(w);
+
     if (n > *message_max_width)
       *message_max_width = n;
 
@@ -2439,8 +2443,6 @@ get_message_lines(char *message, ll_t * message_lines_list,
     if ((n = strlen(ptr)) > *message_max_len)
       *message_max_len = n;
   }
-
-  free(w);
 }
 
 /* ========================================================================= */
@@ -3730,6 +3732,9 @@ main(int argc, char *argv[])
     exit(EXIT_FAILURE);
   if (ini_load(local_ini_file, &win, &term, &limits, ini_cb))
     exit(EXIT_FAILURE);
+
+  free(home_ini_file);
+  free(local_ini_file);
 
   if (message != NULL)
   {
