@@ -2403,9 +2403,15 @@ get_message_lines(char *message, ll_t * message_lines_list,
   /* """"""""""""""""""""""""""""""""""""""""""""" */
   while (*ptr != 0 && (cr_ptr = strchr(ptr, '\n')) != NULL)
   {
-    str = xmalloc(cr_ptr - ptr + 1);
-    str[cr_ptr - ptr] = '\0';
-    memcpy(str, ptr, cr_ptr - ptr);
+    if (cr_ptr > ptr)
+    {
+      str = xmalloc(cr_ptr - ptr + 1);
+      str[cr_ptr - ptr] = '\0';
+      memcpy(str, ptr, cr_ptr - ptr);
+    }
+    else
+      str = strdup("");
+
     ll_append(message_lines_list, str);
 
     /* If needed, update the message maximum width */
@@ -2443,6 +2449,8 @@ get_message_lines(char *message, ll_t * message_lines_list,
     if ((n = strlen(ptr)) > *message_max_len)
       *message_max_len = n;
   }
+  else
+    ll_append(message_lines_list, strdup(""));
 }
 
 /* ========================================================================= */
