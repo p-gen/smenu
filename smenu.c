@@ -2433,7 +2433,7 @@ get_message_lines(char *message, ll_t * message_lines_list,
 
   /* For the last line */
   /* """"""""""""""""" */
-  if (*ptr != 0)
+  if (*ptr != '\0')
   {
     ll_append(message_lines_list, strdup(ptr));
 
