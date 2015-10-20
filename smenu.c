@@ -4394,6 +4394,12 @@ main(int argc, char *argv[])
   /* """"""""""""""" */
   tputs(cursor_invisible, 1, outch);
 
+  /* Force the display to start at a beginning of line */
+  /* """"""""""""""""""""""""""""""""""""""""""""""""" */
+  get_cursor_position(&term.curs_line, &term.curs_column);
+  if (term.curs_column > 1)
+    puts("");
+
   /* Display the words window for the first time */
   /* """"""""""""""""""""""""""""""""""""""""""" */
   message_lines = disp_message(message_lines_list,
