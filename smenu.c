@@ -180,6 +180,7 @@ struct word_s
                               * on the screen                             *
                               * mbytes: number of multibytes to display   */
   int is_selectable;         /* word is is_selectable                     */
+  int attention_level;       /* can vary from 0 to 5; 0 meaning normal    */
 };
 
 /* Structure describing the window in which the user */
@@ -203,6 +204,11 @@ struct win_s
   color_t bar_color;         /* scrollbar color                  */
   color_t search_color;      /* search mode colors               */
   color_t exclude_color;     /* non-selectable words colors      */
+  color_t attention1_color;  /* attention level 1 words colors   */
+  color_t attention2_color;  /* attention level 2 words colors   */
+  color_t attention3_color;  /* attention level 3 words colors   */
+  color_t attention4_color;  /* attention level 4 words colors   */
+  color_t attention5_color;  /* attention level 5 words colors   */
 };
 
 /* *************************************** */
@@ -253,15 +259,16 @@ void
 usage(void)
 {
   fprintf(stderr, "Usage: smenu [-h] [-n lines] [-c] [-l] [-s pattern] ");
-  fprintf(stderr, "[-m message] [-w] [-d] \\\n");
+  fprintf(stderr, "[-m message] [-w] [-d]   \\\n");
   fprintf(stderr, "       [-M] [-t [cols]] [-r] [-b] [-i regex] [-e regex]");
-  fprintf(stderr, "                    \\\n");
+  fprintf(stderr, "                      \\\n");
   fprintf(stderr, "       [-C [a|A|s|S|r|R|d|D]col1[-col2],[col1[-col2]]...] ");
-  fprintf(stderr, "                 \\\n");
+  fprintf(stderr, "                   \\\n");
   fprintf(stderr, "       [-I /regex/repl/[g][v]] ");
   fprintf(stderr, "[-E /regex/repl/[g][v]] ");
-  fprintf(stderr, "[-A regex] [-Z regex]     \\\n");
-  fprintf(stderr, "       [-g] [-W bytes]  [-L bytes] [-V]\n");
+  fprintf(stderr, "[-A regex] [-Z regex] \\\n");
+  fprintf(stderr, "       [-1 regex] [-2 regex] ... [-5 regex] "
+          "[-g] [-W bytes] [-L bytes] [-V]\n");
   fprintf(stderr, "\nThis is a filter that gets words from stdin ");
   fprintf(stderr, "and outputs the\n");
   fprintf(stderr, "selected word (or nothing) on stdout.\n\n");
@@ -299,6 +306,8 @@ usage(void)
           "of the line they appear in.\n");
   fprintf(stderr, "-Z forces a class of words to be the latest "
           "of the line they appear in.\n");
+  fprintf(stderr, "-1,-2,...,-5 gives specific colors to up to 5 "
+          "classes of selectable words.\n");
   fprintf(stderr, "-g separates columns with '|' in tabulate mode.\n");
   fprintf(stderr, "-q prevents the scrollbar display.\n");
   fprintf(stderr, "-W sets the input words separators.\n");
@@ -571,6 +580,11 @@ ini_cb(win_t * win, term_t * term, limits_t * limits,
       CHECK_FG(bar)        CHECK_BG(bar)
       CHECK_FG(search)     CHECK_BG(search)
       CHECK_FG(exclude)    CHECK_BG(exclude)
+      CHECK_FG(attention1) CHECK_BG(attention1)
+      CHECK_FG(attention2) CHECK_BG(attention2)
+      CHECK_FG(attention3) CHECK_BG(attention3)
+      CHECK_FG(attention4) CHECK_BG(attention4)
+      CHECK_FG(attention5) CHECK_BG(attention5)
       /* *INDENT-ON* */
     }
   }
@@ -2644,12 +2658,49 @@ disp_word(word_t * word_a, int pos, int search_mode, char *buffer,
     /* Display a normal word without any attribute */
     /* """"""""""""""""""""""""""""""""""""""""""" */
     mb_strprefix(tmp_max_word, word_a[pos].str, word_a[pos].mbytes - 1, &p);
+
     if (!word_a[pos].is_selectable)
     {
       if (win->exclude_color.fg >= 0)
         set_foreground_color(term, win->exclude_color.fg);
       if (win->exclude_color.bg >= 0)
         set_background_color(term, win->exclude_color.bg);
+    }
+    else if (word_a[pos].attention_level > 0)
+    {
+      switch (word_a[pos].attention_level)
+      {
+        case 1:
+          if (win->attention1_color.fg >= 0)
+            set_foreground_color(term, win->attention1_color.fg);
+          if (win->attention1_color.bg >= 0)
+            set_background_color(term, win->attention1_color.bg);
+          break;
+        case 2:
+          if (win->attention2_color.fg >= 0)
+            set_foreground_color(term, win->attention2_color.fg);
+          if (win->attention2_color.bg >= 0)
+            set_background_color(term, win->attention2_color.bg);
+          break;
+        case 3:
+          if (win->attention3_color.fg >= 0)
+            set_foreground_color(term, win->attention3_color.fg);
+          if (win->attention3_color.bg >= 0)
+            set_background_color(term, win->attention3_color.bg);
+          break;
+        case 4:
+          if (win->attention4_color.fg >= 0)
+            set_foreground_color(term, win->attention4_color.fg);
+          if (win->attention4_color.bg >= 0)
+            set_background_color(term, win->attention4_color.bg);
+          break;
+        case 5:
+          if (win->attention5_color.fg >= 0)
+            set_foreground_color(term, win->attention5_color.fg);
+          if (win->attention5_color.bg >= 0)
+            set_background_color(term, win->attention5_color.bg);
+          break;
+      }
     }
     fputs(tmp_max_word, stdout);
     tputs(exit_attribute_mode, 1, outch);
@@ -3278,6 +3329,8 @@ main(int argc, char *argv[])
   int message_max_len;       /* max number of bytes taken by a message     *
                               * line                                       */
 
+  int index;                 /* generic counter                            */
+
   char *include_pattern = ".";  /* Used by -e/-i                           */
   char *exclude_pattern = NULL;
   regex_t include_re;
@@ -3294,6 +3347,9 @@ main(int argc, char *argv[])
   char *last_word_pattern = NULL;
   regex_t first_word_re;
   regex_t last_word_re;
+
+  char *attention_pattern[5] = { NULL };        /* used by -1 ... -5       */
+  regex_t attention_re[5];
 
   int include_global_replace;   /* control if we replace only the first    */
   int exclude_global_replace;   /* instance                                */
@@ -3454,7 +3510,8 @@ main(int argc, char *argv[])
   /* Command line options analysis */
   /* """"""""""""""""""""""""""""" */
   while ((opt = egetopt(argc, argv,
-                        "VhqdMbi:e:I:E:A:Z:C:clwrgn:t%m:s:W:L:")) != -1)
+                        "VhqdMbi:e:I:E:A:Z:1:2:3:4:5:C:"
+                        "clwrgn:t%m:s:W:L:1:2:3:4:")) != -1)
   {
     switch (opt)
     {
@@ -3593,6 +3650,21 @@ main(int argc, char *argv[])
         }
         break;
 
+      case '1':
+      case '2':
+      case '3':
+      case '4':
+      case '5':
+        if (optarg && *optarg != '-')
+          attention_pattern[opt - '1'] = optarg;
+        else
+        {
+          fprintf(stderr, "Option requires an argument -- %c\n\n",
+                  (char) optopt);
+          usage();
+        }
+        break;
+
       case 'q':
         toggle.no_scrollbar = 1;
         break;
@@ -3713,6 +3785,18 @@ main(int argc, char *argv[])
     win.search_color.bg = 5;
     win.exclude_color.fg = 3;
     win.exclude_color.bg = -1;
+
+    win.attention1_color.fg = 1;
+    win.attention2_color.fg = 2;
+    win.attention3_color.fg = 3;
+    win.attention4_color.fg = -1;
+    win.attention5_color.fg = -1;
+
+    win.attention1_color.bg = -1;
+    win.attention2_color.bg = -1;
+    win.attention3_color.bg = -1;
+    win.attention4_color.bg = -1;
+    win.attention5_color.bg = -1;
   }
 
   /* Set the colors from the config file if possible */
@@ -3860,6 +3944,18 @@ main(int argc, char *argv[])
     exit(EXIT_FAILURE);
   }
 
+  for (index = 0; index < 5; index++)
+  {
+    if (attention_pattern[index]
+        && regcomp(&attention_re[index], attention_pattern[index],
+                   REG_EXTENDED | REG_NOSUB) != 0)
+    {
+      fprintf(stderr, "Bad regular expression %s\n", attention_pattern[index]);
+
+      exit(EXIT_FAILURE);
+    }
+  }
+
   /* Parse the post-processing patterns and extract its values */
   /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""" */
   if (include_sed_pattern)
@@ -3926,6 +4022,7 @@ main(int argc, char *argv[])
     char buf[1024] = { 0 };
     int is_first = 0;
     char *unaltered_word;
+    int attention_level;
 
     if (*word == '\0')
       continue;
@@ -3942,6 +4039,19 @@ main(int argc, char *argv[])
       if (last_word_pattern
           && !is_last && regexec(&last_word_re, word, (size_t) 0, NULL, 0) == 0)
         is_last = 1;
+    }
+
+    /* Check if the word is special */
+    /* """""""""""""""""""""""""""" */
+    attention_level = 0;
+    for (index = 0; index < 5; index++)
+    {
+      if (attention_pattern[index] != NULL
+          && regexec(&attention_re[index], word, (size_t) 0, NULL, 0) == 0)
+      {
+        attention_level = index + 1;
+        break;
+      }
     }
 
     /* Check if the word will be selectable or not */
@@ -4076,6 +4186,8 @@ main(int argc, char *argv[])
 
     word_a[count].str = dest;
     word_a[count].is_selectable = selectable;
+
+    word_a[count].attention_level = attention_level;
 
     if (strcmp(word, dest) != 0)
       word_a[count].orig = word;

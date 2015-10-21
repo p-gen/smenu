@@ -10,6 +10,7 @@ smenu [\fB-h\fP] [\fB-n\fP \fIlines\fP] [\fB-t\fP [\fIcols\fP]]
 [\fB-C\fP [a|A|s|S|r|R|d|D][col1[-col2],[col1[-col2]...
 [\fB-I\fP /regex/string/[g][v]] [\fB-E\fP /regex/string/[g][v]]
 [\fB-A\fP regex] [\fB-Z\fP regex
+[\fB-1\fP regex] [\fB-2\fP regex] ... [\fB-5\fP regex]
 [\fB-g\fP] [\fB-q\fP] [\fB-W\fP bytes] [\fB-L\fP bytes] [\fB-V\fP]
 .SH DESCRIPTION
 This small utility acts as a filter (reads from stdin and writes to
@@ -176,6 +177,10 @@ allowed:
   exclude_foreground=4 : non-selectable color foreground
   exclude_background=0 : non-selectable color background
 
+  attention1_foreground=1 : color foreground for attention level 1 (-1) words
+  attention1_background=1 : color background for attention level 1 (-1) words
+  attention2_foreground=4 : color foreground for attention level 2 (-2) words
+
 [window]
   lines = 7            ; default number of lines of the window
 
@@ -338,6 +343,14 @@ this method to build the lines, just specify an empty
 .IP "\fB-Z\fP \fIregex\fP"
 Similar to \fB-A\fP but forces the word to be the latest of its line.
 The same trick with \fB-L\fP can also be used.
+.IP "\fB-1\fP \fIregex\fP, ..., \fB-5\fP \fIregex\fP"
+Allows to give to 5 classes of words specified by regular expressions
+a special display color. We call them \fBattention levels\fP. Only
+selectable words will be considered.
+
+By default, the first 3 attention levels have their foreground color set
+to red, green, and brown/yellow. All these colors can be set or modified
+via the configuration files. See the example file above for an example.
 .IP \fB-g\fP
 Replaces the blank after each words in column or tabular mode by a
 vertical bar "\fB|\fP". Some users may find the output more readable
