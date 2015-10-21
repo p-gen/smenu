@@ -533,6 +533,24 @@ ini_cb(win_t * win, term_t * term, limits_t * limits,
   {
     int v;
 
+#define CHECK_FG(x)                                            \
+  else if (strcmp(name, #x "_foreground") == 0)                \
+       {                                                       \
+         if ((error = get_ini_color(value, &v, term->colors))) \
+           goto out;                                           \
+         else                                                  \
+           win->x ## _color.fg = v;                            \
+       }
+
+#define CHECK_BG(x)                                            \
+  else if (strcmp(name, #x "_background") == 0)                \
+       {                                                       \
+         if ((error = get_ini_color(value, &v, term->colors))) \
+           goto out;                                           \
+         else                                                  \
+           win->x ## _color.bg = v;                            \
+       }
+
     /* [colors] section */
     /* """""""""""""""" */
     if (has_colors)
@@ -549,48 +567,11 @@ ini_cb(win_t * win, term_t * term, limits_t * limits,
           goto out;
         }
       }
-      else if (strcmp(name, "bar_foreground") == 0)
-      {
-        if ((error = get_ini_color(value, &v, term->colors)))
-          goto out;
-        else
-          win->bar_color.fg = v;
-      }
-      else if (strcmp(name, "bar_background") == 0)
-      {
-        if ((error = get_ini_color(value, &v, term->colors)))
-          goto out;
-        else
-          win->bar_color.bg = v;
-      }
-      else if (strcmp(name, "search_foreground") == 0)
-      {
-        if ((error = get_ini_color(value, &v, term->colors)))
-          goto out;
-        else
-          win->search_color.fg = v;
-      }
-      else if (strcmp(name, "search_background") == 0)
-      {
-        if ((error = get_ini_color(value, &v, term->colors)))
-          goto out;
-        else
-          win->search_color.bg = v;
-      }
-      else if (strcmp(name, "exclude_foreground") == 0)
-      {
-        if ((error = get_ini_color(value, &v, term->colors)))
-          goto out;
-        else
-          win->exclude_color.fg = v;
-      }
-      else if (strcmp(name, "exclude_background") == 0)
-      {
-        if ((error = get_ini_color(value, &v, term->colors)))
-          goto out;
-        else
-          win->exclude_color.bg = v;
-      }
+      /* *INDENT-OFF* */
+      CHECK_FG(bar)        CHECK_BG(bar)
+      CHECK_FG(search)     CHECK_BG(search)
+      CHECK_FG(exclude)    CHECK_BG(exclude)
+      /* *INDENT-ON* */
     }
   }
   else if (strcmp(section, "window") == 0)
