@@ -3291,7 +3291,7 @@ main(int argc, char *argv[])
   regex_t exclude_sed_re;
 
   char *first_word_pattern = NULL;      /* used by -A/-Z                   */
-  char *last_word_patternn = NULL;
+  char *last_word_pattern = NULL;
   regex_t first_word_re;
   regex_t last_word_re;
 
@@ -3610,7 +3610,7 @@ main(int argc, char *argv[])
 
       case 'Z':
         if (optarg && *optarg != '-')
-          last_word_patternn = optarg;
+          last_word_pattern = optarg;
         else
         {
           fprintf(stderr, "Option requires an argument -- %c\n\n",
@@ -3846,16 +3846,16 @@ main(int argc, char *argv[])
       && regcomp(&first_word_re, first_word_pattern,
                  REG_EXTENDED | REG_NOSUB) != 0)
   {
-    fprintf(stderr, "Bad regular expression %s\n", exclude_pattern);
+    fprintf(stderr, "Bad regular expression %s\n", first_word_pattern);
 
     exit(EXIT_FAILURE);
   }
 
-  if (last_word_patternn
-      && regcomp(&last_word_re, last_word_patternn,
+  if (last_word_pattern
+      && regcomp(&last_word_re, last_word_pattern,
                  REG_EXTENDED | REG_NOSUB) != 0)
   {
-    fprintf(stderr, "Bad regular expression %s\n", exclude_pattern);
+    fprintf(stderr, "Bad regular expression %s\n", last_word_pattern);
 
     exit(EXIT_FAILURE);
   }
@@ -3939,7 +3939,7 @@ main(int argc, char *argv[])
           && regexec(&first_word_re, word, (size_t) 0, NULL, 0) == 0)
         is_first = 1;
 
-      if (last_word_patternn
+      if (last_word_pattern
           && !is_last && regexec(&last_word_re, word, (size_t) 0, NULL, 0) == 0)
         is_last = 1;
     }
