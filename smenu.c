@@ -3304,7 +3304,7 @@ delims_cmp(const void *a, const void *b)
 /* Alter win->first_column                                   */
 /* ========================================================= */
 void
-set_new_first_column(win_t * win, word_t * word_a)
+set_new_first_column(win_t * win, term_t * term, word_t * word_a)
 {
   if (word_a[current].start < win->first_column)
   {
@@ -3313,6 +3313,8 @@ set_new_first_column(win_t * win, word_t * word_a)
     while (win->first_column > 0 && word_a[current].start < win->first_column)
       win->first_column = word_a[pos--].start;
   }
+  else if (word_a[current].end >= term->ncolumns - 3)
+    win->first_column = word_a[current].start;
 }
 
 /* ================ */
@@ -5245,7 +5247,7 @@ main(int argc, char *argv[])
 
               /* Set new first column to display */
               /* """"""""""""""""""""""""""""""" */
-              set_new_first_column(&win, word_a);
+              set_new_first_column(&win, &term, word_a);
 
               /* If the word is not selectable, try to find a selectable word */
               /* in ts line                                                   */
@@ -5398,7 +5400,7 @@ main(int argc, char *argv[])
 
               /* Set the new first column to display */
               /* """"""""""""""""""""""""""""""""""" */
-              set_new_first_column(&win, word_a);
+              set_new_first_column(&win, &term, word_a);
 
               /* If the word is not selectable, try to find a selectable word */
               /* in ts line                                                   */

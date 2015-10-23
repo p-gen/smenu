@@ -104,10 +104,9 @@ void right_margin_putp(char *s1, char *s2, langinfo_t * langinfo, term_t * term,
                        win_t * win, int line, int offset);
 int search_next(tst_node_t * tst, word_t * word_a, char *search_buf,
                 int after_only);
-void set_new_first_column(win_t * win, word_t * word_a);
 void sig_handler(int s);
 
-void set_new_first_column(win_t * win, word_t * word_a);
+void set_new_first_column(win_t * win, term_t * term, word_t * word_a);
 
 int parse_replacement_string(char *str, regex_t * re, char **rs, int *global,
                              int *visual);
