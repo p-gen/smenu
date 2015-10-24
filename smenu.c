@@ -1974,7 +1974,7 @@ get_bytes(FILE * input, char *mb_buffer, ll_t * word_delims_list,
   /* In this case the original sequence is lost (unsupported  */
   /* encoding).                                               */
   /* """""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-  if (validate_mb(mb_buffer) != 0)
+  if (langinfo->utf8 && validate_mb(mb_buffer) != 0)
   {
     byte = mb_buffer[0] = '.';
     mb_buffer[1] = '\0';
