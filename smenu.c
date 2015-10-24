@@ -3313,7 +3313,7 @@ set_new_first_column(win_t * win, term_t * term, word_t * word_a)
     while (win->first_column > 0 && word_a[current].start < win->first_column)
       win->first_column = word_a[pos--].start;
   }
-  else if (word_a[current].end >= term->ncolumns - 3)
+  else if (word_a[current].end - win->first_column >= term->ncolumns - 3)
     win->first_column = word_a[current].start;
 }
 
