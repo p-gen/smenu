@@ -3306,15 +3306,29 @@ delims_cmp(const void *a, const void *b)
 void
 set_new_first_column(win_t * win, term_t * term, word_t * word_a)
 {
+  int pos;
+
   if (word_a[current].start < win->first_column)
   {
-    int pos = current;
+    pos = current;
 
     while (win->first_column > 0 && word_a[current].start < win->first_column)
-      win->first_column = word_a[pos--].start;
+    {
+      win->first_column = word_a[pos].start;
+      pos--;
+    }
   }
   else if (word_a[current].end - win->first_column >= term->ncolumns - 3)
-    win->first_column = word_a[current].start;
+  {
+    pos = first_word_in_line_a[line_nb_of_word_a[current]];
+
+    while (!word_a[pos].is_last
+           && word_a[current].end - win->first_column >= term->ncolumns - 3)
+    {
+      pos++;
+      win->first_column = word_a[pos].start;
+    }
+  }
 }
 
 /* ================ */
