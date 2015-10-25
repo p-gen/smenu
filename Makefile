@@ -30,7 +30,7 @@ OBJS = smenu.o
 TARGET = smenu
 
 # The rules
-all: $(TARGET)
+all: $(TARGET) $(TARGET).man
 
 .c.o :
 	@echo "CC  " $<
@@ -41,7 +41,15 @@ $(TARGET): $(OBJS)
 	@$(CC) -o $@ $(OBJS) $(LFLAGS)
 
 clean:
-	$(RM) -f $(OBJS) $(TARGET) smenu-*.tar.gz core
+	$(RM) -f $(OBJS) $(TARGET) $(TARGET).man smenu-*.tar.gz core
+
+$(TARGET).man :
+	@echo MAN
+	@nroff -t -c -Tascii -man $(TARGET).1         \
+	| colcrt -                                    \
+	| sed -e 's/<-,|,|/<-,v,^/'                   \
+	      -e 's/underscores ( )/underscores (_)/' \
+	> $(TARGET).man
 
 strip:
 	strip $(TARGET)

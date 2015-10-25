@@ -3,15 +3,20 @@
 smenu - filter that allows to interactively select a word from stdin
 and outputs the selection to stdout.
 .SH SYNOPSIS
-smenu [\fB-h\fP] [\fB-n\fP \fIlines\fP] [\fB-t\fP [\fIcols\fP]]
-[\fB-s\fP \fIpattern\fP] [\fB-m\fP \fImessage\fP] [\fB-w\fP] [\fB-d\fP]
-[\fB-M\fP] [\fB-c\fP] [\fB-l\fP] [\fB-r\fP] [\fB-b\fP]
-[\fB-i\fP regex] [\fB-e\fP regex]
-[\fB-C\fP [a|A|s|S|r|R|d|D][col1[-col2],[col1[-col2]...
-[\fB-I\fP /regex/string/[g][v]] [\fB-E\fP /regex/string/[g][v]]
-[\fB-A\fP regex] [\fB-Z\fP regex
-[\fB-1\fP regex] [\fB-2\fP regex] ... [\fB-5\fP regex]
-[\fB-g\fP] [\fB-q\fP] [\fB-W\fP bytes] [\fB-L\fP bytes] [\fB-V\fP]
+.nf
+smenu [\fB-h\fP] [\fB-n\fP \fIlines\fP] [\fB-t\fP [\fIcols\fP]] \\
+      [\fB-s\fP \fIpattern\fP] [\fB-m\fP \fImessage\fP] [\fB-w\fP] [\fB-d\fP] \
+[\fB-M\fP] [\fB-c\fP] [\fB-l\fP] [\fB-r\fP] [\fB-b\fP] \\
+      [\fB-i\fP \fIregex\fP] [\fB-e\fP \fIregex\fP] \\
+      [\fB-C\fP \fI[a|A|s|S|r|R|d|D][col1[-col2],[col1[-col2]...\fP \\
+      [\fB-I\fP \fI/regex/string/[g][v]]\fP \
+[\fB-E\fP \fI/regex/string/[g][v]]\fP \\
+      [\fB-A\fP \fIregex\fP] [\fB-Z\fP \fIregex\fP \\
+      [\fB-1\fP \fIregex\fP] [\fB-2\fP \fIregex\fP] ... \
+[\fB-5\fP \fIregex\fP] \\
+      [\fB-g\fP] [\fB-q\fP] [\fB-W\fP \fIbytes\fP] [\fB-L\fP \fIbytes\fP] \\
+      [\fB-V\fP]
+.ne
 .SH DESCRIPTION
 This small utility acts as a filter (reads from stdin and writes to
 stdout). All the words taken from stdin are presented in a scrolling
@@ -48,11 +53,11 @@ into a dot (\fI.\fP) when the user locale is not \fBUTF-8\fP aware like
 \fBPOSIX\fP or \fBC\fP by example.
 .P
 If a word is only containing spaces, then all of them are
-converted into underscores (\fI_\fP) so that we can see them.
+converted into underscores (_) so that we can see them.
 .P
 .SS "Moving among words"
 The cursor can then be moved in every directions by using the
-keyboard arrow keys (\fB\(<-\fP, \fB\(ua\fP,\fB\(da\fP,\fB\(->\fP)
+keyboard arrow keys (\fB\(<-\fP,\fB\(da\fP,\fB\(ua\fP,\fB\(->\fP)
 or the \fIvi\fP direction keys (\fBh\fP, \fBj\fP, \fBk\fP and \fBl\fP).
 \fBHOME\fP, \fBEND\fP, \fBPgDn\fP and \fBPGUp\fP can also be used if
 available and have their traditional meanings.
@@ -161,34 +166,38 @@ Here is an example giving the syntax and the names of the keywords
 allowed:
 .P
 .nf
---8<----------------------------------------------------------------------
+--8<------------------------------------------------------------------
 [colors]
   ; The terminal must have at least 8 colors for this to be useful
   ; if not the following settings will be ignored.
 
-  method=ansi          ; classic | ansi
+  method=ansi             ; classic | ansi
 
-  bar_foreground = 2   ; scroll bar foreground
-  bar_background=0     ; scroll bar background
+  bar_foreground = 2      ; scroll bar foreground
+  bar_background=0        ; scroll bar background
 
-  search_foreground=11 ; search color foreground
-  search_background=1  ; search color background
+  search_foreground=11    ; search color foreground
+  search_background=1     ; search color background
 
-  exclude_foreground=4 : non-selectable color foreground
-  exclude_background=0 : non-selectable color background
+  exclude_foreground=4    ; non-selectable color foreground
+  exclude_background=0    ; non-selectable color background
 
-  attention1_foreground=1 : color foreground for attention level 1 (-1) words
-  attention1_background=1 : color background for attention level 1 (-1) words
-  attention2_foreground=4 : color foreground for attention level 2 (-2) words
+  attention1_foreground=1 ; color foreground for attention
+                          ; level 1 (-1) words
+  attention1_background=1 ; color background for attention
+                          ; level 1 (-1) words
+  attention2_foreground=4 ; color foreground for attention
+                          ; level 2 (-2) words
 
 [window]
-  lines = 7            ; default number of lines of the window
+  lines = 7               ; default number of lines of the window
 
 [limits]
-  word_length = 1024   ; arbitrary max length of input words (int)
-  words = 32767        ; arbitrary max number of allowed input words (int)
-  columns = 128        ; arbitrary max number of columns (int)
---8<----------------------------------------------------------------------
+  word_length = 1024      ; arbitrary max length of input words (int)
+  words = 32767           ; arbitrary max number of allowed input
+                          ; words (int)
+  columns = 128           ; arbitrary max number of columns (int)
+--8<------------------------------------------------------------------
 .fi
 .IP * 2
 The \fBmethod\fP keyword can take the two possible values displayed
