@@ -4,31 +4,35 @@ smenu - filter that allows to interactively select a word from stdin
 and outputs the selection to stdout.
 .SH SYNOPSIS
 .nf
-smenu [\fB-h\fP] [\fB-n\fP \fIlines\fP] [\fB-t\fP [\fIcols\fP]] \\
+\f(CRsmenu [\fB-h\fP] [\fB-n\fP \fIlines\fP] [\fB-t\fP [\fIcols\fP]] \\
       [\fB-s\fP \fIpattern\fP] [\fB-m\fP \fImessage\fP] [\fB-w\fP] [\fB-d\fP] \
 [\fB-M\fP] [\fB-c\fP] [\fB-l\fP] [\fB-r\fP] [\fB-b\fP] \\
       [\fB-i\fP \fIregex\fP] [\fB-e\fP \fIregex\fP] \\
       [\fB-C\fP \fI[a|A|s|S|r|R|d|D][col1[-col2],[col1[-col2]...\fP \\
-      [\fB-I\fP \fI/regex/string/[g][v]]\fP \
-[\fB-E\fP \fI/regex/string/[g][v]]\fP \\
+      [\fB-S\fP \fI/regex/string/[g][v][s]]\fP \
+[\fB-I\fP \fI/regex/string/[g][v][s]]\fP \\
+      [\fB-E\fP \fI/regex/string/[g][v][s]]\fP \\
       [\fB-A\fP \fIregex\fP] [\fB-Z\fP \fIregex\fP \\
       [\fB-1\fP \fIregex\fP] [\fB-2\fP \fIregex\fP] ... \
 [\fB-5\fP \fIregex\fP] \\
       [\fB-g\fP] [\fB-q\fP] [\fB-W\fP \fIbytes\fP] [\fB-L\fP \fIbytes\fP] \\
       [\fB-V\fP]
+\fP
 .ne
 .SH DESCRIPTION
 This small utility acts as a filter (reads from stdin and writes to
 stdout). All the words taken from stdin are presented in a scrolling
-window on the terminal with a selection cursor initially positioned on
-the first word by default.
+window on the terminal at the current cursor position.
+.P
+A selection cursor is initially positioned on the first selectable word
+by default.
 .P
 It is possible to filter the selectable words in the input stream by
 using an include regular expression to match the selectable words
 and an exclude regular expression to match the non-selectable words.
 .P
-Non-selectable words will be skipped when moving the selection cursor
-and will not be able to be searched.
+Non-selectable words are skipped when moving the selection cursor and
+cannot be searched for.
 .P
 The \fB-W\fP option can be used to set the characters (or multibyte
 sequences) which will be used to delimit the input words. The default
@@ -152,12 +156,12 @@ If a file with adequate permissions and the same name as the executable
 but prefixed with a dot is present in the current directory
 or in the user's home directory, then it will be parsed as a
 \fIini\fP file.
-The values read from the file in the home directory will be overriden
-by the ones read from the local directory version if it is present
+The values read from the file in the home directory will be overrode by
+the ones read from the local directory version if it is present
 
 Missing and bad keywords are silently skipped.
 
-The values read, if valid, override the default hardcoded ones.
+The values read, if valid, override the default hard-coded ones.
 
 If a value is invalid the program will be terminated and a message
 displayed.
@@ -166,7 +170,7 @@ Here is an example giving the syntax and the names of the keywords
 allowed:
 .P
 .nf
---8<------------------------------------------------------------------
+\f(CR--8<------------------------------------------------------------------
 [colors]
   ; The terminal must have at least 8 colors for this to be useful
   ; if not the following settings will be ignored.
@@ -198,6 +202,7 @@ allowed:
                           ; words (int)
   columns = 128           ; arbitrary max number of columns (int)
 --8<------------------------------------------------------------------
+\fP
 .fi
 .IP * 2
 The \fBmethod\fP keyword can take the two possible values displayed
@@ -295,17 +300,17 @@ This filter has a higher priority the include filter.
 The \fIregex\fP selections above are done before the possible word
 alterations realized with \fB-I\fP or \fB-E\fP (see below).
 .IP "[\fB-C\fP [a|A|s|S|r|R|d|D][col1[-col2],[col1[-col2]..."
-In column mode, restricts the previous selections or deselection on a
-number of columns. If no selection is given via \fB-i\fP and \fB-e\fP
-this option gives the possibility to select entire columns by giving
-their numbers (1 based).
+In column mode, restricts the previous selections or de-selections to
+some columns. If no selection is given via \fB-i\fP and \fB-e\fP this
+option gives the possibility to select entire columns by giving their
+numbers (1 based).
 
 \fBa\fP/\fBA\fP, \fBs\fP/\fBS\fP or nothing select the specified ranges
 of columns. \fBr\fP/\fBR\fP or \fBd\fP/\fBD\fP select all but the
 specified columns.
 
 Example of columns selection: \fI-a2,3,5-7\fP forces the cursor to only
-navigate in columns \fB2\fP,\fB3\fP,\fB5\fP,\fB6\fP and \fB7\fP. if
+navigate in columns \fB2\fP,\fB3\fP,\fB5\fP,\fB6\fP and \fB7\fP. If
 \fBd\fP was used in place of \fBa\fP, all the columns would have been
 selected \fBexcept\fP the columns \fB2\fP,\fB3\fP,\fB5\fP,\fB6\fP and
 \fB7\fP.
@@ -313,29 +318,46 @@ selected \fBexcept\fP the columns \fB2\fP,\fB3\fP,\fB5\fP,\fB6\fP and
 Spaces are allowed in the selection string if they are protected.
 
 Only the first 1024 columns can be selected by this mean.
-.IP "\fB-I\fP /\fIregex\fP/replacement string/[g][v]"
-Post-processes the \fBincluded\fP (or \fBselectable\fP) words by doing
-a regular expression based substitution. The argument must be formatted
-as in the \fBsed\fP editor.
+.IP "\fB-S\fP /\fIregex\fP/replacement string/[g][v][s]"
+Post-processes the words by applying a regular expression based
+substitution. The argument must be formatted as in the \fBsed\fP
+editor.
 
+This option can be used more than once. Each substitution will be
+applied in sequence on each word. This sequence can be stopped if a
+\fBstop\fP flag is encountered.
+
+.RS
+\fBflags:\fP
+.IP * 2
 The optional trailing \fBg\fP (for \fIg\fPlobal) means that all matched
 occurrences must be replaced and not the first one only.
-
+.IP * 2
 The optional trailing \fBv\fP (for \fIv\fPisual) means that the altered
 words will only be used for display and research. The modifications will
 \fInot\fP be reflected in the returned word.
+.IP * 2
+The optional trailing \fBs\fP (for \fIs\fPtop) means that no more
+substitution will be allowed on this word even if another \fB-I\fP is
+registered.
 
 Small example:
-R=$(echo a b c | smenu -I /b/B/)
-will display "a B c" and \fBR\fP will contain \fIB\fP if \fI B\fP is
+\f(CBR=$(echo a b c | smenu -S /b/B/)\fP
+will display \f(CR"a B c"\fP and \f(CBR\fP will contain \fIB\fP if \fI
+B\fP is
 selected meanwhile
-R=$(echo a b c | smenu -I /b/B/\fBv\fP)
-will display the same as above but \fBR\fP will contain the original
+\f(CBR=$(echo a b c | smenu -S /b/B/\fBv\fP)\fR
+will display the same as above but \f(CBR\fP will contain the original
 word \fIb\fP if \fIB\fP is selected. In both cases, only the word
 \fIB\fP will be searchable and not \fIb\fP.
-.IP "\fB-E\fP /\fIregex\fP/replacement string/[g][v]"
+.RE
+.IP "\fB-I\fP /\fIregex\fP/replacement string/[g][v][s]"
+Post-processes the \fBselectable\fP words by applying a regular
+expression based substitution (see \fB-S\fP for details).
+.IP "\fB-E\fP /\fIregex\fP/replacement string/[g][v][s]"
 Post-processes the \fBexcluded\fP (or \fBnon-selectable\fP) words by
-doing a regular expression based substitution (see \fB-I\fP for details).
+applying a regular expression based substitution (see \fB-S\fP for
+details).
 .P
 The \fB/\fP separator that \fB-I\fP and \fB-E\fP are using above can be
 substituted by any other character except \fISPACE\fP, \fI\\t\fP,
@@ -366,7 +388,7 @@ vertical bar "\fB|\fP". Some users may find the output more readable
 with it.
 .IP \fB-q\fP
 Prevents the scroll bar display. Useful when all the input words can be
-displayed without the need of scrolling. by default the scroll bar is
+displayed without the need of scrolling. By default the scroll bar is
 always displayed when there is more than one line. An absence of cursor
 in it gives a visual indication that all the input words are there.
 .IP "\fB-W\fP \fIbytes\fP"
@@ -395,23 +417,28 @@ an other filter (like \fIexpand\fR) to pre-process the data.
 Simple Yes/No/Cancel request with "No" as default choice:
 .P
 .nf
-In \fBbash\fP: \fBread R <<< $(echo "Yes No Cancel" \\
-                      | smenu  -d -m "Please choose:" -s /N)\fP
+\f(CRIn \fBbash\fP:
+  \f(CBread R <<< $(echo "Yes No Cancel" \\
+               | smenu  -d -m "Please choose:" -s /N)\fP
 
-      or \fBR=$(echo "Yes No Cancel" \\
-             | smenu -d -m "Please choose:" -s /N)\fP
+or
+  \f(CBR=$(echo "Yes No Cancel" \\
+      | smenu -d -m "Please choose:" -s /N)\fP
 
-In \fBksh\fP:  \fBprint "Yes No Cancel"                \\
-         | smenu -d -m "Please choose:" -s /N \\
-         | read R\fP
+In \fBksh\fP:
+  \f(CBprint "Yes No Cancel"                \\
+  | smenu -d -m "Please choose:" -s /N \\
+  | read R\fP
+\fP
 .fi
 .SS 2
 Get a 3 columns report about VM statistics for the current process in
 \fBbash\fP/\fBksh\fP on Linux:
 .P
 .nf
-\fBR=$(grep Vm /proc/$$/status | expand | smenu -b -W$'\\n' -t3 -g -d)\fB
+\f(CBR=$(grep Vm /proc/$$/status | expand | smenu -b -W$'\\n' -t3 -g -d)\fB
 .P
+\fP
 .fi
 .SS 3
 Create a one column selection window containing the list of the first
@@ -419,16 +446,18 @@ Create a one column selection window containing the list of the first
 This example is written in \fBksh\fP).
 .P
 .nf
-\fBpvs -a -o pv_name --noheadings                 \\
+\f(CB
+pvs -a -o pv_name --noheadings                 \\
 | smenu -m "PV list" -n20 -t1 -d -s //dev/root \\
-| read R\fP
+| read R
+\fP
 .fi
-.P
+
 The display will have a look similar to the following with the cursor
 set on the word \fI/dev/root\fP:
-.P
+
 .nf
-PV list
+\f(CRPV list
 /dev/md126           \\
 /dev/md127           |
 /dev/root            | <- cursor here.
@@ -437,24 +466,26 @@ PV list
 /dev/sdc1            |
 /dev/sdc2            |
 /dev/system/homevol  /
+\fP
 .fi
 .SS "4 (advanced)"
 Imagine a file named \fBsample.mnu\fP with the following content:
 
 .nf
---8<---------------------------------
+\f(CR--8<---------------------------------
 [1] "First Entry" [3] "Third entry"
 [2] "Second entry" [4] "Fourth entry"
 @@@ @@@ [5] "Fifth entry"
 @@@
 [Quit] "Exit menu"
 --8<---------------------------------
+\fP
 .fi
 
 Then this quite esoteric command will render it (centered on the screen) as:
 
 .nf
-+--------------------------------+
+\f(CR+--------------------------------+
 |Test menu                       |
 |1    First Entry  3 Third entry |
 |2    Second entry 4 Fourth entry|
@@ -462,16 +493,17 @@ Then this quite esoteric command will render it (centered on the screen) as:
 |                                |
 |Quit Exit menu                  |
 +--------------------------------+
+\fP
 .fi
 
 with the cursor on \fIQuit\fP and only the numbers and "Quit" selectable.
 
-\fBR=$(smenu -q -d -s/Q -M -n 30 -c               \\
+\f(CBR=$(smenu -q -d -s/Q -M -n 30 -c               \\
           -e "@+" -E '/@+//'                   \\
           -i '\\[ *[^ ]+ *\\]' -I '/[][ ]//g'    \\
           -m "Test menu" < sample.mnu)\fP
 
-The selected number or string will be available in \fBR\fP
+The selected number or string will be available in \f(CBR\fP
 
 Try to understand it as an exercise.
 .SH BUGS

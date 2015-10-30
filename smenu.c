@@ -211,6 +211,18 @@ struct win_s
   color_t attention5_color;  /* attention level 5 words colors   */
 };
 
+/* Sed like node structure */
+/* """"""""""""""""""""""" */
+struct sed_s
+{
+  char *pattern;             /* pattern to be matched */
+  char *substitution;        /* substitution string */
+  int visual;                /* Visual flag : alterations are only visual */
+  int global;                /* Global flag : alterations can occure more than once */
+  int stop;                  /* Stop flag   : only one alteration per word */
+  regex_t re;
+};
+
 /* *************************************** */
 /* Ternary Search Tree specific structures */
 /* *************************************** */
@@ -264,11 +276,12 @@ usage(void)
   fprintf(stderr, "                      \\\n");
   fprintf(stderr, "       [-C [a|A|s|S|r|R|d|D]col1[-col2],[col1[-col2]]...] ");
   fprintf(stderr, "                   \\\n");
-  fprintf(stderr, "       [-I /regex/repl/[g][v]] ");
-  fprintf(stderr, "[-E /regex/repl/[g][v]] ");
-  fprintf(stderr, "[-A regex] [-Z regex] \\\n");
-  fprintf(stderr, "       [-1 regex] [-2 regex] ... [-5 regex] "
-          "[-g] [-W bytes] [-L bytes] [-V]\n");
+  fprintf(stderr, "       [-S /regex/repl/[g][v][s]] ");
+  fprintf(stderr, "[-I /regex/repl/[g][v][s]]                 \\\n");
+  fprintf(stderr, "       [-E /regex/repl/[g][v][s]] ");
+  fprintf(stderr, "[-A regex] [-Z regex]                      \\\n");
+  fprintf(stderr, "       [-1 regex] [-2 regex] ... [-5 regex] [-g] ");
+  fprintf(stderr, "[-W bytes] [-L bytes] [-V]\n");
   fprintf(stderr, "\nThis is a filter that gets words from stdin ");
   fprintf(stderr, "and outputs the\n");
   fprintf(stderr, "selected word (or nothing) on stdout.\n\n");
@@ -298,10 +311,12 @@ usage(void)
   fprintf(stderr, "-e sets the regex input filter to match the "
           "non-selectable words.\n");
   fprintf(stderr, "-C sets column restrictions for selections.\n");
+  fprintf(stderr, "-S sets the post-processing action to apply to "
+          "all words.\n");
   fprintf(stderr, "-I sets the post-processing action to apply to "
-          "selectable words.\n");
+          "selectable words only.\n");
   fprintf(stderr, "-E sets the post-processing action to apply to "
-          "non-selectable words.\n");
+          "non-selectable words only.\n");
   fprintf(stderr, "-A forces a class of words to be the first "
           "of the line they appear in.\n");
   fprintf(stderr, "-Z forces a class of words to be the latest "
@@ -325,7 +340,8 @@ usage(void)
   fprintf(stderr, "The search key activates a timed search mode in which\n");
   fprintf(stderr, "you can enter the first letters of the searched word.\n");
   fprintf(stderr, "When entering this mode you have 7s to start typing\n");
-  fprintf(stderr, "and each entered letter gives you 5 more seconds before\n");
+  fprintf(stderr, "and each entered letter gives you 5 more seconds "
+          "before\n");
   fprintf(stderr, "the timeout. After that the search mode is ended.\n\n");
   fprintf(stderr, "Notes:\n");
   fprintf(stderr, "- the timer can be cancelled by pressing ESC.\n");
@@ -1137,12 +1153,11 @@ parse_cols_selector(char *str, char **filter, char *unparsed)
     *unparsed = '\0';
 }
 
-/* ==================================================== */
-/* Parse the sed like sring passed as argument to -I/-E */
-/* ==================================================== */
+/* ======================================================= */
+/* Parse the sed like sring passed as argument to -S/-I/-E */
+/* ======================================================= */
 int
-parse_replacement_string(char *str, regex_t * re, char **rs,
-                         int *global, int *visual)
+parse_sed_like_string(sed_t * sed)
 {
   char sep;
   char *first_sep_pos;
@@ -1151,12 +1166,12 @@ parse_replacement_string(char *str, regex_t * re, char **rs,
   int index;
   char c;
 
-  if (strlen(str) < 4)
+  if (strlen(sed->pattern) < 4)
     return 0;
 
   /* Get the separator (the 1st character) */
   /* """"""""""""""""""""""""""""""""""""" */
-  buf = strdup(str);
+  buf = strdup(sed->pattern);
   sep = buf[0];
 
   /* Space like separators are not permited */
@@ -1171,27 +1186,30 @@ parse_replacement_string(char *str, regex_t * re, char **rs,
 
   *first_sep_pos = '\0';
 
-  /* Get the replacement string */
-  /* """""""""""""""""""""""""" */
+  /* Get the substitution string */
+  /* """"""""""""""""""""""""""" */
   if ((last_sep_pos = strchr(first_sep_pos + 1, sep)) == NULL)
     goto err;
 
   *last_sep_pos = '\0';
 
-  *rs = strdup(first_sep_pos + 1);
+  sed->substitution = strdup(first_sep_pos + 1);
 
   /* Get the global indicator (trailing g) */
   /* and the visual indicator (trailing v) */
+  /* and the stop indicator (trailing s)   */
   /* """"""""""""""""""""""""""""""""""""" */
-  *global = *visual = 0;
+  sed->global = sed->visual = 0;
 
   index = 1;
   while ((c = *(last_sep_pos + index)) != '\0')
   {
     if (c == 'g')
-      *global = 1;
+      sed->global = 1;
     else if (c == 'v')
-      *visual = 1;
+      sed->visual = 1;
+    else if (c == 's')
+      sed->stop = 1;
     else
       goto err;
 
@@ -1205,7 +1223,7 @@ parse_replacement_string(char *str, regex_t * re, char **rs,
 
   /* Compile the regular expression and abort on failure */
   /* """"""""""""""""""""""""""""""""""""""""""""""""""" */
-  if (regcomp(re, buf + 1, REG_EXTENDED) != 0)
+  if (regcomp(&(sed->re), buf + 1, REG_EXTENDED) != 0)
     goto err;
 
   free(buf);
@@ -1220,7 +1238,7 @@ err:
 
 /* ====================================================================== */
 /* Replace the part of a string matched by an extender regular expression */
-/* by the replacement string                                              */
+/* by the substitution string                                             */
 /* The regex used must have been previously compiled                      */
 /*                                                                        */
 /* orig:   original string                                                */
@@ -1231,8 +1249,7 @@ err:
 /* bufsiz: destination buffer max size                                    */
 /* ====================================================================== */
 int
-replace(char *orig, char *subst, regex_t * re, int global, char *buf,
-        size_t bufsiz)
+replace(char *orig, sed_t * sed, char *buf, size_t bufsiz)
 {
   char *s;
   regmatch_t match[10];      /* substrings from regexec */
@@ -1249,9 +1266,9 @@ replace(char *orig, char *subst, regex_t * re, int global, char *buf,
   while (*ptr_orig && strlen(buf) < bufsiz)
   {
     s = buf + strlen(buf);
-    ptr_subst = subst;
+    ptr_subst = sed->substitution;
 
-    if (regexec(re, ptr_orig, 10, match, 0))
+    if (regexec(&(sed->re), ptr_orig, 10, match, 0))
       goto end;
 
     for (j = 0; j < match[0].rm_so; j++)
@@ -1311,9 +1328,9 @@ replace(char *orig, char *subst, regex_t * re, int global, char *buf,
       }
     }
 
-    /* Retry the replacement if global == 1 */
-    /* """""""""""""""""""""""""""""""""""" */
-    if (!global)
+    /* Retry the substitution if global == 1 */
+    /* """"""""""""""""""""""""""""""""""""" */
+    if (!sed->global)
       goto end;
 
     /* In case of empty string matching */
@@ -3352,12 +3369,9 @@ main(int argc, char *argv[])
   regex_t include_re;
   regex_t exclude_re;
 
-  char *include_sed_pattern = NULL;     /* used by -E/-I                   */
-  char *exclude_sed_pattern = NULL;
-  char *include_replace_str = NULL;
-  char *exclude_replace_str = NULL;
-  regex_t include_sed_re;
-  regex_t exclude_sed_re;
+  ll_t *sed_list = NULL;
+  ll_t *include_sed_list = NULL;
+  ll_t *exclude_sed_list = NULL;
 
   char *first_word_pattern = NULL;      /* used by -A/-Z                   */
   char *last_word_pattern = NULL;
@@ -3367,13 +3381,10 @@ main(int argc, char *argv[])
   char *attention_pattern[5] = { NULL };        /* used by -1 ... -5       */
   regex_t attention_re[5];
 
-  int include_global_replace;   /* control if we replace only the first    */
-  int exclude_global_replace;   /* instance                                */
-
   int include_visual_only = 0;  /* The original word read from stdin will  */
   int exclude_visual_only = 0;  /* be restituted unaltered even if its     *
                                  * visual representation was modified via  *
-                                 * -E/-I                                   */
+                                 * -S/-I/-E                                */
 
   char *cols_selector = NULL;
 
@@ -3526,7 +3537,7 @@ main(int argc, char *argv[])
   /* Command line options analysis */
   /* """"""""""""""""""""""""""""" */
   while ((opt = egetopt(argc, argv,
-                        "VhqdMbi:e:I:E:A:Z:1:2:3:4:5:C:"
+                        "VhqdMbi:e:S:I:E:A:Z:1:2:3:4:5:C:"
                         "clwrgn:t%m:s:W:L:1:2:3:4:")) != -1)
   {
     switch (opt)
@@ -3644,9 +3655,40 @@ main(int argc, char *argv[])
         }
         break;
 
+      case 'S':
+        if (optarg && *optarg != '-')
+        {
+          sed_t *sed_node;
+
+          if (sed_list == NULL)
+            sed_list = ll_new();
+
+          sed_node = xmalloc(sizeof(sed_t));
+          sed_node->pattern = optarg;
+          sed_node->stop = 0;
+          ll_append(sed_list, sed_node);
+        }
+        else
+        {
+          fprintf(stderr, "Option requires an argument -- %c\n\n",
+                  (char) optopt);
+          usage();
+        }
+        break;
+
       case 'I':
         if (optarg && *optarg != '-')
-          include_sed_pattern = optarg;
+        {
+          sed_t *sed_node;
+
+          if (include_sed_list == NULL)
+            include_sed_list = ll_new();
+
+          sed_node = xmalloc(sizeof(sed_t));
+          sed_node->pattern = optarg;
+          sed_node->stop = 0;
+          ll_append(include_sed_list, sed_node);
+        }
         else
         {
           fprintf(stderr, "Option requires an argument -- %c\n\n",
@@ -3657,7 +3699,17 @@ main(int argc, char *argv[])
 
       case 'E':
         if (optarg && *optarg != '-')
-          exclude_sed_pattern = optarg;
+        {
+          sed_t *sed_node;
+
+          if (exclude_sed_list == NULL)
+            exclude_sed_list = ll_new();
+
+          sed_node = xmalloc(sizeof(sed_t));
+          sed_node->pattern = optarg;
+          sed_node->stop = 0;
+          ll_append(exclude_sed_list, sed_node);
+        }
         else
         {
           fprintf(stderr, "Option requires an argument -- %c\n\n",
@@ -3974,31 +4026,72 @@ main(int argc, char *argv[])
 
   /* Parse the post-processing patterns and extract its values */
   /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-  if (include_sed_pattern)
-    if (parse_replacement_string(include_sed_pattern,
-                                 &include_sed_re,
-                                 &include_replace_str,
-                                 &include_global_replace,
-                                 &include_visual_only) == 0)
+  if (sed_list != NULL)
+  {
+
+    ll_node_t *node = sed_list->head;
+
+    while (node != NULL)
     {
-      fprintf(stderr, "Bad -I argument. Must be something like: "
-              "/regex/repl_string/[g][v]\n");
+      if (!parse_sed_like_string((sed_t *) (node->data)))
+      {
+        fprintf(stderr, "Bad -S argument. Must be something like: "
+                "/regex/repl_string/[g][v][s]\n");
 
-      exit(EXIT_FAILURE);
+        exit(EXIT_FAILURE);
+      }
+      if ((!include_visual_only || !exclude_visual_only) &&
+          ((sed_t *) (node->data))->visual)
+      {
+        include_visual_only = 1;
+        exclude_visual_only = 1;
+      }
+
+      node = node->next;
     }
+  }
 
-  if (exclude_sed_pattern)
-    if (parse_replacement_string(exclude_sed_pattern,
-                                 &exclude_sed_re,
-                                 &exclude_replace_str,
-                                 &exclude_global_replace,
-                                 &exclude_visual_only) == 0)
+  if (include_sed_list != NULL)
+  {
+
+    ll_node_t *node = include_sed_list->head;
+
+    while (node != NULL)
     {
-      fprintf(stderr, "Bad -E argument. Must be something like: "
-              "/regex/repl_string/[g][v]\n");
+      if (!parse_sed_like_string((sed_t *) (node->data)))
+      {
+        fprintf(stderr, "Bad -I argument. Must be something like: "
+                "/regex/repl_string/[g][v][s]\n");
 
-      exit(EXIT_FAILURE);
+        exit(EXIT_FAILURE);
+      }
+      if (!include_visual_only && ((sed_t *) (node->data))->visual)
+        include_visual_only = 1;
+
+      node = node->next;
     }
+  }
+
+  if (exclude_sed_list != NULL)
+  {
+
+    ll_node_t *node = exclude_sed_list->head;
+
+    while (node != NULL)
+    {
+      if (!parse_sed_like_string((sed_t *) (node->data)))
+      {
+        fprintf(stderr, "Bad -E argument. Must be something like: "
+                "/regex/repl_string/[g][v][s]\n");
+
+        exit(EXIT_FAILURE);
+      }
+      if (!exclude_visual_only && ((sed_t *) (node->data))->visual)
+        exclude_visual_only = 1;
+
+      node = node->next;
+    }
+  }
 
   /* Parse the column selection string if any */
   /* """""""""""""""""""""""""""""""""""""""" */
@@ -4087,33 +4180,59 @@ main(int argc, char *argv[])
     /* """""""""""""""""""""" */
     unaltered_word = strdup(word);
 
-    /* Possibly modify the word acording to -I/-E arguments */
-    /* """""""""""""""""""""""""""""""""""""""""""""""""""" */
-    if (selectable && include_sed_pattern)
+    /* Possibly modify the word acording to -S/-I/-E arguments */
+    /* """"""""""""""""""""""""""""""""""""""""""""""""""""""" */
     {
-      if (replace(word, include_replace_str, &include_sed_re,
-                  include_global_replace, buf, 1024))
-      {
-        free(word);
+      ll_node_t *node = NULL;
 
-        if (*buf == '\0')
-          word = strdup("_");
-        else
-          word = strdup(buf);
+      if (sed_list != NULL)
+        node = sed_list->head;
+
+      while (node != NULL)
+      {
+        if (replace(word, (sed_t *) (node->data), buf, 1024))
+        {
+          free(word);
+
+          /* TODO test if buf is only made of blanks instead */
+          /* """"""""""""""""""""""""""""""""""""""""""""""" */
+          if (*buf == '\0')
+            word = strdup("_");
+          else
+            word = strdup(buf);
+
+          if (((sed_t *) (node->data))->stop)
+            break;
+        }
+
+        *buf = '\0';
+        node = node->next;
       }
-    }
 
-    if (!selectable && exclude_sed_pattern)
-    {
-      if (replace(word, exclude_replace_str, &exclude_sed_re,
-                  exclude_global_replace, buf, 1024))
+      if (selectable && include_sed_list != NULL)
+        node = include_sed_list->head;
+      else if (!selectable && exclude_sed_list != NULL)
+        node = exclude_sed_list->head;
+
+      while (node != NULL)
       {
-        free(word);
+        if (replace(word, (sed_t *) (node->data), buf, 1024))
+        {
+          free(word);
 
-        if (*buf == '\0')
-          word = strdup("");
-        else
-          word = strdup(buf);
+          /* TODO test if buf is only made of blanks instead */
+          /* """"""""""""""""""""""""""""""""""""""""""""""" */
+          if (*buf == '\0')
+            word = strdup("_");
+          else
+            word = strdup(buf);
+
+          if (((sed_t *) (node->data))->stop)
+            break;
+        }
+
+        *buf = '\0';
+        node = node->next;
       }
     }
 

@@ -25,6 +25,7 @@ typedef struct win_s win_t;
 typedef struct word_s word_t;
 typedef struct color_s color_t;
 typedef struct limits_s limits_t;
+typedef struct sed_s sed_t;
 
 void help(win_t * win, term_t * term, int last_line);
 void usage(void);
@@ -108,7 +109,5 @@ void sig_handler(int s);
 
 void set_new_first_column(win_t * win, term_t * term, word_t * word_a);
 
-int parse_replacement_string(char *str, regex_t * re, char **rs, int *global,
-                             int *visual);
-int replace(char *orig, char *subst, regex_t * re, int global, char *buf,
-            size_t bufsiz);
+int parse_sed_like_string(sed_t * sed);
+int replace(char *orig, sed_t * sed, char *buf, size_t bufsiz);
