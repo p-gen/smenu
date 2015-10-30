@@ -41,7 +41,7 @@ int current;                 /* index the current selection      *
                               * (under the cursor)               */
 int new_current;             /* final current position, (used in *
                               * search function)                 */
-int *line_nb_of_word_a;      /* array containig the line number  *
+int *line_nb_of_word_a;      /* array containing the line number *
                               * (from 0) of each word read       */
 int *first_word_in_line_a;   /* array containing the index of    *
                               * the first word of each lines     */
@@ -173,7 +173,7 @@ struct word_s
 {
   char *str;                 /* display string associated with this word  */
   char *orig;                /* NULL or original string if is had been    *
-                              * shortenend for being displayed or altered *
+                              * shortened for being displayed or altered  *
                               * by is expansion.                          */
   int is_last;               /* 1 if the word is the last of a line       */
   int start, end, mbytes;    /* start/end absolute horiz. word positions  *
@@ -201,25 +201,28 @@ struct win_s
   int center;
   int offset;
 
-  color_t bar_color;         /* scrollbar color                  */
-  color_t search_color;      /* search mode colors               */
-  color_t exclude_color;     /* non-selectable words colors      */
-  color_t attention1_color;  /* attention level 1 words colors   */
-  color_t attention2_color;  /* attention level 2 words colors   */
-  color_t attention3_color;  /* attention level 3 words colors   */
-  color_t attention4_color;  /* attention level 4 words colors   */
-  color_t attention5_color;  /* attention level 5 words colors   */
+  color_t bar_color;         /* scrollbar color                   */
+  color_t search_color;      /* search mode colors                */
+  color_t exclude_color;     /* non-selectable words colors       */
+  color_t attention1_color;  /* attention level 1 words colors    */
+  color_t attention2_color;  /* attention level 2 words colors    */
+  color_t attention3_color;  /* attention level 3 words colors    */
+  color_t attention4_color;  /* attention level 4 words colors    */
+  color_t attention5_color;  /* attention level 5 words colors    */
 };
 
 /* Sed like node structure */
 /* """"""""""""""""""""""" */
 struct sed_s
 {
-  char *pattern;             /* pattern to be matched */
-  char *substitution;        /* substitution string */
-  int visual;                /* Visual flag : alterations are only visual */
-  int global;                /* Global flag : alterations can occure more than once */
-  int stop;                  /* Stop flag   : only one alteration per word */
+  char *pattern;             /* pattern to be matched             */
+  char *substitution;        /* substitution string               */
+  int visual;                /* Visual flag: alterations are only *
+                              *              visual               */
+  int global;                /* Global flag: alterations can      *
+                              *              occur more than once */
+  int stop;                  /* Stop flag:   only one alteration  *
+                              *              per word is allowed  */
   regex_t re;
 };
 
@@ -711,7 +714,7 @@ ini_load(const char *filename, win_t * win, term_t * term, limits_t * limits,
       for (s = value + strlen(value) - 1; s > value && isspace(*s); s--)
         *s = 0;
 
-      /* Callback funstion calling */
+      /* Callback function calling */
       /* """"""""""""""""""""""""" */
       error = report(win, term, limits, section, name, value);
 
@@ -927,8 +930,8 @@ setup_term(int const fd)
   new_in_attrs.c_cflag = old_in_attrs.c_cflag;
   new_in_attrs.c_lflag = old_in_attrs.c_lflag & ~(ICANON | ECHO | ISIG);
 
-  new_in_attrs.c_cc[VMIN] = 1;  /* wait for at lear 1 byte */
-  new_in_attrs.c_cc[VTIME] = 0; /* no timeout              */
+  new_in_attrs.c_cc[VMIN] = 1;  /* wait for at least 1 byte */
+  new_in_attrs.c_cc[VTIME] = 0; /* no timeout               */
 
   tcsetattr(fd, TCSANOW, &new_in_attrs);
 }
@@ -1025,7 +1028,7 @@ get_cursor_position(int *const r, int *const c)
 /* r|R is for Remove                                                      */
 /* d|D is for Deselect (same as Remove)                                   */
 /*                                                                        */
-/* unparsed is empty on success and contains the unpaserd part on failure */
+/* unparsed is empty on success and contains the unparsed part on failure */
 /* filter   is a string where each character is                           */
 /*          '1' if the column is selected or 'O' if not                   */
 /* A maximum of 1024 columns is allowed                                   */
@@ -1174,8 +1177,8 @@ parse_sed_like_string(sed_t * sed)
   buf = strdup(sed->pattern);
   sep = buf[0];
 
-  /* Space like separators are not permited */
-  /* """""""""""""""""""""""""""""""""""""" */
+  /* Space like separators are not permitted */
+  /* """"""""""""""""""""""""""""""""""""""" */
   if (isspace(sep))
     goto err;
 
@@ -1244,7 +1247,7 @@ err:
 /* orig:   original string                                                */
 /* subst:  substitute containing \n's                                     */
 /* re:     regcomp compiled extended RE                                   */
-/* global: 1 if all occurences must be replaced, else 0                   */
+/* global: 1 if all occurrences must be replaced, else 0                  */
 /* buf:    destination buffer                                             */
 /* bufsiz: destination buffer max size                                    */
 /* ====================================================================== */
@@ -1393,7 +1396,7 @@ strip_ansi_color(char *s, toggle_t * toggle)
 
 /* ========================================================= */
 /* Decode the number of bytes taken by a character (UTF-8)   */
-/* It is the length of the eading sequence of bits set to 1  */
+/* It is the length of the leading sequence of bits set to 1 */
 /* (Count Leading Ones)                                      */
 /* ========================================================= */
 int
@@ -1564,7 +1567,7 @@ mb_strlen(char *str)
 /* ====================================================================== */
 /* Multibytes extraction of the prefix of n multibyte chars from a string */
 /* The destination string d must have been allocated before.              */
-/* pos is updated to reflect the postion AFTER the prefix.                */
+/* pos is updated to reflect the position AFTER the prefix.               */
 /* ====================================================================== */
 char *
 mb_strprefix(char *d, char *s, int n, int *pos)
@@ -1664,7 +1667,7 @@ tst_insert(tst_node_t * p, wchar_t * w, void *data)
 
 /* ====================================== */
 /* Ternary search tree insertion function */
-/* user data aree not cleaned             */
+/* user data area not cleaned             */
 /* ====================================== */
 void
 tst_cleanup(tst_node_t * p)
@@ -1680,7 +1683,7 @@ tst_cleanup(tst_node_t * p)
 }
 
 /* ========================================================== */
-/* Recurvive traversal of a ternary tree. A callback function */
+/* Recursive traversal of a ternary tree. A callback function */
 /* is also called when a complete string is found             */
 /* returns 1 if the callback function succeed (returned 1) at */
 /* least once                                                 */
@@ -1735,7 +1738,7 @@ tst_search(tst_node_t * root, wchar_t * w)
 }
 
 /* =============================================================== */
-/* search all srings begining with the same prefix                 */
+/* search all strings beginning with the same prefix               */
 /* the callback function will be applied to each of theses strings */
 /* returns NULL if no string matched the prefix                    */
 /* =============================================================== */
@@ -1769,15 +1772,15 @@ tst_prefix_search(tst_node_t * root, wchar_t * w, int (*callback) (void *))
   return NULL;
 }
 
-/* ====================================================================== */
-/* Callback function used by tst_traverse                                 */
-/* Iterate the linked list attached to the string containing the index of */
-/* the words in the input flow. each page number is then used to detemine */
-/* the lower page greater than the cursor position                        */
-/* ---------------------------------------------------------------------- */
-/* Require new_current to be set to count-1 at start                      */
-/* Update new_current to the smallest greater position than current       */
-/* ====================================================================== */
+/* ======================================================================= */
+/* Callback function used by tst_traverse                                  */
+/* Iterate the linked list attached to the string containing the index of  */
+/* the words in the input flow. Each page number is then used to determine */
+/* the lower page greater than the cursor position                         */
+/* ----------------------------------------------------------------------- */
+/* Require new_current to be set to count-1 at start                       */
+/* Update new_current to the smallest greater position than current        */
+/* ======================================================================= */
 int
 tst_cb(void *elem)
 {
@@ -1785,7 +1788,7 @@ tst_cb(void *elem)
   int rc = 0;
 
   /* The data attached to the string in the tst is a linked list of position */
-  /* of the string in the the input flow, This list is naturally sorted      */
+  /* of the string in the input flow, This list is naturally sorted          */
   /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
   ll_t *list = (ll_t *) elem;
 
@@ -1806,7 +1809,7 @@ tst_cb(void *elem)
     /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
     if (pos > current)
     {
-      /* As the future new current index has been set to the hihgest possible */
+      /* As the future new current index has been set to the highest possible */
       /* value, each new possible position can only improve the estimation    */
       /* we se rc to 1 to mark that                                           */
       /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
@@ -1822,17 +1825,17 @@ tst_cb(void *elem)
   return rc;
 }
 
-/* ====================================================================== */
-/* Callback function used by tst_traverse                                 */
-/* Iterate the linked list attached to the string containing the index of */
-/* the words in the input flow. each page number is then used to detemine */
-/* the lower page greater than the cursor position                        */
-/* ---------------------------------------------------------------------- */
-/* This is a special version of tst_cb wich permit to find the first word */
-/* ---------------------------------------------------------------------- */
-/* Require new_current to be set to count - 1 at start                    */
-/* Update new_current to the smallest greater position than current       */
-/* ====================================================================== */
+/* ======================================================================= */
+/* Callback function used by tst_traverse                                  */
+/* Iterate the linked list attached to the string containing the index of  */
+/* the words in the input flow. each page number is then used to determine */
+/* the lower page greater than the cursor position                         */
+/* ----------------------------------------------------------------------- */
+/* This is a special version of tst_cb wich permit to find the first word  */
+/* ----------------------------------------------------------------------- */
+/* Require new_current to be set to count - 1 at start                     */
+/* Update new_current to the smallest greater position than current        */
+/* ======================================================================= */
 int
 tst_cb_cli(void *elem)
 {
@@ -1840,7 +1843,7 @@ tst_cb_cli(void *elem)
   int rc = 0;
 
   /* The data attached to the string in the tst is a linked list of position */
-  /* of the string in the the input flow, This list is naturally sorted      */
+  /* of the string in the input flow, This list is naturally sorted          */
   /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
   ll_t *list = (ll_t *) elem;
 
@@ -1861,7 +1864,7 @@ tst_cb_cli(void *elem)
     /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
     if (pos >= current)      /* Enable the search of the current word */
     {
-      /* As the future new current index has been set to the hihgest possible */
+      /* As the future new current index has been set to the highest possible */
       /* value, each new possible position can only improve the estimation    */
       /* we se rc to 1 to mark that                                           */
       /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
@@ -1881,11 +1884,11 @@ tst_cb_cli(void *elem)
 /* Input functions */
 /* *************** */
 
-/* ================================================ */
-/* Non delay reading of a scancode.                 */
-/* Update a scancodes buffer aand return its length */
-/* in bytes.                                        */
-/* ================================================ */
+/* =============================================== */
+/* Non delay reading of a scancode.                */
+/* Update a scancodes buffer and return its length */
+/* in bytes.                                       */
+/* =============================================== */
 int
 get_scancode(unsigned char *s, int max)
 {
@@ -1928,8 +1931,8 @@ get_scancode(unsigned char *s, int max)
     }
     else
     {
-      /* There isn't a new code, this mean 0x1b came from ESC key pression */
-      /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+      /* There isn't a new code, this mean 0x1b came from ESC key */
+      /* """""""""""""""""""""""""""""""""""""""""""""""""""""""" */
     }
 
     /* Restore the save terminal parameters */
@@ -1943,7 +1946,7 @@ get_scancode(unsigned char *s, int max)
 /* ===================================================================== */
 /* Get bytes from stdin. If the first byte is the leading character of a */
 /* multibyte one, the following ones a also read                         */
-/* Th count_leading_set_bits function is used to obten the number of     */
+/* The count_leading_set_bits function is used to get the number of      */
 /* bytes of the character                                                */
 /* ===================================================================== */
 int
@@ -2237,7 +2240,7 @@ get_word(FILE * input, ll_t * word_delims_list, ll_t * record_delims_list,
         && ll_find(word_delims_list, mb_buffer, delims_cmp) != NULL)
       break;
 
-    /* We no dot count the meaningfull quotes */
+    /* We no dot count the significant quotes */
     /* """""""""""""""""""""""""""""""""""""" */
     if (!is_special
         && ((byte == '"' && !is_squote) || (byte == '\'' && !is_dquote)))
@@ -2469,8 +2472,8 @@ get_message_lines(char *message, ll_t * message_lines_list,
 /* Set the metadata associated with a word, its starting and ending position */
 /* the line in which it is put and so on.                                    */
 /* Set win.start win.end and the starting and ending position of each word.  */
-/* This fonction is only called initially, when resizing the terminal and    */
-/* potentially when the seah function is used.                               */
+/* This function is only called initially, when resizing the terminal and    */
+/* potentially when the search function is used.                             */
 /* ========================================================================= */
 int
 build_metadata(word_t * word_a, term_t * term, int count, win_t * win)
@@ -2740,8 +2743,8 @@ disp_message(ll_t * message_lines_list, int message_max_width,
   int offset;
   wchar_t *w;
 
-  /* Do nothing if thre is no message to display */
-  /* """"""""""""""""""""""""""""""""""""""""""" */
+  /* Do nothing if there is no message to display */
+  /* """""""""""""""""""""""""""""""""""""""""""" */
   if (message_lines_list == NULL)
     return 0;
 
@@ -2750,8 +2753,8 @@ disp_message(ll_t * message_lines_list, int message_max_width,
 
   tputs(enter_bold_mode, 1, outch);
 
-  /* Follow the message lines list and display eachh line */
-  /* """""""""""""""""""""""""""""""""""""""""""""""""""" */
+  /* Follow the message lines list and display each line */
+  /* """"""""""""""""""""""""""""""""""""""""""""""""""" */
   while (node != NULL)
   {
     line = node->data;
@@ -2841,7 +2844,7 @@ disp_lines(word_t * word_a, win_t * win, toggle_t * toggle, int current,
   left_margin_putp(scroll_symbol, term, win);
   while (len > 1 && i <= count - 1)
   {
-    /* Display one word and the space ou symbol following it */
+    /* Display one word and the space or symbol following it */
     /* """"""""""""""""""""""""""""""""""""""""""""""""""""" */
     if (word_a[i].start >= win->first_column
         && word_a[i].end < len + win->first_column)
@@ -3012,7 +3015,7 @@ sig_handler(int s)
 {
   switch (s)
   {
-      /* Standard Terminaison signals */
+      /* Standard termination signals */
       /* """""""""""""""""""""""""""" */
     case SIGTERM:
     case SIGHUP:
@@ -3050,10 +3053,10 @@ sig_handler(int s)
   }
 }
 
-/* ========================================================== */
-/* Try to find the next word mathing the prefix in search_buf */
-/* return 1 if one ha been found, 0 otherwise                 */
-/* ========================================================== */
+/* =========================================================== */
+/* Try to find the next word matching the prefix in search_buf */
+/* return 1 if one ha been found, 0 otherwise                  */
+/* =========================================================== */
 int
 search_next(tst_node_t * tst, word_t * word_a, char *search_buf, int after_only)
 {
@@ -3354,7 +3357,7 @@ set_new_first_column(win_t * win, term_t * term, word_t * word_a)
 int
 main(int argc, char *argv[])
 {
-  char *message = NULL;      /* message to be desplayed above the          *
+  char *message = NULL;      /* message to be displayed above the          *
                               * selection window                           */
   ll_t *message_lines_list = NULL;      /* list of the lines in the        *
                                            message to be displayed         */
@@ -3397,21 +3400,21 @@ main(int argc, char *argv[])
   tst_node_t *tst = NULL;    /* TST used by the search function            */
 
   int colors;                /* Temporary variable used to set term.colors */
-  int page;                  /* Step for the vertical cursor deplacements  */
-  char *word;                /* Temporarry variable to work on words       */
+  int page;                  /* Step for the vertical cursor moves         */
+  char *word;                /* Temporary variable to work on words        */
   char *tmp_max_word;
   int last_line = 0;         /* last logical line number (from 0)          */
   int opt;
   win_t win;
   limits_t limits;
   toggle_t toggle;
-  word_t *word_a;            /* Array contanings words data (size: count)  */
+  word_t *word_a;            /* Array containing words data (size: count)  */
 
   int old_fd1;               /* backups of the old stdout file descriptor  */
-  FILE *old_stdout;          /* The selecterd word will go there           */
+  FILE *old_stdout;          /* The selected word will go there            */
 
   int nl;                    /* Number of lines displayed in the window    */
-  int offset;                /* Used to correstly put the curson at the    *
+  int offset;                /* Used to correctly put the cursor at the    *
                               * start of the selection window, even after  *
                               * a terminal vertical scroll                 */
 
@@ -3476,7 +3479,7 @@ main(int argc, char *argv[])
   win.line_mode = 0;
   win.first_column = 0;
 
-  /* Defaulkt limts initialization */
+  /* Default limits initialization */
   /* """"""""""""""""""""""""""""" */
   limits.words = 32767;
   limits.cols = 256;
@@ -3489,8 +3492,8 @@ main(int argc, char *argv[])
   toggle.no_scrollbar = 0;
   toggle.blank_nonprintable = 0;
 
-  /* Columms seletion variables */
-  /* """""""""""""""""""""""""" */
+  /* Columns selection variables */
+  /* """"""""""""""""""""""""""" */
   char *cols_filter;
 
   /* Get the current locale */
@@ -3527,7 +3530,7 @@ main(int argc, char *argv[])
     langinfo.utf8 = 0;
 
   /* my_isprint is a function pointer that points to the 7 or 8-bit */
-  /* version of isprint accorging to the content of UTF-8           */
+  /* version of isprint according to the content of UTF-8           */
   /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
   if (langinfo.utf8 || langinfo.bits == 8)
     my_isprint = isprint8;
@@ -3796,8 +3799,8 @@ main(int argc, char *argv[])
     usage();
   }
 
-  /* If we did not impose the number of columns, uwe the whole terminal width */
-  /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+  /* If we did not impose the number of columns, we the whole terminal width */
+  /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
   if (!win.max_cols)
     win.wide_columns = 1;
 
@@ -3842,8 +3845,8 @@ main(int argc, char *argv[])
   home_ini_file = make_ini_path(argv[0], "HOME");
   local_ini_file = make_ini_path(argv[0], "PWD");
 
-  /* If the ini file failed to provide custom colors or is inexistant */
-  /* or not readable then  set their defaut values                    */
+  /* If the ini file failed to provide custom colors or is inexistent */
+  /* or not readable then  set their default values                   */
   /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
   if (term.colors > 7)
   {
@@ -3867,8 +3870,8 @@ main(int argc, char *argv[])
     win.attention5_color.bg = -1;
   }
 
-  /* Set the colors from the config file if possible */
-  /* """"""""""""""""""""""""""""""""""""""""""""""" */
+  /* Set the colors from the configuration file if possible */
+  /* """""""""""""""""""""""""""""""""""""""""""""""""""""" */
   if (ini_load(home_ini_file, &win, &term, &limits, ini_cb))
     exit(EXIT_FAILURE);
   if (ini_load(local_ini_file, &win, &term, &limits, ini_cb))
@@ -4180,8 +4183,8 @@ main(int argc, char *argv[])
     /* """""""""""""""""""""" */
     unaltered_word = strdup(word);
 
-    /* Possibly modify the word acording to -S/-I/-E arguments */
-    /* """"""""""""""""""""""""""""""""""""""""""""""""""""""" */
+    /* Possibly modify the word according to -S/-I/-E arguments */
+    /* """""""""""""""""""""""""""""""""""""""""""""""""""""""" */
     {
       ll_node_t *node = NULL;
 
@@ -4311,7 +4314,7 @@ main(int argc, char *argv[])
       if (s > col_max_size[col_index - 1])
         col_max_size[col_index - 1] = s;
 
-      /* Reset the column index when we enconuter and end-of-line */
+      /* Reset the column index when we encounter and end-of-line */
       /* """""""""""""""""""""""""""""""""""""""""""""""""""""""" */
       if (is_last)
         col_index = 0;
@@ -4389,7 +4392,7 @@ main(int argc, char *argv[])
     free(tmpw);
 
     /* When the visual only flag is set, we keep the unaltered word so */
-    /* that it can be restituted even if its visual ans dearchable     */
+    /* that it can be restituted even if its visual and searchable     */
     /* representation may have been altered by the previous code       */
     /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
     if ((word_a[count].is_selectable & include_visual_only)
@@ -4594,9 +4597,9 @@ main(int argc, char *argv[])
   /* """"""""""""""""""""""""""""" */
   last_line = build_metadata(word_a, &term, count, &win);
 
-  /* We've finished reading from stdin                              */
-  /* we will now get the inputs from the controling terminal if any */
-  /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+  /* We've finished reading from stdin                               */
+  /* we will now get the inputs from the controlling terminal if any */
+  /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
   if ((stdin = freopen("/dev/tty", "r", stdin)) == NULL)
     fprintf(stderr, "%s\n", "freopen");
 
@@ -4609,8 +4612,8 @@ main(int argc, char *argv[])
 
   setbuf(stdout, NULL);
 
-  /* Set the caracteristics of the terminal */
-  /* """""""""""""""""""""""""""""""""""""" */
+  /* Set the characteristics of the terminal */
+  /* """"""""""""""""""""""""""""""""""""""" */
   setup_term(fileno(stdin));
 
   /* Initialize the search buffer with tab_real_max_size+1 NULs */
@@ -4658,7 +4661,7 @@ main(int argc, char *argv[])
                   search_buf, &term, last_line, tmp_max_word, &langinfo);
 
   /* Determine the number of lines to move the cursor up if the window */
-  /* display needed a terminel scrolling                               */
+  /* display needed a terminal scrolling                               */
   /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
   if (nl + term.curs_line - 1 > term.nlines)
     offset = term.curs_line + nl - term.nlines;
@@ -4700,8 +4703,8 @@ main(int argc, char *argv[])
                       search_buf, &term, last_line, tmp_max_word, &langinfo);
     }
 
-    /* If an alarm has been tiggered and we are in search mode, try to    */
-    /* use the  prefix in search_buf to find the first mord matching this */
+    /* If an alarm has been triggered and we are in search mode, try to   */
+    /* use the  prefix in search_buf to find the first word matching this */
     /* prefix. If a word if found trigger a window refresh as if the      */
     /* terminal has been  resized                                         */
     /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
@@ -4793,14 +4796,14 @@ main(int argc, char *argv[])
       get_cursor_position(&term.curs_line, &term.curs_column);
 
       /* Determine the number of lines to move the cursor up if the window  */
-      /* display needed a terminel scrolling                                */
+      /* display needed a terminal scrolling                                */
       /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
       if (nl + term.curs_line > term.nlines)
         offset = term.curs_line + nl - term.nlines;
       else
         offset = 0;
 
-      /* Set the curser to the first line of the window */
+      /* Set the cursor to the first line of the window */
       /* """""""""""""""""""""""""""""""""""""""""""""" */
       for (i = 1; i < offset; i++)
         tputs(cursor_up, 1, outch);
@@ -4823,8 +4826,8 @@ main(int argc, char *argv[])
     {
       switch (buffer[0])
       {
-          /* An esccape sequence or a multibyte character has been pressed */
-          /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+          /* An escape sequence or a multibyte character has been pressed */
+          /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
         case 0x1b:          /* ESC */
           if (!search_mode)
           {
@@ -5063,7 +5066,7 @@ main(int argc, char *argv[])
           tputs(cursor_normal, 1, outch);
 
           /* Chose the original string to print if the current one has */
-          /* been alterated by a possible expansion.                   */
+          /* been altered by a possible expansion.                     */
           /* Once this made, print it.                                 */
           /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""" */
           if (word_a[current].orig != NULL)
@@ -5082,7 +5085,7 @@ main(int argc, char *argv[])
             /* Determine the width (in term of terminal columns) of the  */
             /* string to be displayed.                                   */
             /* 65535 is arbitrary max string width                       */
-            /* if width gets the value -1, then a least one characher in */
+            /* if width gets the value -1, then a least one character in */
             /* output_str is not printable. In this case we do not try   */
             /* To remove the possible extra lines because the resulting  */
             /* output is unpredictable.                                  */
@@ -5359,14 +5362,14 @@ main(int argc, char *argv[])
               while (word_a[cursor].start > s)
                 cursor--;
 
-              /* In case no word fullfill this criterium, keep the cursor on */
+              /* In case no word fulfill this criterium, keep the cursor on */
               /* the last word                                               */
               /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
               if (cursor == last_word && word_a[cursor].start > 0)
                 cursor--;
 
-              /* Try to guess the best choice if we have muliple choices */
-              /* """"""""""""""""""""""""""""""""""""""""""""""""""""""" */
+              /* Try to guess the best choice if we have multiple choices */
+              /* """""""""""""""""""""""""""""""""""""""""""""""""""""""" */
               if (word_a[cursor].end >= s &&
                   word_a[cursor].end - s >= e - word_a[cursor + 1].start)
                 current = cursor;
@@ -5507,14 +5510,14 @@ main(int argc, char *argv[])
               while (word_a[cursor].start > s)
                 cursor--;
 
-              /* In case no word fullfill this criterium, keep the cursor on */
+              /* In case no word fulfill this criterium, keep the cursor on */
               /* the last word                                               */
               /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
               if (cursor == last_word && word_a[cursor].start > 0)
                 cursor--;
 
-              /* Try to guess the best choice if we have muliple choices */
-              /* """"""""""""""""""""""""""""""""""""""""""""""""""""""" */
+              /* Try to guess the best choice if we have multiple choices */
+              /* """""""""""""""""""""""""""""""""""""""""""""""""""""""" */
               if (cursor < count - 1
                   && word_a[cursor].end - s >= e - word_a[cursor + 1].start)
                 current = cursor;
@@ -5674,8 +5677,8 @@ main(int argc, char *argv[])
             search_itv.it_interval.tv_usec = 0;
             setitimer(ITIMER_REAL, &search_itv, NULL);
 
-            /* Copy all the bytes included in the keypress to buffer */
-            /* """"""""""""""""""""""""""""""""""""""""""""""""""""" */
+            /* Copy all the bytes included in the key press to buffer */
+            /* """""""""""""""""""""""""""""""""""""""""""""""""""""" */
             for (c = 0; c < l && search_pos < tab_real_max_size; c++)
               search_buf[search_pos++] = buffer[c];
 
