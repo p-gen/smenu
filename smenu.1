@@ -9,9 +9,9 @@ and outputs the selection to stdout.
 [\fB-M\fP] [\fB-c\fP] [\fB-l\fP] [\fB-r\fP] [\fB-b\fP] \\
       [\fB-i\fP \fIregex\fP] [\fB-e\fP \fIregex\fP] \\
       [\fB-C\fP \fI[a|A|s|S|r|R|d|D][col1[-col2],[col1[-col2]...\fP \\
-      [\fB-S\fP \fI/regex/string/[g][v][s]]\fP \
-[\fB-I\fP \fI/regex/string/[g][v][s]]\fP \\
-      [\fB-E\fP \fI/regex/string/[g][v][s]]\fP \\
+      [\fB-S\fP \fI/regex/string/[g][v][s][i]]\fP \
+[\fB-I\fP \fI/regex/string/[g][v][s][i]]\fP \\
+      [\fB-E\fP \fI/regex/string/[g][v][s][i]]\fP \\
       [\fB-A\fP \fIregex\fP] [\fB-Z\fP \fIregex\fP \\
       [\fB-1\fP \fIregex\fP] [\fB-2\fP \fIregex\fP] ... \
 [\fB-5\fP \fIregex\fP] \\
@@ -340,6 +340,9 @@ words will only be used for display and research. The modifications will
 The optional trailing \fBs\fP (for \fIs\fPtop) means that no more
 substitution will be allowed on this word even if another \fB-I\fP is
 registered.
+.IP * 2
+The optional trailing \fBi\fP (for \fIi\fPgnore case) means that the
+string search operation should ignore the case for this pattern.
 
 Small example:
 \f(CBR=$(echo a b c | smenu -S /b/B/)\fP

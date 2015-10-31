@@ -279,10 +279,10 @@ usage(void)
   fprintf(stderr, "                      \\\n");
   fprintf(stderr, "       [-C [a|A|s|S|r|R|d|D]col1[-col2],[col1[-col2]]...] ");
   fprintf(stderr, "                   \\\n");
-  fprintf(stderr, "       [-S /regex/repl/[g][v][s]] ");
-  fprintf(stderr, "[-I /regex/repl/[g][v][s]]                 \\\n");
-  fprintf(stderr, "       [-E /regex/repl/[g][v][s]] ");
-  fprintf(stderr, "[-A regex] [-Z regex]                      \\\n");
+  fprintf(stderr, "       [-S /regex/repl/[g][v][s][i]] ");
+  fprintf(stderr, "[-I /regex/repl/[g][v][s][i]]           \\\n");
+  fprintf(stderr, "       [-E /regex/repl/[g][v][s][i]] ");
+  fprintf(stderr, "[-A regex] [-Z regex]                   \\\n");
   fprintf(stderr, "       [-1 regex] [-2 regex] ... [-5 regex] [-g] ");
   fprintf(stderr, "[-W bytes] [-L bytes] [-V]\n");
   fprintf(stderr, "\nThis is a filter that gets words from stdin ");
@@ -1167,6 +1167,7 @@ parse_sed_like_string(sed_t * sed)
   char *last_sep_pos;
   char *buf;
   int index;
+  int icase;
   char c;
 
   if (strlen(sed->pattern) < 4)
@@ -1202,7 +1203,7 @@ parse_sed_like_string(sed_t * sed)
   /* and the visual indicator (trailing v) */
   /* and the stop indicator (trailing s)   */
   /* """"""""""""""""""""""""""""""""""""" */
-  sed->global = sed->visual = 0;
+  sed->global = sed->visual = icase = 0;
 
   index = 1;
   while ((c = *(last_sep_pos + index)) != '\0')
@@ -1213,6 +1214,8 @@ parse_sed_like_string(sed_t * sed)
       sed->visual = 1;
     else if (c == 's')
       sed->stop = 1;
+    else if (c == 'i')
+      icase = 1;
     else
       goto err;
 
@@ -1226,7 +1229,8 @@ parse_sed_like_string(sed_t * sed)
 
   /* Compile the regular expression and abort on failure */
   /* """"""""""""""""""""""""""""""""""""""""""""""""""" */
-  if (regcomp(&(sed->re), buf + 1, REG_EXTENDED) != 0)
+  if (regcomp(&(sed->re), buf + 1,
+              !icase ? REG_EXTENDED : (REG_EXTENDED | REG_ICASE)) != 0)
     goto err;
 
   free(buf);
