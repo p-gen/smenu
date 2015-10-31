@@ -4220,6 +4220,10 @@ main(int argc, char *argv[])
         node = include_sed_list->head;
       else if (!selectable && exclude_sed_list != NULL)
         node = exclude_sed_list->head;
+      else
+        node = NULL;
+
+      *buf = '\0';
 
       while (node != NULL)
       {
