@@ -3598,6 +3598,7 @@ main(int argc, char *argv[])
         win.line_mode = 1;
         win.tab_mode = 0;
         win.col_mode = 0;
+        break;
 
       case 'g':
         win.col_sep = 1;
