@@ -1158,6 +1158,7 @@ parse_cols_selector(char *str, char **filter, char *unparsed)
   int first, second;         /* range starting and ending values */
   char *ptr;                 /* pointer to the remaining string to parse */
   int max;                   /* Max number of columns allowed */
+  char sep;
 
   len = strlen(str);
   max = 1024;
@@ -1207,6 +1208,7 @@ parse_cols_selector(char *str, char **filter, char *unparsed)
 
   ptr = str + start;
   first = second = -1;
+  offset1 = offset2 = 0;
 
   /* Fill the array with the default value */
   /* """"""""""""""""""""""""""""""""""""" */
@@ -1215,7 +1217,7 @@ parse_cols_selector(char *str, char **filter, char *unparsed)
 
   /* Scan the comma separated ranges */
   /* """"""""""""""""""""""""""""""" */
-  while ((n = sscanf(ptr, "%d %n-%d %n%*c",
+  while ((n = sscanf(ptr, "%d%n-%d%*c%n",
                      &first, &offset1, &second, &offset2)) >= 1)
   {
     int swap;
@@ -1232,6 +1234,16 @@ parse_cols_selector(char *str, char **filter, char *unparsed)
       }
 
       ptr += offset1 + 1;
+
+      /* Check if the separator is legal */
+      /* """"""""""""""""""""""""""""""" */
+      sep = *(ptr - 1);
+      if (*ptr != '\0' && sep != ',' && sep != '\0')
+      {
+        ptr -= 1;
+        break;
+      }
+
       (*filter)[first - 1] = mark;
     }
     else if (n == 2)
@@ -1254,10 +1266,28 @@ parse_cols_selector(char *str, char **filter, char *unparsed)
         second = swap;
       }
 
-      ptr += offset2;
       memset(*filter + first - 1, mark, second - first + 1);
+      if (offset2 > 0)
+      {
+        ptr += offset2;
+
+        /* Check if the separator is legal */
+        /* """"""""""""""""""""""""""""""" */
+        sep = *(ptr - 1);
+        if (*ptr != '\0' && sep != ',' && sep != '\0')
+        {
+          ptr -= 1;
+          break;
+        }
+      }
+      else
+      {
+        ptr = str + len;
+        break;
+      }
     }
     first = second = -1;
+    offset1 = offset2 = 0;
   }
 
   /* Set the unparsed part of the string */
