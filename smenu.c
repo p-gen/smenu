@@ -79,6 +79,8 @@ struct charsetinfo_s
   size_t bits;               /* number of bits in this charset        */
 };
 
+/* Various toggles which can be set with command line options */
+/* """""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
 struct toggle_s
 {
   int del_line;              /* 1 if the clean option is set (-d) else 0   */
@@ -88,6 +90,8 @@ struct toggle_s
                               * symbolic form else 0                       */
 };
 
+/* Structure to store the default or imposed smenu limits */
+/* """""""""""""""""""""""""""""""""""""""""""""""""""""" */
 struct limits_s
 {
   int word_length;
@@ -814,6 +818,8 @@ ini_load(const char *filename, win_t * win, term_t * term, limits_t * limits,
   {
     if (fscanf(f, "[%127[^];\n]]", section) == 1)
     {
+      /* Do nothing */
+      /* """""""""" */
     }
     else if ((cnt = fscanf(f, " %63[^=;\n] = %255[^;\n]", name, value)))
     {
@@ -839,6 +845,8 @@ ini_load(const char *filename, win_t * win, term_t * term, limits_t * limits,
     /* """""""""""""""" */
     while (fscanf(f, "%*[\n]") == 1)
     {
+      /* Do nothing */
+      /* """""""""" */
     }
   }
 
@@ -1298,9 +1306,9 @@ parse_cols_selector(char *str, char **filter, char *unparsed)
     *unparsed = '\0';
 }
 
-/* ======================================================= */
-/* Parse the sed like sring passed as argument to -S/-I/-E */
-/* ======================================================= */
+/* ======================================================== */
+/* Parse the sed like string passed as argument to -S/-I/-E */
+/* ======================================================== */
 int
 parse_sed_like_string(sed_t * sed)
 {
@@ -2297,7 +2305,7 @@ get_word(FILE * input, ll_t * word_delims_list, ll_t * record_delims_list,
   /* """"""""""""""""""""""""""""""""""" */
   temp = xmalloc(wordsize = CHARSCHUNK);
 
-  /* Start stashing bytes. stop when we meet a non delimiter or EOF */
+  /* Start stashing bytes. Stop when we meet a non delimiter or EOF */
   /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
   count = 0;
   is_dquote = 0;
@@ -3513,7 +3521,8 @@ main(int argc, char *argv[])
 
   int index;                 /* generic counter                            */
 
-  char *include_pattern = ".";  /* Used by -e/-i                           */
+  char *include_pattern = ".";  /* Used by -e/-i,  Default is to match     *
+                                 * everyting                               */
   char *exclude_pattern = NULL;
   regex_t include_re;
   regex_t exclude_re;
@@ -3530,10 +3539,10 @@ main(int argc, char *argv[])
   char *attention_pattern[5] = { NULL };        /* used by -1 ... -5       */
   regex_t attention_re[5];
 
-  int include_visual_only = 0;  /* The original word read from stdin will  */
-  int exclude_visual_only = 0;  /* be restituted unaltered even if its     *
-                                 * visual representation was modified via  *
-                                 * -S/-I/-E                                */
+  int include_visual_only = 0;  /* If set to 1, the original word which is *
+                                 * read from stdin will be output even if  */
+  int exclude_visual_only = 0;  /* its visual representation was modified  *
+                                 * via -S/-I/-E                            */
 
   char *cols_selector = NULL;
 
