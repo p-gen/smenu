@@ -3702,7 +3702,8 @@ main(int argc, char *argv[])
         {
           fprintf(stderr, "Option requires an argument -- %c\n\n",
                   (char) optopt);
-          usage();
+
+          exit(EXIT_FAILURE);
         }
         break;
 
@@ -3721,7 +3722,8 @@ main(int argc, char *argv[])
         {
           fprintf(stderr, "Option requires an argument -- %c\n\n",
                   (char) optopt);
-          usage();
+
+          exit(EXIT_FAILURE);
         }
         break;
 
@@ -3757,7 +3759,8 @@ main(int argc, char *argv[])
         {
           fprintf(stderr, "Option requires an argument -- %c\n\n",
                   (char) optopt);
-          usage();
+
+          exit(EXIT_FAILURE);
         }
         break;
 
@@ -3776,7 +3779,8 @@ main(int argc, char *argv[])
         {
           fprintf(stderr, "Option requires an argument -- %c\n\n",
                   (char) optopt);
-          usage();
+
+          exit(EXIT_FAILURE);
         }
         break;
 
@@ -3787,7 +3791,8 @@ main(int argc, char *argv[])
         {
           fprintf(stderr, "Option requires an argument -- %c\n\n",
                   (char) optopt);
-          usage();
+
+          exit(EXIT_FAILURE);
         }
         break;
 
@@ -3801,7 +3806,8 @@ main(int argc, char *argv[])
         {
           fprintf(stderr, "Option requires an argument -- %c\n\n",
                   (char) optopt);
-          usage();
+
+          exit(EXIT_FAILURE);
         }
         break;
 
@@ -3822,7 +3828,8 @@ main(int argc, char *argv[])
         {
           fprintf(stderr, "Option requires an argument -- %c\n\n",
                   (char) optopt);
-          usage();
+
+          exit(EXIT_FAILURE);
         }
         break;
 
@@ -3843,7 +3850,8 @@ main(int argc, char *argv[])
         {
           fprintf(stderr, "Option requires an argument -- %c\n\n",
                   (char) optopt);
-          usage();
+
+          exit(EXIT_FAILURE);
         }
         break;
 
@@ -3864,7 +3872,8 @@ main(int argc, char *argv[])
         {
           fprintf(stderr, "Option requires an argument -- %c\n\n",
                   (char) optopt);
-          usage();
+
+          exit(EXIT_FAILURE);
         }
         break;
 
@@ -3879,7 +3888,8 @@ main(int argc, char *argv[])
         {
           fprintf(stderr, "Option requires an argument -- %c\n\n",
                   (char) optopt);
-          usage();
+
+          exit(EXIT_FAILURE);
         }
         break;
 
@@ -3894,7 +3904,8 @@ main(int argc, char *argv[])
         {
           fprintf(stderr, "Option requires an argument -- %c\n\n",
                   (char) optopt);
-          usage();
+
+          exit(EXIT_FAILURE);
         }
         break;
 
@@ -3905,7 +3916,8 @@ main(int argc, char *argv[])
         {
           fprintf(stderr, "Option requires an argument -- %c\n\n",
                   (char) optopt);
-          usage();
+
+          exit(EXIT_FAILURE);
         }
         break;
 
@@ -3916,7 +3928,8 @@ main(int argc, char *argv[])
         {
           fprintf(stderr, "Option requires an argument -- %c\n\n",
                   (char) optopt);
-          usage();
+
+          exit(EXIT_FAILURE);
         }
         break;
 
@@ -3927,7 +3940,8 @@ main(int argc, char *argv[])
         {
           fprintf(stderr, "Option requires an argument -- %c\n\n",
                   (char) optopt);
-          usage();
+
+          exit(EXIT_FAILURE);
         }
         break;
 
