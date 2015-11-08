@@ -12,19 +12,20 @@ decided to try to write my own.
 I have tried hard to made its usage as simple as possible. It should
 work, even when using an old ``vt100`` terminal and is ``UTF-8`` aware.
 
-How to build?
-=============
+How to build it?
+================
 **smenu** can be built on every system where a working ``terminfo``
-developpement platform is available. This includes every Unix and Unix
+development platform is available. This includes every Unix and Unix
 like systems I am aware of.
 
-You may need to adjust the ``CURSES`` variable in the Makefile. On Linux,
-by example, you need ``ncurses``.
+You just have to type ``make CURSES=curses`` if you want to link with
+**libcurses** or simply ``make`` if **ncurses** is installed.
 
-After that, a simple ``make`` should be sufficient to build the program.
-
-There is no installation procedure as all that is required to do is to
-put the resulting binary and the man page in their traditional places.
+How to install it?
+==================
+For now, there is no installation procedure as all that is required to
+do is to put the resulting binary and man page in their traditional
+places.
 
 Some examples.
 ==============
