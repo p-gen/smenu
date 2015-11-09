@@ -2956,6 +2956,7 @@ disp_lines(word_t * word_a, win_t * win, toggle_t * toggle, int current,
   int i;
   char scroll_symbol[5];
   int len;
+  int display_bar;
 
   scroll_symbol[0] = ' ';
   scroll_symbol[1] = '\0';
@@ -2965,6 +2966,11 @@ disp_lines(word_t * word_a, win_t * win, toggle_t * toggle, int current,
   tputs(save_cursor, 1, outch);
 
   i = win->start;
+
+  if (last_line >= win->max_lines)
+    display_bar = 1;
+  else
+    display_bar = 0;
 
   if (win->col_mode | win->line_mode)
     len = term->ncolumns - 3;
@@ -3055,7 +3061,8 @@ disp_lines(word_t * word_a, win_t * win, toggle_t * toggle, int current,
       {
         /* If we have more than one line to display */
         /* """""""""""""""""""""""""""""""""""""""" */
-        if (!toggle->no_scrollbar && (lines_disp > 1 || i < count - 1))
+        if (display_bar && !toggle->no_scrollbar
+            && (lines_disp > 1 || i < count - 1))
         {
           /* Display the next element of the scrollbar */
           /* """"""""""""""""""""""""""""""""""""""""" */
@@ -3115,7 +3122,7 @@ disp_lines(word_t * word_a, win_t * win, toggle_t * toggle, int current,
       {
         /* The last line of the window has been displayed */
         /* """""""""""""""""""""""""""""""""""""""""""""" */
-        if (line_nb_of_word_a[i] == last_line)
+        if (display_bar && line_nb_of_word_a[i] == last_line)
         {
           if (!toggle->no_scrollbar)
           {
@@ -3129,7 +3136,7 @@ disp_lines(word_t * word_a, win_t * win, toggle_t * toggle, int current,
         }
         else
         {
-          if (!toggle->no_scrollbar)
+          if (display_bar && !toggle->no_scrollbar)
             right_margin_putp(sbar_arr_down, "v", langinfo, term, win,
                               lines_disp, win->offset);
           break;
