@@ -4370,7 +4370,7 @@ main(int argc, char *argv[])
           /* TODO test if buf is only made of blanks instead */
           /* """"""""""""""""""""""""""""""""""""""""""""""" */
           if (*buf == '\0')
-            word = strdup("_");
+            goto next;
           else
             word = strdup(buf);
 
@@ -4400,7 +4400,7 @@ main(int argc, char *argv[])
           /* TODO test if buf is only made of blanks instead */
           /* """"""""""""""""""""""""""""""""""""""""""""""" */
           if (*buf == '\0')
-            word = strdup("_");
+            goto next;
           else
             word = strdup(buf);
 
@@ -4592,6 +4592,10 @@ main(int argc, char *argv[])
 
     if (count % WORDSCHUNK == 0)
       word_a = xrealloc(word_a, (count + WORDSCHUNK) * sizeof(word_t));
+
+  next:
+    {
+    }
   }
 
   /* All input word have now been read */

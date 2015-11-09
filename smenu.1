@@ -351,6 +351,8 @@ will display the same as above but \f(CBR\fP will contain the original
 word \fIb\fP if \fIB\fP is selected. In both cases, only the word
 \fIB\fP will be searchable and not \fIb\fP.
 .RE
+Notice that a substitution resulting in an empty string is equivalent
+to removing the word.
 .IP "\fB-I\fP /\fIregex\fP/replacement string/[g][v][s]"
 Post-processes the \fBselectable\fP words by applying a regular
 expression based substitution (see \fB-S\fP for details).
