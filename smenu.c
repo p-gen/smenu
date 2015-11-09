@@ -5176,10 +5176,10 @@ main(int argc, char *argv[])
           /* n or <Space Bar> has been pressed */
           /* """"""""""""""""""""""""""""""""" */
         case 'n':
+        case ' ':
           if (search_mode)
             goto special_cmds_when_searching;
 
-        case ' ':
           if (search_next(tst, word_a, search_buf, 1))
             if (current > win.end)
               last_line = build_metadata(word_a, &term, count, &win);
