@@ -48,7 +48,6 @@ $(TARGET).man :
 	@nroff -t -c -Tascii -man $(TARGET).1         \
 	| colcrt -                                    \
 	| sed -e 's/<-,|,|/<-,v,^/'                   \
-	      -e 's/underscores ( )/underscores (_)/' \
 	> $(TARGET).man
 
 strip:

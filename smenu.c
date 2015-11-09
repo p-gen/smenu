@@ -2262,7 +2262,7 @@ expand(char *src, char *dest, langinfo_t * langinfo)
   /* by underscores so that it can be seen          */
   /* """""""""""""""""""""""""""""""""""""""""""""" */
   if (all_spaces)
-    memset(dest, '_', len);
+    memset(dest, ' ', len);
 
   *ptr = '\0';               /* Ensure that dest has a nul terminator */
 
