@@ -276,6 +276,12 @@ struct term_s
   int colors;                /* number of available colors             */
   int color_method;          /* color method (0=classic (0-7), 1=ANSI) */
 
+  int has_cursor_up;         /* has cuu1 terminfo capability           */
+  int has_cursor_down;       /* has cud1 terminfo capability           */
+  int has_cursor_left;       /* has cub1 terminfo capability           */
+  int has_cursor_right;      /* has cuf1 terminfo capability           */
+  int has_save_cursor;       /* has sc terminfo capability             */
+  int has_restore_cursor;    /* has rc terminfo capability             */
   int has_setf;              /* has set_foreground terminfo capability */
   int has_setb;              /* has set_background terminfo capability */
   int has_setaf;             /* idem for set_a_foreground (ANSI)       */
@@ -4005,13 +4011,58 @@ main(int argc, char *argv[])
   /* """""""""""""""""""""""""""""""""""""""""" */
   setupterm((char *) 0, 1, (int *) 0);
 
-  term.colors = ((colors = tigetnum("colors")) == -1) ? 0 : colors;
-  term.has_setf = (tigetstr("setf") == 0) ? 0 : 1;
-  term.has_setb = (tigetstr("setb") == 0) ? 0 : 1;
-  term.has_setaf = (tigetstr("setaf") == 0) ? 0 : 1;
-  term.has_setab = (tigetstr("setab") == 0) ? 0 : 1;
-  term.has_hpa = (tigetstr("hpa") == 0) ? 0 : 1;
   term.color_method = 1;     /* we default to setaf/setbf to set colors */
+
+  /* Get some terminal capabilities */
+  /* """""""""""""""""""""""""""""" */
+  term.colors = ((colors = tigetnum("colors")) == -1) ? 0 : colors;
+
+  {
+    char *str;
+
+    str = tigetstr("cuu1");
+    term.has_cursor_up = (str == (char *) -1 || str == NULL) ? 0 : 1;
+
+    str = tigetstr("cud1");
+    term.has_cursor_down = (str == (char *) -1 || str == NULL) ? 0 : 1;
+
+    str = tigetstr("cub1");
+    term.has_cursor_left = (str == (char *) -1 || str == NULL) ? 0 : 1;
+
+    str = tigetstr("cuf1");
+    term.has_cursor_right = (str == (char *) -1 || str == NULL) ? 0 : 1;
+
+    str = tigetstr("sc");
+    term.has_save_cursor = (str == (char *) -1 || str == NULL) ? 0 : 1;
+
+    str = tigetstr("rc");
+    term.has_restore_cursor = (str == (char *) -1 || str == NULL) ? 0 : 1;
+
+    str = tigetstr("setf");
+    term.has_setf = (str == (char *) -1 || str == NULL) ? 0 : 1;
+
+    str = tigetstr("setb");
+    term.has_setb = (str == (char *) -1 || str == NULL) ? 0 : 1;
+
+    str = tigetstr("setaf");
+    term.has_setaf = (str == (char *) -1 || str == NULL) ? 0 : 1;
+
+    str = tigetstr("setab");
+    term.has_setab = (str == (char *) -1 || str == NULL) ? 0 : 1;
+
+    str = tigetstr("hpa");
+    term.has_hpa = (str == (char *) -1 || str == NULL) ? 0 : 1;
+  }
+
+  if (!term.has_cursor_up || !term.has_cursor_down ||
+      !term.has_cursor_left || !term.has_cursor_right ||
+      !term.has_save_cursor || !term.has_restore_cursor)
+  {
+    fprintf(stderr, "The terminal does not have the required cursor "
+            "management capabilities.\n");
+
+    exit(EXIT_FAILURE);
+  }
 
   /* Get the number of lines/columns of the terminal */
   /* """"""""""""""""""""""""""""""""""""""""""""""" */
