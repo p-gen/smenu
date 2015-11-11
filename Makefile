@@ -43,7 +43,7 @@ $(TARGET): $(OBJS)
 clean:
 	$(RM) -f $(OBJS) $(TARGET) $(TARGET).man smenu-*.tar.gz core
 
-$(TARGET).man :
+$(TARGET).man : $(TARGET).1
 	@echo MAN
 	@nroff -t -c -Tascii -man $(TARGET).1         \
 	| colcrt -                                    \
