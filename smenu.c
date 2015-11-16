@@ -2482,9 +2482,9 @@ void
 set_foreground_color(term_t * term, int color)
 {
   if (term->color_method == 0 && term->has_setf)
-    tputs(tparm(set_foreground, color), 1, outch);
+    tputs(tparm(set_foreground, color, 0, 0, 0, 0, 0, 0, 0, 0, 0), 1, outch);
   else if (term->color_method == 1 && term->has_setaf)
-    tputs(tparm(set_a_foreground, color), 1, outch);
+    tputs(tparm(set_a_foreground, color, 0, 0, 0, 0, 0, 0, 0, 0, 0), 1, outch);
 }
 
 /* ========================================================= */
@@ -2494,9 +2494,9 @@ void
 set_background_color(term_t * term, int color)
 {
   if (term->color_method == 0 && term->has_setb)
-    tputs(tparm(set_background, color), 1, outch);
+    tputs(tparm(set_background, color, 0, 0, 0, 0, 0, 0, 0, 0, 0), 1, outch);
   else if (term->color_method == 1 && term->has_setab)
-    tputs(tparm(set_a_background, color), 1, outch);
+    tputs(tparm(set_a_background, color, 0, 0, 0, 0, 0, 0, 0, 0, 0), 1, outch);
 }
 
 /* ====================================================== */
@@ -2537,11 +2537,12 @@ right_margin_putp(char *s1, char *s2, langinfo_t * langinfo,
     set_background_color(term, win->bar_color.bg);
 
   if (term->has_hpa)
-    tputs(tparm(column_address, offset + win->max_width + 1), 1, outch);
+    tputs(tparm(column_address, offset + win->max_width + 1,
+                0, 0, 0, 0, 0, 0, 0, 0, 0), 1, outch);
   else
     tputs(tparm(cursor_address,
-                term->curs_line + line - 2, offset + win->max_width + 1), 1,
-          outch);
+                term->curs_line + line - 2, offset + win->max_width + 1,
+                0, 0, 0, 0, 0, 0, 0, 0), 1, outch);
 
   if (langinfo->utf8)
     fputs(s1, stdout);
@@ -4837,14 +4838,14 @@ main(int argc, char *argv[])
   /* We've finished reading from stdin                               */
   /* we will now get the inputs from the controlling terminal if any */
   /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-  if ((stdin = freopen("/dev/tty", "r", stdin)) == NULL)
+  if (freopen("/dev/tty", "r", stdin) == NULL)
     fprintf(stderr, "%s\n", "freopen");
 
   old_fd1 = dup(1);
   old_stdout = fdopen(old_fd1, "w");
   setbuf(old_stdout, NULL);
 
-  if ((stdout = freopen("/dev/tty", "w", stdout)) == NULL)
+  if (freopen("/dev/tty", "w", stdout) == NULL)
     fprintf(stderr, "%s\n", "freopen");
 
   setbuf(stdout, NULL);
