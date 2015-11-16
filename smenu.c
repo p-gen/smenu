@@ -4090,8 +4090,8 @@ main(int argc, char *argv[])
     win.attention1_color.fg = 1;
     win.attention2_color.fg = 2;
     win.attention3_color.fg = 3;
-    win.attention4_color.fg = -1;
-    win.attention5_color.fg = -1;
+    win.attention4_color.fg = 5;
+    win.attention5_color.fg = 6;
 
     win.attention1_color.bg = -1;
     win.attention2_color.bg = -1;
