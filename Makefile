@@ -15,7 +15,7 @@ else \
 fi`
 
 DATE=`if git status >/dev/null 2>&1; then \
-  echo ", build: "\`date +%x_%Z\`; \
+  echo ", build: "\`date +%x_%H:%M_%Z\`; \
 else \
   echo ", build: "\`date +%x_%H:%M_%Z\`; \
 fi`
