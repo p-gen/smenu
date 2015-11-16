@@ -2482,9 +2482,9 @@ void
 set_foreground_color(term_t * term, int color)
 {
   if (term->color_method == 0 && term->has_setf)
-    tputs(tparm(set_foreground, color, 0, 0, 0, 0, 0, 0, 0, 0, 0), 1, outch);
+    tputs(tparm(set_foreground, color, 0, 0, 0, 0, 0, 0, 0, 0), 1, outch);
   else if (term->color_method == 1 && term->has_setaf)
-    tputs(tparm(set_a_foreground, color, 0, 0, 0, 0, 0, 0, 0, 0, 0), 1, outch);
+    tputs(tparm(set_a_foreground, color, 0, 0, 0, 0, 0, 0, 0, 0), 1, outch);
 }
 
 /* ========================================================= */
@@ -2494,9 +2494,9 @@ void
 set_background_color(term_t * term, int color)
 {
   if (term->color_method == 0 && term->has_setb)
-    tputs(tparm(set_background, color, 0, 0, 0, 0, 0, 0, 0, 0, 0), 1, outch);
+    tputs(tparm(set_background, color, 0, 0, 0, 0, 0, 0, 0, 0), 1, outch);
   else if (term->color_method == 1 && term->has_setab)
-    tputs(tparm(set_a_background, color, 0, 0, 0, 0, 0, 0, 0, 0, 0), 1, outch);
+    tputs(tparm(set_a_background, color, 0, 0, 0, 0, 0, 0, 0, 0), 1, outch);
 }
 
 /* ====================================================== */
@@ -2538,11 +2538,11 @@ right_margin_putp(char *s1, char *s2, langinfo_t * langinfo,
 
   if (term->has_hpa)
     tputs(tparm(column_address, offset + win->max_width + 1,
-                0, 0, 0, 0, 0, 0, 0, 0, 0), 1, outch);
+                0, 0, 0, 0, 0, 0, 0, 0), 1, outch);
   else
     tputs(tparm(cursor_address,
                 term->curs_line + line - 2, offset + win->max_width + 1,
-                0, 0, 0, 0, 0, 0, 0, 0), 1, outch);
+                0, 0, 0, 0, 0, 0, 0), 1, outch);
 
   if (langinfo->utf8)
     fputs(s1, stdout);
