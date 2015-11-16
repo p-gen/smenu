@@ -1,5 +1,4 @@
 # Some variables
-CC = gcc
 RM = rm
 CURSES=ncurses
 
