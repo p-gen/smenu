@@ -106,6 +106,7 @@ charsetinfo_t all_supported_charsets[] = {
 
   {"ANSI_X3.4-1968", 7},
   {"ANSI_X3.4-1986", 7},
+  {"646", 7},
   {"ASCII", 7},
   {"CP367", 7},
   {"IBM367", 7},
