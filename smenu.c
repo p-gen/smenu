@@ -19,6 +19,7 @@
 #define COLSCHUNK 16
 
 #define _XOPEN_SOURCE 600
+#include "config.h"
 #include <stdio.h>
 #include <stdlib.h>
 #if defined(__sun) && defined(__SVR4)
