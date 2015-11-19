@@ -19,16 +19,22 @@
 #define COLSCHUNK 16
 
 #define _XOPEN_SOURCE 600
-#include <termios.h>
 #include <stdio.h>
 #include <stdlib.h>
+#if defined(__sun) && defined(__SVR4)
+#include <stdbool.h>
+#endif
 #include <signal.h>
 #include <ctype.h>
 #include <string.h>
 #include <unistd.h>
 #include <locale.h>
 #include <langinfo.h>
+#if defined(__sun) && defined(__SVR4)
+#include <curses.h>
+#endif
 #include <term.h>
+#include <termios.h>
 #include <regex.h>
 #include <errno.h>
 #include <wchar.h>
