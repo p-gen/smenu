@@ -18,8 +18,12 @@ How to build it?
 development platform is available. This includes every Unix and Unix
 like systems I am aware of.
 
-You just have to type ``make CURSES=curses`` if you want to link with
-**libcurses** or simply ``make`` if **ncurses** is installed.
+It can be easily compiled and installed with the usual ``configure``,
+``make``, ``make install`` commands. A simple script: ``build.sh`` is
+provided to automate this procedure.
+
+Use the included ``autogen.sh`` if you need to generate a new
+``configure`` script from ``configure.ac`` and ``Makefile.am``.
 
 How to install it?
 ==================
