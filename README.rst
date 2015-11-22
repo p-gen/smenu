@@ -18,18 +18,18 @@ How to build it?
 development platform is available. This includes every Unix and Unix
 like systems I am aware of.
 
-It can be easily compiled and installed with the usual ``configure``,
-``make``, ``make install`` commands. A simple script: ``build.sh`` is
-provided to automate this procedure.
+Please use the provided ``build.sh`` to build the executable. This
+script accepts the same arguments as ``configure``, type ``build.sh
+--help`` the see them.
 
-Use the included ``autogen.sh`` if you need to generate a new
-``configure`` script from ``configure.ac`` and ``Makefile.am``.
+The script ``autogen.sh`` is also provided if you need to generate a
+new ``configure`` script from ``configure.ac`` and ``Makefile.am``. The
+GNU **autotools** will need to be installed for this script to work.
 
 How to install it?
 ==================
-For now, there is no installation procedure as all that is required to
-do is to put the resulting binary and man page in their traditional
-places.
+Once the build process has finished, a simple ``make install`` with the
+appropriate privileges will do it
 
 Some examples.
 ==============
@@ -102,6 +102,4 @@ Note the presence of a scrollbar.
 
 Interested?
 -----------
-Please read the included man page to learn more about this little program.
-
-On Linux, ``man ./smenu.1`` will do it.
+Please use the included man page to learn more about this little program.
