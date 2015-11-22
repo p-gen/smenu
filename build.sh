@@ -9,7 +9,7 @@ fi
 
 # Ensure that aclocal wont' be called
 # """""""""""""""""""""""""""""""""""
-touch Makefile.in install-sh missing depcomp config.h.in configure aclocal.m4
+touch aclocal.m4 Makefile.in configure config.h.in
 
 # Create the Makefile
 # """""""""""""""""""
