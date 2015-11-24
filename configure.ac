@@ -33,7 +33,6 @@ AC_TYPE_SIZE_T
 
 # Checks for library functions.
 AC_FUNC_MALLOC
-AC_FUNC_REALLOC
 AC_CHECK_FUNCS([mblen memset nl_langinfo pathconf regcomp setlocale strchr strdup strrchr])
 
 AC_CONFIG_FILES([Makefile])
