@@ -41,6 +41,8 @@ void ll_init(ll_t * list);
 ll_node_t *ll_new_node(void);
 ll_t *ll_new(void);
 
+int my_stricmp(const char *str1, const char *str2);
+
 int isprint7(int i);
 int isprint8(int i);
 

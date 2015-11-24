@@ -1155,6 +1155,30 @@ get_cursor_position(int *const r, int *const c)
 /* Strings and multibyte strings utility functions */
 /* *********************************************** */
 
+/* ========================================= */
+/* Case insensitive strcmp                   */
+/* from http://c.snippets.org/code/stricmp.c */
+/* ========================================= */
+int
+my_stricmp(const char *str1, const char *str2)
+{
+  int retval = 0;
+
+  while (1)
+  {
+    retval = tolower(*str1++) - tolower(*str2++);
+
+    if (retval)
+      break;
+
+    if (*str1 && *str2)
+      continue;
+    else
+      break;
+  }
+  return retval;
+}
+
 /* ====================================================================== */
 /* Parse a columns description string                                     */
 /* <letter><range1>,<range2>,...                                          */
@@ -3689,7 +3713,7 @@ main(int argc, char *argv[])
 
   while (charset_ptr->name != NULL)
   {
-    if (strcmp(charset, charset_ptr->name) == 0)
+    if (my_stricmp(charset, charset_ptr->name) == 0)
     {
       is_supported_charset = 1;
       langinfo.bits = charset_ptr->bits;
