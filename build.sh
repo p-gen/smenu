@@ -9,7 +9,7 @@ fi
 
 # Ensure that aclocal wont' be called
 # """""""""""""""""""""""""""""""""""
-touch aclocal.m4 Makefile.in configure config.h.in
+touch Makefile.in configure config.h.in
 
 # Create the Makefile
 # """""""""""""""""""
