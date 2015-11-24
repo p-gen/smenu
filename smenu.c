@@ -125,6 +125,10 @@ charsetinfo_t all_supported_charsets[] = {
   {"US", 7},
   {"US-ASCII", 7},
 
+  {"hp-roman8", 8},
+  {"roman8", 8},
+  {"r8", 8},
+
   {"ISO-8859-1", 8},
   {"ISO-IR-100", 8},
   {"ISO_8859-1:1987", 8},
