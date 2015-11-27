@@ -36,5 +36,4 @@ AC_FUNC_MALLOC
 AC_CHECK_FUNCS([mblen memset nl_langinfo pathconf regcomp setlocale strchr strdup strrchr])
 
 AC_CONFIG_FILES([Makefile])
-AC_OUTPUT
-
+AC_OUTPUT([smenu.spec])
