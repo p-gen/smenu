@@ -299,6 +299,10 @@ struct term_s
   int has_setaf;             /* idem for set_a_foreground (ANSI)       */
   int has_setab;             /* idem for set_a_background (ANSI)       */
   int has_hpa;               /* has column_address terminfo capability */
+  int has_bold;              /* has bold mode                          */
+  int has_reverse;           /* has reverse mode                       */
+  int has_underline;         /* has underline mode                     */
+  int has_standout;          /* has standout mode                      */
 };
 
 /* Structure describing a word */
@@ -568,10 +572,14 @@ help(win_t * win, term_t * term, int last_line)
     switch (entries[index].attr)
     {
       case 'b':
-        tputs(enter_bold_mode, 1, outch);
+        if (term->has_bold)
+          tputs(enter_bold_mode, 1, outch);
         break;
       case 'r':
-        tputs(enter_reverse_mode, 1, outch);
+        if (term->has_reverse)
+          tputs(enter_reverse_mode, 1, outch);
+        else if (term->has_standout)
+          tputs(enter_standout_mode, 1, outch);
         break;
       case 'n':
         tputs(exit_attribute_mode, 1, outch);
@@ -2540,7 +2548,8 @@ set_background_color(term_t * term, int color)
 void
 left_margin_putp(char *s, term_t * term, win_t * win)
 {
-  tputs(enter_bold_mode, 1, outch);
+  if (term->has_bold)
+    tputs(enter_bold_mode, 1, outch);
 
   if (win->bar_color.fg >= 0)
     set_foreground_color(term, win->bar_color.fg);
@@ -2563,7 +2572,8 @@ void
 right_margin_putp(char *s1, char *s2, langinfo_t * langinfo,
                   term_t * term, win_t * win, int line, int offset)
 {
-  tputs(enter_bold_mode, 1, outch);
+  if (term->has_bold)
+    tputs(enter_bold_mode, 1, outch);
 
   if (win->bar_color.fg >= 0)
     set_foreground_color(term, win->bar_color.fg);
@@ -2819,8 +2829,12 @@ disp_word(word_t * word_a, int pos, int search_mode, char *buffer,
         set_background_color(term, win->search_color.bg);
       else
       {
-        tputs(enter_underline_mode, 1, outch);
-        tputs(enter_reverse_mode, 1, outch);
+        if (term->has_underline)
+          tputs(enter_underline_mode, 1, outch);
+        if (term->has_reverse)
+          tputs(enter_reverse_mode, 1, outch);
+        else if (term->has_standout)
+          tputs(enter_standout_mode, 1, outch);
       }
 
       mb_strprefix(tmp_max_word, word_a[pos].str, word_a[pos].mbytes - 1, &p);
@@ -2849,7 +2863,7 @@ disp_word(word_t * word_a, int pos, int search_mode, char *buffer,
         /* """""""""""""""""""""""""""""""" */
         if (win->search_color.fg >= 0 && term->colors > 7)
           set_foreground_color(term, win->search_color.fg);
-        else
+        else if (term->has_bold)
           tputs(enter_bold_mode, 1, outch);
 
         fputs(buffer, stdout);
@@ -2864,7 +2878,11 @@ disp_word(word_t * word_a, int pos, int search_mode, char *buffer,
     {
       /* If we are not in search mode, display in the cursor in reverse video */
       /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-      tputs(enter_reverse_mode, 1, outch);
+      if (term->has_reverse)
+        tputs(enter_reverse_mode, 1, outch);
+      else if (term->has_standout)
+        tputs(enter_standout_mode, 1, outch);
+
       mb_strprefix(tmp_max_word, word_a[pos].str, word_a[pos].mbytes - 1, &p);
       fputs(tmp_max_word, stdout);
     }
@@ -2878,10 +2896,20 @@ disp_word(word_t * word_a, int pos, int search_mode, char *buffer,
 
     if (!word_a[pos].is_selectable)
     {
-      if (win->exclude_color.fg >= 0)
-        set_foreground_color(term, win->exclude_color.fg);
-      if (win->exclude_color.bg >= 0)
-        set_background_color(term, win->exclude_color.bg);
+      if (term->colors > 7)
+      {
+        if (win->exclude_color.fg >= 0)
+          set_foreground_color(term, win->exclude_color.fg);
+        if (win->exclude_color.bg >= 0)
+          set_background_color(term, win->exclude_color.bg);
+      }
+      else
+      {
+        if (term->has_bold)
+          tputs(enter_bold_mode, 1, outch);
+        else if (term->has_underline)
+          tputs(enter_underline_mode, 1, outch);
+      }
     }
     else if (word_a[pos].attention_level > 0)
     {
@@ -2948,7 +2976,8 @@ disp_message(ll_t * message_lines_list, int message_max_width,
   node = message_lines_list->head;
   buf = xmalloc(message_max_len + 1);
 
-  tputs(enter_bold_mode, 1, outch);
+  if (term->has_bold)
+    tputs(enter_bold_mode, 1, outch);
 
   /* Follow the message lines list and display each line */
   /* """"""""""""""""""""""""""""""""""""""""""""""""""" */
@@ -3059,7 +3088,8 @@ disp_lines(word_t * word_a, win_t * win, toggle_t * toggle, int current,
       if ((win->col_mode | win->line_mode) && i < count - 1
           && word_a[i + 1].end >= len + win->first_column)
       {
-        tputs(enter_bold_mode, 1, outch);
+        if (term->has_bold)
+          tputs(enter_bold_mode, 1, outch);
 
         if (win->bar_color.fg >= 0)
           set_foreground_color(term, win->bar_color.fg);
@@ -4052,7 +4082,9 @@ main(int argc, char *argv[])
 
   /* Get some terminal capabilities */
   /* """""""""""""""""""""""""""""" */
-  term.colors = ((colors = tigetnum("colors")) == -1) ? 0 : colors;
+  term.colors = tigetnum("colors");
+  if (term.colors < 0)
+    term.colors = 0;
 
   {
     char *str;
@@ -4089,6 +4121,18 @@ main(int argc, char *argv[])
 
     str = tigetstr("hpa");
     term.has_hpa = (str == (char *) -1 || str == NULL) ? 0 : 1;
+
+    str = tigetstr("bold");
+    term.has_bold = (str == (char *) -1 || str == NULL) ? 0 : 1;
+
+    str = tigetstr("rev");
+    term.has_reverse = (str == (char *) -1 || str == NULL) ? 0 : 1;
+
+    str = tigetstr("ul");
+    term.has_underline = (str == (char *) -1 || str == NULL) ? 0 : 1;
+
+    str = tigetstr("smso");
+    term.has_standout = (str == (char *) -1 || str == NULL) ? 0 : 1;
   }
 
   if (!term.has_cursor_up || !term.has_cursor_down ||
