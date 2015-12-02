@@ -23,7 +23,7 @@ Summary:        A standard input word picker
 License:        GPL-2.0
 Group:          Productivity/Text/Utilities
 Url:            http://repo.or.cz/smenu.git
-Source:         %{name}-%{version}.tar.gz
+Source:         %{name}-%{version}.tar.bz2
 BuildRequires:  ncurses-devel
 BuildRoot:      %{_tmppath}/%{name}-%{version}-build
 
