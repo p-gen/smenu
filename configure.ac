@@ -7,7 +7,8 @@ AC_PREREQ([2.69])
 AC_INIT([smenu], [my_version], [p.gen.progs@gmail.com])
 AC_CONFIG_SRCDIR([smenu.c])
 AC_CONFIG_HEADERS([config.h])
-AM_INIT_AUTOMAKE([foreign -Wall])
+AM_INIT_AUTOMAKE([no-dist-gzip dist-bzip2 foreign -Wall])
+AM_SILENT_RULES([yes])
 
 # Checks for programs.
 AC_USE_SYSTEM_EXTENSIONS
