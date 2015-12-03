@@ -3788,8 +3788,7 @@ main(int argc, char *argv[])
           win.asked_max_lines = atoi(optarg);
         else
         {
-          fprintf(stderr, "Option requires an argument -- %c\n\n",
-                  (char) optopt);
+          TELL("Option requires an Argument -- ");
 
           exit(EXIT_FAILURE);
         }
@@ -3808,8 +3807,7 @@ main(int argc, char *argv[])
           pre_selection_index = strdup(optarg);
         else
         {
-          fprintf(stderr, "Option requires an argument -- %c\n\n",
-                  (char) optopt);
+          TELL("Option requires an argument -- ");
 
           exit(EXIT_FAILURE);
         }
@@ -3845,8 +3843,7 @@ main(int argc, char *argv[])
           message = optarg;
         else
         {
-          fprintf(stderr, "Option requires an argument -- %c\n\n",
-                  (char) optopt);
+          TELL("Option requires an argument -- ");
 
           exit(EXIT_FAILURE);
         }
@@ -3865,8 +3862,7 @@ main(int argc, char *argv[])
           include_pattern = optarg;
         else
         {
-          fprintf(stderr, "Option requires an argument -- %c\n\n",
-                  (char) optopt);
+          TELL("Option requires an argument -- ");
 
           exit(EXIT_FAILURE);
         }
@@ -3877,8 +3873,7 @@ main(int argc, char *argv[])
           exclude_pattern = optarg;
         else
         {
-          fprintf(stderr, "Option requires an argument -- %c\n\n",
-                  (char) optopt);
+          TELL("Option requires an argument -- ");
 
           exit(EXIT_FAILURE);
         }
@@ -3892,8 +3887,7 @@ main(int argc, char *argv[])
         }
         else
         {
-          fprintf(stderr, "Option requires an argument -- %c\n\n",
-                  (char) optopt);
+          TELL("Option requires an argument -- ");
 
           exit(EXIT_FAILURE);
         }
@@ -3914,8 +3908,7 @@ main(int argc, char *argv[])
         }
         else
         {
-          fprintf(stderr, "Option requires an argument -- %c\n\n",
-                  (char) optopt);
+          TELL("Option requires an argument -- ");
 
           exit(EXIT_FAILURE);
         }
@@ -3936,8 +3929,7 @@ main(int argc, char *argv[])
         }
         else
         {
-          fprintf(stderr, "Option requires an argument -- %c\n\n",
-                  (char) optopt);
+          TELL("Option requires an argument -- ");
 
           exit(EXIT_FAILURE);
         }
@@ -3958,8 +3950,7 @@ main(int argc, char *argv[])
         }
         else
         {
-          fprintf(stderr, "Option requires an argument -- %c\n\n",
-                  (char) optopt);
+          TELL("Option requires an argument -- ");
 
           exit(EXIT_FAILURE);
         }
@@ -3974,8 +3965,7 @@ main(int argc, char *argv[])
           attention_pattern[opt - '1'] = optarg;
         else
         {
-          fprintf(stderr, "Option requires an argument -- %c\n\n",
-                  (char) optopt);
+          TELL("Option requires an argument -- ");
 
           exit(EXIT_FAILURE);
         }
@@ -3990,8 +3980,7 @@ main(int argc, char *argv[])
           first_word_pattern = optarg;
         else
         {
-          fprintf(stderr, "Option requires an argument -- %c\n\n",
-                  (char) optopt);
+          TELL("Option requires an argument -- ");
 
           exit(EXIT_FAILURE);
         }
@@ -4002,8 +3991,7 @@ main(int argc, char *argv[])
           last_word_pattern = optarg;
         else
         {
-          fprintf(stderr, "Option requires an argument -- %c\n\n",
-                  (char) optopt);
+          TELL("Option requires an argument -- ");
 
           exit(EXIT_FAILURE);
         }
@@ -4014,8 +4002,7 @@ main(int argc, char *argv[])
           iws = optarg;
         else
         {
-          fprintf(stderr, "Option requires an argument -- %c\n\n",
-                  (char) optopt);
+          TELL("Option requires an argument -- ");
 
           exit(EXIT_FAILURE);
         }
@@ -4026,8 +4013,7 @@ main(int argc, char *argv[])
           ils = optarg;
         else
         {
-          fprintf(stderr, "Option requires an argument -- %c\n\n",
-                  (char) optopt);
+          TELL("Option requires an argument -- ");
 
           exit(EXIT_FAILURE);
         }
