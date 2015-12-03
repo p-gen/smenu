@@ -3634,7 +3634,6 @@ main(int argc, char *argv[])
 
   tst_node_t *tst = NULL;    /* TST used by the search function            */
 
-  int colors;                /* Temporary variable used to set term.colors */
   int page;                  /* Step for the vertical cursor moves         */
   char *word;                /* Temporary variable to work on words        */
   char *tmp_max_word;
