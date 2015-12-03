@@ -405,11 +405,11 @@ struct ll_s
 /* Help functions */
 /* ************** */
 
-/* ====================== */
-/* Usage display and exit */
-/* ====================== */
+/* =================== */
+/* Short usage display */
+/* =================== */
 void
-usage(void)
+short_usage(void)
 {
   fprintf(stderr, "Usage: smenu [-h] [-n lines] [-c] [-l] [-s pattern] ");
   fprintf(stderr, "[-m message] [-w] [-d]   \\\n");
@@ -423,6 +423,16 @@ usage(void)
   fprintf(stderr, "[-A regex] [-Z regex]                   \\\n");
   fprintf(stderr, "       [-1 regex] [-2 regex] ... [-5 regex] [-g] ");
   fprintf(stderr, "[-W bytes] [-L bytes] [-V]\n");
+}
+
+/* ====================== */
+/* Usage display and exit */
+/* ====================== */
+void
+usage(void)
+{
+  short_usage();
+
   fprintf(stderr, "\nThis is a filter that gets words from stdin ");
   fprintf(stderr, "and outputs the\n");
   fprintf(stderr, "selected word (or nothing) on stdout.\n\n");
@@ -3789,6 +3799,8 @@ main(int argc, char *argv[])
         else
         {
           TELL("Option requires an Argument -- ");
+          fputs("\n", stderr);
+          short_usage();
 
           exit(EXIT_FAILURE);
         }
@@ -3808,6 +3820,8 @@ main(int argc, char *argv[])
         else
         {
           TELL("Option requires an argument -- ");
+          fputs("\n", stderr);
+          short_usage();
 
           exit(EXIT_FAILURE);
         }
@@ -3844,6 +3858,8 @@ main(int argc, char *argv[])
         else
         {
           TELL("Option requires an argument -- ");
+          fputs("\n", stderr);
+          short_usage();
 
           exit(EXIT_FAILURE);
         }
@@ -3863,6 +3879,8 @@ main(int argc, char *argv[])
         else
         {
           TELL("Option requires an argument -- ");
+          fputs("\n", stderr);
+          short_usage();
 
           exit(EXIT_FAILURE);
         }
@@ -3874,6 +3892,8 @@ main(int argc, char *argv[])
         else
         {
           TELL("Option requires an argument -- ");
+          fputs("\n", stderr);
+          short_usage();
 
           exit(EXIT_FAILURE);
         }
@@ -3888,6 +3908,8 @@ main(int argc, char *argv[])
         else
         {
           TELL("Option requires an argument -- ");
+          fputs("\n", stderr);
+          short_usage();
 
           exit(EXIT_FAILURE);
         }
@@ -3909,6 +3931,8 @@ main(int argc, char *argv[])
         else
         {
           TELL("Option requires an argument -- ");
+          fputs("\n", stderr);
+          short_usage();
 
           exit(EXIT_FAILURE);
         }
@@ -3930,6 +3954,8 @@ main(int argc, char *argv[])
         else
         {
           TELL("Option requires an argument -- ");
+          fputs("\n", stderr);
+          short_usage();
 
           exit(EXIT_FAILURE);
         }
@@ -3951,6 +3977,8 @@ main(int argc, char *argv[])
         else
         {
           TELL("Option requires an argument -- ");
+          fputs("\n", stderr);
+          short_usage();
 
           exit(EXIT_FAILURE);
         }
@@ -3966,6 +3994,8 @@ main(int argc, char *argv[])
         else
         {
           TELL("Option requires an argument -- ");
+          fputs("\n", stderr);
+          short_usage();
 
           exit(EXIT_FAILURE);
         }
@@ -3981,6 +4011,8 @@ main(int argc, char *argv[])
         else
         {
           TELL("Option requires an argument -- ");
+          fputs("\n", stderr);
+          short_usage();
 
           exit(EXIT_FAILURE);
         }
@@ -3992,6 +4024,8 @@ main(int argc, char *argv[])
         else
         {
           TELL("Option requires an argument -- ");
+          fputs("\n", stderr);
+          short_usage();
 
           exit(EXIT_FAILURE);
         }
@@ -4003,6 +4037,8 @@ main(int argc, char *argv[])
         else
         {
           TELL("Option requires an argument -- ");
+          fputs("\n", stderr);
+          short_usage();
 
           exit(EXIT_FAILURE);
         }
@@ -4014,6 +4050,8 @@ main(int argc, char *argv[])
         else
         {
           TELL("Option requires an argument -- ");
+          fputs("\n", stderr);
+          short_usage();
 
           exit(EXIT_FAILURE);
         }
@@ -4021,6 +4059,10 @@ main(int argc, char *argv[])
 
       case '?':
         fputs("\n", stderr);
+        short_usage();
+
+        exit(EXIT_FAILURE);
+
       case 'h':
       default:
         usage();
@@ -4031,7 +4073,9 @@ main(int argc, char *argv[])
   if (optind < argc)
   {
     fprintf(stderr, "Not an option -- %s\n\n", argv[argc - 1]);
-    usage();
+    short_usage();
+
+    exit(EXIT_FAILURE);
   }
 
   /* If we did not impose the number of columns, we the whole terminal width */

@@ -28,6 +28,7 @@ typedef struct limits_s limits_t;
 typedef struct sed_s sed_t;
 
 void help(win_t * win, term_t * term, int last_line);
+void short_usage(void);
 void usage(void);
 
 void *xmalloc(size_t size);
