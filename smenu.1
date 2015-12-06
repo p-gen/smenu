@@ -13,8 +13,9 @@ and outputs the selection to stdout.
 [\fB-I\fP \fI/regex/string/[g][v][s][i]]\fP \\
       [\fB-E\fP \fI/regex/string/[g][v][s][i]]\fP \\
       [\fB-A\fP \fIregex\fP] [\fB-Z\fP \fIregex\fP \\
-      [\fB-1\fP \fIregex\fP] [\fB-2\fP \fIregex\fP] ... \
-[\fB-5\fP \fIregex\fP] \\
+      [\fB-1\fP \fIregex\fP [\fIfg\fP/\fIbg\fp]] \
+[\fB-2\fP \fIregex\fP [\fIfg\fP/\fIbg\fp]] ... \
+[\fB-5\fP \fIregex\fP [\fIfg\fP/\fIbg\fp]] \\
       [\fB-g\fP] [\fB-q\fP] [\fB-W\fP \fIbytes\fP] [\fB-L\fP \fIbytes\fP] \\
       [\fB-V\fP]
 \fP
@@ -376,14 +377,19 @@ this method to build the lines, just specify an empty
 .IP "\fB-Z\fP \fIregex\fP"
 Similar to \fB-A\fP but forces the word to be the latest of its line.
 The same trick with \fB-L\fP can also be used.
-.IP "\fB-1\fP \fIregex\fP, ..., \fB-5\fP \fIregex\fP"
-Allows to give to 5 classes of words specified by regular expressions
-a special display color. We call them \fBattention levels\fP. Only
+.IP "\fB-1\fP ... \fB-5\fP \fIregex\fP [\fIfg\fP/\fIbg\fP]
+Allows to give to 5 classes of words specified by regular expressions a
+special display color. They are called \fBattention levels\fP. Only
 selectable words will be considered.
 
-By default, the first 3 attention levels have their foreground color set
-to red, green, and brown/yellow. All these colors can be set or modified
-via the configuration files. See the example file above for an example.
+By default, the 5 attention levels have their foreground color set to
+red, green, brown/yellow, purple and cyan. All these colors also can be
+set or modified permanently in the configuration files. See the example
+file above for an example.
+
+The optional second argument can be used to override the default or
+configured foreground (\fIfg\fP) and background (\fIbg\fP) color of
+each class.
 .IP \fB-g\fP
 Replaces the blank after each words in column or tabular mode by a
 vertical bar "\fB|\fP". Some users may find the output more readable

@@ -412,17 +412,18 @@ void
 short_usage(void)
 {
   fprintf(stderr, "Usage: smenu [-h] [-n lines] [-c] [-l] [-s pattern] ");
-  fprintf(stderr, "[-m message] [-w] [-d]   \\\n");
+  fprintf(stderr, "[-m message] [-w] [-d] \\\n");
   fprintf(stderr, "       [-M] [-t [cols]] [-r] [-b] [-i regex] [-e regex]");
-  fprintf(stderr, "                      \\\n");
+  fprintf(stderr, "                    \\\n");
   fprintf(stderr, "       [-C [a|A|s|S|r|R|d|D]col1[-col2],[col1[-col2]]...] ");
-  fprintf(stderr, "                   \\\n");
+  fprintf(stderr, "                 \\\n");
   fprintf(stderr, "       [-S /regex/repl/[g][v][s][i]] ");
-  fprintf(stderr, "[-I /regex/repl/[g][v][s][i]]           \\\n");
+  fprintf(stderr, "[-I /regex/repl/[g][v][s][i]]         \\\n");
   fprintf(stderr, "       [-E /regex/repl/[g][v][s][i]] ");
-  fprintf(stderr, "[-A regex] [-Z regex]                   \\\n");
-  fprintf(stderr, "       [-1 regex] [-2 regex] ... [-5 regex] [-g] ");
-  fprintf(stderr, "[-W bytes] [-L bytes] [-V]\n");
+  fprintf(stderr, "[-A regex] [-Z regex]                 \\\n");
+  fprintf(stderr, "       [-1 regex [fg/bg]] [-2 regex [fg/bg]] ... ");
+  fprintf(stderr, "[-5 regex [fg/bg]] [-g]   \\\n");
+  fprintf(stderr, "       [-W bytes] [-L bytes] [-V]\n");
 }
 
 /* ====================== */
@@ -719,7 +720,10 @@ ini_cb(win_t * win, term_t * term, limits_t * limits,
          if ((error = get_ini_color(value, &v, term->colors))) \
            goto out;                                           \
          else                                                  \
-           win->x ## _color.fg = v;                            \
+         {                                                     \
+           if (win->x ## _color.fg < 0)                        \
+             win->x ## _color.fg = v;                          \
+         }                                                     \
        }
 
 #define CHECK_BG(x)                                            \
@@ -728,7 +732,10 @@ ini_cb(win_t * win, term_t * term, limits_t * limits,
          if ((error = get_ini_color(value, &v, term->colors))) \
            goto out;                                           \
          else                                                  \
-           win->x ## _color.bg = v;                            \
+         {                                                     \
+           if (win->x ## _color.bg < 0)                        \
+             win->x ## _color.bg = v;                          \
+         }                                                     \
        }
 
     /* [colors] section */
@@ -3723,6 +3730,25 @@ main(int argc, char *argv[])
   win.line_mode = 0;
   win.first_column = 0;
 
+  win.bar_color.fg = -1;
+  win.bar_color.bg = -1;
+  win.search_color.fg = -1;
+  win.search_color.bg = -1;
+  win.exclude_color.fg = -1;
+  win.exclude_color.bg = -1;
+
+  win.attention1_color.fg = -1;
+  win.attention2_color.fg = -1;
+  win.attention3_color.fg = -1;
+  win.attention4_color.fg = -1;
+  win.attention5_color.fg = -1;
+
+  win.attention1_color.bg = -1;
+  win.attention2_color.bg = -1;
+  win.attention3_color.bg = -1;
+  win.attention4_color.bg = -1;
+  win.attention5_color.bg = -1;
+
   /* Default limits initialization */
   /* """"""""""""""""""""""""""""" */
   limits.words = 32767;
@@ -3990,7 +4016,81 @@ main(int argc, char *argv[])
       case '4':
       case '5':
         if (optarg && *optarg != '-')
+        {
+          int count = 1;
+          char fgs[4] = { 0 };
+          char bgs[4] = { 0 };
+          int fg = -1, bg = -1;
+
           attention_pattern[opt - '1'] = optarg;
+
+          /* Parse optional additional arguments */
+          /* """"""""""""""""""""""""""""""""""" */
+          while (argv[optind] && *argv[optind] != '-')
+          {
+            if (count > 2)
+            {
+              TELL("Too many arguments -- ");
+              fputs("\n", stderr);
+              short_usage();
+
+              exit(EXIT_FAILURE);
+            }
+
+            /* Colors must respect the format: <fg color>/<bg color> */
+            /* """"""""""""""""""""""""""""""""""""""""""""""""""""" */
+            if (sscanf(argv[optind], "%3[^/]/%3s", fgs, bgs) == 2)
+            {
+              errno = 0;
+              fg = strtol(fgs, NULL, 10);
+              bg = strtol(bgs, NULL, 10);
+
+              if (errno)
+              {
+                TELL(" Invalid colors -- ");
+                fputs("\n", stderr);
+                short_usage();
+
+                exit(EXIT_FAILURE);
+              }
+              else
+                switch (opt)
+                {
+                  case '1':
+                    win.attention1_color.fg = fg;
+                    win.attention1_color.bg = bg;
+                    break;
+                  case '2':
+                    win.attention2_color.fg = fg;
+                    win.attention2_color.bg = bg;
+                    break;
+                  case '3':
+                    win.attention3_color.fg = fg;
+                    win.attention3_color.bg = bg;
+                    break;
+                  case '4':
+                    win.attention4_color.fg = fg;
+                    win.attention4_color.bg = bg;
+                    break;
+                  case '5':
+                    win.attention5_color.fg = fg;
+                    win.attention5_color.bg = bg;
+                    break;
+                }
+            }
+            else
+            {
+              TELL("Bad optional color settings -- ");
+              fputs("\n", stderr);
+              short_usage();
+
+              exit(EXIT_FAILURE);
+            }
+
+            optind++;
+            count++;
+          }
+        }
         else
         {
           TELL("Option requires an argument -- ");
@@ -4183,31 +4283,6 @@ main(int argc, char *argv[])
   home_ini_file = make_ini_path(argv[0], "HOME");
   local_ini_file = make_ini_path(argv[0], "PWD");
 
-  /* If the ini file failed to provide custom colors or is inexistent */
-  /* or not readable then  set their default values                   */
-  /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-  if (term.colors > 7)
-  {
-    win.bar_color.fg = 2;
-    win.bar_color.bg = -1;
-    win.search_color.fg = 0;
-    win.search_color.bg = 5;
-    win.exclude_color.fg = 3;
-    win.exclude_color.bg = -1;
-
-    win.attention1_color.fg = 1;
-    win.attention2_color.fg = 2;
-    win.attention3_color.fg = 3;
-    win.attention4_color.fg = 5;
-    win.attention5_color.fg = 6;
-
-    win.attention1_color.bg = -1;
-    win.attention2_color.bg = -1;
-    win.attention3_color.bg = -1;
-    win.attention4_color.bg = -1;
-    win.attention5_color.bg = -1;
-  }
-
   /* Set the colors from the configuration file if possible */
   /* """""""""""""""""""""""""""""""""""""""""""""""""""""" */
   if (ini_load(home_ini_file, &win, &term, &limits, ini_cb))
@@ -4217,6 +4292,31 @@ main(int argc, char *argv[])
 
   free(home_ini_file);
   free(local_ini_file);
+
+  /* If some colors were not set, set their default values */
+  /* """"""""""""""""""""""""""""""""""""""""""""""""""""" */
+  if (term.colors > 7)
+  {
+    if (win.bar_color.fg < 0)
+      win.bar_color.fg = 2;
+    if (win.search_color.fg < 0)
+      win.search_color.fg = 0;
+    if (win.search_color.bg < 0)
+      win.search_color.bg = 5;
+    if (win.exclude_color.fg < 0)
+      win.exclude_color.fg = 3;
+
+    if (win.attention1_color.fg < 0)
+      win.attention1_color.fg = 1;
+    if (win.attention2_color.fg < 0)
+      win.attention2_color.fg = 2;
+    if (win.attention3_color.fg < 0)
+      win.attention3_color.fg = 3;
+    if (win.attention4_color.fg < 0)
+      win.attention4_color.fg = 5;
+    if (win.attention5_color.fg < 0)
+      win.attention5_color.fg = 6;
+  }
 
   if (message != NULL)
   {
