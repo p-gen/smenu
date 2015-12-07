@@ -4042,12 +4042,16 @@ main(int argc, char *argv[])
             if (sscanf(argv[optind], "%3[^/]/%3s", fgs, bgs) == 2)
             {
               errno = 0;
-              fg = strtol(fgs, NULL, 10);
-              bg = strtol(bgs, NULL, 10);
+              char *endptrf, *endptrb;
 
-              if (errno)
+              fg = (int) strtol(fgs, &endptrf, 10);
+              bg = (int) strtol(bgs, &endptrb, 10);
+
+              if (errno
+                  || endptrf == fgs || *endptrf != '\0'
+                  || endptrb == bgs || *endptrb != '\0')
               {
-                TELL(" Invalid colors -- ");
+                TELL("Invalid colors -- ");
                 fputs("\n", stderr);
                 short_usage();
 
