@@ -882,7 +882,7 @@ ini_load(const char *filename, win_t * win, term_t * term, limits_t * limits,
       if (error)
         goto out;
     }
-    fscanf(f, " ;%*[^\n]");
+    (void) fscanf(f, " ;%*[^\n]");
 
     /* skip blank lines */
     /* """""""""""""""" */
@@ -3412,9 +3412,9 @@ char *optstart = START;      /* list of characters that start options */
 #define TELL(S) { \
   if (opterr && opterrfd >= 0) { \
     char option = (char) optopt; \
-    write(opterrfd, (S), strlen(S)); \
-    write(opterrfd, &option, 1); \
-    write(opterrfd, "\n", 1); \
+    (void) write(opterrfd, (S), strlen(S)); \
+    (void) write(opterrfd, &option, 1); \
+    (void) write(opterrfd, "\n", 1); \
   } \
   return (optbad); \
 }
