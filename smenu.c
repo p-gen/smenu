@@ -309,16 +309,16 @@ struct term_s
 /* """"""""""""""""""""""""""" */
 struct word_s
 {
-  char *str;                 /* display string associated with this word  */
-  char *orig;                /* NULL or original string if is had been    *
-                              * shortened for being displayed or altered  *
-                              * by is expansion.                          */
-  int is_last;               /* 1 if the word is the last of a line       */
-  int start, end, mbytes;    /* start/end absolute horiz. word positions  *
-                              * on the screen                             *
-                              * mbytes: number of multibytes to display   */
-  int is_selectable;         /* word is is_selectable                     */
-  int attention_level;       /* can vary from 0 to 5; 0 meaning normal    */
+  char *str;                 /* display string associated with this word */
+  char *orig;                /* NULL or original string if is had been   *
+                              * shortened for being displayed or altered *
+                              * by is expansion.                         */
+  int is_last;               /* 1 if the word is the last of a line      */
+  int start, end, mbytes;    /* start/end absolute horiz. word positions *
+                              * on the screen                            *
+                              * mbytes: number of multibytes to display  */
+  int is_selectable;         /* word is is_selectable                    */
+  int attention_level;       /* can vary from 0 to 5; 0 meaning normal   */
 };
 
 /* Structure describing the window in which the user */
@@ -339,14 +339,10 @@ struct win_s
   int center;
   int offset;
 
-  color_t bar_color;         /* scrollbar color                   */
-  color_t search_color;      /* search mode colors                */
-  color_t exclude_color;     /* non-selectable words colors       */
-  color_t attention1_color;  /* attention level 1 words colors    */
-  color_t attention2_color;  /* attention level 2 words colors    */
-  color_t attention3_color;  /* attention level 3 words colors    */
-  color_t attention4_color;  /* attention level 4 words colors    */
-  color_t attention5_color;  /* attention level 5 words colors    */
+  color_t bar_color;         /* scrollbar color             */
+  color_t search_color;      /* search mode colors          */
+  color_t exclude_color;     /* non-selectable words colors */
+  color_t attention_color[5];   /* attention words colors   */
 };
 
 /* Sed like node structure */
@@ -738,6 +734,30 @@ ini_cb(win_t * win, term_t * term, limits_t * limits,
          }                                                     \
        }
 
+#define CHECK_ATT_FG(x,y)                                      \
+  else if (strcmp(name, #x #y "_foreground") == 0)             \
+       {                                                       \
+         if ((error = get_ini_color(value, &v, term->colors))) \
+           goto out;                                           \
+         else                                                  \
+         {                                                     \
+           if (win->x ## _color[y-1].fg < 0)                   \
+             win->x ## _color[y-1].fg = v;                     \
+         }                                                     \
+       }
+
+#define CHECK_ATT_BG(x,y)                                      \
+  else if (strcmp(name, #x #y "_background") == 0)             \
+       {                                                       \
+         if ((error = get_ini_color(value, &v, term->colors))) \
+           goto out;                                           \
+         else                                                  \
+         {                                                     \
+           if (win->x ## _color[y-1].bg < 0)                   \
+             win->x ## _color[y-1].bg = v;                     \
+         }                                                     \
+       }
+
     /* [colors] section */
     /* """""""""""""""" */
     if (has_colors)
@@ -755,14 +775,14 @@ ini_cb(win_t * win, term_t * term, limits_t * limits,
         }
       }
       /* *INDENT-OFF* */
-      CHECK_FG(bar)        CHECK_BG(bar)
-      CHECK_FG(search)     CHECK_BG(search)
-      CHECK_FG(exclude)    CHECK_BG(exclude)
-      CHECK_FG(attention1) CHECK_BG(attention1)
-      CHECK_FG(attention2) CHECK_BG(attention2)
-      CHECK_FG(attention3) CHECK_BG(attention3)
-      CHECK_FG(attention4) CHECK_BG(attention4)
-      CHECK_FG(attention5) CHECK_BG(attention5)
+      CHECK_FG(bar)              CHECK_BG(bar)
+      CHECK_FG(search)           CHECK_BG(search)
+      CHECK_FG(exclude)          CHECK_BG(exclude)
+      CHECK_ATT_FG(attention, 1) CHECK_ATT_BG(attention, 1)
+      CHECK_ATT_FG(attention, 2) CHECK_ATT_BG(attention, 2)
+      CHECK_ATT_FG(attention, 3) CHECK_ATT_BG(attention, 3)
+      CHECK_ATT_FG(attention, 4) CHECK_ATT_BG(attention, 4)
+      CHECK_ATT_FG(attention, 5) CHECK_ATT_BG(attention, 5)
       /* *INDENT-ON* */
     }
   }
@@ -2930,39 +2950,12 @@ disp_word(word_t * word_a, int pos, int search_mode, char *buffer,
     }
     else if (word_a[pos].attention_level > 0)
     {
-      switch (word_a[pos].attention_level)
-      {
-        case 1:
-          if (win->attention1_color.fg >= 0)
-            set_foreground_color(term, win->attention1_color.fg);
-          if (win->attention1_color.bg >= 0)
-            set_background_color(term, win->attention1_color.bg);
-          break;
-        case 2:
-          if (win->attention2_color.fg >= 0)
-            set_foreground_color(term, win->attention2_color.fg);
-          if (win->attention2_color.bg >= 0)
-            set_background_color(term, win->attention2_color.bg);
-          break;
-        case 3:
-          if (win->attention3_color.fg >= 0)
-            set_foreground_color(term, win->attention3_color.fg);
-          if (win->attention3_color.bg >= 0)
-            set_background_color(term, win->attention3_color.bg);
-          break;
-        case 4:
-          if (win->attention4_color.fg >= 0)
-            set_foreground_color(term, win->attention4_color.fg);
-          if (win->attention4_color.bg >= 0)
-            set_background_color(term, win->attention4_color.bg);
-          break;
-        case 5:
-          if (win->attention5_color.fg >= 0)
-            set_foreground_color(term, win->attention5_color.fg);
-          if (win->attention5_color.bg >= 0)
-            set_background_color(term, win->attention5_color.bg);
-          break;
-      }
+      int level = word_a[pos].attention_level - 1;
+
+      if (win->attention_color[level].fg >= 0)
+        set_foreground_color(term, win->attention_color[level].fg);
+      if (win->attention_color[level].bg >= 0)
+        set_background_color(term, win->attention_color[level].bg);
     }
     fputs(tmp_max_word, stdout);
     tputs(exit_attribute_mode, 1, outch);
@@ -3737,17 +3730,11 @@ main(int argc, char *argv[])
   win.exclude_color.fg = -1;
   win.exclude_color.bg = -1;
 
-  win.attention1_color.fg = -1;
-  win.attention2_color.fg = -1;
-  win.attention3_color.fg = -1;
-  win.attention4_color.fg = -1;
-  win.attention5_color.fg = -1;
-
-  win.attention1_color.bg = -1;
-  win.attention2_color.bg = -1;
-  win.attention3_color.bg = -1;
-  win.attention4_color.bg = -1;
-  win.attention5_color.bg = -1;
+  for (index = 0; index < 5; index++)
+  {
+    win.attention_color[index].fg = -1;
+    win.attention_color[index].bg = -1;
+  }
 
   /* Default limits initialization */
   /* """"""""""""""""""""""""""""" */
@@ -4058,29 +4045,10 @@ main(int argc, char *argv[])
                 exit(EXIT_FAILURE);
               }
               else
-                switch (opt)
-                {
-                  case '1':
-                    win.attention1_color.fg = fg;
-                    win.attention1_color.bg = bg;
-                    break;
-                  case '2':
-                    win.attention2_color.fg = fg;
-                    win.attention2_color.bg = bg;
-                    break;
-                  case '3':
-                    win.attention3_color.fg = fg;
-                    win.attention3_color.bg = bg;
-                    break;
-                  case '4':
-                    win.attention4_color.fg = fg;
-                    win.attention4_color.bg = bg;
-                    break;
-                  case '5':
-                    win.attention5_color.fg = fg;
-                    win.attention5_color.bg = bg;
-                    break;
-                }
+              {
+                win.attention_color[opt - '1'].fg = fg;
+                win.attention_color[opt - '1'].bg = bg;
+              }
             }
             else
             {
@@ -4301,6 +4269,8 @@ main(int argc, char *argv[])
   /* """"""""""""""""""""""""""""""""""""""""""""""""""""" */
   if (term.colors > 7)
   {
+    int def_color[5] = { 1, 2, 3, 5, 6 };
+
     if (win.bar_color.fg < 0)
       win.bar_color.fg = 2;
     if (win.search_color.fg < 0)
@@ -4310,16 +4280,9 @@ main(int argc, char *argv[])
     if (win.exclude_color.fg < 0)
       win.exclude_color.fg = 3;
 
-    if (win.attention1_color.fg < 0)
-      win.attention1_color.fg = 1;
-    if (win.attention2_color.fg < 0)
-      win.attention2_color.fg = 2;
-    if (win.attention3_color.fg < 0)
-      win.attention3_color.fg = 3;
-    if (win.attention4_color.fg < 0)
-      win.attention4_color.fg = 5;
-    if (win.attention5_color.fg < 0)
-      win.attention5_color.fg = 6;
+    for (index = 0; index < 5; index++)
+      if (win.attention_color[index].fg < 0)
+        win.attention_color[index].fg = def_color[index];
   }
 
   if (message != NULL)
