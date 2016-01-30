@@ -23,7 +23,7 @@ typedef struct tst_node_s tst_node_t;
 typedef struct toggle_s toggle_t;
 typedef struct win_s win_t;
 typedef struct word_s word_t;
-typedef struct color_s color_t;
+typedef struct txt_attr_s txt_attr_t;
 typedef struct limits_s limits_t;
 typedef struct sed_s sed_t;
 
@@ -74,11 +74,10 @@ int ini_load(const char *filename, win_t * win, term_t * term,
              limits_t * limits, int (*report) (win_t * win, term_t * term,
                                                limits_t * limits,
                                                const char *section,
-                                               const char *name,
-                                               const char *value));
-int get_ini_color(const char *str, int *v, int max_color);
+                                               const char *name, char *value));
+int get_ini_attr(char *str, txt_attr_t * v, int max_color);
 int ini_cb(win_t * win, term_t * term, limits_t * limits, const char *section,
-           const char *name, const char *value);
+           const char *name, char *value);
 char *make_ini_path(char *name, char *base);
 
 void set_foreground_color(term_t * term, int color);
@@ -114,3 +113,7 @@ void set_new_first_column(win_t * win, term_t * term, word_t * word_a);
 
 int parse_sed_like_string(sed_t * sed);
 int replace(char *orig, sed_t * sed, char *buf, size_t bufsiz);
+
+int decode_txt_attr_toggles(char *s, txt_attr_t * attr);
+int parse_txt_attr(char *str, txt_attr_t * attr, int max_color);
+void apply_txt_attr(term_t * term, txt_attr_t attr);

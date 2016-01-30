@@ -61,9 +61,9 @@ static int delims_cmp(const void *a, const void *b);
 
 /* UTF-8 useful symbols */
 /* """"""""""""""""""""" */
-char *sbar_broken_line = "\xc2\xa6";    /* broken_bar                       */
-char *sbar_arr_left = "\xe2\x86\x90";   /* leftwards_arrow                  */
-char *sbar_arr_right = "\xe2\x86\x92";  /* rightwards_arrow                 */
+char *broken_line_sym = "\xc2\xa6";     /* broken_bar                       */
+char *shift_left_sym = "\xe2\x86\x90";  /* leftwards_arrow                  */
+char *shift_right_sym = "\xe2\x86\x92"; /* rightwards_arrow                 */
 
 char *sbar_line = "\xe2\x94\x82";       /* box_drawings_light_vertical      */
 char *sbar_top = "\xe2\x94\x90";        /* box_drawings_light_down_and_left */
@@ -269,12 +269,19 @@ struct itimerval search_itv;
 struct itimerval hlp_itv;
 struct itimerval winch_itv;
 
-/* Structure containing the color components */
-/* """"""""""""""""""""""""""""""""""""""""" */
-struct color_s
+/* Structure containing the attributes components */
+/* """""""""""""""""""""""""""""""""""""""""""""" */
+struct txt_attr_s
 {
-  int fg;
-  int bg;
+  signed char is_set;
+  short fg;
+  short bg;
+  signed char bold;
+  signed char dim;
+  signed char reverse;
+  signed char standout;
+  signed char underline;
+  signed char italic;
 };
 
 /* Structure containing some terminal characteristics */
@@ -318,7 +325,7 @@ struct word_s
                               * on the screen                            *
                               * mbytes: number of multibytes to display  */
   int is_selectable;         /* word is is_selectable                    */
-  int attention_level;       /* can vary from 0 to 5; 0 meaning normal   */
+  int special_level;         /* can vary from 0 to 5; 0 meaning normal   */
 };
 
 /* Structure describing the window in which the user */
@@ -339,10 +346,13 @@ struct win_s
   int center;
   int offset;
 
-  color_t bar_color;         /* scrollbar color             */
-  color_t search_color;      /* search mode colors          */
-  color_t exclude_color;     /* non-selectable words colors */
-  color_t attention_color[5];   /* attention words colors   */
+  txt_attr_t cursor_attr;    /* current cursor attributes            */
+  txt_attr_t bar_attr;       /* scrollbar attributes                 */
+  txt_attr_t shift_attr;     /* shift indicator attributes           */
+  txt_attr_t search_field_attr; /* search mode field attributes      */
+  txt_attr_t search_text_attr;  /* search mode text attributes       */
+  txt_attr_t exclude_attr;   /* non-selectable words attributes      */
+  txt_attr_t special_attr[5];   /* special (-1,...) words attributes */
 };
 
 /* Sed like node structure */
@@ -417,8 +427,8 @@ short_usage(void)
   fprintf(stderr, "[-I /regex/repl/[g][v][s][i]]         \\\n");
   fprintf(stderr, "       [-E /regex/repl/[g][v][s][i]] ");
   fprintf(stderr, "[-A regex] [-Z regex]                 \\\n");
-  fprintf(stderr, "       [-1 regex [fg/bg]] [-2 regex [fg/bg]] ... ");
-  fprintf(stderr, "[-5 regex [fg/bg]] [-g]   \\\n");
+  fprintf(stderr, "       [-1 regex [attr]] [-2 regex [attr]] ... ");
+  fprintf(stderr, "[-5 regex [attr]] [-g]      \\\n");
   fprintf(stderr, "       [-W bytes] [-L bytes] [-V]\n");
 }
 
@@ -675,24 +685,169 @@ xrealloc(void *ptr, size_t size)
   return allocated;
 }
 
-/* ******************** */
-/* ini parsing function */
-/* ******************** */
+/* ********************************** */
+/* attributes string parsing function */
+/* ********************************** */
 
-/* ============================================================ */
-/* Extract a color from the passed string, return 1 on error or */
-/* if the color number is tool large                            */
-/* ============================================================ */
+/* ================================ */
+/* Decode attributes toggles if any */
+/* b -> bold                        */
+/* d -> dim                         */
+/* r -> reverse                     */
+/* s -> standout                    */
+/* u -> underline                   */
+/* i -> italic                      */
+/*                                  */
+/* Returns 0 if some unexpecte      */
+/* toggle is found else 0           */
+/* ================================ */
 int
-get_ini_color(const char *str, int *v, int max_color)
+decode_txt_attr_toggles(char *s, txt_attr_t * attr)
 {
   int rc = 1;
 
-  if (sscanf(str, "%d", v) == 1 && *v >= 0 && *v <= max_color)
-    rc = 0;
+  attr->bold = attr->dim = attr->reverse = 0;
+  attr->standout = attr->underline = attr->italic = 0;
+
+  while (*s != '\0')
+  {
+    switch (*s)
+    {
+      case 'b':
+        attr->bold = 1;
+        attr->is_set = 1;
+        break;
+      case 'd':
+        attr->dim = 1;
+        attr->is_set = 1;
+        break;
+      case 'r':
+        attr->reverse = 1;
+        attr->is_set = 1;
+        break;
+      case 's':
+        attr->standout = 1;
+        attr->is_set = 1;
+        break;
+      case 'u':
+        attr->underline = 1;
+        attr->is_set = 1;
+        break;
+      case 'i':
+        attr->italic = 1;
+        attr->is_set = 1;
+        break;
+      default:
+        rc = 0;
+        break;
+    }
+    s++;
+  }
+  return rc;
+}
+
+/* =========================================================== */
+/* Parse atttibutes in str in the form [fg][/bg][,toggles]     */
+/* where:                                                      */
+/* fg and bg are short representing a color value              */
+/* toggles is an array of togles (see decode_txt_attr_toggles) */
+/* Returns 1 on success else 0                                 */
+/* attr will be filled by the function                         */
+/* =========================================================== */
+int
+parse_txt_attr(char *str, txt_attr_t * attr, int max_color)
+{
+  int n;
+  char *pos;
+  char s1[12] = { 0 };
+  char s2[7] = { 0 };
+  short d1 = -1, d2 = -1;
+  int rc = 1;
+
+  n = sscanf(str, "%11[^,],%6s", s1, s2);
+
+  if (n == 0)
+    return 0;
+
+  if ((pos = strchr(s1, '/')))
+  {
+    if (pos == s1)           /* s1 starts with a / */
+    {
+      d1 = -1;
+      if (sscanf(s1 + 1, "%hd", &d2) == 0)
+      {
+        d2 = -1;
+        if (n == 1)
+          return 0;
+      }
+    }
+    else if (sscanf(s1, "%hd/%hd", &d1, &d2) < 2)
+    {
+      d1 = d2 = -1;
+      if (n == 1)
+        return 0;
+    }
+  }
+  else                       /* no / in the first string */
+  {
+    d2 = -1;
+    if (sscanf(s1, "%hd", &d1) == 0)
+    {
+      d1 = -1;
+      if (n == 2 || decode_txt_attr_toggles(s1, attr) == 0)
+        return 0;
+    }
+  }
+
+  if (d1 >= max_color || d2 >= max_color || d1 < -1 || d2 < -1)
+    return 0;
+
+  attr->fg = d1;
+  attr->bg = d2;
+
+  if (n == 2)
+    rc = decode_txt_attr_toggles(s2, attr);
+
+  if (!attr->is_set)
+    attr->is_set = (d1 >= 0 || d2 >= 0);
 
   return rc;
 }
+
+/* ============================================ */
+/* Set the terminal attributs according to attr */
+/* ============================================ */
+void
+apply_txt_attr(term_t * term, txt_attr_t attr)
+{
+  if (attr.fg >= 0)
+    set_foreground_color(term, attr.fg);
+
+  if (attr.bg >= 0)
+    set_background_color(term, attr.bg);
+
+  if (attr.bold > 0)
+    tputs(enter_bold_mode, 1, outch);
+
+  if (attr.dim > 0)
+    tputs(enter_dim_mode, 1, outch);
+
+  if (attr.reverse > 0)
+    tputs(enter_reverse_mode, 1, outch);
+
+  if (attr.standout > 0)
+    tputs(enter_standout_mode, 1, outch);
+
+  if (attr.underline > 0)
+    tputs(enter_underline_mode, 1, outch);
+
+  if (attr.italic > 0)
+    tputs(enter_italics_mode, 1, outch);
+}
+
+/* ******************** */
+/* ini parsing function */
+/* ******************** */
 
 /* ===================================================== */
 /* Callback function called when parsing each non-header */
@@ -701,61 +856,68 @@ get_ini_color(const char *str, int *v, int max_color)
 /* ===================================================== */
 int
 ini_cb(win_t * win, term_t * term, limits_t * limits,
-       const char *section, const char *name, const char *value)
+       const char *section, const char *name, char *value)
 {
   int error = 0;
   int has_colors = (term->colors > 7);
 
   if (strcmp(section, "colors") == 0)
   {
-    int v;
+    txt_attr_t v = { 0, -1, -1, -1, -1, -1, -1, -1, -1 };
 
-#define CHECK_FG(x)                                            \
-  else if (strcmp(name, #x "_foreground") == 0)                \
-       {                                                       \
-         if ((error = get_ini_color(value, &v, term->colors))) \
-           goto out;                                           \
-         else                                                  \
-         {                                                     \
-           if (win->x ## _color.fg < 0)                        \
-             win->x ## _color.fg = v;                          \
-         }                                                     \
+#define CHECK_ATTR(x)                                             \
+  else if (strcmp(name, #x) == 0)                                 \
+       {                                                          \
+         error = ! parse_txt_attr(value, &v, term->colors);       \
+         if (error)                                               \
+           goto out;                                              \
+         else                                                     \
+         {                                                        \
+           win->x ## _attr.is_set = v.is_set;                     \
+           if (win->x ## _attr.fg < 0)                            \
+             win->x ## _attr.fg = v.fg;                           \
+           if (win->x ## _attr.bg < 0)                            \
+             win->x ## _attr.bg = v.bg;                           \
+           if (win->x ## _attr.bold < 0)                          \
+             win->x ## _attr.bold = v.bold;                       \
+           if (win->x ## _attr.dim < 0)                           \
+             win->x ## _attr.dim = v.dim;                         \
+           if (win->x ## _attr.reverse < 0)                       \
+             win->x ## _attr.reverse = v.reverse;                 \
+           if (win->x ## _attr.standout < 0)                      \
+             win->x ## _attr.standout = v.standout;               \
+           if (win->x ## _attr.underline < 0)                     \
+             win->x ## _attr.underline = v.underline;             \
+           if (win->x ## _attr.italic < 0)                        \
+             win->x ## _attr.italic = v.italic;                   \
+         }                                                        \
        }
 
-#define CHECK_BG(x)                                            \
-  else if (strcmp(name, #x "_background") == 0)                \
-       {                                                       \
-         if ((error = get_ini_color(value, &v, term->colors))) \
-           goto out;                                           \
-         else                                                  \
-         {                                                     \
-           if (win->x ## _color.bg < 0)                        \
-             win->x ## _color.bg = v;                          \
-         }                                                     \
-       }
-
-#define CHECK_ATT_FG(x,y)                                      \
-  else if (strcmp(name, #x #y "_foreground") == 0)             \
-       {                                                       \
-         if ((error = get_ini_color(value, &v, term->colors))) \
-           goto out;                                           \
-         else                                                  \
-         {                                                     \
-           if (win->x ## _color[y-1].fg < 0)                   \
-             win->x ## _color[y-1].fg = v;                     \
-         }                                                     \
-       }
-
-#define CHECK_ATT_BG(x,y)                                      \
-  else if (strcmp(name, #x #y "_background") == 0)             \
-       {                                                       \
-         if ((error = get_ini_color(value, &v, term->colors))) \
-           goto out;                                           \
-         else                                                  \
-         {                                                     \
-           if (win->x ## _color[y-1].bg < 0)                   \
-             win->x ## _color[y-1].bg = v;                     \
-         }                                                     \
+#define CHECK_ATT_ATTR(x,y)                                       \
+  else if (strcmp(name, #x #y) == 0)                              \
+       {                                                          \
+         if ((error = ! parse_txt_attr(value, &v, term->colors))) \
+           goto out;                                              \
+         else                                                     \
+         {                                                        \
+           win->x ## _attr[y-1].is_set = v.is_set;                \
+           if (win->x ## _attr[y-1].fg < 0)                       \
+             win->x ## _attr[y-1].fg = v.fg;                      \
+           if (win->x ## _attr[y-1].bg < 0)                       \
+             win->x ## _attr[y-1].bg = v.bg;                      \
+           if (win->x ## _attr[y-1].bold < 0)                     \
+             win->x ## _attr[y-1].bold = v.bold;                  \
+           if (win->x ## _attr[y-1].dim < 0)                      \
+             win->x ## _attr[y-1].dim = v.dim;                    \
+           if (win->x ## _attr[y-1].reverse < 0 )                 \
+             win->x ## _attr[y-1].reverse = v.reverse;            \
+           if (win->x ## _attr[y-1].standout < 0)                 \
+             win->x ## _attr[y-1].standout = v.standout;          \
+           if (win->x ## _attr[y-1].underline < 0)                \
+             win->x ## _attr[y-1].underline = v.underline;        \
+           if (win->x ## _attr[y-1].italic < 0)                   \
+             win->x ## _attr[y-1].italic = v.italic;              \
+         }                                                        \
        }
 
     /* [colors] section */
@@ -775,14 +937,17 @@ ini_cb(win_t * win, term_t * term, limits_t * limits,
         }
       }
       /* *INDENT-OFF* */
-      CHECK_FG(bar)              CHECK_BG(bar)
-      CHECK_FG(search)           CHECK_BG(search)
-      CHECK_FG(exclude)          CHECK_BG(exclude)
-      CHECK_ATT_FG(attention, 1) CHECK_ATT_BG(attention, 1)
-      CHECK_ATT_FG(attention, 2) CHECK_ATT_BG(attention, 2)
-      CHECK_ATT_FG(attention, 3) CHECK_ATT_BG(attention, 3)
-      CHECK_ATT_FG(attention, 4) CHECK_ATT_BG(attention, 4)
-      CHECK_ATT_FG(attention, 5) CHECK_ATT_BG(attention, 5)
+      CHECK_ATTR(cursor)
+      CHECK_ATTR(bar)
+      CHECK_ATTR(shift)
+      CHECK_ATTR(search_field)
+      CHECK_ATTR(search_text)
+      CHECK_ATTR(exclude)
+      CHECK_ATT_ATTR(special, 1)
+      CHECK_ATT_ATTR(special, 2)
+      CHECK_ATT_ATTR(special, 3)
+      CHECK_ATT_ATTR(special, 4)
+      CHECK_ATT_ATTR(special, 5)
       /* *INDENT-ON* */
     }
   }
@@ -847,8 +1012,7 @@ out:
 int
 ini_load(const char *filename, win_t * win, term_t * term, limits_t * limits,
          int (*report) (win_t * win, term_t * term, limits_t * limits,
-                        const char *section, const char *name,
-                        const char *value))
+                        const char *section, const char *name, char *value))
 {
   char name[64];
   char value[256];
@@ -1882,7 +2046,7 @@ tst_insert(tst_node_t * p, wchar_t * w, void *data)
 {
   if (p == NULL)
   {
-    p = (tst_node_t *) xmalloc(sizeof(struct tst_node_s));
+    p = (tst_node_t *) xmalloc(sizeof(tst_node_t));
     p->splitchar = *w;
     p->lokid = p->eqkid = p->hikid = NULL;
     p->data = NULL;
@@ -2585,14 +2749,10 @@ set_background_color(term_t * term, int color)
 void
 left_margin_putp(char *s, term_t * term, win_t * win)
 {
-  if (term->has_bold)
+  if (win->shift_attr.is_set)
+    apply_txt_attr(term, win->shift_attr);
+  else if (term->has_bold)
     tputs(enter_bold_mode, 1, outch);
-
-  if (win->bar_color.fg >= 0)
-    set_foreground_color(term, win->bar_color.fg);
-
-  if (win->bar_color.bg >= 0)
-    set_background_color(term, win->bar_color.bg);
 
   /* We won't print this symbol when not in column mode */
   /* """""""""""""""""""""""""""""""""""""""""""""""""" */
@@ -2609,14 +2769,10 @@ void
 right_margin_putp(char *s1, char *s2, langinfo_t * langinfo,
                   term_t * term, win_t * win, int line, int offset)
 {
-  if (term->has_bold)
+  if (win->bar_attr.is_set)
+    apply_txt_attr(term, win->bar_attr);
+  else if (term->has_bold)
     tputs(enter_bold_mode, 1, outch);
-
-  if (win->bar_color.fg >= 0)
-    set_foreground_color(term, win->bar_color.fg);
-
-  if (win->bar_color.bg >= 0)
-    set_background_color(term, win->bar_color.bg);
 
   if (term->has_hpa)
     tputs(tparm(column_address, offset + win->max_width + 1,
@@ -2862,8 +3018,8 @@ disp_word(word_t * word_a, int pos, int search_mode, char *buffer,
 
       /* Set the search cursor attribute */
       /* """"""""""""""""""""""""""""""" */
-      if (win->search_color.bg >= 0 && term->colors > 7)
-        set_background_color(term, win->search_color.bg);
+      if (win->search_field_attr.is_set)
+        apply_txt_attr(term, win->search_field_attr);
       else
       {
         if (term->has_underline)
@@ -2898,8 +3054,8 @@ disp_word(word_t * word_a, int pos, int search_mode, char *buffer,
 
         /* Set the buffer display attribute */
         /* """""""""""""""""""""""""""""""" */
-        if (win->search_color.fg >= 0 && term->colors > 7)
-          set_foreground_color(term, win->search_color.fg);
+        if (win->search_text_attr.is_set)
+          apply_txt_attr(term, win->search_text_attr);
         else if (term->has_bold)
           tputs(enter_bold_mode, 1, outch);
 
@@ -2915,7 +3071,33 @@ disp_word(word_t * word_a, int pos, int search_mode, char *buffer,
     {
       /* If we are not in search mode, display in the cursor in reverse video */
       /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-      if (term->has_reverse)
+      if (win->cursor_attr.is_set)
+      {
+        if (win->cursor_attr.bold > 0)
+          tputs(enter_bold_mode, 1, outch);
+
+        if (win->cursor_attr.dim > 0)
+          tputs(enter_dim_mode, 1, outch);
+
+        if (win->cursor_attr.reverse > 0)
+          tputs(enter_reverse_mode, 1, outch);
+
+        if (win->cursor_attr.standout > 0)
+          tputs(enter_standout_mode, 1, outch);
+
+        if (win->cursor_attr.underline > 0)
+          tputs(enter_underline_mode, 1, outch);
+
+        if (win->cursor_attr.italic > 0)
+          tputs(enter_italics_mode, 1, outch);
+
+        if (win->cursor_attr.fg >= 0 && term->colors > 7)
+          set_foreground_color(term, win->cursor_attr.fg);
+
+        if (win->cursor_attr.fg >= 0 && term->colors > 7)
+          set_background_color(term, win->cursor_attr.bg);
+      }
+      else if (term->has_reverse)
         tputs(enter_reverse_mode, 1, outch);
       else if (term->has_standout)
         tputs(enter_standout_mode, 1, outch);
@@ -2933,29 +3115,35 @@ disp_word(word_t * word_a, int pos, int search_mode, char *buffer,
 
     if (!word_a[pos].is_selectable)
     {
-      if (term->colors > 7)
-      {
-        if (win->exclude_color.fg >= 0)
-          set_foreground_color(term, win->exclude_color.fg);
-        if (win->exclude_color.bg >= 0)
-          set_background_color(term, win->exclude_color.bg);
-      }
+      if (win->exclude_attr.is_set)
+        apply_txt_attr(term, win->exclude_attr);
       else
       {
+        if (term->has_reverse)
+          tputs(enter_reverse_mode, 1, outch);
         if (term->has_bold)
           tputs(enter_bold_mode, 1, outch);
+        else if (term->has_standout)
+          tputs(enter_standout_mode, 1, outch);
         else if (term->has_underline)
           tputs(enter_underline_mode, 1, outch);
       }
     }
-    else if (word_a[pos].attention_level > 0)
+    else if (word_a[pos].special_level > 0)
     {
-      int level = word_a[pos].attention_level - 1;
+      int level = word_a[pos].special_level - 1;
 
-      if (win->attention_color[level].fg >= 0)
-        set_foreground_color(term, win->attention_color[level].fg);
-      if (win->attention_color[level].bg >= 0)
-        set_background_color(term, win->attention_color[level].bg);
+      if (win->special_attr[level].is_set)
+        apply_txt_attr(term, win->special_attr[level]);
+      else
+      {
+        if (term->has_bold)
+          tputs(enter_bold_mode, 1, outch);
+        else if (term->has_reverse)
+          tputs(enter_reverse_mode, 1, outch);
+        else if (term->has_standout)
+          tputs(enter_standout_mode, 1, outch);
+      }
     }
     fputs(tmp_max_word, stdout);
     tputs(exit_attribute_mode, 1, outch);
@@ -3070,7 +3258,7 @@ disp_lines(word_t * word_a, win_t * win, toggle_t * toggle, int current,
     if (win->first_column > 0)
     {
       if (langinfo->utf8)
-        strcpy(scroll_symbol, sbar_arr_left);
+        strcpy(scroll_symbol, shift_left_sym);
       else
         strcpy(scroll_symbol, "<");
     }
@@ -3098,21 +3286,20 @@ disp_lines(word_t * word_a, win_t * win, toggle_t * toggle, int current,
       if ((win->col_mode | win->line_mode) && i < count - 1
           && word_a[i + 1].end >= len + win->first_column)
       {
-        if (term->has_bold)
+        if (win->shift_attr.is_set)
+        {
+          apply_txt_attr(term, win->shift_attr);
+
+          if (langinfo->utf8)
+            fputs(shift_right_sym, stdout);
+          else
+            fputs(">", stdout);
+
+          tputs(exit_attribute_mode, 1, outch);
+        }
+        else if (term->has_bold)
           tputs(enter_bold_mode, 1, outch);
 
-        if (win->bar_color.fg >= 0)
-          set_foreground_color(term, win->bar_color.fg);
-
-        if (win->bar_color.bg >= 0)
-          set_background_color(term, win->bar_color.bg);
-
-        if (langinfo->utf8)
-          fputs(sbar_arr_right, stdout);
-        else
-          fputs(">", stdout);
-
-        tputs(exit_attribute_mode, 1, outch);
       }
 
       /* If we want to display the gutter */
@@ -3120,7 +3307,7 @@ disp_lines(word_t * word_a, win_t * win, toggle_t * toggle, int current,
       else if (!word_a[i].is_last && win->col_sep && win->tab_mode)
       {
         if (langinfo->utf8)
-          fputs(sbar_broken_line, stdout);
+          fputs(broken_line_sym, stdout);
         else
           fputs("|", stdout);
       }
@@ -3626,8 +3813,8 @@ main(int argc, char *argv[])
   regex_t first_word_re;
   regex_t last_word_re;
 
-  char *attention_pattern[5] = { NULL };        /* used by -1 ... -5       */
-  regex_t attention_re[5];
+  char *special_pattern[5] = { NULL };  /* used by -1 ... -5       */
+  regex_t special_re[5];
 
   int include_visual_only = 0;  /* If set to 1, the original word which is *
                                  * read from stdin will be output even if  */
@@ -3710,6 +3897,8 @@ main(int argc, char *argv[])
   langinfo_t langinfo;
   int is_supported_charset;
 
+  txt_attr_t init_attr;
+
   /* Win fields initialization */
   /* """"""""""""""""""""""""" */
   win.max_lines = 5;
@@ -3723,18 +3912,25 @@ main(int argc, char *argv[])
   win.line_mode = 0;
   win.first_column = 0;
 
-  win.bar_color.fg = -1;
-  win.bar_color.bg = -1;
-  win.search_color.fg = -1;
-  win.search_color.bg = -1;
-  win.exclude_color.fg = -1;
-  win.exclude_color.bg = -1;
+  init_attr.is_set = 0;
+  init_attr.fg = -1;
+  init_attr.bg = -1;
+  init_attr.bold = -1;
+  init_attr.dim = -1;
+  init_attr.reverse = -1;
+  init_attr.standout = -1;
+  init_attr.underline = -1;
+  init_attr.italic = -1;
+
+  win.cursor_attr = init_attr;
+  win.bar_attr = init_attr;
+  win.shift_attr = init_attr;
+  win.search_field_attr = init_attr;
+  win.search_text_attr = init_attr;
+  win.exclude_attr = init_attr;
 
   for (index = 0; index < 5; index++)
-  {
-    win.attention_color[index].fg = -1;
-    win.attention_color[index].bg = -1;
-  }
+    win.special_attr[index] = init_attr;
 
   /* Default limits initialization */
   /* """"""""""""""""""""""""""""" */
@@ -3793,6 +3989,16 @@ main(int argc, char *argv[])
     my_isprint = isprint8;
   else
     my_isprint = isprint7;
+
+  /* Set terminal in noncanonical, noecho mode */
+  /* """"""""""""""""""""""""""""""""""""""""" */
+  setupterm((char *) 0, 1, (int *) 0);
+
+  /* Get some terminal capabilities */
+  /* """""""""""""""""""""""""""""" */
+  term.colors = tigetnum("colors");
+  if (term.colors < 0)
+    term.colors = 0;
 
   /* Command line options analysis */
   /* """"""""""""""""""""""""""""" */
@@ -4005,11 +4211,9 @@ main(int argc, char *argv[])
         if (optarg && *optarg != '-')
         {
           int count = 1;
-          char fgs[4] = { 0 };
-          char bgs[4] = { 0 };
-          int fg = -1, bg = -1;
+          txt_attr_t attr = init_attr;
 
-          attention_pattern[opt - '1'] = optarg;
+          special_pattern[opt - '1'] = optarg;
 
           /* Parse optional additional arguments */
           /* """"""""""""""""""""""""""""""""""" */
@@ -4026,29 +4230,17 @@ main(int argc, char *argv[])
 
             /* Colors must respect the format: <fg color>/<bg color> */
             /* """"""""""""""""""""""""""""""""""""""""""""""""""""" */
-            if (sscanf(argv[optind], "%3[^/]/%3s", fgs, bgs) == 2)
+            if (parse_txt_attr(argv[optind], &attr, term.colors))
             {
-              errno = 0;
-              char *endptrf, *endptrb;
-
-              fg = (int) strtol(fgs, &endptrf, 10);
-              bg = (int) strtol(bgs, &endptrb, 10);
-
-              if (errno
-                  || endptrf == fgs || *endptrf != '\0'
-                  || endptrb == bgs || *endptrb != '\0')
-              {
-                TELL("Invalid colors -- ");
-                fputs("\n", stderr);
-                short_usage();
-
-                exit(EXIT_FAILURE);
-              }
-              else
-              {
-                win.attention_color[opt - '1'].fg = fg;
-                win.attention_color[opt - '1'].bg = bg;
-              }
+              win.special_attr[opt - '1'].is_set = attr.is_set;
+              win.special_attr[opt - '1'].fg = attr.fg;
+              win.special_attr[opt - '1'].bg = attr.bg;
+              win.special_attr[opt - '1'].bold = attr.bold;
+              win.special_attr[opt - '1'].dim = attr.dim;
+              win.special_attr[opt - '1'].reverse = attr.reverse;
+              win.special_attr[opt - '1'].standout = attr.standout;
+              win.special_attr[opt - '1'].underline = attr.underline;
+              win.special_attr[opt - '1'].italic = attr.italic;
             }
             else
             {
@@ -4175,17 +4367,8 @@ main(int argc, char *argv[])
   sigaction(SIGTERM, &sa, NULL);
   sigaction(SIGHUP, &sa, NULL);
 
-  /* Set terminal in noncanoniccal, noecho mode */
-  /* """""""""""""""""""""""""""""""""""""""""" */
-  setupterm((char *) 0, 1, (int *) 0);
-
   term.color_method = 1;     /* we default to setaf/setbf to set colors */
-
-  /* Get some terminal capabilities */
-  /* """""""""""""""""""""""""""""" */
-  term.colors = tigetnum("colors");
-  if (term.colors < 0)
-    term.colors = 0;
+  term.curs_line = term.curs_column = 0;
 
   {
     char *str;
@@ -4255,8 +4438,8 @@ main(int argc, char *argv[])
   home_ini_file = make_ini_path(argv[0], "HOME");
   local_ini_file = make_ini_path(argv[0], "PWD");
 
-  /* Set the colors from the configuration file if possible */
-  /* """""""""""""""""""""""""""""""""""""""""""""""""""""" */
+  /* Set the attributes from the configuration file if possible */
+  /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
   if (ini_load(home_ini_file, &win, &term, &limits, ini_cb))
     exit(EXIT_FAILURE);
   if (ini_load(local_ini_file, &win, &term, &limits, ini_cb))
@@ -4265,24 +4448,52 @@ main(int argc, char *argv[])
   free(home_ini_file);
   free(local_ini_file);
 
-  /* If some colors were not set, set their default values */
-  /* """"""""""""""""""""""""""""""""""""""""""""""""""""" */
+  /* If some attributes were not set, set their default values */
+  /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""" */
   if (term.colors > 7)
   {
-    int def_color[5] = { 1, 2, 3, 5, 6 };
+    int def_attr[5] = { 1, 2, 3, 5, 6 };
 
-    if (win.bar_color.fg < 0)
-      win.bar_color.fg = 2;
-    if (win.search_color.fg < 0)
-      win.search_color.fg = 0;
-    if (win.search_color.bg < 0)
-      win.search_color.bg = 5;
-    if (win.exclude_color.fg < 0)
-      win.exclude_color.fg = 3;
+    if (!win.bar_attr.is_set)
+    {
+      win.bar_attr.fg = 2;
+      win.bar_attr.is_set = 1;
+    }
+
+    if (!win.shift_attr.is_set)
+    {
+      win.shift_attr.bold = 1;
+      win.shift_attr.is_set = 1;
+    }
+
+    if (!win.search_field_attr.is_set)
+    {
+      win.search_field_attr.fg = 0;
+      win.search_field_attr.bg = 6;
+      win.search_field_attr.is_set = 1;
+    }
+
+    if (!win.search_text_attr.is_set)
+    {
+      win.search_text_attr.fg = 6;
+      win.search_text_attr.bg = 0;
+      win.search_text_attr.is_set = 1;
+    }
+
+    if (!win.exclude_attr.is_set)
+    {
+      win.exclude_attr.fg = 3;
+      win.exclude_attr.is_set = 1;
+    }
 
     for (index = 0; index < 5; index++)
-      if (win.attention_color[index].fg < 0)
-        win.attention_color[index].fg = def_color[index];
+    {
+      if (!win.special_attr[index].is_set)
+      {
+        win.special_attr[index].fg = def_attr[index];
+        win.special_attr[index].is_set = 1;
+      }
+    }
   }
 
   if (message != NULL)
@@ -4422,11 +4633,11 @@ main(int argc, char *argv[])
 
   for (index = 0; index < 5; index++)
   {
-    if (attention_pattern[index]
-        && regcomp(&attention_re[index], attention_pattern[index],
+    if (special_pattern[index]
+        && regcomp(&special_re[index], special_pattern[index],
                    REG_EXTENDED | REG_NOSUB) != 0)
     {
-      fprintf(stderr, "Bad regular expression %s\n", attention_pattern[index]);
+      fprintf(stderr, "Bad regular expression %s\n", special_pattern[index]);
 
       exit(EXIT_FAILURE);
     }
@@ -4539,7 +4750,7 @@ main(int argc, char *argv[])
     char buf[1024] = { 0 };
     int is_first = 0;
     char *unaltered_word;
-    int attention_level;
+    int special_level;
 
     if (*word == '\0')
       continue;
@@ -4560,13 +4771,13 @@ main(int argc, char *argv[])
 
     /* Check if the word is special */
     /* """""""""""""""""""""""""""" */
-    attention_level = 0;
+    special_level = 0;
     for (index = 0; index < 5; index++)
     {
-      if (attention_pattern[index] != NULL
-          && regexec(&attention_re[index], word, (size_t) 0, NULL, 0) == 0)
+      if (special_pattern[index] != NULL
+          && regexec(&special_re[index], word, (size_t) 0, NULL, 0) == 0)
       {
-        attention_level = index + 1;
+        special_level = index + 1;
         break;
       }
     }
@@ -4734,7 +4945,7 @@ main(int argc, char *argv[])
     word_a[count].str = dest;
     word_a[count].is_selectable = selectable;
 
-    word_a[count].attention_level = attention_level;
+    word_a[count].special_level = special_level;
 
     if (strcmp(word, dest) != 0)
       word_a[count].orig = word;

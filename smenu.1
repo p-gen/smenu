@@ -8,18 +8,19 @@ and outputs the selection to stdout.
       [\fB-s\fP \fIpattern\fP] [\fB-m\fP \fImessage\fP] [\fB-w\fP] [\fB-d\fP] \
 [\fB-M\fP] [\fB-c\fP] [\fB-l\fP] [\fB-r\fP] [\fB-b\fP] \\
       [\fB-i\fP \fIregex\fP] [\fB-e\fP \fIregex\fP] \\
-      [\fB-C\fP \fI[a|A|s|S|r|R|d|D][col1[-col2],[col1[-col2]...\fP \\
-      [\fB-S\fP \fI/regex/string/[g][v][s][i]]\fP \
-[\fB-I\fP \fI/regex/string/[g][v][s][i]]\fP \\
-      [\fB-E\fP \fI/regex/string/[g][v][s][i]]\fP \\
+      [\fB-C\fP \
+[\fIa\fP|\fIA\fP|\fIs\fP|\fIS\fP|\fIr\fP|\fIR\fP|\fId\fP|\fID\fP]\
+[\fIcol1\fP[-\fIcol2\fP],[\fIcol1\fP[-\fIcol2\fP]... \\
+      [\fB-S\fP \fI/regex/string/\fP[\fIg\fP][\fIv\fP][\fIs\fP][\fIi\fP]] \
+[\fB-I\fP \fI/regex/string/\fP[\fIg\fP][\fIv\fP][\fIs\fP][\fIi\fP]] \\
+      [\fB-E\fP \fI/regex/string/\fP[\fIg\fP][\fIv\fP][\fIs\fP][\fIi\fP]] \\
       [\fB-A\fP \fIregex\fP] [\fB-Z\fP \fIregex\fP \\
-      [\fB-1\fP \fIregex\fP [\fIfg\fP/\fIbg\fp]] \
-[\fB-2\fP \fIregex\fP [\fIfg\fP/\fIbg\fp]] ... \
-[\fB-5\fP \fIregex\fP [\fIfg\fP/\fIbg\fp]] \\
+      [\fB-1\fP \fIregex\fP [\fIATTR\fP] \
+[\fB-2\fP \fIregex\fP [\fIATTR\fP] ... \
+[\fB-5\fP \fIregex\fP [\fIATTR\fP] \\
       [\fB-g\fP] [\fB-q\fP] [\fB-W\fP \fIbytes\fP] [\fB-L\fP \fIbytes\fP] \\
       [\fB-V\fP]
-\fP
-.ne
+.fi
 .SH DESCRIPTION
 This small utility acts as a filter (reads from stdin and writes to
 stdout). All the words taken from stdin are presented in a scrolling
@@ -170,26 +171,22 @@ allowed:
 .nf
 \f(CR--8<------------------------------------------------------------------
 [colors]
-  ; The terminal must have at least 8 colors for this to be useful
+  ; The terminal must have at least 8 colors and/or have attributes like bold
+  ; and reverse for this to be useful
   ; if not the following settings will be ignored.
 
   method=ansi             ; classic | ansi (default)
 
-  bar_foreground = 2      ; scroll bar foreground
-  bar_background=0        ; scroll bar background
+  cursor=0/2              ; cursor attributes
+  shift=6,b               ; shift symbol attributes
+  bar = 7/4,b             ; scroll bar attributes
+  search_field = 0/6      ; search field attributes
+  search_text = 7,bu      ; search text attributes
+  exclude = 4/0,u         ; non-selectable color attributes
 
-  search_foreground=11    ; search color foreground
-  search_background=1     ; search color background
-
-  exclude_foreground=4    ; non-selectable color foreground
-  exclude_background=0    ; non-selectable color background
-
-  attention1_foreground=1 ; color foreground for attention
-                          ; level 1 (-1) words
-  attention1_background=7 ; color background for attention
-                          ; level 1 (-1) words
-  attention2_foreground=4 ; color foreground for attention
-                          ; level 2 (-2) words
+  special1 = 7/4,b        ; attributes for the special level 1
+  special2 = bu           ; attributes for the special level 2
+  special3 = /3,b         ; attributes for the special level 3
 
 [window]
   lines = 7               ; default number of lines of the window
@@ -207,6 +204,13 @@ The \fBmethod\fP keyword can take the two possible values displayed
 above and determines if you want to use the native method (limited to 8
 colors) of the \fBansi\fP method (ISO 8613-6) if your terminal supports
 more than 8 colors. The default value corresponds to \fBansi\fP.
+
+The attributes syntax is [fg][/bg][,toggles] where \fBfg\fP and
+\fBbg\fP are numbers representing the foreground and background
+color and \fBtoggles\fP is a strings which can contain the characters
+\fIb\fP, \fId\fP, \fIr\fP, \fIs\fP, \fIu\fP and \fIi\fP  standing for
+\fIb\fPold, \fId\fPim, \fIr\fPeverse, \fIs\fPtandout, \fIu\fPnderline
+and \fIi\fPtalic.
 .IP * 2
 Spaces are allowed anywhere in the lines and between them, even around
 the \fB=\fP.
@@ -377,19 +381,31 @@ this method to build the lines, just specify an empty
 .IP "\fB-Z\fP \fIregex\fP"
 Similar to \fB-A\fP but forces the word to be the latest of its line.
 The same trick with \fB-L\fP can also be used.
-.IP "\fB-1\fP ... \fB-5\fP \fIregex\fP [\fIfg\fP/\fIbg\fP]
+.IP "\fB-1\fP ... \fB-5\fP \fIregex\fP [\fIATTR\fP]
 Allows to give to 5 classes of words specified by regular expressions a
-special display color. They are called \fBattention levels\fP. Only
+special display color. They are called \fBspecial levels\fP. Only
 selectable words will be considered.
 
-By default, the 5 attention levels have their foreground color set to
+By default, the 5 special levels have their foreground color set to
 red, green, brown/yellow, purple and cyan. All these colors also can be
 set or modified permanently in the configuration files. See the example
 file above for an example.
 
-The optional second argument can be used to override the default or
-configured foreground (\fIfg\fP) and background (\fIbg\fP) color of
-each class.
+The optional second argument (\fIATTR\fP) can be used to override the
+default or configured attributes of each class. Its syntax is the same
+as the one used in the configuration file:
+.nf
+[\fIfg\fP][/\fIbg\fP][,{\fIb\fP|\fId\fP|\fIr\fP|\fIs\fP|\fIu\fP|\fIi\fP}] \
+| [{\fIb\fP|\fId\fP|\fIr\fP|\fIs\fP|\fIu\fP|\fIi\fP}]
+.fi
+
+Examples of possible syntaxes are:
+.nf
+  \f(CB2/0,bu \fPgreen on black bold underline
+  \f(CB/2     \fPgreen background
+  \f(CB5      \fPtext in purple
+  \f(CBrb     \fPreverse bold
+.fi
 .IP \fB-g\fP
 Replaces the blank after each words in column or tabular mode by a
 vertical bar "\fB|\fP". Some users may find the output more readable
