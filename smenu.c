@@ -6050,7 +6050,22 @@ main(int argc, char *argv[])
               nl = disp_lines(word_a, &win, &toggle, current, count,
                               search_mode, search_buf, &term, last_line,
                               tmp_max_word, &langinfo);
+            else
+            {
+              /* We couldn't move to a selectable word, */
+              /* try to move the window offset instead  */
+              /* """""""""""""""""""""""""""""""""""""" */
+              cur_line = line_nb_of_word_a[current];
+              if (win.cur_line < win.max_lines && page == 1)
+              {
+                win.start =
+                  first_word_in_line_a[line_nb_of_word_a[old_start] - 1];
 
+                nl = disp_lines(word_a, &win, &toggle, current, count,
+                                search_mode, search_buf, &term, last_line,
+                                tmp_max_word, &langinfo);
+              }
+            }
             break;
           }
           else
@@ -6200,7 +6215,22 @@ main(int argc, char *argv[])
               nl = disp_lines(word_a, &win, &toggle, current, count,
                               search_mode, search_buf, &term, last_line,
                               tmp_max_word, &langinfo);
+            else
+            {
+              /* We couldn't move to a selectable word, */
+              /* try to move the window offset instead  */
+              /* """""""""""""""""""""""""""""""""""""" */
+              cur_line = line_nb_of_word_a[current];
+              if (win.cur_line > 1 && win.end < count - 1 && page == 1)
+              {
+                win.start =
+                  first_word_in_line_a[line_nb_of_word_a[old_start] + 1];
 
+                nl = disp_lines(word_a, &win, &toggle, current, count,
+                                search_mode, search_buf, &term, last_line,
+                                tmp_max_word, &langinfo);
+              }
+            }
             break;
           }
           else
