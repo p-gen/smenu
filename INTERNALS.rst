@@ -54,3 +54,39 @@ The main  datastructures are:
   This TST is used when searching a word using the ``/`` command or when using
   the ``-s`` commandline option.
 
+.. raw:: pdf
+
+   PageBreak
+
+The following diagram illustrates various variables used in the code::
+
+       first_word_in_line_a array
+                   |
+                   v
+                 +---+------stdin stream-------------------+
+                 | 0 |                                     |
+                 |   |                                     |
+                 |   |                                     |
+                 |   |                                     |
+                 |   |                                     |
+                 |   |                                     |
+                 |   | first_column                        |
+                 |   |    |                                |
+                 |   +----V-win---------+------------------+
+   win.start -------->................. ^ .................| 1
+    win.offset   |   |................. | .................| 2 <-- win.cur_line
+   <------------>|   |................. | win.max_lines ...| 3
+                 |   |................. | .................| .
+    current ------------> cursor ...... | .................| .
+                 |   |................. | .................| .
+                 |   |................. v .................<------ win.end
+                 |   +------------------+------------------+
+                 |   |                                     |
+                 |   |                                     |
+                 |   |                                     |
+                 |   |                          +----------+
+    st_line --------->                          |
+                 +---+-------------------------^+
+                                               |
+                                               |
+                                            count-1

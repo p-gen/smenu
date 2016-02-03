@@ -814,9 +814,9 @@ parse_txt_attr(char *str, txt_attr_t * attr, int max_color)
   return rc;
 }
 
-/* ============================================ */
-/* Set the terminal attributs according to attr */
-/* ============================================ */
+/* ============================================= */
+/* Set the terminal attributes according to attr */
+/* ============================================= */
 void
 apply_txt_attr(term_t * term, txt_attr_t attr)
 {
@@ -2216,7 +2216,7 @@ tst_cb(void *elem)
     {
       /* As the future new current index has been set to the highest possible */
       /* value, each new possible position can only improve the estimation    */
-      /* we se rc to 1 to mark that                                           */
+      /* we set rc to 1 to mark that                                          */
       /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
       if (pos < new_current)
       {
@@ -2233,7 +2233,7 @@ tst_cb(void *elem)
 /* ======================================================================= */
 /* Callback function used by tst_traverse                                  */
 /* Iterate the linked list attached to the string containing the index of  */
-/* the words in the input flow. each page number is then used to determine */
+/* the words in the input flow. Each page number is then used to determine */
 /* the lower page greater than the cursor position                         */
 /* ----------------------------------------------------------------------- */
 /* This is a special version of tst_cb wich permit to find the first word  */
@@ -2271,7 +2271,7 @@ tst_cb_cli(void *elem)
     {
       /* As the future new current index has been set to the highest possible */
       /* value, each new possible position can only improve the estimation    */
-      /* we se rc to 1 to mark that                                           */
+      /* we set rc to 1 to mark that                                          */
       /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
       if (pos < new_current)
       {
@@ -3439,7 +3439,7 @@ disp_lines(word_t * word_a, win_t * win, toggle_t * toggle, int current,
 }
 
 /* ============================================ */
-/* Signal handler. manages SIGWINCH and SIGALRM */
+/* Signal handler. Manages SIGWINCH and SIGALRM */
 /* ============================================ */
 void
 sig_handler(int s)
@@ -3799,7 +3799,7 @@ main(int argc, char *argv[])
   int index;                 /* generic counter                            */
 
   char *include_pattern = ".";  /* Used by -e/-i,  Default is to match     *
-                                 * everyting                               */
+                                 * everything                              */
   char *exclude_pattern = NULL;
   regex_t include_re;
   regex_t exclude_re;
@@ -4342,8 +4342,8 @@ main(int argc, char *argv[])
     exit(EXIT_FAILURE);
   }
 
-  /* If we did not impose the number of columns, we the whole terminal width */
-  /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+  /* If we did not impose the number of columns, use the whole terminal width */
+  /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
   if (!win.max_cols)
     win.wide_columns = 1;
 
@@ -5146,9 +5146,9 @@ main(int argc, char *argv[])
                               * words array to be  displayed         */
 
   /* Index of the selected element in the array words                */
-  /* Ths string can be:                                              */
+  /* The string can be:                                              */
   /*   "last"    The string "last"   put the cursor on the last word */
-  /*   n         a number            put the cursor on th word n     */
+  /*   n         a number            put the cursor on the word n    */
   /*   /pref     /+a regexp          put the cursor on the first     */
   /*                                 word matching the prefix "pref" */
   /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
@@ -5240,9 +5240,9 @@ main(int argc, char *argv[])
   /* """"""""""""""""""""""""""""""""""""""" */
   setup_term(fileno(stdin));
 
-  /* Initialize the search buffer with tab_real_max_size+1 NULs */
-  /* It wil never be reallocated, only cleared.                 */
-  /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+  /* Initialize the search buffer with tab_real_max_size+1 NULs  */
+  /* It will never be reallocated, only cleared.                 */
+  /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
   search_buf = xcalloc(1, tab_real_max_size + 1);
 
   /* Hide the cursor */
@@ -5986,9 +5986,8 @@ main(int argc, char *argv[])
               while (word_a[cursor].start > s)
                 cursor--;
 
-              /* In case no word fulfill this criterium, keep the cursor on */
-              /* the last word                                               */
-              /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+              /* In case no word is eligible, keep the cursor on the last word */
+              /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
               if (cursor == last_word && word_a[cursor].start > 0)
                 cursor--;
 
@@ -6149,9 +6148,8 @@ main(int argc, char *argv[])
               while (word_a[cursor].start > s)
                 cursor--;
 
-              /* In case no word fulfill this criterium, keep the cursor on */
-              /* the last word                                               */
-              /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+              /* In case no word is eligible, keep the cursor on  the last word */
+              /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
               if (cursor == last_word && word_a[cursor].start > 0)
                 cursor--;
 
