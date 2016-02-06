@@ -1096,10 +1096,18 @@ char *
 make_ini_path(char *name, char *base)
 {
   char *path;
-  char *home = getenv(base);
-  int path_max = pathconf(".", _PC_PATH_MAX);
-  int len = strlen(home) + strlen(name) + 3;
+  char *home;
+  long path_max;
+  long len;
   char *conf;
+
+  home = getenv(base);
+
+  if (home == NULL)
+    home = "";
+
+  path_max = pathconf(".", _PC_PATH_MAX);
+  len = strlen(home) + strlen(name) + 3;
 
   if (path_max < 0)
     path_max = 4096;         /* POSIX minimal value */
@@ -2364,10 +2372,12 @@ get_bytes(FILE * input, char *mb_buffer, ll_t * word_delims_list,
 
   /* read the first byte */
   /* """"""""""""""""""" */
-  byte = mb_buffer[last++] = fgetc(input);
+  byte = fgetc(input);
 
   if (byte == EOF)
     return EOF;
+
+  mb_buffer[last++] = byte;
 
   /* Check if we need to read more bytes to form a sequence */
   /* and put the number of bytes of the sequence in last.   */
