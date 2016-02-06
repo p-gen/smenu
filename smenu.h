@@ -51,6 +51,7 @@ int count_leading_set_bits(unsigned char c);
 int get_cursor_position(int *const r, int *const c);
 void get_terminal_size(int *const r, int *const c);
 char *mb_strprefix(char *d, char *s, int n, int *pos);
+int mb_strlen(char *str);
 wchar_t *mb_strtowcs(char *s);
 void *validate_mb(const void *str);
 int outch(int c);
@@ -99,7 +100,7 @@ int get_bytes(FILE * input, char *mb_buffer, ll_t * word_delims_list,
               toggle_t * toggle, langinfo_t * langinfo);
 int get_scancode(unsigned char *s, int max);
 char *get_word(FILE * input, ll_t * word_delims_list, ll_t * record_delims_list,
-               char *mb_buffer, int *is_last, toggle_t * toggle,
+               char *mb_buffer, unsigned char *is_last, toggle_t * toggle,
                langinfo_t * langinfo, win_t * win, limits_t * limits);
 void left_margin_putp(char *s, term_t * term, win_t * win);
 int main(int argc, char *argv[]);
@@ -115,5 +116,5 @@ int parse_sed_like_string(sed_t * sed);
 int replace(char *orig, sed_t * sed, char *buf, size_t bufsiz);
 
 int decode_txt_attr_toggles(char *s, txt_attr_t * attr);
-int parse_txt_attr(char *str, txt_attr_t * attr, int max_color);
+int parse_txt_attr(char *str, txt_attr_t * attr, short max_color);
 void apply_txt_attr(term_t * term, txt_attr_t attr);
