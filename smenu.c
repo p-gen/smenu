@@ -1415,10 +1415,9 @@ my_stricmp(const char *str1, const char *str2)
 /* unparsed is empty on success and contains the unparsed part on failure */
 /* filter   is a string where each character is                           */
 /*          '1' if the column is selected or 'O' if not                   */
-/* A maximum of 1024 columns is allowed                                   */
 /* ====================================================================== */
 void
-parse_cols_selector(char *str, char **filter, char *unparsed)
+parse_cols_selector(char *str, char **filter, char *unparsed, int max_cols)
 {
   char def;                  /* default value */
   char mark;                 /* Value to set */
@@ -1433,7 +1432,7 @@ parse_cols_selector(char *str, char **filter, char *unparsed)
   char sep;
 
   len = (int) strlen(str);
-  max = 1024;
+  max = max_cols;
   *filter = xmalloc(max + 1);
 
   /* Get the first character to see if this is */
@@ -4736,7 +4735,7 @@ main(int argc, char *argv[])
   {
     char *unparsed = strdup(cols_selector);
 
-    parse_cols_selector(cols_selector, &cols_filter, unparsed);
+    parse_cols_selector(cols_selector, &cols_filter, unparsed, limits.cols);
 
     if (*unparsed != '\0')
     {

@@ -110,6 +110,8 @@ int search_next(tst_node_t * tst, word_t * word_a, char *search_buf,
                 int after_only);
 void sig_handler(int s);
 
+void parse_cols_selector(char *str, char **filter, char *unparsed,
+                         int max_cols);
 void set_new_first_column(win_t * win, term_t * term, word_t * word_a);
 
 int parse_sed_like_string(sed_t * sed);
