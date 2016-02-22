@@ -72,6 +72,20 @@ char *sbar_curs = "\xe2\x95\x91";       /* box_drawings_double_vertical     */
 char *sbar_arr_up = "\xe2\x96\xb2";     /* black_up_pointing_triangle       */
 char *sbar_arr_down = "\xe2\x96\xbc";   /* black_down_pointing_triangle     */
 
+/* Various filter pseudo constants */
+/* """"""""""""""""""""""""""""""" */
+enum filter_types
+{
+  include_filter = 'I',
+  exclude_filter = 'E'
+};
+
+enum filter_infos
+{
+  include_mark = '1',
+  exclude_mark = '0'
+};
+
 /* Locale informations */
 /* """"""""""""""""""" */
 struct langinfo_s
@@ -435,7 +449,9 @@ short_usage(void)
   fprintf(stderr, "[-m message] [-w] [-d] \\\n");
   fprintf(stderr, "       [-M] [-t [cols]] [-r] [-b] [-i regex] [-e regex]");
   fprintf(stderr, "                    \\\n");
-  fprintf(stderr, "       [-C [a|A|s|S|r|R|d|D]col1[-col2],[col1[-col2]]...] ");
+  fprintf(stderr, "       [-C [a|A|s|S|r|R|d|D]col1[-col2],[col1[-col2]]...]");
+  fprintf(stderr, "                  \\\n");
+  fprintf(stderr, "       [-R [a|A|s|S|r|R|d|D]row1[-row2],[row1[-row2]]...] ");
   fprintf(stderr, "                 \\\n");
   fprintf(stderr, "       [-S /regex/repl/[g][v][s][i]] ");
   fprintf(stderr, "[-I /regex/repl/[g][v][s][i]]         \\\n");
@@ -483,6 +499,7 @@ usage(void)
   fprintf(stderr, "-e sets the regex input filter to match the "
           "non-selectable words.\n");
   fprintf(stderr, "-C sets column restrictions for selections.\n");
+  fprintf(stderr, "-R sets rows restrictions for selections.\n");
   fprintf(stderr, "-S sets the post-processing action to apply to "
           "all words.\n");
   fprintf(stderr, "-I sets the post-processing action to apply to "
@@ -1534,7 +1551,7 @@ outch(int c)
 void
 setup_term(int const fd)
 {
-  /* Save the terminal parameters and configure it in raw mode */
+  /* Save the terminal parameters and configure it in row mode */
   /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""" */
   tcgetattr(fd, &old_in_attrs);
 
@@ -1655,7 +1672,7 @@ my_stricmp(const char *str1, const char *str2)
 }
 
 /* ====================================================================== */
-/* Parse a columns description string                                     */
+/* Parse a description string                                             */
 /* <letter><range1>,<range2>,...                                          */
 /* <range> is n1-n2 | n1 where n1 starts with 1                           */
 /*                                                                        */
@@ -1666,11 +1683,11 @@ my_stricmp(const char *str1, const char *str2)
 /* d|D is for Deselect (same as Remove)                                   */
 /*                                                                        */
 /* unparsed is empty on success and contains the unparsed part on failure */
-/* filter   is a string where each character is                           */
-/*          '1' if the column is selected or 'O' if not                   */
+/* filter   is include_filter or exclude_filter according to <letter>     */
 /* ====================================================================== */
 void
-parse_cols_selector(char *str, char **filter, char *unparsed, int max_cols)
+parse_selectors(char *str, int *filter, char *unparsed,
+                ll_t ** inc_list, ll_t ** exc_list)
 {
   char def;                  /* default value */
   char mark;                 /* Value to set */
@@ -1681,12 +1698,10 @@ parse_cols_selector(char *str, char **filter, char *unparsed, int max_cols)
   int n;                     /* number of successfully parsed values */
   int first, second;         /* range starting and ending values */
   char *ptr;                 /* pointer to the remaining string to parse */
-  int max;                   /* Max number of columns allowed */
   char sep;
+  interval_t *interval;
 
   len = (int) strlen(str);
-  max = max_cols;
-  *filter = xmalloc(max + 1);
 
   /* Get the first character to see if this is */
   /* an additive or restrictive operation.     */
@@ -1700,16 +1715,16 @@ parse_cols_selector(char *str, char **filter, char *unparsed, int max_cols)
     case 'A':
     case 's':
     case 'S':
-      def = '0';
-      mark = '1';
+      *filter = include_filter;
+      mark = include_mark;
       break;
 
     case 'r':
     case 'R':
     case 'd':
     case 'D':
-      def = '1';
-      mark = '0';
+      *filter = exclude_filter;
+      mark = exclude_mark;
       break;
 
     case '1':
@@ -1721,8 +1736,8 @@ parse_cols_selector(char *str, char **filter, char *unparsed, int max_cols)
     case '7':
     case '8':
     case '9':
-      def = '0';
-      mark = '1';
+      *filter = include_filter;
+      mark = include_mark;
       start = 0;
       break;
 
@@ -1733,11 +1748,6 @@ parse_cols_selector(char *str, char **filter, char *unparsed, int max_cols)
   ptr = str + start;
   first = second = -1;
   offset1 = offset2 = 0;
-
-  /* Fill the array with the default value */
-  /* """"""""""""""""""""""""""""""""""""" */
-  memset(*filter, def, max);
-  (*filter)[max] = '\0';
 
   /* Scan the comma separated ranges */
   /* """"""""""""""""""""""""""""""" */
@@ -1750,7 +1760,7 @@ parse_cols_selector(char *str, char **filter, char *unparsed, int max_cols)
     {
       /* Only one value could have been read */
       /* """"""""""""""""""""""""""""""""""" */
-      if (first < 1 || first > max)
+      if (first < 1)
       {
         strcpy(unparsed, ptr);
 
@@ -1768,13 +1778,19 @@ parse_cols_selector(char *str, char **filter, char *unparsed, int max_cols)
         break;
       }
 
-      (*filter)[first - 1] = mark;
+      interval = interval_new();
+      interval->low = interval->high = first - 1;
+
+      if (mark == exclude_mark)
+        ll_append(*exc_list, interval);
+      else
+        ll_append(*inc_list, interval);
     }
     else if (n == 2)
     {
       /* The two range values have been read */
       /* """"""""""""""""""""""""""""""""""" */
-      if (first < 1 || second < 1 || first > max || second > max)
+      if (first < 1 || second < 1)
       {
         strcpy(unparsed, ptr);
 
@@ -1790,7 +1806,15 @@ parse_cols_selector(char *str, char **filter, char *unparsed, int max_cols)
         second = swap;
       }
 
-      memset(*filter + first - 1, mark, second - first + 1);
+      interval = interval_new();
+      interval->low = first - 1;
+      interval->high = second - 1;
+
+      if (mark == exclude_mark)
+        ll_append(*exc_list, interval);
+      else
+        ll_append(*inc_list, interval);
+
       if (offset2 > 0)
       {
         ptr += offset2;
@@ -1820,6 +1844,56 @@ parse_cols_selector(char *str, char **filter, char *unparsed, int max_cols)
     strcpy(unparsed, ptr);
   else
     *unparsed = '\0';
+}
+
+/* ===================================================================== */
+/* Merge the intervals from an interval list in order to get the minimum */
+/* number of intervals to consider.                                      */
+/* ===================================================================== */
+void
+merge_intervals(ll_t * list)
+{
+  ll_node_t *node1, *node2;
+  interval_t *data1, *data2;
+  interval_t *interval;
+
+  if (!list || list->len < 2)
+    return;
+  else
+  {
+    /* Step 1: sort the intervals list */
+    /* """"""""""""""""""""""""""""""" */
+    ll_sort(list, interval_comp, interval_swap);
+
+    /* step 2: merge the list by merging the consecutive intervals */
+    /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+    node1 = list->head;
+    node2 = node1->next;
+
+    while (node2)
+    {
+      data1 = (interval_t *) (node1->data);
+      data2 = (interval_t *) (node2->data);
+
+      if (data1->high >= data2->low - 1)
+      {
+        /* interval 1 overlaps interval 2 */
+        /* '''''''''''''''''''''''''''''' */
+        if (data2->high >= data1->high)
+          data1->high = data2->high;
+        ll_delete(list, node2);
+        free(data2);
+        node2 = node1->next;
+      }
+      else
+      {
+        /* no overlap */
+        /* '''''''''' */
+        node1 = node2;
+        node2 = node2->next;
+      }
+    }
+  }
 }
 
 /* ======================================================== */
@@ -3143,7 +3217,8 @@ get_message_lines(char *message, ll_t * message_lines_list,
 /* potentially when the search function is used.                             */
 /* ========================================================================= */
 int
-build_metadata(word_t * word_a, term_t * term, int count, win_t * win)
+build_metadata(word_t * word_a, term_t * term, int count, win_t * win,
+               int filter_type, ll_t * inc_list, ll_t * exc_list)
 {
   int i = 0;
   size_t word_len;
@@ -3152,19 +3227,54 @@ build_metadata(word_t * word_a, term_t * term, int count, win_t * win)
   int cur_line;
   int end_line;
   int word_width;
-  int tab_count;             /* Current number of words in the line, *
-                              * used in tab_mode                     */
+  int def_selectable;        /* default selectable value                    */
+  int selectable;            /* wanted selectable value                     */
+  int is_selectable;
+  int tab_count;             /* Current number of words in the line,        *
+                              * used in tab_mode                            */
   wchar_t *w;
+  ll_t *list = NULL;         /* linked list of selectable or non-selectable *
+                              * lines intervals                             */
+  ll_node_t *node = NULL;    /* one node of this list                       */
+  interval_t *interval;      /* the data in each node                       */
 
   line_nb_of_word_a[0] = 0;
   first_word_in_line_a[0] = 0;
   win->max_width = 0;
+
+  /* initialise the selectable parameters */
+  /* """""""""""""""""""""""""""""""""""" */
+  if (filter_type == include_filter)
+  {
+    list = inc_list;
+    def_selectable = 0;
+    selectable = 1;
+  }
+  else
+  {
+    list = exc_list;
+    def_selectable = 1;
+    selectable = 0;
+  }
+
+  if (list)
+    node = list->head;
+
+  if (node)
+    interval = (interval_t *) node->data;
 
   /* Modify the max number of displayed lines if we do not have */
   /* enough place                                               */
   /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
   if (win->max_lines > term->nlines - 1)
     win->max_lines = term->nlines - 1;
+
+  /* look if the first line is in an interval of the list */
+  /* """""""""""""""""""""""""""""""""""""""""""""""""""" */
+  if (node && interval->low == 0)
+    is_selectable = selectable;
+  else
+    is_selectable = def_selectable;
 
   tab_count = 0;
   while (i < count)
@@ -3204,6 +3314,23 @@ build_metadata(word_t * word_a, term_t * term, int count, win_t * win)
       line_nb_of_word_a[i] = ++last;
       first_word_in_line_a[last] = i;
 
+      /* if the new line is greater then the last one of the */
+      /* previous interval then go the next interval if any  */
+      /* """"""""""""""""""""""""""""""""""""""""""""""""""" */
+      if (node && last > interval->high)
+      {
+        node = node->next;
+        if (node)
+          interval = (interval_t *) node->data;
+      }
+
+      /* look if the new line is in an interval of the list */
+      /* """""""""""""""""""""""""""""""""""""""""""""""""" */
+      if (node && last >= interval->low && 0 <= interval->high)
+        is_selectable = selectable;
+      else
+        is_selectable = def_selectable;
+
       word_a[i].start = 0;
 
       len = word_width + 1;  /* Resets the current line length     */
@@ -3217,7 +3344,6 @@ build_metadata(word_t * word_a, term_t * term, int count, win_t * win)
       word_a[i].start = len;
       word_a[i].end = word_a[i].start + word_width - 1;
       word_a[i].mbytes = word_len + 1;
-
       line_nb_of_word_a[i] = last;
 
       len += word_width + 1; /* Increase line length */
@@ -3226,6 +3352,11 @@ build_metadata(word_t * word_a, term_t * term, int count, win_t * win)
 
     if (len > win->max_width)
       win->max_width = len;
+
+    /* Set the selectable flag if the word has not be unselected before */
+    /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+    if (word_a[i].is_selectable)
+      word_a[i].is_selectable = is_selectable;
 
     i++;
   }
@@ -4078,6 +4209,13 @@ main(int argc, char *argv[])
   ll_t *include_sed_list = NULL;
   ll_t *exclude_sed_list = NULL;
 
+  ll_t *include_cols_list = NULL;
+  ll_t *exclude_cols_list = NULL;
+  ll_t *include_rows_list = NULL;
+  ll_t *exclude_rows_list = NULL;
+
+  int rows_filter_type;
+
   char *first_word_pattern = NULL;      /* used by -A/-Z                   */
   char *last_word_pattern = NULL;
   regex_t first_word_re;
@@ -4092,6 +4230,7 @@ main(int argc, char *argv[])
                                  * via -S/-I/-E                            */
 
   char *cols_selector = NULL;
+  char *rows_selector = NULL;
 
   int message_lines;
 
@@ -4219,6 +4358,10 @@ main(int argc, char *argv[])
   /* """"""""""""""""""""""""""" */
   char *cols_filter;
 
+  /* Rows selection variables */
+  /* """"""""""""""""""""""""""" */
+  char *rows_filter;
+
   /* Get the current locale */
   /* """""""""""""""""""""" */
   setlocale(LC_ALL, "");
@@ -4273,7 +4416,7 @@ main(int argc, char *argv[])
   /* Command line options analysis */
   /* """"""""""""""""""""""""""""" */
   while ((opt = egetopt(argc, argv,
-                        "VhqdMbi:e:S:I:E:A:Z:1:2:3:4:5:C:"
+                        "VhqdMbi:e:S:I:E:A:Z:1:2:3:4:5:C:R:"
                         "clwrgn:t%m:s:W:L:1:2:3:4:")) != -1)
   {
     switch (opt)
@@ -4404,6 +4547,21 @@ main(int argc, char *argv[])
         }
         break;
 
+      case 'R':
+        if (optarg && *optarg != '-')
+        {
+          rows_selector = optarg;
+          win.line_mode = 1;
+        }
+        else
+        {
+          TELL("Option requires an argument -- ");
+          (void) fputs("\n", stderr);
+          short_usage();
+
+          exit(EXIT_FAILURE);
+        }
+        break;
       case 'S':
         if (optarg && *optarg != '-')
         {
@@ -4982,19 +5140,82 @@ main(int argc, char *argv[])
     }
   }
 
+  /* Parse the row selection string if any */
+  /* """"""""""""""""""""""""""""""""""""" */
+  if (rows_selector != NULL)
+  {
+    char *unparsed = strdup(rows_selector);
+
+    ll_node_t *node;
+    interval_t *data;
+
+    include_rows_list = ll_new();
+    exclude_rows_list = ll_new();
+
+    parse_selectors(rows_selector, &rows_filter_type, unparsed,
+                    &include_rows_list, &exclude_rows_list);
+
+    if (*unparsed != '\0')
+    {
+      fprintf(stderr, "Bad -R argument. Unparsed part: %s\n", unparsed);
+
+      exit(EXIT_FAILURE);
+    }
+
+    merge_intervals(include_rows_list);
+    merge_intervals(exclude_rows_list);
+  }
+
   /* Parse the column selection string if any */
   /* """""""""""""""""""""""""""""""""""""""" */
   if (cols_selector != NULL)
   {
     char *unparsed = strdup(cols_selector);
+    int filter_type;
 
-    parse_cols_selector(cols_selector, &cols_filter, unparsed, limits.cols);
+    ll_node_t *node;
+    interval_t *data;
+
+    include_cols_list = ll_new();
+    exclude_cols_list = ll_new();
+
+    cols_filter = xmalloc(limits.cols);
+
+    parse_selectors(cols_selector, &filter_type, unparsed,
+                    &include_cols_list, &exclude_cols_list);
 
     if (*unparsed != '\0')
     {
       fprintf(stderr, "Bad -C argument. Unparsed part: %s\n", unparsed);
 
       exit(EXIT_FAILURE);
+    }
+
+    merge_intervals(include_cols_list);
+    merge_intervals(exclude_cols_list);
+
+    /* Populate the columns filter */
+    /* """"""""""""""""""""""""""" */
+    if (filter_type == include_filter)
+    {
+      memset(cols_filter, exclude_mark, limits.cols - 1);
+      for (node = include_cols_list->head; node; node = node->next)
+      {
+        data = node->data;
+        memset(cols_filter + data->low, include_mark,
+               data->high - data->low + 1);
+      }
+    }
+    else
+    {
+      memset(cols_filter, include_mark, limits.cols - 1);
+
+      for (node = exclude_cols_list->head; node; node = node->next)
+      {
+        data = node->data;
+        memset(cols_filter + data->low, exclude_mark,
+               data->high - data->low + 1);
+      }
     }
 
     free(unparsed);
@@ -5415,6 +5636,11 @@ main(int argc, char *argv[])
   win.start = 0;             /* index of the first element in the    *
                               * words array to be  displayed         */
 
+  /* We can now build the metadata */
+  /* """"""""""""""""""""""""""""" */
+  last_line = build_metadata(word_a, &term, count, &win, rows_filter_type,
+                             include_rows_list, exclude_rows_list);
+
   /* Index of the selected element in the array words                */
   /* The string can be:                                              */
   /*   "last"    The string "last"   put the cursor on the last word */
@@ -5426,21 +5652,12 @@ main(int argc, char *argv[])
   /* Find the first selectable word (if any) in the input stream */
   /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
   for (first_selectable = 0;
-       first_selectable < count - 1
-       && !word_a[first_selectable].is_selectable; first_selectable++);
+       first_selectable < count && !word_a[first_selectable].is_selectable;
+       first_selectable++);
 
   /* If not found, abort */
   /* """"""""""""""""""" */
-  if (!word_a[first_selectable].is_selectable)
-  {
-    fprintf(stderr, "No selectable word found.\n");
-
-    exit(EXIT_FAILURE);
-  }
-
-  /* If not found, abort */
-  /* """"""""""""""""""" */
-  if (!word_a[first_selectable].is_selectable)
+  if (first_selectable == count)
   {
     fprintf(stderr, "No selectable word found.\n");
 
@@ -5486,10 +5703,6 @@ main(int argc, char *argv[])
           current--;
     }
   }
-
-  /* We can now build the metadata */
-  /* """"""""""""""""""""""""""""" */
-  last_line = build_metadata(word_a, &term, count, &win);
 
   /* We've finished reading from stdin                               */
   /* we will now get the inputs from the controlling terminal if any */
@@ -5659,7 +5872,8 @@ main(int argc, char *argv[])
 
       /* Calculate the new metadata and draw the window again */
       /* """""""""""""""""""""""""""""""""""""""""""""""""""" */
-      last_line = build_metadata(word_a, &term, count, &win);
+      last_line = build_metadata(word_a, &term, count, &win, rows_filter_type,
+                                 include_rows_list, exclude_rows_list);
 
       if (win.col_mode | win.line_mode)
       {
@@ -5898,7 +6112,9 @@ main(int argc, char *argv[])
 
           if (search_next(tst, word_a, search_buf, 1))
             if (current > win.end)
-              last_line = build_metadata(word_a, &term, count, &win);
+              last_line = build_metadata(word_a, &term, count, &win,
+                                         rows_filter_type,
+                                         include_rows_list, exclude_rows_list);
 
           nl = disp_lines(word_a, &win, &toggle, current, count,
                           search_mode, search_buf, &term, last_line,
@@ -6606,7 +6822,10 @@ main(int argc, char *argv[])
             if (search_next(tst, word_a, search_buf, 0))
             {
               if (current > win.end)
-                last_line = build_metadata(word_a, &term, count, &win);
+                last_line = build_metadata(word_a, &term, count, &win,
+                                           rows_filter_type,
+                                           include_rows_list,
+                                           exclude_rows_list);
 
               nl = disp_lines(word_a, &win, &toggle, current, count,
                               search_mode, search_buf, &term, last_line,

@@ -11,6 +11,9 @@ and outputs the selection to stdout.
       [\fB-C\fP \
 [\fIa\fP|\fIA\fP|\fIs\fP|\fIS\fP|\fIr\fP|\fIR\fP|\fId\fP|\fID\fP]\
 [\fIcol1\fP[-\fIcol2\fP],[\fIcol1\fP[-\fIcol2\fP]... \\
+      [\fB-R\fP \
+[\fIa\fP|\fIA\fP|\fIs\fP|\fIS\fP|\fIr\fP|\fIR\fP|\fId\fP|\fID\fP]\
+[\fIrow1\fP[-\fIrow2\fP],[\fIrow1\fP[-\fIrow2\fP]... \\
       [\fB-S\fP \fI/regex/string/\fP[\fIg\fP][\fIv\fP][\fIs\fP][\fIi\fP]] \
 [\fB-I\fP \fI/regex/string/\fP[\fIg\fP][\fIv\fP][\fIs\fP][\fIi\fP]] \\
       [\fB-E\fP \fI/regex/string/\fP[\fIg\fP][\fIv\fP][\fIs\fP][\fIi\fP]] \\
@@ -32,6 +35,9 @@ by default.
 It is possible to filter the selectable words in the input stream by
 using an include regular expression to match the selectable words
 and an exclude regular expression to match the non-selectable words.
+
+Notice that when some words are excluded they can no more be re-included
+after.
 .P
 Non-selectable words are skipped when moving the selection cursor and
 cannot be searched for.
@@ -293,7 +299,8 @@ Enables \fBENTER\fP to validate the selection even in search mode.
 .IP \fB-b\fP
 Replace all non-printable characters by a blank.
 .IP "\fB-i\fP \fIregex\fP"
-Sets the \fBi\fPnclude filter to match the selectable words.
+Sets the \fBi\fPnclude filter to match the selectable words. All the
+other words will become non-selectable (excluded)
 .IP "\fB-e\fP \fIregex\fP"
 Sets the \fBe\fPxclude filter to match the non-selectable words.
 
@@ -301,7 +308,7 @@ This filter has a higher priority the include filter.
 .P
 The \fIregex\fP selections above are done before the possible word
 alterations realized with \fB-I\fP or \fB-E\fP (see below).
-.IP "[\fB-C\fP [a|A|s|S|r|R|d|D][col1[-col2],[col1[-col2]..."
+.IP "\fB-C\fP [a|A|s|S|r|R|d|D][col1[-col2]],[col1[-col2]]..."
 In column mode, restricts the previous selections or de-selections to
 some columns. If no selection is given via \fB-i\fP and \fB-e\fP this
 option gives the possibility to select entire columns by giving their
@@ -311,6 +318,9 @@ numbers (1 based).
 of columns. \fBr\fP/\fBR\fP or \fBd\fP/\fBD\fP select all but the
 specified columns.
 
+The words in the selected columns will be considered as included and the
+others excluded.
+
 Example of columns selection: \fI-a2,3,5-7\fP forces the cursor to only
 navigate in columns \fB2\fP,\fB3\fP,\fB5\fP,\fB6\fP and \fB7\fP. If
 \fBd\fP was used in place of \fBa\fP, all the columns would have been
@@ -319,7 +329,12 @@ selected \fBexcept\fP the columns \fB2\fP,\fB3\fP,\fB5\fP,\fB6\fP and
 
 Spaces are allowed in the selection string if they are protected.
 
-Only the first 1024 columns can be selected by this mean.
+The column mode is forced when this option is selected.
+.IP "\fB-R\fP [a|A|s|S|r|R|d|D][col1[-col2]],[col1[-col2]]..."
+Similar to \fB-C\fP but for the rows.
+
+One difference though: this is the line mode which is forced by this
+option NOT the column mode.
 .IP "\fB-S\fP /\fIregex\fP/replacement string/[g][v][s]"
 Post-processes the words by applying a regular expression based
 substitution. The argument must be formatted as in the \fBsed\fP

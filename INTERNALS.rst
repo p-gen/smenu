@@ -58,7 +58,7 @@ The main  datastructures are:
 
    PageBreak
 
-The following diagram illustrates various variables used in the code::
+The following diagram illustrates various variables used in the code.::
 
        first_word_in_line_a array
                    |
@@ -90,3 +90,22 @@ The following diagram illustrates various variables used in the code::
                                                |
                                                |
                                             count-1
+
+The followin diagram shows how the lines and columns intervals introduced
+by ``-C`` and ``-R`` options are stored in linked lists.::
+
+    +------+           +------+
+    | head |           | tail |
+    +---+--+           +--+---+
+        |                 |
+        |                 |
+      +-v-+    +---+    +-v-+    +---+
+      |   +---->   +---->   +---->xxx|
+      +-+-+    +-+-+    +-+-+    +---+
+        |        |        |
+        |        |        |
+     +--v---+ +--v---+ +--v---+
+     | low  | | low  | | low  |
+     +------+ +------+ +------+  Intervals
+     | high | | high | | high |
+     +------+ +------+ +------+
