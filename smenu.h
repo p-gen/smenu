@@ -36,6 +36,17 @@ void *xcalloc(size_t num, size_t size);
 void *xrealloc(void *ptr, size_t size);
 
 int ll_append(ll_t * const list, void *const data);
+int ll_prepend(ll_t * const list, void *const data);
+void ll_insert_before(ll_t * const list, ll_node_t * node, void *const data);
+void ll_insert_after(ll_t * const list, ll_node_t * node, void *const data);
+ll_node_t *ll_partition(ll_node_t * l, ll_node_t * h,
+                        int (*comp) (void *, void *),
+                        void (*swap) (void *, void *));
+void ll_quicksort(ll_node_t * l, ll_node_t * h,
+                  int (*comp) (void *, void *), void (*swap) (void *a, void *));
+void ll_sort(ll_t * list, int (*comp) (void *, void *),
+             void (*swap) (void *a, void *));
+int ll_delete(ll_t * const list, ll_node_t * node);
 ll_node_t *ll_find(ll_t * const, void *const,
                    int (*)(const void *, const void *));
 void ll_init(ll_t * list);

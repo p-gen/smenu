@@ -401,6 +401,7 @@ struct ll_node_s
 {
   void *data;
   struct ll_node_s *next;
+  struct ll_node_s *prev;
 };
 
 /* Linked List structure */
@@ -1145,11 +1146,7 @@ ll_t *
 ll_new(void)
 {
   ll_t *ret = xmalloc(sizeof(ll_t));
-
-  if (ret)
-    ll_init(ret);
-  else
-    errno = ENOMEM;
+  ll_init(ret);
 
   return ret;
 }
@@ -1197,10 +1194,12 @@ ll_append(ll_t * const list, void *const data)
       node->data = data;
       node->next = NULL;
 
+      node->prev = list->tail;
       if (list->tail)
         list->tail->next = node;
       else
         list->head = node;
+
       list->tail = node;
 
       ++list->len;
@@ -1209,6 +1208,196 @@ ll_append(ll_t * const list, void *const data)
   }
 
   return ret;
+}
+
+/* =================================================================== */
+/* Put a new node filled with its data at the beginning of the linked  */
+/* list. The user is responsible for the memory management of the data */
+/* =================================================================== */
+int
+ll_prepend(ll_t * const list, void *const data)
+{
+  int ret = 1;
+  ll_node_t *node;
+
+  if (list)
+  {
+    node = ll_new_node();
+    if (node)
+    {
+      node->data = data;
+      node->prev = NULL;
+
+      node->next = list->head;
+      if (list->head)
+        list->head->prev = node;
+      else
+        list->tail = node;
+
+      list->head = node;
+
+      ++list->len;
+      ret = 0;
+    }
+  }
+
+  return ret;
+}
+
+/* ======================================================= */
+/* Insert a new node before the specified node in the list */
+/* TODO test it                                           */
+/* ======================================================= */
+void
+ll_insert_before(ll_t * const list, ll_node_t * node, void *const data)
+{
+  int ret = 1;
+  ll_node_t *new_node;
+
+  if (list)
+  {
+    if (node->prev == NULL)
+      ll_prepend(list, data);
+    else
+    {
+      new_node = ll_new_node();
+      if (new_node)
+      {
+        new_node->data = data;
+        new_node->next = node;
+        new_node->prev = node->prev;
+        node->prev->next = new_node;
+
+        ++list->len;
+      }
+    }
+  }
+}
+
+/* ====================================================== */
+/* Insert a new node after the specified node in the list */
+/* TODO test it                                           */
+/* ====================================================== */
+void
+ll_insert_after(ll_t * const list, ll_node_t * node, void *const data)
+{
+  ll_node_t *new_node;
+
+  if (list)
+  {
+    if (node->next == NULL)
+      ll_append(list, data);
+    else
+    {
+      new_node = ll_new_node();
+      if (new_node)
+      {
+        new_node->data = data;
+        new_node->prev = node;
+        new_node->next = node->next;
+        node->next->prev = new_node;
+
+        ++list->len;
+      }
+    }
+  }
+}
+
+/* ====================================================== */
+/* Partition code for the quicksort function              */
+/* Based on code found here:                              */
+/* http://www.geeksforgeeks.org/quicksort-for-linked-list */
+/* ====================================================== */
+ll_node_t *
+partition(ll_node_t * l, ll_node_t * h, int (*comp) (void *, void *),
+          void (*swap) (void *, void *))
+{
+  /* Considers last element as pivot, places the pivot element at its       */
+  /* correct position in sorted array, and places all smaller (smaller than */
+  /* pivot) to left of pivot and all greater elements to right of pivot     */
+  /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+
+  /* set pivot as h element */
+  /* """""""""""""""""""""" */
+  void *x = h->data;
+
+  ll_node_t *i = l->prev;
+
+  for (ll_node_t * j = l; j != h; j = j->next)
+  {
+    if (comp(j->data, x) < 1)
+    {
+      i = (i == NULL) ? l : i->next;
+
+      swap(&(i->data), &(j->data));
+    }
+  }
+
+  i = (i == NULL) ? l : i->next;
+  swap(i->data, h->data);
+
+  return i;
+}
+
+/* ======================================================= */
+/* A recursive implementation of quicksort for linked list */
+/* ======================================================= */
+void
+ll_quicksort(ll_node_t * l, ll_node_t * h,
+             int (*comp) (void *, void *), void (*swap) (void *a, void *))
+{
+  if (h != NULL && l != h && l != h->next)
+  {
+    ll_node_t *p = partition(l, h, comp, swap);
+    ll_quicksort(l, p->prev, comp, swap);
+    ll_quicksort(p->next, h, comp, swap);
+  }
+}
+
+/* =========================== */
+/* A linked list sort function */
+/* =========================== */
+void
+ll_sort(ll_t * list, int (*comp) (void *, void *),
+        void (*swap) (void *a, void *))
+{
+  /* Call the recursive ll_quicksort function */
+  /* """""""""""""""""""""""""""""""""""""""" */
+  ll_quicksort(list->head, list->tail, interval_comp, interval_swap);
+}
+
+/* ================================ */
+/* Remove a node from a linked list */
+/* ================================ */
+int
+ll_delete(ll_t * const list, ll_node_t * node)
+{
+  if (list->head == list->tail)
+  {
+    if (list->head != NULL)
+      list->head = list->tail = NULL;
+    else
+      return 0;
+  }
+  else if (node->prev == NULL)
+  {
+    list->head = node->next;
+    list->head->prev = NULL;
+  }
+  else if (node->next == NULL)
+  {
+    list->tail = node->prev;
+    list->tail->next = NULL;
+  }
+  else
+  {
+    node->next->prev = node->prev;
+    node->prev->next = node->next;
+  }
+
+  --list->len;
+
+  return 1;
 }
 
 /* =========================================================================*/
