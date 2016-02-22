@@ -26,6 +26,7 @@ typedef struct word_s word_t;
 typedef struct txt_attr_s txt_attr_t;
 typedef struct limits_s limits_t;
 typedef struct sed_s sed_t;
+typedef struct interval_s interval_t;
 
 void help(win_t * win, term_t * term, int last_line);
 void short_usage(void);
@@ -34,6 +35,10 @@ void usage(void);
 void *xmalloc(size_t size);
 void *xcalloc(size_t num, size_t size);
 void *xrealloc(void *ptr, size_t size);
+
+interval_t *interval_new(void);
+int interval_comp(void *a, void *b);
+void interval_swap(void *a, void *b);
 
 int ll_append(ll_t * const list, void *const data);
 int ll_prepend(ll_t * const list, void *const data);

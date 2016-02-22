@@ -375,6 +375,14 @@ struct sed_s
   regex_t re;
 };
 
+/* Interval structure for use in lists of columns and rows */
+/* """"""""""""""""""""""""""""""""""""""""""""""""""""""" */
+struct interval_s
+{
+  int low;
+  int high;
+};
+
 /* *************************************** */
 /* Ternary Search Tree specific structures */
 /* *************************************** */
@@ -1133,6 +1141,62 @@ make_ini_path(char *name, char *base)
     path = NULL;
 
   return path;
+}
+
+/* ****************** */
+/* interval functions */
+/* ****************** */
+
+/* ===================== */
+/* Create a new interval */
+/* ===================== */
+interval_t *
+interval_new(void)
+{
+  interval_t *ret = xmalloc(sizeof(interval_t));
+
+  return ret;
+}
+
+/* ====================================== */
+/* Compare 2 intervals as integer couples */
+/* same return values as for strcmp       */
+/* ====================================== */
+int
+interval_comp(void *a, void *b)
+{
+  interval_t *ia = (interval_t *) a;
+  interval_t *ib = (interval_t *) b;
+
+  if (ia->low < ib->low)
+    return -1;
+  if (ia->low > ib->low)
+    return 1;
+  if (ia->high < ib->high)
+    return -1;
+  if (ia->high > ib->high)
+    return 1;
+
+  return 0;
+}
+
+/* =============================== */
+/* swap the value of two intervals */
+/* =============================== */
+void
+interval_swap(void *a, void *b)
+{
+  interval_t *ia = (interval_t *) a;
+  interval_t *ib = (interval_t *) b;
+  int tmp;
+
+  tmp = ia->low;
+  ia->low = ib->low;
+  ib->low = tmp;
+
+  tmp = ia->high;
+  ia->high = ib->high;
+  ib->high = tmp;
 }
 
 /* ********************* */
