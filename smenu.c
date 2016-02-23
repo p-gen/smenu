@@ -1687,7 +1687,7 @@ my_stricmp(const char *str1, const char *str2)
 /* ====================================================================== */
 void
 parse_selectors(char *str, int *filter, char *unparsed,
-                ll_t ** inc_list, ll_t ** exc_list)
+                ll_t * inc_list, ll_t * exc_list)
 {
   char def;                  /* default value */
   char mark;                 /* Value to set */
@@ -1782,9 +1782,9 @@ parse_selectors(char *str, int *filter, char *unparsed,
       interval->low = interval->high = first - 1;
 
       if (mark == exclude_mark)
-        ll_append(*exc_list, interval);
+        ll_append(exc_list, interval);
       else
-        ll_append(*inc_list, interval);
+        ll_append(inc_list, interval);
     }
     else if (n == 2)
     {
@@ -1811,9 +1811,9 @@ parse_selectors(char *str, int *filter, char *unparsed,
       interval->high = second - 1;
 
       if (mark == exclude_mark)
-        ll_append(*exc_list, interval);
+        ll_append(exc_list, interval);
       else
-        ll_append(*inc_list, interval);
+        ll_append(inc_list, interval);
 
       if (offset2 > 0)
       {
@@ -5153,7 +5153,7 @@ main(int argc, char *argv[])
     exclude_rows_list = ll_new();
 
     parse_selectors(rows_selector, &rows_filter_type, unparsed,
-                    &include_rows_list, &exclude_rows_list);
+                    include_rows_list, exclude_rows_list);
 
     if (*unparsed != '\0')
     {
@@ -5182,7 +5182,7 @@ main(int argc, char *argv[])
     cols_filter = xmalloc(limits.cols);
 
     parse_selectors(cols_selector, &filter_type, unparsed,
-                    &include_cols_list, &exclude_cols_list);
+                    include_cols_list, exclude_cols_list);
 
     if (*unparsed != '\0')
     {
