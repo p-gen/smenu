@@ -5198,21 +5198,34 @@ main(int argc, char *argv[])
     /* """"""""""""""""""""""""""" */
     if (filter_type == include_filter)
     {
-      memset(cols_filter, exclude_mark, limits.cols - 1);
+      memset(cols_filter, exclude_mark, limits.cols);
       for (node = include_cols_list->head; node; node = node->next)
       {
         data = node->data;
+
+        if (data->low >= limits.cols)
+          break;
+
+        if (data->high >= limits.cols)
+          data->high = limits.cols - 1;
+
         memset(cols_filter + data->low, include_mark,
                data->high - data->low + 1);
       }
     }
     else
     {
-      memset(cols_filter, include_mark, limits.cols - 1);
-
+      memset(cols_filter, include_mark, limits.cols);
       for (node = exclude_cols_list->head; node; node = node->next)
       {
         data = node->data;
+
+        if (data->low >= limits.cols)
+          break;
+
+        if (data->high >= limits.cols)
+          data->high = limits.cols - 1;
+
         memset(cols_filter + data->low, exclude_mark,
                data->high - data->low + 1);
       }
