@@ -76,14 +76,14 @@ char *sbar_arr_down = "\xe2\x96\xbc";   /* black_down_pointing_triangle     */
 /* """"""""""""""""""""""""""""""" */
 enum filter_types
 {
-  include_filter = 'I',
-  exclude_filter = 'E'
+  INCLUDE_FILTER,
+  EXCLUDE_FILTER
 };
 
 enum filter_infos
 {
-  include_mark = '1',
-  exclude_mark = '0'
+  INCLUDE_MARK = '1',
+  EXCLUDE_MARK = '0'
 };
 
 /* Locale informations */
@@ -1683,7 +1683,7 @@ my_stricmp(const char *str1, const char *str2)
 /* d|D is for Deselect (same as Remove)                                   */
 /*                                                                        */
 /* unparsed is empty on success and contains the unparsed part on failure */
-/* filter   is include_filter or exclude_filter according to <letter>     */
+/* filter   is INCLUDE_FILTER or EXCLUDE_FILTER according to <letter>     */
 /* ====================================================================== */
 void
 parse_selectors(char *str, int *filter, char *unparsed,
@@ -1715,16 +1715,16 @@ parse_selectors(char *str, int *filter, char *unparsed,
     case 'A':
     case 's':
     case 'S':
-      *filter = include_filter;
-      mark = include_mark;
+      *filter = INCLUDE_FILTER;
+      mark = INCLUDE_MARK;
       break;
 
     case 'r':
     case 'R':
     case 'd':
     case 'D':
-      *filter = exclude_filter;
-      mark = exclude_mark;
+      *filter = EXCLUDE_FILTER;
+      mark = EXCLUDE_MARK;
       break;
 
     case '1':
@@ -1736,8 +1736,8 @@ parse_selectors(char *str, int *filter, char *unparsed,
     case '7':
     case '8':
     case '9':
-      *filter = include_filter;
-      mark = include_mark;
+      *filter = INCLUDE_FILTER;
+      mark = INCLUDE_MARK;
       start = 0;
       break;
 
@@ -1781,7 +1781,7 @@ parse_selectors(char *str, int *filter, char *unparsed,
       interval = interval_new();
       interval->low = interval->high = first - 1;
 
-      if (mark == exclude_mark)
+      if (mark == EXCLUDE_MARK)
         ll_append(exc_list, interval);
       else
         ll_append(inc_list, interval);
@@ -1810,7 +1810,7 @@ parse_selectors(char *str, int *filter, char *unparsed,
       interval->low = first - 1;
       interval->high = second - 1;
 
-      if (mark == exclude_mark)
+      if (mark == EXCLUDE_MARK)
         ll_append(exc_list, interval);
       else
         ll_append(inc_list, interval);
@@ -3244,7 +3244,7 @@ build_metadata(word_t * word_a, term_t * term, int count, win_t * win,
 
   /* initialise the selectable parameters */
   /* """""""""""""""""""""""""""""""""""" */
-  if (filter_type == include_filter)
+  if (filter_type == INCLUDE_FILTER)
   {
     list = inc_list;
     def_selectable = 0;
@@ -5196,9 +5196,9 @@ main(int argc, char *argv[])
 
     /* Populate the columns filter */
     /* """"""""""""""""""""""""""" */
-    if (filter_type == include_filter)
+    if (filter_type == INCLUDE_FILTER)
     {
-      memset(cols_filter, exclude_mark, limits.cols);
+      memset(cols_filter, EXCLUDE_MARK, limits.cols);
       for (node = include_cols_list->head; node; node = node->next)
       {
         data = node->data;
@@ -5209,13 +5209,13 @@ main(int argc, char *argv[])
         if (data->high >= limits.cols)
           data->high = limits.cols - 1;
 
-        memset(cols_filter + data->low, include_mark,
+        memset(cols_filter + data->low, INCLUDE_MARK,
                data->high - data->low + 1);
       }
     }
     else
     {
-      memset(cols_filter, include_mark, limits.cols);
+      memset(cols_filter, INCLUDE_MARK, limits.cols);
       for (node = exclude_cols_list->head; node; node = node->next)
       {
         data = node->data;
@@ -5226,7 +5226,7 @@ main(int argc, char *argv[])
         if (data->high >= limits.cols)
           data->high = limits.cols - 1;
 
-        memset(cols_filter + data->low, exclude_mark,
+        memset(cols_filter + data->low, EXCLUDE_MARK,
                data->high - data->low + 1);
       }
     }
