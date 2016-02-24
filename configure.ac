@@ -1,7 +1,7 @@
 #                                               -*- Autoconf -*-
 # Process this file with autoconf to produce a configure script.
 
-m4_define(my_version, [0.9])
+m4_define(my_version, [m4_esyscmd([tr -d '\n' < version])])
 
 AC_PREREQ([2.69])
 AC_INIT([smenu], [my_version], [p.gen.progs@gmail.com])
