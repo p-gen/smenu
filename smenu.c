@@ -4429,13 +4429,7 @@ main(int argc, char *argv[])
         if (optarg && *optarg != '-')
           win.asked_max_lines = atoi(optarg);
         else
-        {
           TELL("Option requires an Argument -- ");
-          (void) fputs("\n", stderr);
-          short_usage();
-
-          exit(EXIT_FAILURE);
-        }
         break;
 
       case 'd':
@@ -4450,13 +4444,7 @@ main(int argc, char *argv[])
         if (optarg && *optarg != '-')
           pre_selection_index = strdup(optarg);
         else
-        {
           TELL("Option requires an argument -- ");
-          (void) fputs("\n", stderr);
-          short_usage();
-
-          exit(EXIT_FAILURE);
-        }
         break;
 
       case 't':
@@ -4488,13 +4476,7 @@ main(int argc, char *argv[])
         if (optarg && *optarg != '-')
           message = optarg;
         else
-        {
           TELL("Option requires an argument -- ");
-          (void) fputs("\n", stderr);
-          short_usage();
-
-          exit(EXIT_FAILURE);
-        }
         break;
 
       case 'r':
@@ -4509,26 +4491,14 @@ main(int argc, char *argv[])
         if (optarg && *optarg != '-')
           include_pattern = optarg;
         else
-        {
           TELL("Option requires an argument -- ");
-          (void) fputs("\n", stderr);
-          short_usage();
-
-          exit(EXIT_FAILURE);
-        }
         break;
 
       case 'e':
         if (optarg && *optarg != '-')
           exclude_pattern = optarg;
         else
-        {
           TELL("Option requires an argument -- ");
-          (void) fputs("\n", stderr);
-          short_usage();
-
-          exit(EXIT_FAILURE);
-        }
         break;
 
       case 'C':
@@ -4538,13 +4508,7 @@ main(int argc, char *argv[])
           win.col_mode = 1;
         }
         else
-        {
           TELL("Option requires an argument -- ");
-          (void) fputs("\n", stderr);
-          short_usage();
-
-          exit(EXIT_FAILURE);
-        }
         break;
 
       case 'R':
@@ -4554,13 +4518,7 @@ main(int argc, char *argv[])
           win.line_mode = 1;
         }
         else
-        {
           TELL("Option requires an argument -- ");
-          (void) fputs("\n", stderr);
-          short_usage();
-
-          exit(EXIT_FAILURE);
-        }
         break;
       case 'S':
         if (optarg && *optarg != '-')
@@ -4576,13 +4534,7 @@ main(int argc, char *argv[])
           ll_append(sed_list, sed_node);
         }
         else
-        {
           TELL("Option requires an argument -- ");
-          (void) fputs("\n", stderr);
-          short_usage();
-
-          exit(EXIT_FAILURE);
-        }
         break;
 
       case 'I':
@@ -4599,13 +4551,7 @@ main(int argc, char *argv[])
           ll_append(include_sed_list, sed_node);
         }
         else
-        {
           TELL("Option requires an argument -- ");
-          (void) fputs("\n", stderr);
-          short_usage();
-
-          exit(EXIT_FAILURE);
-        }
         break;
 
       case 'E':
@@ -4622,13 +4568,7 @@ main(int argc, char *argv[])
           ll_append(exclude_sed_list, sed_node);
         }
         else
-        {
           TELL("Option requires an argument -- ");
-          (void) fputs("\n", stderr);
-          short_usage();
-
-          exit(EXIT_FAILURE);
-        }
         break;
 
       case '1':
@@ -4648,13 +4588,7 @@ main(int argc, char *argv[])
           while (argv[optind] && *argv[optind] != '-')
           {
             if (count > 2)
-            {
               TELL("Too many arguments -- ");
-              (void) fputs("\n", stderr);
-              short_usage();
-
-              exit(EXIT_FAILURE);
-            }
 
             /* Colors must respect the format: <fg color>/<bg color> */
             /* """"""""""""""""""""""""""""""""""""""""""""""""""""" */
@@ -4671,26 +4605,14 @@ main(int argc, char *argv[])
               win.special_attr[opt - '1'].italic = attr.italic;
             }
             else
-            {
               TELL("Bad optional color settings -- ");
-              (void) fputs("\n", stderr);
-              short_usage();
-
-              exit(EXIT_FAILURE);
-            }
 
             optind++;
             count++;
           }
         }
         else
-        {
           TELL("Option requires an argument -- ");
-          (void) fputs("\n", stderr);
-          short_usage();
-
-          exit(EXIT_FAILURE);
-        }
         break;
 
       case 'q':
@@ -4701,52 +4623,28 @@ main(int argc, char *argv[])
         if (optarg && *optarg != '-')
           first_word_pattern = optarg;
         else
-        {
           TELL("Option requires an argument -- ");
-          (void) fputs("\n", stderr);
-          short_usage();
-
-          exit(EXIT_FAILURE);
-        }
         break;
 
       case 'Z':
         if (optarg && *optarg != '-')
           last_word_pattern = optarg;
         else
-        {
           TELL("Option requires an argument -- ");
-          (void) fputs("\n", stderr);
-          short_usage();
-
-          exit(EXIT_FAILURE);
-        }
         break;
 
       case 'W':
         if (optarg && *optarg != '-')
           iws = optarg;
         else
-        {
           TELL("Option requires an argument -- ");
-          (void) fputs("\n", stderr);
-          short_usage();
-
-          exit(EXIT_FAILURE);
-        }
         break;
 
       case 'L':
         if (optarg && *optarg != '-')
           ils = optarg;
         else
-        {
           TELL("Option requires an argument -- ");
-          (void) fputs("\n", stderr);
-          short_usage();
-
-          exit(EXIT_FAILURE);
-        }
         break;
 
       case '?':
