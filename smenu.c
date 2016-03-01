@@ -5321,7 +5321,7 @@ main(int argc, char *argv[])
 
       /* Restricts the selection to certain columns */
       /* """""""""""""""""""""""""""""""""""""""""" */
-      if (selectable == 1 && cols_selector != NULL)
+      if (selectable && cols_selector != NULL)
         if (cols_filter[col_index - 1] == '0')
           selectable = 0;
 
