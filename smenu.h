@@ -100,8 +100,7 @@ char *make_ini_path(char *name, char *base);
 void set_foreground_color(term_t * term, int color);
 void set_background_color(term_t * term, int color);
 
-int build_metadata(word_t * word_a, term_t * term, int count, win_t * win,
-                   int filter_type, ll_t * inc_list, ll_t * exc_list);
+int build_metadata(word_t * word_a, term_t * term, int count, win_t * win);
 int disp_lines(word_t * word_a, win_t * win, toggle_t * toggle, int current,
                int count, int search_mode, char *search_buf, term_t * term,
                int last_line, char *tmp_max_word, langinfo_t * langinfo);

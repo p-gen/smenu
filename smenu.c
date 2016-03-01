@@ -76,6 +76,7 @@ char *sbar_arr_down = "\xe2\x96\xbc";   /* black_down_pointing_triangle     */
 /* """"""""""""""""""""""""""""""" */
 enum filter_types
 {
+  UNKNOWN_FILTER,
   INCLUDE_FILTER,
   EXCLUDE_FILTER
 };
@@ -3217,8 +3218,7 @@ get_message_lines(char *message, ll_t * message_lines_list,
 /* potentially when the search function is used.                             */
 /* ========================================================================= */
 int
-build_metadata(word_t * word_a, term_t * term, int count, win_t * win,
-               int filter_type, ll_t * inc_list, ll_t * exc_list)
+build_metadata(word_t * word_a, term_t * term, int count, win_t * win)
 {
   int i = 0;
   size_t word_len;
@@ -3227,54 +3227,19 @@ build_metadata(word_t * word_a, term_t * term, int count, win_t * win,
   int cur_line;
   int end_line;
   int word_width;
-  int def_selectable;        /* default selectable value                    */
-  int selectable;            /* wanted selectable value                     */
-  int is_selectable;
   int tab_count;             /* Current number of words in the line,        *
                               * used in tab_mode                            */
   wchar_t *w;
-  ll_t *list = NULL;         /* linked list of selectable or non-selectable *
-                              * lines intervals                             */
-  ll_node_t *node = NULL;    /* one node of this list                       */
-  interval_t *interval;      /* the data in each node                       */
 
   line_nb_of_word_a[0] = 0;
   first_word_in_line_a[0] = 0;
   win->max_width = 0;
-
-  /* initialise the selectable parameters */
-  /* """""""""""""""""""""""""""""""""""" */
-  if (filter_type == INCLUDE_FILTER)
-  {
-    list = inc_list;
-    def_selectable = 0;
-    selectable = 1;
-  }
-  else
-  {
-    list = exc_list;
-    def_selectable = 1;
-    selectable = 0;
-  }
-
-  if (list)
-    node = list->head;
-
-  if (node)
-    interval = (interval_t *) node->data;
 
   /* Modify the max number of displayed lines if we do not have */
   /* enough place                                               */
   /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
   if (win->max_lines > term->nlines - 1)
     win->max_lines = term->nlines - 1;
-
-  /* look if the first line is in an interval of the list */
-  /* """""""""""""""""""""""""""""""""""""""""""""""""""" */
-  if (node && interval->low == 0)
-    is_selectable = selectable;
-  else
-    is_selectable = def_selectable;
 
   tab_count = 0;
   while (i < count)
@@ -3314,23 +3279,6 @@ build_metadata(word_t * word_a, term_t * term, int count, win_t * win,
       line_nb_of_word_a[i] = ++last;
       first_word_in_line_a[last] = i;
 
-      /* if the new line is greater then the last one of the */
-      /* previous interval then go the next interval if any  */
-      /* """"""""""""""""""""""""""""""""""""""""""""""""""" */
-      if (node && last > interval->high)
-      {
-        node = node->next;
-        if (node)
-          interval = (interval_t *) node->data;
-      }
-
-      /* look if the new line is in an interval of the list */
-      /* """""""""""""""""""""""""""""""""""""""""""""""""" */
-      if (node && last >= interval->low && 0 <= interval->high)
-        is_selectable = selectable;
-      else
-        is_selectable = def_selectable;
-
       word_a[i].start = 0;
 
       len = word_width + 1;  /* Resets the current line length     */
@@ -3352,11 +3300,6 @@ build_metadata(word_t * word_a, term_t * term, int count, win_t * win,
 
     if (len > win->max_width)
       win->max_width = len;
-
-    /* Set the selectable flag if the word has not be unselected before */
-    /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-    if (word_a[i].is_selectable)
-      word_a[i].is_selectable = is_selectable;
 
     i++;
   }
@@ -4214,7 +4157,7 @@ main(int argc, char *argv[])
   ll_t *include_rows_list = NULL;
   ll_t *exclude_rows_list = NULL;
 
-  int rows_filter_type;
+  int rows_filter_type = UNKNOWN_FILTER;
 
   char *first_word_pattern = NULL;      /* used by -A/-Z                   */
   char *last_word_pattern = NULL;
@@ -4306,7 +4249,16 @@ main(int argc, char *argv[])
   langinfo_t langinfo;
   int is_supported_charset;
 
+  int line_count = 0;
+
   txt_attr_t init_attr;
+
+  ll_t *interval_list = NULL;   /* linked list of selectable or non-selectable *
+                                 * lines intervals                             */
+  ll_node_t *interval_node = NULL;      /* one node of this list               */
+  interval_t *interval;      /* the data in each node                          */
+  int row_def_selectable;    /* default selectable value                       */
+  int row_selectable;        /* wanted selectable value                        */
 
   /* Win fields initialization */
   /* """"""""""""""""""""""""" */
@@ -4357,10 +4309,6 @@ main(int argc, char *argv[])
   /* Columns selection variables */
   /* """"""""""""""""""""""""""" */
   char *cols_filter;
-
-  /* Rows selection variables */
-  /* """"""""""""""""""""""""""" */
-  char *rows_filter;
 
   /* Get the current locale */
   /* """""""""""""""""""""" */
@@ -5132,6 +5080,31 @@ main(int argc, char *argv[])
     free(unparsed);
   }
 
+  /* Initialize the useful values needed to walk through the rows intervals */
+  /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+  if (rows_filter_type == INCLUDE_FILTER)
+  {
+    interval_list = include_rows_list;
+    row_def_selectable = 0;
+    row_selectable = 1;
+  }
+  else
+  {
+    interval_list = exclude_rows_list;
+    row_def_selectable = 1;
+    row_selectable = 0;
+  }
+
+  /* Set the head of the interval list */
+  /* """"""""""""""""""""""""""""""""" */
+  if (interval_list)
+    interval_node = interval_list->head;
+
+  /* And get the first interval */
+  /* """""""""""""""""""""""""" */
+  if (interval_node)
+    interval = (interval_t *) interval_node->data;
+
   /* Get and process the input stream words */
   /* """""""""""""""""""""""""""""""""""""" */
   while ((word = get_word(stdin, word_delims_list, record_delims_list,
@@ -5196,6 +5169,35 @@ main(int argc, char *argv[])
       selectable = 1;
     else
       selectable = 0;
+
+    /* For each new line check if the line is in the current  */
+    /* interval or if we need to get the next interval if any */
+    /* """""""""""""""""""""""""""""""""""""""""""""""""""""" */
+    if (rows_selector)
+    {
+      if (count > 0 && word_a[count - 1].is_last)
+      {
+        line_count++;
+        if (interval_node && line_count > interval->high)
+        {
+          interval_node = interval_node->next;
+          if (interval_node)
+            interval = (interval_t *) interval_node->data;
+        }
+      }
+
+      /* Look if the line is in an interval of the list. We only consider */
+      /* the case where the word is selectable as we won't reselect an    */
+      /* already deselected word.                                         */
+      /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+      if (rows_filter_type != UNKNOWN_FILTER && selectable)
+      {
+        if (line_count >= interval->low && line_count <= interval->high)
+          selectable = row_selectable;
+        else
+          selectable = row_def_selectable;
+      }
+    }
 
     /* Save the original word */
     /* """""""""""""""""""""" */
@@ -5549,8 +5551,7 @@ main(int argc, char *argv[])
 
   /* We can now build the metadata */
   /* """"""""""""""""""""""""""""" */
-  last_line = build_metadata(word_a, &term, count, &win, rows_filter_type,
-                             include_rows_list, exclude_rows_list);
+  last_line = build_metadata(word_a, &term, count, &win);
 
   /* Index of the selected element in the array words                */
   /* The string can be:                                              */
@@ -5783,8 +5784,7 @@ main(int argc, char *argv[])
 
       /* Calculate the new metadata and draw the window again */
       /* """""""""""""""""""""""""""""""""""""""""""""""""""" */
-      last_line = build_metadata(word_a, &term, count, &win, rows_filter_type,
-                                 include_rows_list, exclude_rows_list);
+      last_line = build_metadata(word_a, &term, count, &win);
 
       if (win.col_mode | win.line_mode)
       {
@@ -6023,9 +6023,7 @@ main(int argc, char *argv[])
 
           if (search_next(tst, word_a, search_buf, 1))
             if (current > win.end)
-              last_line = build_metadata(word_a, &term, count, &win,
-                                         rows_filter_type,
-                                         include_rows_list, exclude_rows_list);
+              last_line = build_metadata(word_a, &term, count, &win);
 
           nl = disp_lines(word_a, &win, &toggle, current, count,
                           search_mode, search_buf, &term, last_line,
@@ -6733,10 +6731,7 @@ main(int argc, char *argv[])
             if (search_next(tst, word_a, search_buf, 0))
             {
               if (current > win.end)
-                last_line = build_metadata(word_a, &term, count, &win,
-                                           rows_filter_type,
-                                           include_rows_list,
-                                           exclude_rows_list);
+                last_line = build_metadata(word_a, &term, count, &win);
 
               nl = disp_lines(word_a, &win, &toggle, current, count,
                               search_mode, search_buf, &term, last_line,
