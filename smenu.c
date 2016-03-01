@@ -4220,6 +4220,11 @@ main(int argc, char *argv[])
                                          * of each  column in column mode  */
   int *col_max_size = NULL;  /* Array of maximum sizes of each column in   *
                               * column mode                                */
+
+  int cols_real_max_size = 0;   /* Max real width of all columns used when *
+                                 * -w and -c are both set                  */
+  int cols_max_size = 0;     /* Same as above for the columns widths       */
+
   int col_index;             /* Index of the current column when reading   *
                               * words, used in column mode                 */
   int cols_number;           /* Number of columns in column mode           */
@@ -4399,17 +4404,22 @@ main(int argc, char *argv[])
         if (optarg != NULL)
           win.max_cols = atoi(optarg);
         win.tab_mode = 1;
+        win.col_mode = 0;
+        win.line_mode = 0;
         break;
 
       case 'c':
-        win.tab_mode = 1;
+        win.tab_mode = 0;
         win.col_mode = 1;
+        win.line_mode = 0;
+        win.max_cols = 0;
         break;
 
       case 'l':
         win.line_mode = 1;
         win.tab_mode = 0;
         win.col_mode = 0;
+        win.max_cols = 0;
         break;
 
       case 'g':
@@ -4464,6 +4474,8 @@ main(int argc, char *argv[])
         {
           rows_selector = optarg;
           win.line_mode = 1;
+          win.tab_mode = 0;
+          win.max_cols = 0;
         }
         else
           TELL("Option requires an argument -- ");
@@ -4618,7 +4630,7 @@ main(int argc, char *argv[])
 
   /* If we did not impose the number of columns, use the whole terminal width */
   /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-  if (!win.max_cols)
+  if (win.tab_mode && !win.max_cols)
     win.wide = 1;
 
   win.start = 0;
@@ -5329,14 +5341,28 @@ main(int argc, char *argv[])
       /* and col_max_size[col_index - 1]                           */
       /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""" */
       if ((s = (int) word_len) > col_real_max_size[col_index - 1])
+      {
         col_real_max_size[col_index - 1] = s;
+
+        /* Also update the real max size of all columns seen */
+        /* """"""""""""""""""""""""""""""""""""""""""""""""" */
+        if (s > cols_real_max_size)
+          cols_real_max_size = s;
+      }
 
       s = (int) mbstowcs(0, dest, 0);
       s = wcswidth((tmpw = mb_strtowcs(dest)), s);
       free(tmpw);
 
       if (s > col_max_size[col_index - 1])
+      {
         col_max_size[col_index - 1] = s;
+
+        /* Also update the max size of all columns seen */
+        /* """""""""""""""""""""""""""""""""""""""""""" */
+        if (s > cols_max_size)
+          cols_max_size = s;
+      }
 
       /* Reset the column index when we encounter and end-of-line */
       /* """""""""""""""""""""""""""""""""""""""""""""""""""""""" */
@@ -5480,6 +5506,15 @@ main(int argc, char *argv[])
   if (win.col_mode)
   {
     char *temp;
+
+    /* Sets all columns to the same size when -w and -c are both set */
+    /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+    if (win.wide)
+      for (col_index = 0; col_index < cols_number - 1; col_index++)
+      {
+        col_max_size[col_index] = cols_max_size;
+        col_real_max_size[col_index] = cols_real_max_size;
+      }
 
     /* Total space taken by all the columns plus the gutter */
     /* """""""""""""""""""""""""""""""""""""""""""""""""""" */
