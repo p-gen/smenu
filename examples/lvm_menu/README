@@ -1,0 +1,7 @@
+This is an example of bash tool to build a customized LVM management menu.
+
+menu.sh     is used to create a generic menu with smenu
+lvm_menu.sh uses menu.sh to create a specialized menu to manage LVM objects
+
+Running lvm_menu.sh -i should display something similar to the screenshot
+provided. In this screenshot the user is about to delete a LV.
