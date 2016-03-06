@@ -110,8 +110,6 @@ static int mb_strlen(char *str);
 static wchar_t *mb_strtowcs(char *s);
 static void *validate_mb(const void *str);
 static int outch(int c);
-static void *pd_memmem(const void *buf, size_t buflen, const void *pattern,
-                       size_t len);
 static void restore_term(int const fd);
 static void setup_term(int const fd);
 static void strip_ansi_color(char *s, toggle_t * toggle);
@@ -132,7 +130,6 @@ static int ini_load(const char *filename, win_t * win, term_t * term,
                     int (*report) (win_t * win, term_t * term,
                                    limits_t * limits, const char *section,
                                    const char *name, char *value));
-static int get_ini_attr(char *str, txt_attr_t * v, int max_color);
 static int ini_cb(win_t * win, term_t * term, limits_t * limits,
                   const char *section, const char *name, char *value);
 static char *make_ini_path(char *name, char *base);
@@ -170,9 +167,6 @@ static int search_next(tst_node_t * tst, word_t * word_a, char *search_buf,
                        int after_only);
 static void sig_handler(int s);
 
-static void parse_cols_selector(char *str, char **filter, char *unparsed,
-                                int max_cols, ll_t ** inc_list,
-                                ll_t ** exc_list);
 static void set_new_first_column(win_t * win, term_t * term, word_t * word_a);
 
 static int parse_sed_like_string(sed_t * sed);
