@@ -1329,7 +1329,6 @@ ll_prepend(ll_t * const list, void *const data)
 void
 ll_insert_before(ll_t * const list, ll_node_t * node, void *const data)
 {
-  int ret = 1;
   ll_node_t *new_node;
 
   if (list)
@@ -1686,7 +1685,6 @@ void
 parse_selectors(char *str, int *filter, char *unparsed,
                 ll_t * inc_list, ll_t * exc_list)
 {
-  char def;                  /* default value */
   char mark;                 /* Value to set */
   char c;
   int len;                   /* parsed string length */
@@ -1852,7 +1850,6 @@ merge_intervals(ll_t * list)
 {
   ll_node_t *node1, *node2;
   interval_t *data1, *data2;
-  interval_t *interval;
 
   if (!list || list->len < 2)
     return;
@@ -5144,9 +5141,6 @@ main(int argc, char *argv[])
   if (rows_selector != NULL)
   {
     char *unparsed = strdup(rows_selector);
-
-    ll_node_t *node;
-    interval_t *data;
 
     include_rows_list = ll_new();
     exclude_rows_list = ll_new();
