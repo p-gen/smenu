@@ -1386,8 +1386,8 @@ ll_insert_after(ll_t * const list, ll_node_t * node, void *const data)
 /* http://www.geeksforgeeks.org/quicksort-for-linked-list */
 /* ====================================================== */
 ll_node_t *
-partition(ll_node_t * l, ll_node_t * h, int (*comp) (void *, void *),
-          void (*swap) (void *, void *))
+ll_partition(ll_node_t * l, ll_node_t * h, int (*comp) (void *, void *),
+             void (*swap) (void *, void *))
 {
   /* Considers last element as pivot, places the pivot element at its       */
   /* correct position in sorted array, and places all smaller (smaller than */
@@ -1425,7 +1425,7 @@ ll_quicksort(ll_node_t * l, ll_node_t * h,
 {
   if (h != NULL && l != h && l != h->next)
   {
-    ll_node_t *p = partition(l, h, comp, swap);
+    ll_node_t *p = ll_partition(l, h, comp, swap);
     ll_quicksort(l, p->prev, comp, swap);
     ll_quicksort(p->next, h, comp, swap);
   }
