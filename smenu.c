@@ -6634,7 +6634,8 @@ main(int argc, char *argv[])
               /* We couldn't move to a selectable word, */
               /* try to move the window offset instead  */
               /* """""""""""""""""""""""""""""""""""""" */
-              if (win.cur_line < win.max_lines && page == 1)
+              if (line_nb_of_word_a[old_start] > 0 &&
+                  win.cur_line < win.max_lines && page == 1)
               {
                 win.start =
                   first_word_in_line_a[line_nb_of_word_a[old_start] - 1];
