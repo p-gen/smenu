@@ -41,7 +41,154 @@
 #include <wchar.h>
 #include <sys/ioctl.h>
 #include <sys/time.h>
-#include "smenu.h"
+
+/* ******** */
+/* typedefs */
+/* ******** */
+
+typedef struct charsetinfo_s charsetinfo_t;
+typedef struct langinfo_s langinfo_t;
+typedef struct ll_node_s ll_node_t;
+typedef struct ll_s ll_t;
+typedef struct term_s term_t;
+typedef struct tst_node_s tst_node_t;
+typedef struct toggle_s toggle_t;
+typedef struct win_s win_t;
+typedef struct word_s word_t;
+typedef struct txt_attr_s txt_attr_t;
+typedef struct limits_s limits_t;
+typedef struct sed_s sed_t;
+typedef struct interval_s interval_t;
+
+/* ********** */
+/* Prototypes */
+/* ********** */
+
+static void help(win_t * win, term_t * term, int last_line);
+static void short_usage(void);
+static void usage(void);
+
+static void *xmalloc(size_t size);
+static void *xcalloc(size_t num, size_t size);
+static void *xrealloc(void *ptr, size_t size);
+
+static interval_t *interval_new(void);
+static int interval_comp(void *a, void *b);
+static void interval_swap(void *a, void *b);
+
+static int ll_append(ll_t * const list, void *const data);
+static int ll_prepend(ll_t * const list, void *const data);
+static void ll_insert_before(ll_t * const list, ll_node_t * node,
+                             void *const data);
+static void ll_insert_after(ll_t * const list, ll_node_t * node,
+                            void *const data);
+static ll_node_t *ll_partition(ll_node_t * l, ll_node_t * h,
+                               int (*comp) (void *, void *),
+                               void (*swap) (void *, void *));
+static void ll_quicksort(ll_node_t * l, ll_node_t * h,
+                         int (*comp) (void *, void *),
+                         void (*swap) (void *a, void *));
+static void ll_sort(ll_t * list, int (*comp) (void *, void *),
+                    void (*swap) (void *a, void *));
+static int ll_delete(ll_t * const list, ll_node_t * node);
+static ll_node_t *ll_find(ll_t * const, void *const,
+                          int (*)(const void *, const void *));
+static void ll_init(ll_t * list);
+static ll_node_t *ll_new_node(void);
+static ll_t *ll_new(void);
+
+static int my_stricmp(const char *str1, const char *str2);
+
+static int isprint7(int i);
+static int isprint8(int i);
+
+static int count_leading_set_bits(unsigned char c);
+static int get_cursor_position(int *const r, int *const c);
+static void get_terminal_size(int *const r, int *const c);
+static char *mb_strprefix(char *d, char *s, int n, int *pos);
+static int mb_strlen(char *str);
+static wchar_t *mb_strtowcs(char *s);
+static void *validate_mb(const void *str);
+static int outch(int c);
+static void *pd_memmem(const void *buf, size_t buflen, const void *pattern,
+                       size_t len);
+static void restore_term(int const fd);
+static void setup_term(int const fd);
+static void strip_ansi_color(char *s, toggle_t * toggle);
+static int strprefix(char *str1, char *str2);
+
+static int tst_cb(void *elem);
+static int tst_cb_cli(void *elem);
+static void tst_cleanup(tst_node_t * p);
+static tst_node_t *tst_insert(tst_node_t * p, wchar_t * w, void *data);
+static void *tst_prefix_search(tst_node_t * root, wchar_t * w,
+                               int (*callback) (void *));
+static void *tst_search(tst_node_t * root, wchar_t * w);
+static int tst_traverse(tst_node_t * p, int (*callback) (void *),
+                        int first_call);
+
+static int ini_load(const char *filename, win_t * win, term_t * term,
+                    limits_t * limits,
+                    int (*report) (win_t * win, term_t * term,
+                                   limits_t * limits, const char *section,
+                                   const char *name, char *value));
+static int get_ini_attr(char *str, txt_attr_t * v, int max_color);
+static int ini_cb(win_t * win, term_t * term, limits_t * limits,
+                  const char *section, const char *name, char *value);
+static char *make_ini_path(char *name, char *base);
+
+static void set_foreground_color(term_t * term, int color);
+static void set_background_color(term_t * term, int color);
+
+static int build_metadata(word_t * word_a, term_t * term, int count,
+                          win_t * win);
+static int disp_lines(word_t * word_a, win_t * win, toggle_t * toggle,
+                      int current, int count, int search_mode, char *search_buf,
+                      term_t * term, int last_line, char *tmp_max_word,
+                      langinfo_t * langinfo);
+static void get_message_lines(char *message, ll_t * message_lines_list,
+                              int *message_max_width, int *message_max_len);
+static int disp_message(ll_t * message_lines_list, int width, int max_len,
+                        term_t * term, win_t * win);
+static void disp_word(word_t * word_a, int pos, int search_mode, char *buffer,
+                      term_t * term, win_t * win, char *tmp_max_word);
+static int egetopt(int nargc, char **nargv, char *ostr);
+static int expand(char *src, char *dest, langinfo_t * langinfo);
+static int get_bytes(FILE * input, char *mb_buffer, ll_t * word_delims_list,
+                     toggle_t * toggle, langinfo_t * langinfo);
+static int get_scancode(unsigned char *s, int max);
+static char *get_word(FILE * input, ll_t * word_delims_list,
+                      ll_t * record_delims_list, char *mb_buffer,
+                      unsigned char *is_last, toggle_t * toggle,
+                      langinfo_t * langinfo, win_t * win, limits_t * limits);
+
+static void left_margin_putp(char *s, term_t * term, win_t * win);
+static void right_margin_putp(char *s1, char *s2, langinfo_t * langinfo,
+                              term_t * term, win_t * win, int line, int offset);
+
+static int search_next(tst_node_t * tst, word_t * word_a, char *search_buf,
+                       int after_only);
+static void sig_handler(int s);
+
+static void parse_cols_selector(char *str, char **filter, char *unparsed,
+                                int max_cols, ll_t ** inc_list,
+                                ll_t ** exc_list);
+static void set_new_first_column(win_t * win, term_t * term, word_t * word_a);
+
+static int parse_sed_like_string(sed_t * sed);
+static int replace(char *orig, sed_t * sed, char *buf, size_t bufsiz);
+
+static int decode_txt_attr_toggles(char *s, txt_attr_t * attr);
+static int parse_txt_attr(char *str, txt_attr_t * attr, short max_color);
+static void apply_txt_attr(term_t * term, txt_attr_t attr);
+
+static int (*my_isprint) (int);
+
+static int delims_cmp(const void *a, const void *b);
+
+/* **************** */
+/* Global variables */
+/* **************** */
 
 int count = 0;               /* number of words read from stdin  */
 int current;                 /* index the current selection      *
@@ -55,10 +202,6 @@ int *first_word_in_line_a;   /* array containing the index of    *
 int search_mode = 0;         /* 1 if in search mode else 0       */
 int help_mode = 0;           /* 1 if help is display else 0      */
 
-int (*my_isprint) (int);
-
-static int delims_cmp(const void *a, const void *b);
-
 /* UTF-8 useful symbols */
 /* """"""""""""""""""""" */
 char *broken_line_sym = "\xc2\xa6";     /* broken_bar                       */
@@ -71,6 +214,19 @@ char *sbar_down = "\xe2\x94\x98";       /* box_drawings_light_up_and_left   */
 char *sbar_curs = "\xe2\x95\x91";       /* box_drawings_double_vertical     */
 char *sbar_arr_up = "\xe2\x96\xb2";     /* black_up_pointing_triangle       */
 char *sbar_arr_down = "\xe2\x96\xbc";   /* black_down_pointing_triangle     */
+
+tst_node_t *root;
+
+/* Variables used in signal handlers */
+/* """"""""""""""""""""""""""""""""" */
+volatile sig_atomic_t got_winch = 0;
+volatile sig_atomic_t got_winch_alrm = 0;
+volatile sig_atomic_t got_search_alrm = 0;
+volatile sig_atomic_t got_help_alrm = 0;
+
+/* ***************** */
+/* emums and structs */
+/* ***************** */
 
 /* Various filter pseudo constants */
 /* """"""""""""""""""""""""""""""" */
@@ -120,158 +276,6 @@ struct limits_s
   int words;
   int cols;
 };
-
-/* Mapping of supported charsets and the number of bits used in them */
-/* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-charsetinfo_t all_supported_charsets[] = {
-  {"UTF-8", 8},
-
-  {"ANSI_X3.4-1968", 7},
-  {"ANSI_X3.4-1986", 7},
-  {"646", 7},
-  {"ASCII", 7},
-  {"CP367", 7},
-  {"IBM367", 7},
-  {"ISO_646.BASIC", 7},
-  {"ISO_646.IRV:1991", 7},
-  {"ISO_646.IRV", 7},
-  {"ISO646-US", 7},
-  {"ISO-IR-6", 7},
-  {"US", 7},
-  {"US-ASCII", 7},
-
-  {"hp-roman8", 8},
-  {"roman8", 8},
-  {"r8", 8},
-
-  {"ISO-8859-1", 8},
-  {"ISO-IR-100", 8},
-  {"ISO_8859-1:1987", 8},
-  {"ISO_8859-1", 8},
-  {"LATIN1", 8},
-  {"L1", 8},
-  {"IBM819", 8},
-  {"CP819", 8},
-
-  {"ISO-8859-2", 8},
-  {"ISO-IR-101", 8},
-  {"ISO_8859-2:1987", 8},
-  {"ISO_8859-2", 8},
-  {"LATIN2", 8},
-  {"L2", 8},
-  {"CP28592", 8},
-
-  {"ISO-8859-3", 8},
-  {"ISO-IR-109", 8},
-  {"ISO_8859-3:1988", 8},
-  {"ISO_8859-3", 8},
-  {"LATIN3", 8},
-  {"L3", 8},
-  {"CP28593", 8},
-
-  {"ISO-8859-4", 8},
-  {"ISO-IR-110", 8},
-  {"ISO_8859-4:1988", 8},
-  {"LATIN4", 8},
-  {"L4", 8},
-  {"CP28594", 8},
-
-  {"ISO-8859-5", 8},
-  {"ISO-IR-144", 8},
-  {"ISO_8859-5:1988", 8},
-  {"CYRILLIC", 8},
-  {"CP28595", 8},
-
-  {"KOI8-R", 8},
-  {"KOI8-RU", 8},
-  {"KOI8-U", 8},
-
-  {"ISO-8859-6", 8},
-  {"ISO-IR-127", 8},
-  {"ISO_8859-6:1987", 8},
-  {"ECMA-114", 8},
-  {"ASMO-708", 8},
-  {"ARABIC", 8},
-  {"CP28596", 8},
-
-  {"ISO-8859-7", 8},
-  {"ISO-IR-126", 8},
-  {"ISO_8859-7:2003", 8},
-  {"ISO_8859-7:1987", 8},
-  {"ELOT_928", 8},
-  {"ECMA-118", 8},
-  {"GREEK", 8},
-  {"GREEK8", 8},
-  {"CP28597", 8},
-
-  {"ISO-8859-8", 8},
-  {"ISO-IR-138", 8},
-  {"ISO_8859-8:1988", 8},
-  {"HEBREW", 8},
-  {"CP28598", 8},
-
-  {"ISO-8859-9", 8},
-  {"ISO-IR-148", 8},
-  {"ISO_8859-9:1989", 8},
-  {"LATIN5", 8},
-  {"L5", 8},
-  {"CP28599", 8},
-
-  {"ISO-8859-10", 8},
-  {"ISO-IR-157", 8},
-  {"ISO_8859-10:1992", 8},
-  {"LATIN6", 8},
-  {"L6", 8},
-  {"CP28600", 8},
-
-  {"ISO-8859-11", 8},
-  {"ISO-8859-11:2001", 8},
-  {"ISO-IR-166", 8},
-  {"CP474", 8},
-
-  {"TIS-620", 8},
-  {"TIS620", 8},
-  {"TIS620-0", 8},
-  {"TIS620.2529-1", 8},
-  {"TIS620.2533-0", 8},
-
-  /* ISO-8859-12 was abandoned in 1997 */
-  /* """"""""""""""""""""""""""""""""" */
-
-  {"ISO-8859-13", 8},
-  {"ISO-IR-179", 8},
-  {"LATIN7", 8},
-  {"L7", 8},
-  {"CP28603", 8},
-
-  {"ISO-8859-14", 8},
-  {"LATIN8", 8},
-  {"L8", 8},
-
-  {"ISO-8859-15", 8},
-  {"LATIN-9", 8},
-  {"CP28605", 8},
-
-  {"ISO-8859-16", 8},
-  {"ISO-IR-226", 8},
-  {"ISO_8859-16:2001", 8},
-  {"LATIN10", 8},
-  {"L10", 8},
-
-  {"CP1250", 8},
-  {"CP1251", 8},
-
-  {"CP1252", 8},
-  {"MS-ANSI", 8},
-  {0, 0}
-};
-
-/* Variables used in signal handlers */
-/* """"""""""""""""""""""""""""""""" */
-volatile sig_atomic_t got_winch = 0;
-volatile sig_atomic_t got_winch_alrm = 0;
-volatile sig_atomic_t got_search_alrm = 0;
-volatile sig_atomic_t got_help_alrm = 0;
 
 /* Terminal setting variables */
 /* """""""""""""""""""""""""" */
@@ -411,8 +415,6 @@ struct tst_node_s
   tst_node_t *lokid, *eqkid, *hikid;
   void *data;
 };
-
-tst_node_t *root;
 
 /* ******************************* */
 /* Linked list specific structures */
@@ -4132,6 +4134,151 @@ set_new_first_column(win_t * win, term_t * term, word_t * word_a)
 int
 main(int argc, char *argv[])
 {
+  /* Mapping of supported charsets and the number of bits used in them */
+  /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+  charsetinfo_t all_supported_charsets[] = {
+    {"UTF-8", 8},
+
+    {"ANSI_X3.4-1968", 7},
+    {"ANSI_X3.4-1986", 7},
+    {"646", 7},
+    {"ASCII", 7},
+    {"CP367", 7},
+    {"IBM367", 7},
+    {"ISO_646.BASIC", 7},
+    {"ISO_646.IRV:1991", 7},
+    {"ISO_646.IRV", 7},
+    {"ISO646-US", 7},
+    {"ISO-IR-6", 7},
+    {"US", 7},
+    {"US-ASCII", 7},
+
+    {"hp-roman8", 8},
+    {"roman8", 8},
+    {"r8", 8},
+
+    {"ISO-8859-1", 8},
+    {"ISO-IR-100", 8},
+    {"ISO_8859-1:1987", 8},
+    {"ISO_8859-1", 8},
+    {"LATIN1", 8},
+    {"L1", 8},
+    {"IBM819", 8},
+    {"CP819", 8},
+
+    {"ISO-8859-2", 8},
+    {"ISO-IR-101", 8},
+    {"ISO_8859-2:1987", 8},
+    {"ISO_8859-2", 8},
+    {"LATIN2", 8},
+    {"L2", 8},
+    {"CP28592", 8},
+
+    {"ISO-8859-3", 8},
+    {"ISO-IR-109", 8},
+    {"ISO_8859-3:1988", 8},
+    {"ISO_8859-3", 8},
+    {"LATIN3", 8},
+    {"L3", 8},
+    {"CP28593", 8},
+
+    {"ISO-8859-4", 8},
+    {"ISO-IR-110", 8},
+    {"ISO_8859-4:1988", 8},
+    {"LATIN4", 8},
+    {"L4", 8},
+    {"CP28594", 8},
+
+    {"ISO-8859-5", 8},
+    {"ISO-IR-144", 8},
+    {"ISO_8859-5:1988", 8},
+    {"CYRILLIC", 8},
+    {"CP28595", 8},
+
+    {"KOI8-R", 8},
+    {"KOI8-RU", 8},
+    {"KOI8-U", 8},
+
+    {"ISO-8859-6", 8},
+    {"ISO-IR-127", 8},
+    {"ISO_8859-6:1987", 8},
+    {"ECMA-114", 8},
+    {"ASMO-708", 8},
+    {"ARABIC", 8},
+    {"CP28596", 8},
+
+    {"ISO-8859-7", 8},
+    {"ISO-IR-126", 8},
+    {"ISO_8859-7:2003", 8},
+    {"ISO_8859-7:1987", 8},
+    {"ELOT_928", 8},
+    {"ECMA-118", 8},
+    {"GREEK", 8},
+    {"GREEK8", 8},
+    {"CP28597", 8},
+
+    {"ISO-8859-8", 8},
+    {"ISO-IR-138", 8},
+    {"ISO_8859-8:1988", 8},
+    {"HEBREW", 8},
+    {"CP28598", 8},
+
+    {"ISO-8859-9", 8},
+    {"ISO-IR-148", 8},
+    {"ISO_8859-9:1989", 8},
+    {"LATIN5", 8},
+    {"L5", 8},
+    {"CP28599", 8},
+
+    {"ISO-8859-10", 8},
+    {"ISO-IR-157", 8},
+    {"ISO_8859-10:1992", 8},
+    {"LATIN6", 8},
+    {"L6", 8},
+    {"CP28600", 8},
+
+    {"ISO-8859-11", 8},
+    {"ISO-8859-11:2001", 8},
+    {"ISO-IR-166", 8},
+    {"CP474", 8},
+
+    {"TIS-620", 8},
+    {"TIS620", 8},
+    {"TIS620-0", 8},
+    {"TIS620.2529-1", 8},
+    {"TIS620.2533-0", 8},
+
+    /* ISO-8859-12 was abandoned in 1997 */
+    /* """"""""""""""""""""""""""""""""" */
+
+    {"ISO-8859-13", 8},
+    {"ISO-IR-179", 8},
+    {"LATIN7", 8},
+    {"L7", 8},
+    {"CP28603", 8},
+
+    {"ISO-8859-14", 8},
+    {"LATIN8", 8},
+    {"L8", 8},
+
+    {"ISO-8859-15", 8},
+    {"LATIN-9", 8},
+    {"CP28605", 8},
+
+    {"ISO-8859-16", 8},
+    {"ISO-IR-226", 8},
+    {"ISO_8859-16:2001", 8},
+    {"LATIN10", 8},
+    {"L10", 8},
+
+    {"CP1250", 8},
+    {"CP1251", 8},
+
+    {"CP1252", 8},
+    {"MS-ANSI", 8},
+    {0, 0}
+  };
+
   char *message = NULL;      /* message to be displayed above the          *
                               * selection window                           */
   ll_t *message_lines_list = NULL;      /* list of the lines in the        *
@@ -4258,12 +4405,12 @@ main(int argc, char *argv[])
 
   txt_attr_t init_attr;
 
-  ll_t *interval_list = NULL;   /* linked list of selectable or non-selectable *
-                                 * lines intervals                             */
-  ll_node_t *interval_node = NULL;      /* one node of this list               */
-  interval_t *interval;      /* the data in each node                          */
-  int row_def_selectable;    /* default selectable value                       */
-  int row_selectable;        /* wanted selectable value                        */
+  ll_t *interval_list = NULL;   /* linked list of selectable or            */
+  /* non-selectable lines intervals          */
+  ll_node_t *interval_node = NULL;      /* one node of this list           */
+  interval_t *interval;      /* the data in each node                      */
+  int row_def_selectable;    /* default selectable value                   */
+  int row_selectable;        /* wanted selectable value                    */
 
   /* Win fields initialization */
   /* """"""""""""""""""""""""" */
@@ -5787,8 +5934,9 @@ main(int argc, char *argv[])
       setitimer(ITIMER_REAL, &winch_itv, NULL);
     }
 
-    /* Upon expiration of this alarm, we trigger a content update of the window */
-    /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+    /* Upon expiration of this alarm, we trigger a content update */
+    /* of the window                                              */
+    /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
     if (got_winch_alrm)
     {
       got_winch_alrm = 0;
@@ -6417,8 +6565,9 @@ main(int argc, char *argv[])
               while (word_a[cursor].start > s)
                 cursor--;
 
-              /* In case no word is eligible, keep the cursor on the last word */
-              /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+              /* In case no word is eligible, keep the cursor on */
+              /* the last word                                   */
+              /* """"""""""""""""""""""""""""""""""""""""""""""" */
               if (cursor == last_word && word_a[cursor].start > 0)
                 cursor--;
 
@@ -6578,8 +6727,9 @@ main(int argc, char *argv[])
               while (word_a[cursor].start > s)
                 cursor--;
 
-              /* In case no word is eligible, keep the cursor on  the last word */
-              /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+              /* In case no word is eligible, keep the cursor on */
+              /* the last word                                   */
+              /* """"""""""""""""""""""""""""""""""""""""""""""" */
               if (cursor == last_word && word_a[cursor].start > 0)
                 cursor--;
 

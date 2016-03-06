@@ -18,10 +18,7 @@ AC_PROG_INSTALL
 AC_PROG_LN_S
 AC_PROG_MAKE_SET
 
-AC_CHECK_HEADER(term.h,
-  [AC_SEARCH_LIBS(tgetent, [curses ncursesw ncurses], [HAVE_CURSES=True])], ,
-  [#include <curses.h>
-  ])
+AC_SEARCH_LIBS(tgetent, [curses ncursesw ncurses], [HAVE_CURSES=True])
 
 # Checks for libraries.
 

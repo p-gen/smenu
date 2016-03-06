@@ -4622,11 +4622,7 @@ $as_echo "no" >&6; }
 fi
 
 
-ac_fn_c_check_header_compile "$LINENO" "term.h" "ac_cv_header_term_h" "#include <curses.h>
-
-"
-if test "x$ac_cv_header_term_h" = xyes; then :
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for library containing tgetent" >&5
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for library containing tgetent" >&5
 $as_echo_n "checking for library containing tgetent... " >&6; }
 if ${ac_cv_search_tgetent+:} false; then :
   $as_echo_n "(cached) " >&6
@@ -4681,9 +4677,6 @@ if test "$ac_res" != no; then :
   test "$ac_res" = "none required" || LIBS="$ac_res $LIBS"
   HAVE_CURSES=True
 fi
-
-fi
-
 
 
 # Checks for libraries.

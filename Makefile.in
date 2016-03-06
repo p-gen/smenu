@@ -289,7 +289,7 @@ target_alias = @target_alias@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-smenu_SOURCES = smenu.c smenu.h
+smenu_SOURCES = smenu.c
 dist_man_MANS = smenu.1
 EXTRA_DIST = smenu.spec.in smenu.spec build.sh version COPYRIGHT INTERNALS.rst LICENSE.rst README.rst examples
 all: config.h
