@@ -35,7 +35,7 @@ do
      LVC)   echo LV create ;;
      LVD)   echo LV delete ;;
      LVE)   echo LV expand ;;
-     LVS)   echo LV list   ;;
+     LVS)   echo LV shrink ;;
 
      PVC)   echo PV create ;;
      PVD)   echo PV delete ;;
