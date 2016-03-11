@@ -5512,6 +5512,8 @@ main(int argc, char *argv[])
 
     word_a[count].special_level = special_level;
 
+    /* Save the non modified word in .orig if it has been altered */
+    /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
     if (strcmp(word, dest) != 0)
       word_a[count].orig = word;
     else
@@ -5530,6 +5532,33 @@ main(int argc, char *argv[])
     }
     else
       word_a[count].is_last = 0;
+
+    /* Store the new max number of bytes in a word */
+    /* """"""""""""""""""""""""""""""""""""""""""" */
+    if ((size = (int) word_len) > tab_real_max_size)
+      tab_real_max_size = (int) word_len;
+
+    /* Store the new max word width */
+    /* """""""""""""""""""""""""""" */
+    size = (int) mbstowcs(0, dest, 0);
+
+    if ((size = wcswidth((tmpw = mb_strtowcs(dest)), size)) > tab_max_size)
+      tab_max_size = size;
+
+    free(tmpw);
+
+    /* When the visual only flag is set, we keep the unaltered word so */
+    /* that it can be restituted even if its visual and searchable     */
+    /* representation may have been altered by the previous code       */
+    /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+    if ((word_a[count].is_selectable & include_visual_only)
+        | ((!word_a[count].is_selectable) & exclude_visual_only))
+    {
+      free(word_a[count].orig);
+      word_a[count].orig = unaltered_word;
+    }
+    else
+      free(unaltered_word);
 
     /* If the word is selectable insert it in the TST tree */
     /* with its associated index in the input stream.      */
@@ -5561,33 +5590,6 @@ main(int argc, char *argv[])
       }
       free(w);
     }
-
-    /* Store the new max number of bytes in a word */
-    /* """"""""""""""""""""""""""""""""""""""""""" */
-    if ((size = (int) word_len) > tab_real_max_size)
-      tab_real_max_size = (int) word_len;
-
-    /* Store the new max word width */
-    /* """""""""""""""""""""""""""" */
-    size = (int) mbstowcs(0, dest, 0);
-
-    if ((size = wcswidth((tmpw = mb_strtowcs(dest)), size)) > tab_max_size)
-      tab_max_size = size;
-
-    free(tmpw);
-
-    /* When the visual only flag is set, we keep the unaltered word so */
-    /* that it can be restituted even if its visual and searchable     */
-    /* representation may have been altered by the previous code       */
-    /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-    if ((word_a[count].is_selectable & include_visual_only)
-        | ((!word_a[count].is_selectable) & exclude_visual_only))
-    {
-      free(word_a[count].orig);
-      word_a[count].orig = unaltered_word;
-    }
-    else
-      free(unaltered_word);
 
     /* One more word... */
     /* """""""""""""""" */
@@ -5753,38 +5755,107 @@ main(int argc, char *argv[])
     last_selectable--;
 
   if (pre_selection_index == NULL)
+    /* option -s was not used */
+    /* """""""""""""""""""""" */
     current = first_selectable;
-  else if (strcmp(pre_selection_index, "last") == 0)
-    current = last_selectable;
   else if (*pre_selection_index == '/')
   {
-    wchar_t *w;
+    /* A regular expression is expected */
+    /* """""""""""""""""""""""""""""""" */
+    regex_t re;
+    int index;
 
-    new_current = last_selectable;
-    if (NULL != tst_prefix_search(tst,
-                                  w = mb_strtowcs(pre_selection_index + 1),
-                                  tst_cb_cli))
-      current = new_current;
+    if (regcomp(&re, pre_selection_index + 1, REG_EXTENDED | REG_NOSUB) != 0)
+    {
+      fprintf(stderr, "Invalid regular expression (%s)\n", pre_selection_index);
+
+      exit(EXIT_FAILURE);
+    }
     else
-      current = first_selectable;
-    free(w);
+    {
+      int found = 0;
+      char *word;
+
+      for (index = first_selectable; index <= last_selectable; index++)
+      {
+        if (word_a[index].orig != NULL)
+          word = word_a[index].orig;
+        else
+          word = word_a[index].str;
+
+        if (regexec(&re, word, (size_t) 0, NULL, 0) == 0)
+        {
+          current = index;
+          found = 1;
+          break;
+        }
+      }
+
+      if (!found)
+        current = first_selectable;
+    }
   }
   else if (*pre_selection_index != '\0')
   {
-    current = atoi(pre_selection_index);
-    if (current >= count)
-      current = count - 1;
-    if (!word_a[current].is_selectable)
+    /* A prefix string or an index is expected */
+    /* """"""""""""""""""""""""""""""""""""""" */
+    size_t len;
+    char *ptr = pre_selection_index;
+
+    if (*ptr == '#')
     {
-      if (current > last_selectable)
+      /* An index is expected */
+      /* """""""""""""""""""" */
+      ptr++;
+
+      if (sscanf(ptr, "%d%n", &current, &len) == 1 && len == strlen(ptr))
+      {
+        /* We got an index (numeric value) */
+        /* """"""""""""""""""""""""""""""" */
+        if (current < 0)
+          current = first_selectable;
+
+        if (current >= count)
+          current = count - 1;
+
+        if (!word_a[current].is_selectable)
+        {
+          if (current > last_selectable)
+            current = last_selectable;
+          else if (current < first_selectable)
+            current = first_selectable;
+          else
+            while (current > first_selectable && !word_a[current].is_selectable)
+              current--;
+        }
+      }
+      else if (*ptr == '\0' || strcmp(ptr, "last") == 0)
+        /* We got a special index (empty or last) */
+        /* """""""""""""""""""""""""""""""""""""" */
         current = last_selectable;
-      else if (current < first_selectable)
-        current = first_selectable;
       else
-        while (current > first_selectable && !word_a[current].is_selectable)
-          current--;
+      {
+        fprintf(stderr, "Invalid index (%s)\n", ptr);
+
+        exit(EXIT_FAILURE);
+      }
+    }
+    else
+    {
+      /* A prefix is expected */
+      /* """""""""""""""""""" */
+      wchar_t *w;
+
+      new_current = last_selectable;
+      if (NULL != tst_prefix_search(tst, w = mb_strtowcs(ptr), tst_cb_cli))
+        current = new_current;
+      else
+        current = first_selectable;
+      free(w);
     }
   }
+  else
+    current = first_selectable;
 
   /* We've finished reading from stdin                               */
   /* we will now get the inputs from the controlling terminal if any */

@@ -243,22 +243,31 @@ Note that if this mode each column has the same width.
 .IP "\fB-s\fP \fIpattern\fP"
 Pre-Position the cursor to the first word matching the specified pattern.
 
-\fIpattern\fP" can be:
+\fIpattern\fP can be:
 .RS
 .IP * 2
-A \fBnumber\fP giving the initial position of the cursor (counting from
-0). If this number if greater than the number of words, the cursor will
-be set on la last position.
+A "\fB#\fP" immediately followed by a \fBnumber\fP giving the initial
+position of the cursor (counting from 0). If this number if greater than
+the number of words, the cursor will be set on the latest selectable
+position.
 .IP * 2
-The string \fBlast\fP meaning that we want the initial position to be
-on the last word.
+A single "\fB#\fP" or the string \fB#last\fP to also set the initial
+cursor position at the latest selectable word position.
 .IP * 2
 A string starting with a "\fB/\fP" indicating that we want the cursor
-to be set on the first word matching the \fBprefix\fP string following
-the "\fB/\fP" (\fB/Ca\fP will match \fBCancel\fP by example).
+to be set at the position of the first word matching the given regular
+expression.
+.IP * 2
+A \fBprefix\fP string indicating that we want the cursor to be set on the
+first word matching the string given (\fBCa\fP will match \fBCancel\fP
+by example).
 .PP
-Every failure will do nothing, resulting with the cursor set on the
-first word.
+Warning, when searching for a prefix or a regular expression, smenu
+only look for them only after an eventual modification, so per example,
+the command:
+\f(CBsmenu -I/c/x/ -s/c <<< "a b c d"\fP won't find c and put the cursor
+on \fBa\fP but \f(CBsmenu -I/c/x/v -s/c <<< "a b c d"\fP will find it and
+put the cursor on the \fBx\fP substituting the \fBc\fP on screen only
 .RE
 .IP "\fB-m\fP \fImessage\fP"
 Displays a message above the window. Beware, it will truncated if it
