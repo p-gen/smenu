@@ -54,7 +54,7 @@ fi
 # Menu display
 # """"""""""""
 REP=$(../../smenu "$TITLE"                 \
-            -s /"* Exit"                   \
+            -s /Exit                       \
             -q -d -M -n 30 -c -w           \
             -e '^#' -E '/(^#)+(.*)$/ \2/v' \
             -1 '\\* Exit' 7/4,b            \
