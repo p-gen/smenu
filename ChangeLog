@@ -1,0 +1,23 @@
+-------------------------------------------------------------------
+Sun Mar 13 09:28:52 UTC 2016 - p.gen.progs@gmail.com
+
+- Version 0.9.1
+* Use the GNU autotools
+* Fix a lot of small and not so small bugs
+* Change the -s option semantic
+* Improve help and man page
+* Introduce some new options - see the man page for more
+* Also rework some options - see the man page for more
+* Add more configurable colors
+* Add the notion of non-selectable words
+* Add the notion of special words
+* Add a (de)selection by rows and/or columns
+* Interpret quotations in the input stream and ignore empty words
+* Add an option to center the output window
+* And many other minor changes
+
+-------------------------------------------------------------------
+Sun Aug 9 23:00:59 UTC 2015 - p.gen.progs@gmail.com
+
+- Initial version - 0.9
+

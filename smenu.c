@@ -5891,11 +5891,15 @@ main(int argc, char *argv[])
   if (term.curs_column > 1)
     puts("");
 
-  /* Display the words window for the first time */
-  /* """"""""""""""""""""""""""""""""""""""""""" */
+  /* Display the words window and its title for the first time */
+  /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""" */
   message_lines = disp_message(message_lines_list,
                                message_max_width, message_max_len, &term, &win);
 
+  /* Before displaying the word windows for the first time when in column */
+  /* or line mode, we need to ensure that the word under the cursor will  */
+  /* be visible by setting the number of the first column to be displayed */
+  /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
   if (win.col_mode | win.line_mode)
   {
     int pos;
@@ -5903,8 +5907,8 @@ main(int argc, char *argv[])
 
     len = term.ncolumns - 3;
 
-    /* Adjust win.first_column if the cursor is no more visible */
-    /* """""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+    /* Adjust win.first_column if the cursor is not visible */
+    /* """""""""""""""""""""""""""""""""""""""""""""""""""" */
     pos = first_word_in_line_a[line_nb_of_word_a[current]];
 
     while (word_a[current].end - word_a[pos].start >= len)
@@ -5913,8 +5917,10 @@ main(int argc, char *argv[])
     win.first_column = word_a[pos].start;
   }
 
-  /* Save the cursor line column */
-  /* """"""""""""""""""""""""""" */
+  /* Save the initial cursor line and column, here only the line is    */
+  /* interesting us. This will tell us if we are in need to compensate */
+  /* a terminal automatic scrolling                                    */
+  /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
   get_cursor_position(&term.curs_line, &term.curs_column);
 
   nl = disp_lines(word_a, &win, &toggle, current, count, search_mode,
@@ -5933,8 +5939,9 @@ main(int argc, char *argv[])
   for (i = 1; i < offset; i++)
     (void) tputs(cursor_up, 1, outch);
 
-  /* Save again the cursor current line and column positions */
-  /* """"""""""""""""""""""""""""""""""""""""""""""""""""""" */
+  /* Save again the cursor current line and column positions so that we */
+  /* will be able to put the terminal cursor back here                  */
+  /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
   get_cursor_position(&term.curs_line, &term.curs_column);
 
   /* Main loop */
@@ -6078,6 +6085,8 @@ main(int argc, char *argv[])
       continue;
     }
 
+    /* Pressed keys scancodes processing */
+    /* """"""""""""""""""""""""""""""""" */
     page = 1;                /* Default number of lines to do down/up *
                               * with PgDn/PgUp                        */
 
@@ -6087,15 +6096,15 @@ main(int argc, char *argv[])
     {
       switch (buffer[0])
       {
+        case 0x1b:          /* ESC */
           /* An escape sequence or a multibyte character has been pressed */
           /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-        case 0x1b:          /* ESC */
           if (!search_mode)
           {
-            /* HOME key has been pressed */
-            /* """"""""""""""""""""""""" */
             if (memcmp("\x1bOH", buffer, 3) == 0)
             {
+              /* HOME key has been pressed */
+              /* """"""""""""""""""""""""" */
               current = win.start;
 
               /* Find the first selectable word */
@@ -6116,10 +6125,10 @@ main(int argc, char *argv[])
               break;
             }
 
-            /* END key has been pressed */
-            /* """""""""""""""""""""""" */
             if (memcmp("\x1bOF", buffer, 3) == 0)
             {
+              /* END key has been pressed */
+              /* """""""""""""""""""""""" */
               current = win.end;
 
               /* Find the last selectable word */
@@ -6166,45 +6175,45 @@ main(int argc, char *argv[])
               break;
             }
 
-            /* Left arrow key has been pressed */
-            /* """"""""""""""""""""""""""""""" */
             if (memcmp("\x1bOD", buffer, 3) == 0
                 || memcmp("\x1b[D", buffer, 3) == 0)
+              /* Left arrow key has been pressed */
+              /* """"""""""""""""""""""""""""""" */
               goto kl;
 
-            /* Right arrow key has been pressed */
-            /* """""""""""""""""""""""""""""""" */
             if (memcmp("\x1bOC", buffer, 3) == 0
                 || memcmp("\x1b[C", buffer, 3) == 0)
+              /* Right arrow key has been pressed */
+              /* """""""""""""""""""""""""""""""" */
               goto kr;
 
-            /* Up arrow key has been pressed */
-            /* """"""""""""""""""""""""""""" */
             if (memcmp("\x1bOA", buffer, 3) == 0
                 || memcmp("\x1b[A", buffer, 3) == 0)
+              /* Up arrow key has been pressed */
+              /* """"""""""""""""""""""""""""" */
               goto ku;
 
-            /* Down arrow key has been pressed */
-            /* """"""""""""""""""""""""""""""" */
             if (memcmp("\x1bOB", buffer, 3) == 0
                 || memcmp("\x1b[B", buffer, 3) == 0)
+              /* Down arrow key has been pressed */
+              /* """"""""""""""""""""""""""""""" */
               goto kd;
 
-            /* PgUp key has been pressed */
-            /* """"""""""""""""""""""""" */
             if (memcmp("\x1b[5~", buffer, 4) == 0)
+              /* PgUp key has been pressed */
+              /* """"""""""""""""""""""""" */
               goto kpp;
 
-            /* PgDn key has been pressed */
-            /* """"""""""""""""""""""""" */
             if (memcmp("\x1b[6~", buffer, 4) == 0)
+              /* PgDn key has been pressed */
+              /* """"""""""""""""""""""""" */
               goto knp;
           }
 
-          /* ESC key has been pressed */
-          /* """""""""""""""""""""""" */
           if (memcmp("\x1b", buffer, 1) == 0)
           {
+            /* ESC key has been pressed */
+            /* """""""""""""""""""""""" */
             if (search_mode || help_mode)
             {
               search_mode = 0;
@@ -6219,11 +6228,11 @@ main(int argc, char *argv[])
           /* Else ignore key */
           break;
 
-          /* q or Q has been pressed */
-          /* """"""""""""""""""""""" */
         case 'q':
         case 'Q':
         case 3:             /* ^C */
+          /* q or Q of ^C has been pressed */
+          /* """"""""""""""""""""""""""""" */
           if (search_mode)
             goto special_cmds_when_searching;
 
@@ -6256,10 +6265,10 @@ main(int argc, char *argv[])
 
           exit(EXIT_SUCCESS);
 
-          /* n or <Space Bar> has been pressed */
-          /* """"""""""""""""""""""""""""""""" */
         case 'n':
         case ' ':
+          /* n or <Space Bar> has been pressed */
+          /* """"""""""""""""""""""""""""""""" */
           if (search_mode)
             goto special_cmds_when_searching;
 
@@ -6272,10 +6281,10 @@ main(int argc, char *argv[])
                           tmp_max_word, &langinfo);
           break;
 
-          /* <Enter> has been pressed */
-          /* """""""""""""""""""""""" */
         case 0x0d:          /* CR */
         {
+          /* <Enter> has been pressed */
+          /* """""""""""""""""""""""" */
 
           int extra_lines;
           char *output_str;
@@ -6381,11 +6390,11 @@ main(int argc, char *argv[])
           exit(EXIT_SUCCESS);
         }
 
-          /* Cursor Left key has been pressed */
-          /* """""""""""""""""""""""""""""""" */
         kl:
         case 'H':
         case 'h':
+          /* Cursor Left key has been pressed */
+          /* """""""""""""""""""""""""""""""" */
           if (!search_mode)
           {
             int old_current = current;
@@ -6464,11 +6473,11 @@ main(int argc, char *argv[])
           else
             goto special_cmds_when_searching;
 
-          /* Right key has been pressed */
-          /* """""""""""""""""""""""""" */
         kr:
         case 'L':
         case 'l':
+          /* Right key has been pressed */
+          /* """""""""""""""""""""""""" */
           if (!search_mode)
           {
             int old_current = current;
@@ -6559,16 +6568,16 @@ main(int argc, char *argv[])
           else
             goto special_cmds_when_searching;
 
+        kpp:
           /* PgUp key has been pressed */
           /* """"""""""""""""""""""""" */
-        kpp:
           page = win.max_lines;
 
-          /* Cursor Up key has been pressed */
-          /* """""""""""""""""""""""""""""" */
         ku:
         case 'K':
         case 'k':
+          /* Cursor Up key has been pressed */
+          /* """""""""""""""""""""""""""""" */
           if (!search_mode)
           {
             int cur_line;
@@ -6709,16 +6718,16 @@ main(int argc, char *argv[])
           else
             goto special_cmds_when_searching;
 
+        knp:
           /* PgDn key has been pressed */
           /* """"""""""""""""""""""""" */
-        knp:
           page = win.max_lines;
 
-          /* Cursor Down key has been pressed */
-          /* """""""""""""""""""""""""""""""" */
         kd:
         case 'J':
         case 'j':
+          /* Cursor Down key has been pressed */
+          /* """""""""""""""""""""""""""""""" */
           if (!search_mode)
           {
             int cur_line;
@@ -6873,10 +6882,10 @@ main(int argc, char *argv[])
           else
             goto special_cmds_when_searching;
 
-          /* / or CTRL-F key has been pressed (start of a search session) */
-          /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
         case 0x06:
         case '/':
+          /* / or CTRL-F key has been pressed (start of a search session) */
+          /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
           if (!search_mode)
           {
             search_mode = 1;
@@ -6906,10 +6915,10 @@ main(int argc, char *argv[])
           else
             goto special_cmds_when_searching;
 
-          /* Backspace and CTRL-H */
-          /* """""""""""""""""""" */
         case 0x08:          /* ^H */
         case 0x7f:          /* BS */
+          /* Backspace or CTRL-H */
+          /* """"""""""""""""""" */
           if (search_mode)
           {
             if (*search_buf != '\0')
@@ -6933,9 +6942,9 @@ main(int argc, char *argv[])
           }
           break;
 
+        case '?':
           /* Help mode */
           /* """"""""" */
-        case '?':
           if (!search_mode)
           {
             help(&win, &term, last_line);

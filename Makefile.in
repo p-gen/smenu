@@ -81,7 +81,7 @@ subdir = .
 DIST_COMMON = $(srcdir)/Makefile.in $(srcdir)/Makefile.am \
 	$(top_srcdir)/configure $(am__configure_deps) \
 	$(srcdir)/config.h.in $(srcdir)/smenu.spec.in depcomp \
-	$(dist_man_MANS) TODO install-sh missing
+	$(dist_man_MANS) ChangeLog TODO install-sh missing
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
@@ -291,7 +291,7 @@ top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 smenu_SOURCES = smenu.c
 dist_man_MANS = smenu.1
-EXTRA_DIST = smenu.spec.in smenu.spec build.sh version COPYRIGHT INTERNALS.rst LICENSE.rst README.rst examples
+EXTRA_DIST = smenu.spec.in ChangeLog smenu.spec build.sh version COPYRIGHT INTERNALS.rst LICENSE.rst README.rst examples
 all: config.h
 	$(MAKE) $(AM_MAKEFLAGS) all-am
 
