@@ -5647,7 +5647,7 @@ main(int argc, char *argv[])
     /* Sets all columns to the same size when -w and -c are both set */
     /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
     if (win.wide)
-      for (col_index = 0; col_index < cols_number - 1; col_index++)
+      for (col_index = 0; col_index < cols_number; col_index++)
       {
         col_max_size[col_index] = cols_max_size;
         col_real_max_size[col_index] = cols_real_max_size;
