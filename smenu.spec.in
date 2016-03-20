@@ -50,7 +50,7 @@ make %{?_smp_mflags}
 %install
 make DESTDIR=%{buildroot} install %{?_smp_mflags}
 install -d %{buildroot}%{_defaultdocdir}/%{name}
-for FILE in COPYRIGHT *.rst; do
+for FILE in COPYRIGHT *.rst examples; do
   mv ${FILE} %{buildroot}%{_defaultdocdir}/%{name}
 done
 
