@@ -563,11 +563,8 @@ help(win_t * win, term_t * term, int last_line)
     {'b', "Arrows", 6},
     {'n', "|", 1},
     {'b', "h", 1},
-    {'n', "/", 1},
     {'b', "j", 1},
-    {'n', "/", 1},
     {'b', "k", 1},
-    {'n', "/", 1},
     {'b', "l", 1},
     {'n', ",", 1},
     {'b', "PgUp", 4},
@@ -3814,6 +3811,7 @@ sig_handler(int s)
       if (got_winch)
       {
         got_winch = 0;
+        got_help_alrm = 0;
         got_winch_alrm = 1;
       }
 
@@ -5965,6 +5963,10 @@ main(int argc, char *argv[])
       hlp_itv.it_interval.tv_sec = 0;
       hlp_itv.it_interval.tv_usec = 0;
       setitimer(ITIMER_REAL, &hlp_itv, NULL);
+
+      /* Calculate the new metadata and draw the window again */
+      /* """""""""""""""""""""""""""""""""""""""""""""""""""" */
+      last_line = build_metadata(word_a, &term, count, &win);
 
       nl = disp_lines(word_a, &win, &toggle, current, count, search_mode,
                       search_buf, &term, last_line, tmp_max_word, &langinfo);
