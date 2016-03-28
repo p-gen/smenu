@@ -6096,6 +6096,13 @@ main(int argc, char *argv[])
 
     if (l)
     {
+      if (!search_mode)
+        if (help_mode && buffer[0] != '?')
+        {
+          got_help_alrm = 1;
+          continue;
+        }
+
       switch (buffer[0])
       {
         case 0x1b:          /* ESC */
@@ -6219,7 +6226,6 @@ main(int argc, char *argv[])
             if (search_mode || help_mode)
             {
               search_mode = 0;
-              help_mode = 0;
               nl = disp_lines(word_a, &win, &toggle, current, count,
                               search_mode, search_buf, &term, last_line,
                               tmp_max_word, &langinfo);
@@ -6296,7 +6302,6 @@ main(int argc, char *argv[])
           if (search_mode || help_mode)
           {
             search_mode = 0;
-            help_mode = 0;
 
             nl = disp_lines(word_a, &win, &toggle, current, count, search_mode,
                             search_buf, &term, last_line, tmp_max_word,
@@ -6960,6 +6965,8 @@ main(int argc, char *argv[])
             hlp_itv.it_interval.tv_usec = 0;
             setitimer(ITIMER_REAL, &hlp_itv, NULL);
           }
+          else
+            goto special_cmds_when_searching;
           break;
 
         special_cmds_when_searching:
