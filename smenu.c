@@ -137,6 +137,8 @@ static char *make_ini_path(char *name, char *base);
 static void set_foreground_color(term_t * term, int color);
 static void set_background_color(term_t * term, int color);
 
+static void
+set_win_start_end(word_t * word_a, win_t * win, int current, int last);
 static int build_metadata(word_t * word_a, term_t * term, int count,
                           win_t * win);
 static int disp_lines(word_t * word_a, win_t * win, toggle_t * toggle,
@@ -479,7 +481,7 @@ usage(void)
           "limited with\n");
   fprintf(stderr, "   an optional number.\n");
   fprintf(stderr, "-s sets the initial cursor position (read the manual for "
-          "details.\n");
+          "more details).\n");
   fprintf(stderr, "-m displays a one-line message above the window\n");
   fprintf(stderr, "-w uses all the terminal width for the columns if "
           "their numbers is given.\n");
@@ -3200,6 +3202,28 @@ get_message_lines(char *message, ll_t * message_lines_list,
     ll_append(message_lines_list, strdup(""));
 }
 
+/* =================================================================== */
+/* Set the new start and the new end of the window structure according */
+/* to the current cursor position.                                     */
+/* =================================================================== */
+static void
+set_win_start_end(word_t * word_a, win_t * win, int current, int last)
+{
+  int cur_line, end_line;
+
+  cur_line = line_nb_of_word_a[current];
+  if (cur_line == last)
+    win->end = count - 1;
+  else
+    win->end = first_word_in_line_a[cur_line + 1] - 1;
+  end_line = line_nb_of_word_a[win->end];
+
+  if (end_line < win->max_lines)
+    win->start = 0;
+  else
+    win->start = first_word_in_line_a[end_line - win->max_lines + 1];
+}
+
 /* ========================================================================= */
 /* Set the metadata associated with a word, its starting and ending position */
 /* the line in which it is put and so on.                                    */
@@ -3302,17 +3326,7 @@ build_metadata(word_t * word_a, term_t * term, int count, win_t * win)
   /* We need to recalculate win->start and win->end here */
   /* because of a possible terminal resizing             */
   /* """"""""""""""""""""""""""""""""""""""""""""""""""" */
-  cur_line = line_nb_of_word_a[current];
-  if (cur_line == last)
-    win->end = count - 1;
-  else
-    win->end = first_word_in_line_a[cur_line + 1] - 1;
-  end_line = line_nb_of_word_a[win->end];
-
-  if (end_line < win->max_lines)
-    win->start = 0;
-  else
-    win->start = first_word_in_line_a[end_line - win->max_lines + 1];
+  set_win_start_end(word_a, win, current, last);
 
   return last;
 }
@@ -5719,8 +5733,8 @@ main(int argc, char *argv[])
   win.start = 0;             /* index of the first element in the    *
                               * words array to be  displayed         */
 
-  /* We can now build the metadata */
-  /* """"""""""""""""""""""""""""" */
+  /* We can now build the first metadata */
+  /* """"""""""""""""""""""""""""""""""" */
   last_line = build_metadata(word_a, &term, count, &win);
 
   /* Index of the selected element in the array words                */
@@ -5854,6 +5868,10 @@ main(int argc, char *argv[])
   }
   else
     current = first_selectable;
+
+  /* We now need to adjust the 'start'/'end' fields of the structure 'win' */
+  /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+  set_win_start_end(word_a, &win, current, last_line);
 
   /* We've finished reading from stdin                               */
   /* we will now get the inputs from the controlling terminal if any */
