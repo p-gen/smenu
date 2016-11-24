@@ -138,8 +138,7 @@ static char *make_ini_path(char *name, char *base);
 static void set_foreground_color(term_t * term, int color);
 static void set_background_color(term_t * term, int color);
 
-static void
-set_win_start_end(word_t * word_a, win_t * win, int current, int last);
+static void set_win_start_end(win_t * win, int current, int last);
 static int build_metadata(word_t * word_a, term_t * term, int count,
                           win_t * win);
 static int disp_lines(word_t * word_a, win_t * win, toggle_t * toggle,
@@ -3225,7 +3224,7 @@ get_message_lines(char *message, ll_t * message_lines_list,
 /* to the current cursor position.                                     */
 /* =================================================================== */
 static void
-set_win_start_end(word_t * word_a, win_t * win, int current, int last)
+set_win_start_end(win_t * win, int current, int last)
 {
   int cur_line, end_line;
 
@@ -3342,7 +3341,7 @@ build_metadata(word_t * word_a, term_t * term, int count, win_t * win)
   /* We need to recalculate win->start and win->end here */
   /* because of a possible terminal resizing             */
   /* """"""""""""""""""""""""""""""""""""""""""""""""""" */
-  set_win_start_end(word_a, win, current, last);
+  set_win_start_end(win, current, last);
 
   return last;
 }
@@ -5892,7 +5891,7 @@ main(int argc, char *argv[])
 
   /* We now need to adjust the 'start'/'end' fields of the structure 'win' */
   /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-  set_win_start_end(word_a, &win, current, last_line);
+  set_win_start_end(&win, current, last_line);
 
   /* We've finished reading from stdin                               */
   /* we will now get the inputs from the controlling terminal if any */
