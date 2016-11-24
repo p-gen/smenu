@@ -97,6 +97,7 @@ static void ll_init(ll_t * list);
 static ll_node_t *ll_new_node(void);
 static ll_t *ll_new(void);
 
+static void rtrim(char *str, const char *trim);
 static int my_stricmp(const char *str1, const char *str2);
 
 static int isprint7(int i);
@@ -262,6 +263,8 @@ struct toggle_s
   int no_scrollbar;          /* 1 to disable the scrollbar display else 0  */
   int blank_nonprintable;    /* 1 to try to display non-blanks in          *
                               * symbolic form else 0                       */
+  int keep_spaces;           /* 1 to keep the trailing spaces in columne   *
+                              * and tabulate mode.                         */
 };
 
 /* Structure to store the default or imposed smenu limits */
@@ -446,8 +449,9 @@ short_usage(void)
 {
   fprintf(stderr, "Usage: smenu [-h] [-n lines] [-c] [-l] [-s pattern] ");
   fprintf(stderr, "[-m message] [-w] [-d] \\\n");
-  fprintf(stderr, "       [-M] [-t [cols]] [-r] [-b] [-i regex] [-e regex]");
-  fprintf(stderr, "                    \\\n");
+  fprintf(stderr,
+          "       [-M] [-t [cols]] [-k] [-r] [-b] [-i regex] [-e regex]");
+  fprintf(stderr, "               \\\n");
   fprintf(stderr, "       [-C [a|A|s|S|r|R|d|D]col1[-col2],[col1[-col2]]...]");
   fprintf(stderr, "                  \\\n");
   fprintf(stderr, "       [-R [a|A|s|S|r|R|d|D]row1[-row2],[row1[-row2]]...] ");
@@ -480,6 +484,9 @@ usage(void)
   fprintf(stderr, "-t tabulates the items. The number of columns can be "
           "limited with\n");
   fprintf(stderr, "   an optional number.\n");
+  fprintf(stderr, "-k do not trim the trailing space from the output string "
+          "when in column and\n");
+  fprintf(stderr, "   tabulate mode.\n");
   fprintf(stderr, "-s sets the initial cursor position (read the manual for "
           "more details).\n");
   fprintf(stderr, "-m displays a one-line message above the window\n");
@@ -1641,6 +1648,17 @@ get_cursor_position(int *const r, int *const c)
 /* *********************************************** */
 /* Strings and multibyte strings utility functions */
 /* *********************************************** */
+
+/* ======================== */
+/* trim trailing characters */
+/* ======================== */
+static void
+rtrim(char *str, const char *trim_str)
+{
+  size_t len = strlen(str);
+  while (len > 0 && strchr(trim_str, str[len - 1]))
+    str[--len] = '\0';
+}
 
 /* ========================================= */
 /* Case insensitive strcmp                   */
@@ -3238,8 +3256,6 @@ build_metadata(word_t * word_a, term_t * term, int count, win_t * win)
   size_t word_len;
   int len = 0;
   int last = 0;
-  int cur_line;
-  int end_line;
   int word_width;
   int tab_count;             /* Current number of words in the line,        *
                               * used in tab_mode                            */
@@ -4460,6 +4476,7 @@ main(int argc, char *argv[])
   toggle.enter_val_in_search = 0;
   toggle.no_scrollbar = 0;
   toggle.blank_nonprintable = 0;
+  toggle.keep_spaces = 0;
 
   /* Columns selection variables */
   /* """"""""""""""""""""""""""" */
@@ -4520,7 +4537,7 @@ main(int argc, char *argv[])
   /* """"""""""""""""""""""""""""" */
   while ((opt = egetopt(argc, argv,
                         "VhqdMbi:e:S:I:E:A:Z:1:2:3:4:5:C:R:"
-                        "clwrgn:t%m:s:W:L:1:2:3:4:")) != -1)
+                        "kclwrgn:t%m:s:W:L:1:2:3:4:")) != -1)
   {
     switch (opt)
     {
@@ -4556,6 +4573,10 @@ main(int argc, char *argv[])
         win.tab_mode = 1;
         win.col_mode = 0;
         win.line_mode = 0;
+        break;
+
+      case 'k':
+        toggle.keep_spaces = 1;
         break;
 
       case 'c':
@@ -6368,6 +6389,14 @@ main(int argc, char *argv[])
             output_str = word_a[current].orig;
           else
             output_str = word_a[current].str;
+
+          /* Trim the trailing spaces if -k is given in tabular or       */
+          /* column mode. Leading spaces are alwaye preserved because I  */
+          /* consider their presence intentional as the only way to have */
+          /* them is to use quotes in the command line.                  */
+          /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+          if (!toggle.keep_spaces || (!win.tab_mode && !win.col_mode))
+            rtrim(output_str, " ");
 
           /* And print it. */
           /* """"""""""""" */

@@ -5,8 +5,8 @@ and outputs the selection to stdout.
 .SH SYNOPSIS
 .nf
 \f(CRsmenu [\fB-h\fP] [\fB-n\fP \fIlines\fP] [\fB-t\fP [\fIcols\fP]] \\
-      [\fB-s\fP \fIpattern\fP] [\fB-m\fP \fImessage\fP] [\fB-w\fP] [\fB-d\fP] \
-[\fB-M\fP] [\fB-c\fP] [\fB-l\fP] [\fB-r\fP] [\fB-b\fP] \\
+      [\fB-k\fP] [\fB-s\fP \fIpattern\fP] [\fB-m\fP \fImessage\fP] [\fB-w\fP] \\
+      [\fB-d\fP] [\fB-M\fP] [\fB-c\fP] [\fB-l\fP] [\fB-r\fP] [\fB-b\fP] \\
       [\fB-i\fP \fIregex\fP] [\fB-e\fP \fIregex\fP] \\
       [\fB-C\fP \
 [\fIa\fP|\fIA\fP|\fIs\fP|\fIS\fP|\fIr\fP|\fIR\fP|\fId\fP|\fID\fP]\
@@ -240,6 +240,10 @@ and \fB-Z\fP can nevertheless be used to force words to appear in the first
 .RS
 Note that if this mode each column has the same width.
 .RE
+.IP \fB-k\fP
+in column or tabulate mode, the selected word may be smaller than the
+column width. By default these trailing spaces will be removed from the
+output string. This option force them to be kept.
 .IP "\fB-s\fP \fIpattern\fP"
 Pre-Position the cursor to the first word matching the specified pattern.
 
