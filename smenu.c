@@ -1445,7 +1445,7 @@ ll_sort(ll_t * list, int (*comp) (void *, void *),
 {
   /* Call the recursive ll_quicksort function */
   /* """""""""""""""""""""""""""""""""""""""" */
-  ll_quicksort(list->head, list->tail, interval_comp, interval_swap);
+  ll_quicksort(list->head, list->tail, comp, swap);
 }
 
 /* ================================ */
