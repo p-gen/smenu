@@ -3232,7 +3232,12 @@ set_win_start_end(win_t * win, int current, int last)
   if (cur_line == last)
     win->end = count - 1;
   else
-    win->end = first_word_in_line_a[cur_line + 1] - 1;
+  {
+    if (cur_line + win->max_lines / 2 + 1 <= last)
+      win->end = first_word_in_line_a[cur_line + win->max_lines / 2 + 1] - 1;
+    else
+      win->end = first_word_in_line_a[last];
+  }
   end_line = line_nb_of_word_a[win->end];
 
   if (end_line < win->max_lines)
