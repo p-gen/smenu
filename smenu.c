@@ -3980,9 +3980,11 @@ char *optstart = START;      /* list of characters that start options */
 #define TELL(S) { \
   if (opterr && opterrfd >= 0) { \
     char option = (char) optopt; \
-    (void) write(opterrfd, (S), strlen(S)); \
-    (void) write(opterrfd, &option, 1); \
-    (void) write(opterrfd, "\n", 1); \
+    int rc, dummy; \
+    rc=write(opterrfd, (S), strlen(S)); \
+    rc=write(opterrfd, &option, 1); \
+    rc=write(opterrfd, "\n", 1); \
+    dummy=rc;                /* to please the compiler about unused results */ \
   } \
   return (optbad); \
 }
