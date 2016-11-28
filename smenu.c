@@ -97,7 +97,8 @@ static void ll_init(ll_t * list);
 static ll_node_t *ll_new_node(void);
 static ll_t *ll_new(void);
 
-static void rtrim(char *str, const char *trim);
+static void ltrim(char *str, const char *trim);
+static void rtrim(char *str, const char *trim, size_t min_len);
 static int my_stricmp(const char *str1, const char *str2);
 
 static int isprint7(int i);
@@ -338,6 +339,7 @@ struct word_s
   size_t mbytes;             /*  number of multibytes to display         */
   int special_level;         /* can vary from 0 to 5; 0 meaning normal   */
   char *str;                 /* display string associated with this word */
+  size_t len;                /* number of bytes of str (for trimming)    */
   char *orig;                /* NULL or original string if is had been   *
                               * shortened for being displayed or altered *
                               * by is expansion.                         */
@@ -483,9 +485,8 @@ usage(void)
   fprintf(stderr, "-t tabulates the items. The number of columns can be "
           "limited with\n");
   fprintf(stderr, "   an optional number.\n");
-  fprintf(stderr, "-k do not trim the trailing space from the output string "
-          "when in column and\n");
-  fprintf(stderr, "   tabulate mode.\n");
+  fprintf(stderr, "-k do not trim the space surrounding the output string "
+          "if any.\n");
   fprintf(stderr, "-s sets the initial cursor position (read the manual for "
           "more details).\n");
   fprintf(stderr, "-m displays a one-line message above the window\n");
@@ -1648,14 +1649,29 @@ get_cursor_position(int *const r, int *const c)
 /* Strings and multibyte strings utility functions */
 /* *********************************************** */
 
-/* ======================== */
-/* trim trailing characters */
-/* ======================== */
+/* ======================= */
+/* trim leading characters */
+/* ======================= */
 static void
-rtrim(char *str, const char *trim_str)
+ltrim(char *str, const char *trim_str)
 {
   size_t len = strlen(str);
-  while (len > 0 && strchr(trim_str, str[len - 1]))
+  size_t begin = strspn(str, trim_str);
+  if (begin > 0)
+    for (size_t i = begin; i <= len; ++i)
+      str[i - begin] = str[i];
+}
+
+/* ================================================= */
+/* trim trailing characters                          */
+/* The resulting string will have at least min bytes */
+/* even if trailing spaces remain.                   */
+/* ================================================= */
+static void
+rtrim(char *str, const char *trim_str, size_t min)
+{
+  size_t len = strlen(str);
+  while (len > min && strchr(trim_str, str[len - 1]))
     str[--len] = '\0';
 }
 
@@ -5628,6 +5644,11 @@ main(int argc, char *argv[])
       free(w);
     }
 
+    /* Record the length of the word in bytes. This information will be */
+    /* used if the -k option (keep spaces ) is not set.                 */
+    /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+    word_a[count].len = strlen(word_a[count].str);
+
     /* One more word... */
     /* """""""""""""""" */
     if (count == limits.words)
@@ -5746,6 +5767,7 @@ main(int argc, char *argv[])
       temp[tab_real_max_size + s1 - s2] = '\0';
       free(word_a[i].str);
       word_a[i].str = temp;
+
     }
   }
 
@@ -6399,8 +6421,12 @@ main(int argc, char *argv[])
           /* consider their presence intentional as the only way to have */
           /* them is to use quotes in the command line.                  */
           /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-          if (!toggle.keep_spaces || (!win.tab_mode && !win.col_mode))
-            rtrim(output_str, " ");
+          rtrim(output_str, " \t", word_a[current].len);
+          if (!toggle.keep_spaces)
+          {
+            ltrim(output_str, " \t");
+            rtrim(output_str, " \t", 0);
+          }
 
           /* And print it. */
           /* """"""""""""" */
