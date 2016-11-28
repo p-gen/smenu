@@ -1405,8 +1405,9 @@ ll_partition(ll_node_t * l, ll_node_t * h, int (*comp) (void *, void *),
   void *x = h->data;
 
   ll_node_t *i = l->prev;
+  ll_node_t *j;
 
-  for (ll_node_t * j = l; j != h; j = j->next)
+  for (j = l; j != h; j = j->next)
   {
     if (comp(j->data, x) < 1)
     {
@@ -1657,8 +1658,10 @@ ltrim(char *str, const char *trim_str)
 {
   size_t len = strlen(str);
   size_t begin = strspn(str, trim_str);
+  size_t i;
+
   if (begin > 0)
-    for (size_t i = begin; i <= len; ++i)
+    for (i = begin; i <= len; ++i)
       str[i - begin] = str[i];
 }
 
