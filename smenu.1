@@ -65,17 +65,17 @@ into a dot (\fI.\fP) when the user locale is not \fBUTF-8\fP aware like
 \fBPOSIX\fP or \fBC\fP by example.
 .P
 .SS "Moving among words"
-The cursor can then be moved in every directions by using the
+The cursor can then be moved in every direction by using the
 keyboard arrow keys (\fB\(<-\fP,\fB\(da\fP,\fB\(ua\fP,\fB\(->\fP)
 or the \fIvi\fP direction keys (\fBh\fP, \fBj\fP, \fBk\fP and \fBl\fP).
-\fBHOME\fP, \fBEND\fP, \fBPgDn\fP and \fBPGUp\fP can also be used if
+\fBHOME\fP, \fBEND\fP, \fBPgDn\fP and \fBPgUp\fP can also be used if
 available and have their traditional meanings.
 .SS "Searching for a word"
 The \fB/\fP or \fB^F\fP (\fBCtrl-f\fP) can be used to initiate a
-research by prefix among the words after the cursor.
+search by prefix among the words after the cursor.
 .P
 After that the cursor attribute is modified and all the characters
-entered 7s after this change goes in a search buffer with the cursor
+entered 7s after this change go in a search buffer with the cursor
 moving immediately to the next word matching this prefix. Any character
 entered within 5s after that completes that buffer and resets the 5s
 timer and possibly moves the cursor again.
@@ -83,8 +83,8 @@ timer and possibly moves the cursor again.
 As soon as the timer ends, the search mode is ended and the cursor
 regains its initial appearance.
 .P
-The search buffer if persistent as long as the cursor is on a matching
-word when a new research is initialized.
+The search buffer is persistent as long as the cursor is on a matching
+word when a new search is initialized.
 .br
 If the beginning of the word under the cursor does not match the
 previous search buffer, then the search buffer if erased.
@@ -92,7 +92,7 @@ previous search buffer, then the search buffer if erased.
 At any time in this mode you can move the cursor with the keys
 described above. \fBESC\fP ends this mode immediately.
 .P
-The \fBSPACE\fP or \fBn\fP key repeats the last research if the search
+The \fBSPACE\fP or \fBn\fP key repeats the last search if the search
 buffer is not empty. As in search mode, nothing happens if there is no
 matching word after the cursor.
 .P
@@ -103,7 +103,7 @@ word containing these characters.
 Hitting \fBq\fP exits without outputting anything, nothing is selected.
 .P
 By default, hitting \fBENTER\fP writes the selected word to stdout when
-not in search mode. In search mode \fBENTER\fP ends this mode and do
+not in search mode. In search mode \fBENTER\fP ends this mode and does
 nothing more. If you want to be able to select a word \fIeven\fP in
 search mode, use the \fB-r\fP option to change this behavior.
 .SS Help
@@ -116,8 +116,8 @@ appearance is meant to be classical but it has some particularities:
 The scroll bar is not displayed if all the input words fit on only one
 line.
 .IP * 2
-Otherwise, the scroll bar is always displayed except if the \fB-q\fP
-option is set. This option completely disable the scroll bar display.
+Otherwise, the scroll bar is always displayed except when the \fB-q\fP
+option is set. This option completely disables the scroll bar display.
 .IP * 2
 When the scrolling window has only one line, the scroll bar has only 3
 states:
@@ -147,7 +147,7 @@ A "\fB+\fP" can also appear in the scroll bar in lieu of a "\fB|\fP",
 giving the relative position of the cursor line in the bunch of input
 words.
 .SS "Terminal resizing"
-The windows is redrawn is the terminal is resized. The redrawing is
+The windows is redrawn if the terminal is resized. The redrawing is
 actually done only 1s after the end of the resizing to avoid artefacts
 on screen. The cursor will remain on the current selected word but may
 be displayed on another place in the window.
@@ -161,15 +161,14 @@ If a file with adequate permissions and the same name as the executable
 but prefixed with a dot is present in the current directory
 or in the user's home directory, then it will be parsed as a
 \fIini\fP file.
-The values read from the file in the home directory will be overrode by
-the ones read from the local directory version if it is present
+The values read from the file in the home directory will be overridden by
+the ones read from the local directory (if it is present).
 
 Missing and bad keywords are silently skipped.
 
 The values read, if valid, override the default hard-coded ones.
 
-If a value is invalid the program will be terminated and a message
-displayed.
+If a value is invalid an error message is shown and the program terminates.
 
 Here is an example giving the syntax and the names of the keywords
 allowed:
@@ -219,7 +218,7 @@ color and \fBtoggles\fP is a strings which can contain the characters
 and \fIi\fPtalic.
 .IP * 2
 Spaces are allowed anywhere in the lines and between them, even around
-the \fB=\fP.
+the "\fB=\fP".
 .IP * 2
 Everything following a \fB;\fP is ignored.
 .SH OPTIONS
@@ -238,7 +237,7 @@ and \fB-Z\fP can nevertheless be used to force words to appear in the first
 (respectively last) position of the displayed line.
 .P
 .RS
-Note that if this mode each column has the same width.
+Note that in this mode each column has the same width.
 .RE
 .IP \fB-k\fP
 By default, the spaces surrounding the output string will be deleted.
@@ -255,19 +254,18 @@ position of the cursor (counting from 0). If this number if greater than
 the number of words, the cursor will be set on the latest selectable
 position.
 .IP * 2
-A single "\fB#\fP" or the string \fB#last\fP to also set the initial
-cursor position at the latest selectable word position.
+A single "\fB#\fP" or the string \fB#last\fP to set the initial
+cursor position to the latest selectable word position.
 .IP * 2
 A string starting with a "\fB/\fP" indicating that we want the cursor
-to be set at the position of the first word matching the given regular
-expression.
+to be set to the first word matching the given regular expression.
 .IP * 2
 A \fBprefix\fP string indicating that we want the cursor to be set on the
 first word matching the string given (\fBCa\fP will match \fBCancel\fP
 by example).
 .PP
 Warning, when searching for a prefix or a regular expression, smenu
-only look for them only after an eventual modification, so per example,
+only looks for them after an eventual modification, so for example,
 the command:
 \f(CBsmenu -I/c/x/ -s/c <<< "a b c d"\fP won't find c and put the cursor
 on \fBa\fP but \f(CBsmenu -I/c/x/v -s/c <<< "a b c d"\fP will find it and
@@ -287,7 +285,7 @@ have the same size (the largest one). See option \fB-c\fP below.
 .P
 .RS
 Note that the column's size is only calculated once when the words are
-displayed for the first time. A terminal resize will not alter this
+displayed for the first time. A terminal resize will not update this
 value.  This choice enables a faster display.
 .RE
 .P
@@ -320,7 +318,7 @@ other words will become non-selectable (excluded)
 .IP "\fB-e\fP \fIregex\fP"
 Sets the \fBe\fPxclude filter to match the non-selectable words.
 
-This filter has a higher priority the include filter.
+This filter has a higher priority than the include filter.
 .P
 The \fIregex\fP selections above are done before the possible word
 alterations realized with \fB-I\fP or \fB-E\fP (see below).
@@ -364,15 +362,15 @@ applied in sequence on each word. This sequence can be stopped if a
 \fBflags:\fP
 .IP * 2
 The optional trailing \fBg\fP (for \fIg\fPlobal) means that all matched
-occurrences must be replaced and not the first one only.
+occurrences shall be replaced and not only the first one.
 .IP * 2
 The optional trailing \fBv\fP (for \fIv\fPisual) means that the altered
-words will only be used for display and research. The modifications will
+words will only be used for display and search. The modifications will
 \fInot\fP be reflected in the returned word.
 .IP * 2
 The optional trailing \fBs\fP (for \fIs\fPtop) means that no more
 substitution will be allowed on this word even if another \fB-S\fP is
-registered.
+used.
 .IP * 2
 The optional trailing \fBi\fP (for \fIi\fPgnore case) means that the
 string search operation should ignore the case for this pattern.
@@ -413,7 +411,7 @@ this method to build the lines, just specify an empty
 Similar to \fB-A\fP but forces the word to be the latest of its line.
 The same trick with \fB-L\fP can also be used.
 .IP "\fB-1\fP ... \fB-5\fP \fIregex\fP [\fIATTR\fP]
-Allows to give to 5 classes of words specified by regular expressions a
+Allows to give up to 5 classes of words specified by regular expressions a
 special display color. They are called \fBspecial levels\fP. Only
 selectable words will be considered.
 
@@ -430,7 +428,7 @@ as the one used in the configuration file:
 | [{\fIb\fP|\fId\fP|\fIr\fP|\fIs\fP|\fIu\fP|\fIi\fP}]
 .fi
 
-Examples of possible syntaxes are:
+Examples of possible attributes are:
 .nf
   \f(CB2/0,bu \fPgreen on black bold underline
   \f(CB/2     \fPgreen background
@@ -464,7 +462,7 @@ also used.
 .IP \fB-V\fP
 Displays the current version and quits.
 .SH NOTES
-If tabulations (\fI\\t\fP) are embedded in the input, there is no way
+If tabulators (\fI\\t\fP) are embedded in the input, there is no way
 to replace them with the original number of spaces. In this case use
 an other filter (like \fIexpand\fR) to pre-process the data.
 .SH EXAMPLES
@@ -497,7 +495,7 @@ Get a 3 columns report about VM statistics for the current process in
 .fi
 .SS 3
 Create a one column selection window containing the list of the first
-20 LVM physical volumes. At end, the selection window will be erased.
+20 LVM physical volumes. At the end, the selection window will be erased.
 This example is written in \fBksh\fP).
 .P
 .nf
