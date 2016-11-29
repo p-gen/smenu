@@ -77,11 +77,13 @@ static int interval_comp(void *a, void *b);
 static void interval_swap(void *a, void *b);
 
 static int ll_append(ll_t * const list, void *const data);
+#if 0                        /* here for coherency but not used. */
 static int ll_prepend(ll_t * const list, void *const data);
 static void ll_insert_before(ll_t * const list, ll_node_t * node,
                              void *const data);
 static void ll_insert_after(ll_t * const list, ll_node_t * node,
                             void *const data);
+#endif
 static ll_node_t *ll_partition(ll_node_t * l, ll_node_t * h,
                                int (*comp) (void *, void *),
                                void (*swap) (void *, void *));
@@ -119,7 +121,9 @@ static int strprefix(char *str1, char *str2);
 
 static int tst_cb(void *elem);
 static int tst_cb_cli(void *elem);
+#if 0                        /* here for coherency but not used. */
 static void tst_cleanup(tst_node_t * p);
+#endif
 static tst_node_t *tst_insert(tst_node_t * p, wchar_t * w, void *data);
 static void *tst_prefix_search(tst_node_t * root, wchar_t * w,
                                int (*callback) (void *));
@@ -186,6 +190,8 @@ static int delims_cmp(const void *a, const void *b);
 /* **************** */
 /* Global variables */
 /* **************** */
+
+int dummy_rc;
 
 int count = 0;               /* number of words read from stdin  */
 int current;                 /* index the current selection      *
@@ -1100,7 +1106,10 @@ ini_load(const char *filename, win_t * win, term_t * term, limits_t * limits,
       if (error)
         goto out;
     }
-    (void) fscanf(f, " ;%*[^\n]");
+    if (fscanf(f, " ;%*[^\n]"))
+    {
+      /* To silence the compiler about unused results */
+    }
 
     /* skip blank lines */
     /* """""""""""""""" */
@@ -1294,6 +1303,7 @@ ll_append(ll_t * const list, void *const data)
   return ret;
 }
 
+#if 0                        /* here for coherency but not used. */
 /* =================================================================== */
 /* Put a new node filled with its data at the beginning of the linked  */
 /* list. The user is responsible for the memory management of the data */
@@ -1385,6 +1395,7 @@ ll_insert_after(ll_t * const list, ll_node_t * node, void *const data)
     }
   }
 }
+#endif
 
 /* ====================================================== */
 /* Partition code for the quicksort function              */
@@ -2438,10 +2449,11 @@ tst_insert(tst_node_t * p, wchar_t * w, void *data)
   return (p);
 }
 
-/* ====================================== */
-/* Ternary search tree insertion function */
-/* user data area not cleaned             */
-/* ====================================== */
+#if 0                        /* here for coherency but not used. */
+/* ===================================== */
+/* Ternary search tree deletion function */
+/* user data area not cleaned            */
+/* ===================================== */
 void
 tst_cleanup(tst_node_t * p)
 {
@@ -2454,6 +2466,7 @@ tst_cleanup(tst_node_t * p)
     free(p);
   }
 }
+#endif
 
 /* ========================================================== */
 /* Recursive traversal of a ternary tree. A callback function */
@@ -3980,11 +3993,9 @@ char *optstart = START;      /* list of characters that start options */
 #define TELL(S) { \
   if (opterr && opterrfd >= 0) { \
     char option = (char) optopt; \
-    int rc, dummy; \
-    rc=write(opterrfd, (S), strlen(S)); \
-    rc=write(opterrfd, &option, 1); \
-    rc=write(opterrfd, "\n", 1); \
-    dummy=rc;                /* to please the compiler about unused results */ \
+    dummy_rc=write(opterrfd, (S), strlen(S)); \
+    dummy_rc=write(opterrfd, &option, 1); \
+    dummy_rc=write(opterrfd, "\n", 1); \
   } \
   return (optbad); \
 }
@@ -4327,8 +4338,8 @@ main(int argc, char *argv[])
                               * selection window                           */
   ll_t *message_lines_list = NULL;      /* list of the lines in the        *
                                            message to be displayed         */
-  int message_max_width;     /* total width of the message (longest line)  */
-  int message_max_len;       /* max number of bytes taken by a message     *
+  int message_max_width = 0; /* total width of the message (longest line)  */
+  int message_max_len = 0;   /* max number of bytes taken by a message     *
                               * line                                       */
 
   int index;                 /* generic counter                            */
@@ -5527,7 +5538,7 @@ main(int argc, char *argv[])
       /* Restricts the selection to certain columns */
       /* """""""""""""""""""""""""""""""""""""""""" */
       if (selectable && cols_selector != NULL)
-        if (cols_filter[col_index - 1] == '0')
+        if (cols_filter[col_index - 1] == EXCLUDE_MARK)
           selectable = 0;
 
       /* Update the max values of col_real_max_size[col_index - 1] */
@@ -5863,7 +5874,7 @@ main(int argc, char *argv[])
   {
     /* A prefix string or an index is expected */
     /* """"""""""""""""""""""""""""""""""""""" */
-    size_t len;
+    int len;
     char *ptr = pre_selection_index;
 
     if (*ptr == '#')
@@ -5872,7 +5883,7 @@ main(int argc, char *argv[])
       /* """""""""""""""""""" */
       ptr++;
 
-      if (sscanf(ptr, "%d%n", &current, &len) == 1 && len == strlen(ptr))
+      if (sscanf(ptr, "%d%n", &current, &len) == 1 && len == (int) strlen(ptr))
       {
         /* We got an index (numeric value) */
         /* """"""""""""""""""""""""""""""" */
