@@ -3278,10 +3278,16 @@ set_win_start_end(win_t * win, int current, int last)
     win->end = count - 1;
   else
   {
-    if (cur_line + win->max_lines / 2 + 1 <= last)
-      win->end = first_word_in_line_a[cur_line + win->max_lines / 2 + 1] - 1;
-    else
-      win->end = first_word_in_line_a[last];
+    /* in help mode we must not modify the windows start/end position as */
+    /* It must be redrawn exactly as it was before.                      */
+    /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+    if (!help_mode)
+    {
+      if (cur_line + win->max_lines / 2 + 1 <= last)
+        win->end = first_word_in_line_a[cur_line + win->max_lines / 2 + 1] - 1;
+      else
+        win->end = first_word_in_line_a[last];
+    }
   }
   end_line = line_nb_of_word_a[win->end];
 
@@ -6061,7 +6067,6 @@ main(int argc, char * argv[])
     if (got_help_alrm)
     {
       got_help_alrm = 0;
-      help_mode     = 0;
 
       /* Disarm the help timer to 10s */
       /* """""""""""""""""""""""""""" */
@@ -6075,7 +6080,8 @@ main(int argc, char * argv[])
       /* """""""""""""""""""""""""""""""""""""""""""""""""""" */
       last_line = build_metadata(word_a, &term, count, &win);
 
-      nl = disp_lines(word_a, &win, &toggle, current, count, search_mode,
+      help_mode = 0;
+      nl        = disp_lines(word_a, &win, &toggle, current, count, search_mode,
                       search_buf, &term, last_line, tmp_max_word, &langinfo);
     }
 
