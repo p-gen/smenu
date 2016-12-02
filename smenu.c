@@ -498,7 +498,7 @@ usage(void)
   fprintf(stderr,
           "-s sets the initial cursor position (read the manual for "
           "more details).\n");
-  fprintf(stderr, "-m displays a one-line message above the window\n");
+  fprintf(stderr, "-m displays a one-line message above the window.\n");
   fprintf(stderr,
           "-w uses all the terminal width for the columns if their numbers "
           "is given.\n");
@@ -569,7 +569,7 @@ usage(void)
   fprintf(stderr, "Notes:\n");
   fprintf(stderr, "- the timer can be cancelled by pressing ESC.\n");
   fprintf(stderr, "- a bad search letter can be removed with ");
-  fprintf(stderr, "CTRL-H or Backspace\n\n");
+  fprintf(stderr, "CTRL-H or Backspace.\n\n");
   fprintf(stderr, "(C) Pierre Gentile (2015).\n");
 
   exit(EXIT_FAILURE);
@@ -4400,7 +4400,7 @@ main(int argc, char * argv[])
 
   int message_lines;
 
-  int i; /* word index */
+  int wi; /* word index */
 
   term_t term; /* Terminal structure */
 
@@ -5104,11 +5104,13 @@ main(int argc, char * argv[])
   /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
   if (win.col_mode)
   {
+    int ci; /* column index */
+
     col_real_max_size = xmalloc(COLSCHUNK * sizeof(int));
     col_max_size      = xmalloc(COLSCHUNK * sizeof(int));
 
-    for (i                 = 0; i < COLSCHUNK; i++)
-      col_real_max_size[i] = col_max_size[i] = 0;
+    for (ci                 = 0; ci < COLSCHUNK; ci++)
+      col_real_max_size[ci] = col_max_size[ci] = 0;
 
     col_index = cols_number = 0;
   }
@@ -5190,7 +5192,6 @@ main(int argc, char * argv[])
 
   if (include_sed_list != NULL)
   {
-
     ll_node_t * node = include_sed_list->head;
 
     while (node != NULL)
@@ -5547,7 +5548,7 @@ main(int argc, char * argv[])
         /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
         if (cols_number % COLSCHUNK == 0)
         {
-          int i;
+          int ci; /* column index */
 
           col_real_max_size = xrealloc(col_real_max_size,
                                        (cols_number + COLSCHUNK) * sizeof(int));
@@ -5557,10 +5558,10 @@ main(int argc, char * argv[])
 
           /* Initialize the max size for the new columns */
           /* """"""""""""""""""""""""""""""""""""""""""" */
-          for (i = 0; i < COLSCHUNK; i++)
+          for (ci = 0; ci < COLSCHUNK; ci++)
           {
-            col_real_max_size[cols_number + i] = 0;
-            col_max_size[cols_number + i]      = 0;
+            col_real_max_size[cols_number + ci] = 0;
+            col_max_size[cols_number + ci]      = 0;
           }
         }
       }
@@ -5765,24 +5766,24 @@ main(int argc, char * argv[])
       win.max_width += col_max_size[col_index] + 1;
 
     col_index = 0;
-    for (i = 0; i < count; i++)
+    for (wi = 0; wi < count; wi++)
     {
       int       s1, s2;
       size_t    word_width;
       wchar_t * w;
 
-      s1         = (int)strlen(word_a[i].str);
-      word_width = mbstowcs(0, word_a[i].str, 0);
-      s2 = wcswidth((w = mb_strtowcs(word_a[i].str)), word_width);
+      s1         = (int)strlen(word_a[wi].str);
+      word_width = mbstowcs(0, word_a[wi].str, 0);
+      s2 = wcswidth((w = mb_strtowcs(word_a[wi].str)), word_width);
       free(w);
       temp = xcalloc(1, col_real_max_size[col_index] + s1 - s2 + 1);
       memset(temp, ' ', col_max_size[col_index] + s1 - s2);
-      memcpy(temp, word_a[i].str, s1);
+      memcpy(temp, word_a[wi].str, s1);
       temp[col_real_max_size[col_index] + s1 - s2] = '\0';
-      free(word_a[i].str);
-      word_a[i].str = temp;
+      free(word_a[wi].str);
+      word_a[wi].str = temp;
 
-      if (word_a[i].is_last)
+      if (word_a[wi].is_last)
         col_index = 0;
       else
         col_index++;
@@ -5799,22 +5800,22 @@ main(int argc, char * argv[])
         tab_real_max_size = tab_max_size;
     }
 
-    for (i = 0; i < count; i++)
+    for (wi = 0; wi < count; wi++)
     {
       int       s1, s2;
       size_t    word_width;
       wchar_t * w;
 
-      s1         = (int)strlen(word_a[i].str);
-      word_width = mbstowcs(0, word_a[i].str, 0);
-      s2 = wcswidth((w = mb_strtowcs(word_a[i].str)), word_width);
+      s1         = (int)strlen(word_a[wi].str);
+      word_width = mbstowcs(0, word_a[wi].str, 0);
+      s2 = wcswidth((w = mb_strtowcs(word_a[wi].str)), word_width);
       free(w);
       temp = xcalloc(1, tab_real_max_size + s1 - s2 + 1);
       memset(temp, ' ', tab_max_size + s1 - s2);
-      memcpy(temp, word_a[i].str, s1);
+      memcpy(temp, word_a[wi].str, s1);
       temp[tab_real_max_size + s1 - s2] = '\0';
-      free(word_a[i].str);
-      word_a[i].str = temp;
+      free(word_a[wi].str);
+      word_a[wi].str = temp;
     }
   }
 
@@ -6047,8 +6048,12 @@ main(int argc, char * argv[])
 
   /* Set the cursor to the first line of the window */
   /* """""""""""""""""""""""""""""""""""""""""""""" */
-  for (i = 1; i < offset; i++)
-    (void)tputs(cursor_up, 1, outch);
+  {
+    int i; /* generic index in this block */
+
+    for (i = 1; i < offset; i++)
+      (void)tputs(cursor_up, 1, outch);
+  }
 
   /* Save again the cursor current line and column positions so that we */
   /* will be able to put the terminal cursor back here                  */
@@ -6059,7 +6064,7 @@ main(int argc, char * argv[])
   /* """"""""" */
   while (1)
   {
-    int l;
+    int sc; /* scancode */
 
     /* If this alarm is triggered, then redisplay the window */
     /* to remove the help message and disable this timer.    */
@@ -6120,6 +6125,7 @@ main(int argc, char * argv[])
     /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
     if (got_winch_alrm)
     {
+      int i; /* generic index in this block */
       got_winch_alrm = 0;
 
       get_terminal_size(&term.nlines, &term.ncolumns);
@@ -6204,9 +6210,9 @@ main(int argc, char * argv[])
     page = 1; /* Default number of lines to do down/up *
                * with PgDn/PgUp                        */
 
-    l = get_scancode(buffer, 15);
+    sc = get_scancode(buffer, 15);
 
-    if (l)
+    if (sc)
     {
       if (!search_mode)
         if (help_mode && buffer[0] != '?')
@@ -6356,28 +6362,32 @@ main(int argc, char * argv[])
           if (search_mode)
             goto special_cmds_when_searching;
 
-          for (i = 0; i < message_lines; i++)
-            (void)tputs(cursor_up, 1, outch);
-
-          if (toggle.del_line)
           {
-            (void)tputs(clr_eol, 1, outch);
-            (void)tputs(clr_bol, 1, outch);
-            (void)tputs(save_cursor, 1, outch);
+            int i; /* generic index in this block */
 
-            for (i = 1; i < nl + message_lines; i++)
+            for (i = 0; i < message_lines; i++)
+              (void)tputs(cursor_up, 1, outch);
+
+            if (toggle.del_line)
             {
-              (void)tputs(cursor_down, 1, outch);
               (void)tputs(clr_eol, 1, outch);
               (void)tputs(clr_bol, 1, outch);
+              (void)tputs(save_cursor, 1, outch);
+
+              for (i = 1; i < nl + message_lines; i++)
+              {
+                (void)tputs(cursor_down, 1, outch);
+                (void)tputs(clr_eol, 1, outch);
+                (void)tputs(clr_bol, 1, outch);
+              }
+              (void)tputs(restore_cursor, 1, outch);
             }
-            (void)tputs(restore_cursor, 1, outch);
-          }
-          else
-          {
-            for (i = 1; i < nl + message_lines; i++)
-              (void)tputs(cursor_down, 1, outch);
-            puts("");
+            else
+            {
+              for (i = 1; i < nl + message_lines; i++)
+                (void)tputs(cursor_down, 1, outch);
+              puts("");
+            }
           }
 
           (void)tputs(cursor_normal, 1, outch);
@@ -6410,6 +6420,7 @@ main(int argc, char * argv[])
           char *    output_str;
           int       width;
           wchar_t * w;
+          int       i; /* generic index in this block */
 
           if (search_mode || help_mode)
           {
@@ -6441,6 +6452,7 @@ main(int argc, char * argv[])
               (void)tputs(clr_eol, 1, outch);
               (void)tputs(clr_bol, 1, outch);
             }
+
             (void)tputs(restore_cursor, 1, outch);
           }
           else
@@ -6538,22 +6550,23 @@ main(int argc, char * argv[])
                 if (current == win.start)
                   if (win.start > 0)
                   {
-                    for (i = win.start - 1; i >= 0 && word_a[i].start != 0; i--)
+                    for (wi = win.start - 1; wi >= 0 && word_a[wi].start != 0;
+                         wi--)
                     {
                     }
-                    win.start = i;
+                    win.start = wi;
 
-                    if (word_a[i].str != NULL)
-                      win.start = i;
+                    if (word_a[wi].str != NULL)
+                      win.start = wi;
 
                     if (win.end < count - 1)
                     {
-                      for (i = win.end + 2;
-                           i < count - 1 && word_a[i].start != 0; i++)
+                      for (wi = win.end + 2;
+                           wi < count - 1 && word_a[wi].start != 0; wi++)
                       {
                       }
-                      if (word_a[i].str != NULL)
-                        win.end = i;
+                      if (word_a[wi].str != NULL)
+                        win.end = wi;
                     }
                   }
 
@@ -6620,22 +6633,22 @@ main(int argc, char * argv[])
                 if (current == win.end)
                   if (win.start < count - 1 && win.end != count - 1)
                   {
-                    for (i = win.start + 1;
-                         i < count - 1 && word_a[i].start != 0; i++)
+                    for (wi = win.start + 1;
+                         wi < count - 1 && word_a[wi].start != 0; wi++)
                     {
                     }
 
-                    if (word_a[i].str != NULL)
-                      win.start = i;
+                    if (word_a[wi].str != NULL)
+                      win.start = wi;
 
                     if (win.end < count - 1)
                     {
-                      for (i = win.end + 2;
-                           i < count - 1 && word_a[i].start != 0; i++)
+                      for (wi = win.end + 2;
+                           wi < count - 1 && word_a[wi].start != 0; wi++)
                       {
                       }
-                      if (word_a[i].str != NULL)
-                        win.end = i;
+                      if (word_a[wi].str != NULL)
+                        win.end = wi;
                     }
                   }
 
@@ -6715,7 +6728,7 @@ main(int argc, char * argv[])
             int cursor;
             int old_current = current;
             int old_start   = win.start;
-            int index       = 0;
+            int index;
 
             /* Store the initial starting and ending positions of */
             /* the word under the cursor                          */
@@ -7092,7 +7105,7 @@ main(int argc, char * argv[])
         special_cmds_when_searching:
         default:
         {
-          int c;
+          int c; /* byte index in the scancode string */
 
           if (search_mode)
           {
@@ -7108,7 +7121,7 @@ main(int argc, char * argv[])
 
             /* Copy all the bytes included in the key press to buffer */
             /* """""""""""""""""""""""""""""""""""""""""""""""""""""" */
-            for (c = 0; c < l && search_pos < tab_real_max_size; c++)
+            for (c = 0; c < sc && search_pos < tab_real_max_size; c++)
               search_buf[search_pos++] = buffer[c];
 
             if (search_next(tst, word_a, search_buf, 0))
