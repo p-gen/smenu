@@ -4,7 +4,7 @@ smenu - filter that allows to interactively select a word from stdin
 and outputs the selection to stdout.
 .SH SYNOPSIS
 .nf
-\f(CRsmenu [\fB-h\fP] [\fB-n\fP \fIlines\fP] [\fB-t\fP [\fIcols\fP]] \\
+\f(CRsmenu [\fB-h\fP|\fB-?\fP] [\fB-n\fP \fIlines\fP] [\fB-t\fP [\fIcols\fP]] \\
       [\fB-k\fP] [\fB-s\fP \fIpattern\fP] [\fB-m\fP \fImessage\fP] [\fB-w\fP] \\
       [\fB-d\fP] [\fB-M\fP] [\fB-c\fP] [\fB-l\fP] [\fB-r\fP] [\fB-b\fP] \\
       [\fB-i\fP \fIregex\fP] [\fB-e\fP \fIregex\fP] \\
@@ -222,8 +222,8 @@ the "\fB=\fP".
 .IP * 2
 Everything following a \fB;\fP is ignored.
 .SH OPTIONS
-.IP \fB-h\fP
-Displays a short help message and exists.
+.IP "\fB-h\fP or \fB-?\fP"
+Displays a log (\fB-h\fP) or short (\fB-?\fP) help message and exits.
 .IP "\fB-n\fP \fIlines\fB"
 Gives the maximum number of lines in the scrolling selection window. By
 default five lines at most are displayed and the other ones, if

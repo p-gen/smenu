@@ -456,21 +456,20 @@ struct ll_s
 void
 short_usage(void)
 {
-  fprintf(stderr, "Usage: smenu [-h] [-n lines] [-c] [-l] [-s pattern] ");
-  fprintf(stderr, "[-m message] [-w] [-d] \\\n");
-  fprintf(stderr,
-          "       [-M] [-t [cols]] [-k] [-r] [-b] [-i regex] [-e regex]");
-  fprintf(stderr, "               \\\n");
+  fprintf(stderr, "Usage: smenu [-h|-?] [-n lines] [-c] [-l] [-s pattern] ");
+  fprintf(stderr, "[-m message] [-w] \\\n");
+  fprintf(stderr, "       [-d] [-M] [-t [cols]] [-k] [-r] [-b] [-i regex] ");
+  fprintf(stderr, "[-e regex]        \\\n");
   fprintf(stderr, "       [-C [a|A|s|S|r|R|d|D]col1[-col2],[col1[-col2]]...]");
-  fprintf(stderr, "                  \\\n");
+  fprintf(stderr, "                \\\n");
   fprintf(stderr, "       [-R [a|A|s|S|r|R|d|D]row1[-row2],[row1[-row2]]...] ");
-  fprintf(stderr, "                 \\\n");
+  fprintf(stderr, "               \\\n");
   fprintf(stderr, "       [-S /regex/repl/[g][v][s][i]] ");
-  fprintf(stderr, "[-I /regex/repl/[g][v][s][i]]         \\\n");
+  fprintf(stderr, "[-I /regex/repl/[g][v][s][i]]       \\\n");
   fprintf(stderr, "       [-E /regex/repl/[g][v][s][i]] ");
-  fprintf(stderr, "[-A regex] [-Z regex]                 \\\n");
+  fprintf(stderr, "[-A regex] [-Z regex]               \\\n");
   fprintf(stderr, "       [-1 regex [attr]] [-2 regex [attr]] ... ");
-  fprintf(stderr, "[-5 regex [attr]] [-g]      \\\n");
+  fprintf(stderr, "[-5 regex [attr]] [-g]    \\\n");
   fprintf(stderr, "       [-W bytes] [-L bytes] [-V]\n");
 }
 
@@ -542,14 +541,26 @@ usage(void)
   fprintf(stderr, "-L sets the input lines separators.\n");
   fprintf(stderr, "-V displays the current version and quits.\n");
   fprintf(stderr, "\nNavigation keys are:\n");
-  fprintf(stderr, "  Left/Down/Up/Right arrows or h/j/k/l\n");
-  fprintf(stderr, "  Home/End\n");
-  fprintf(stderr, "  SPACE to search for the next match of a previously\n");
-  fprintf(stderr, "        entered search prefix if any, see below.\n\n");
-  fprintf(stderr, "Exit key without output (do nothing): q\n");
-  fprintf(stderr, "Selection key                       : ENTER\n");
-  fprintf(stderr, "Cancel key                          : ESC\n");
-  fprintf(stderr, "Search key                          : / or CTRL-F\n\n");
+  fprintf(stderr, "  - Left/Down/Up/Right arrows or h/j/k/l.\n");
+  fprintf(stderr, "  - Home/End.\n");
+  fprintf(stderr, "  - SPACE to search for the next match of a previously\n");
+  fprintf(stderr, "          entered search prefix if any, see below.\n\n");
+  fprintf(stderr, "Other useful keys are:\n");
+  fprintf(stderr,
+          "  - Help key (temporary display of a short help line): "
+          "?\n");
+  fprintf(stderr,
+          "  - Exit key without output (do nothing)             : "
+          "q\n");
+  fprintf(stderr,
+          "  - Selection key                                    : "
+          "ENTER\n");
+  fprintf(stderr,
+          "  - Cancel key                                       : "
+          "ESC\n");
+  fprintf(stderr,
+          "  - Search key                                       : "
+          "/ or CTRL-F\n\n");
   fprintf(stderr, "The search key activates a timed search mode in which\n");
   fprintf(stderr, "you can enter the first letters of the searched word.\n");
   fprintf(stderr, "When entering this mode you have 7s to start typing\n");
@@ -3965,7 +3976,7 @@ search_next(tst_node_t * tst, word_t * word_a, char * search_buf,
 /* None of these constants are referenced in the executable portion of */
 /* the code ... their sole purpose is to initialize global variables.  */
 /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-#define BADCH (int)'?'
+#define BADCH (int)'@'
 #define NEEDSEP (int)':'
 #define MAYBESEP (int)'%'
 #define ERRFD 2
@@ -4576,7 +4587,7 @@ main(int argc, char * argv[])
   /* Command line options analysis */
   /* """"""""""""""""""""""""""""" */
   while ((opt = egetopt(argc, argv,
-                        "VhqdMbi:e:S:I:E:A:Z:1:2:3:4:5:C:R:"
+                        "Vh?qdMbi:e:S:I:E:A:Z:1:2:3:4:5:C:R:"
                         "kclwrgn:t%m:s:W:L:1:2:3:4:"))
          != -1)
   {
