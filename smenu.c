@@ -4925,7 +4925,7 @@ main(int argc, char * argv[])
     str              = tigetstr("rev");
     term.has_reverse = (str == (char *)-1 || str == NULL) ? 0 : 1;
 
-    str                = tigetstr("ul");
+    str                = tigetstr("smul");
     term.has_underline = (str == (char *)-1 || str == NULL) ? 0 : 1;
 
     str               = tigetstr("smso");
