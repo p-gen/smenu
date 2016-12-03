@@ -4592,7 +4592,7 @@ main(int argc, char * argv[])
   /* """"""""""""""""""""""""""""" */
   while ((opt = egetopt(argc, argv,
                         "Vh?qdMbi:e:S:I:E:A:Z:1:2:3:4:5:C:R:"
-                        "kclwrgn:t%m:s:W:L:1:2:3:4:"))
+                        "kclwrgn:t%m:s:W:L:"))
          != -1)
   {
     switch (opt)
