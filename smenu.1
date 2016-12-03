@@ -22,7 +22,7 @@ and outputs the selection to stdout.
 [\fB-2\fP \fIregex\fP [\fIATTR\fP] ... \
 [\fB-5\fP \fIregex\fP [\fIATTR\fP] \\
       [\fB-g\fP] [\fB-q\fP] [\fB-W\fP \fIbytes\fP] [\fB-L\fP \fIbytes\fP] \\
-      [\fB-V\fP]
+      [\fB-T\fP [\fIseperator\fP]]] [\fB-V\fP]
 .fi
 .SH DESCRIPTION
 This small utility acts as a filter (reads from stdin and writes to
@@ -188,6 +188,7 @@ allowed:
   search_field = 0/6      ; search field attributes
   search_text = 7,bu      ; search text attributes
   exclude = 4/0,u         ; non-selectable color attributes
+  tag = 0/5               ; tagged (selected) attributes
 
   special1 = 7/4,b        ; attributes for the special level 1
   special2 = bu           ; attributes for the special level 2
@@ -459,6 +460,18 @@ set.
 The characters (or multibyte sequences) passed to \fB-L\fP are
 automatically added to the list of word delimiters as if \fB-W\fP was
 also used.
+.IP "\fB-T\fP [\fIseparator\fP]"
+Enables the multi-selections or tagged mode. In this mode, each
+selectable word can be selected without ending the program. The last
+selection is then done as usual by hitting the \fBENTER\fP key which
+also ends the program.
+
+All the tagged words (and the world under the cursor) are then sent
+to stdout separated by the optional argument given to the \fB-T\fP
+option. Note than this \fIseparator\fP can have more than one character
+and can even contain control character as in \f(CB$'\\n'\fP.
+
+A space is used as the default separator if none is given.
 .IP \fB-V\fP
 Displays the current version and quits.
 .SH NOTES

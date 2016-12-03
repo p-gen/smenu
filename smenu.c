@@ -272,6 +272,7 @@ struct toggle_s
                             * symbolic form else 0                       */
   int keep_spaces;         /* 1 to keep the trailing spaces in columne   *
                             * and tabulate mode.                         */
+  int taggable;            /* 1 if tagging is enabled                    */
 };
 
 /* Structure to store the default or imposed smenu limits */
@@ -351,6 +352,7 @@ struct word_s
   char * orig;                 /* NULL or original string if is had been   *
                                 * shortened for being displayed or altered *
                                 * by is expansion.                         */
+  unsigned char is_tagged;     /* 1 if the word is tagged, 0 if not        */
   unsigned char is_last;       /* 1 if the word is the last of a line      */
   unsigned char is_selectable; /* word is is_selectable                 */
 };
@@ -369,7 +371,8 @@ struct win_s
   int max_width;       /* max line length. In column, tab or line *
                         * mode it can be greater than the         *
                         * terminal width                          */
-  int offset;          /* window offset user when centered        */
+  int    offset;       /* window offset user when centered        */
+  char * sel_sep;      /* separator in output when tagged is anable */
 
   unsigned char tab_mode;  /* -t */
   unsigned char col_mode;  /* -c */
@@ -384,6 +387,7 @@ struct win_s
   txt_attr_t search_field_attr; /* search mode field attributes      */
   txt_attr_t search_text_attr;  /* search mode text attributes       */
   txt_attr_t exclude_attr;      /* non-selectable words attributes   */
+  txt_attr_t tag_attr;          /* non-selectable words attributes   */
   txt_attr_t special_attr[5];   /* special (-1,...) words attributes */
 };
 
@@ -470,7 +474,7 @@ short_usage(void)
   fprintf(stderr, "[-A regex] [-Z regex]               \\\n");
   fprintf(stderr, "       [-1 regex [attr]] [-2 regex [attr]] ... ");
   fprintf(stderr, "[-5 regex [attr]] [-g]    \\\n");
-  fprintf(stderr, "       [-W bytes] [-L bytes] [-V]\n");
+  fprintf(stderr, "       [-W bytes] [-L bytes] [-T [separator]] [-V]\n");
 }
 
 /* ====================== */
@@ -539,6 +543,11 @@ usage(void)
   fprintf(stderr, "-q prevents the scrollbar display.\n");
   fprintf(stderr, "-W sets the input words separators.\n");
   fprintf(stderr, "-L sets the input lines separators.\n");
+  fprintf(stderr, "-T enables the tagging (multi-selections) mode. ");
+  fprintf(stderr, "An optional parameter\n");
+  fprintf(stderr, "   sets the separator string between the selected words ");
+  fprintf(stderr, "on the output.\n");
+  fprintf(stderr, "   A single space is the default separator.\n");
   fprintf(stderr, "-V displays the current version and quits.\n");
   fprintf(stderr, "\nNavigation keys are:\n");
   fprintf(stderr, "  - Left/Down/Up/Right arrows or h/j/k/l.\n");
@@ -552,6 +561,9 @@ usage(void)
   fprintf(stderr,
           "  - Exit key without output (do nothing)             : "
           "q\n");
+  fprintf(stderr,
+          "  - Tagging keys: Select/Deselect/Toggle             : "
+          "INS/DEL/t\n");
   fprintf(stderr,
           "  - Selection key                                    : "
           "ENTER\n");
@@ -996,6 +1008,7 @@ ini_cb(win_t * win, term_t * term, limits_t * limits, const char * section,
       CHECK_ATTR(search_field)
       CHECK_ATTR(search_text)
       CHECK_ATTR(exclude)
+      CHECK_ATTR(tag)
       CHECK_ATT_ATTR(special, 1)
       CHECK_ATT_ATTR(special, 2)
       CHECK_ATT_ATTR(special, 3)
@@ -3561,6 +3574,21 @@ disp_word(word_t * word_a, int pos, int search_mode, char * buffer,
           (void)tputs(enter_standout_mode, 1, outch);
       }
     }
+    else if (word_a[pos].is_tagged)
+    {
+      if (win->tag_attr.is_set)
+        apply_txt_attr(term, win->tag_attr);
+      else
+      {
+        if (term->has_underline)
+          (void)tputs(enter_underline_mode, 1, outch);
+        else if (term->has_standout)
+          (void)tputs(enter_standout_mode, 1, outch);
+        else if (term->has_reverse)
+          (void)tputs(enter_reverse_mode, 1, outch);
+      }
+    }
+
     (void)fputs(tmp_max_word, stdout);
     (void)tputs(exit_attribute_mode, 1, outch);
   }
@@ -4515,6 +4543,9 @@ main(int argc, char * argv[])
   win.search_field_attr = init_attr;
   win.search_text_attr  = init_attr;
   win.exclude_attr      = init_attr;
+  win.tag_attr          = init_attr;
+
+  win.sel_sep = NULL;
 
   for (index                = 0; index < 5; index++)
     win.special_attr[index] = init_attr;
@@ -4532,6 +4563,7 @@ main(int argc, char * argv[])
   toggle.no_scrollbar        = 0;
   toggle.blank_nonprintable  = 0;
   toggle.keep_spaces         = 0;
+  toggle.taggable            = 0;
 
   /* Columns selection variables */
   /* """"""""""""""""""""""""""" */
@@ -4592,7 +4624,7 @@ main(int argc, char * argv[])
   /* """"""""""""""""""""""""""""" */
   while ((opt = egetopt(argc, argv,
                         "Vh?qdMbi:e:S:I:E:A:Z:1:2:3:4:5:C:R:"
-                        "kclwrgn:t%m:s:W:L:"))
+                        "kclwrgn:t%m:s:W:L:T%"))
          != -1)
   {
     switch (opt)
@@ -4832,6 +4864,12 @@ main(int argc, char * argv[])
           ils = optarg;
         else
           TELL("Option requires an argument -- ");
+        break;
+
+      case 'T':
+        if (optarg != NULL)
+          win.sel_sep   = optarg;
+        toggle.taggable = 1;
         break;
 
       case '?':
@@ -5609,6 +5647,7 @@ main(int argc, char * argv[])
     word_a[count].is_selectable = selectable;
 
     word_a[count].special_level = special_level;
+    word_a[count].is_tagged     = 0;
 
     /* Save the non modified word in .orig if it has been altered */
     /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
@@ -6333,6 +6372,16 @@ main(int argc, char * argv[])
               /* PgDn key has been pressed */
               /* """"""""""""""""""""""""" */
               goto knp;
+
+            if (memcmp("\x1b[2~", buffer, 4) == 0)
+              /* Ins key has been pressed */
+              /* """"""""""""""""""""""""" */
+              goto kins;
+
+            if (memcmp("\x1b[3~", buffer, 4) == 0)
+              /* Del key has been pressed */
+              /* """"""""""""""""""""""""" */
+              goto kdel;
           }
 
           if (memcmp("\x1b", buffer, 1) == 0)
@@ -6464,30 +6513,84 @@ main(int argc, char * argv[])
           /* """""""""""""""""""""""""""""""""""" */
           (void)tputs(cursor_normal, 1, outch);
 
-          /* Chose the original string to print if the current one has */
-          /* been altered by a possible expansion.                     */
-          /* Once this made, print it.                                 */
-          /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-          if (word_a[current].orig != NULL)
-            output_str = word_a[current].orig;
-          else
-            output_str = word_a[current].str;
-
-          /* Trim the trailing spaces if -k is given in tabular or       */
-          /* column mode. Leading spaces are alwaye preserved because I  */
-          /* consider their presence intentional as the only way to have */
-          /* them is to use quotes in the command line.                  */
-          /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-          rtrim(output_str, " \t", word_a[current].len);
-          if (!toggle.keep_spaces)
+          if (toggle.taggable)
           {
-            ltrim(output_str, " \t");
-            rtrim(output_str, " \t", 0);
-          }
+            ll_t *      output_list = ll_new();
+            ll_node_t * node;
 
-          /* And print it. */
-          /* """"""""""""" */
-          fprintf(old_stdout, "%s", output_str);
+            for (wi = 0; wi < count; wi++)
+            {
+              if (word_a[wi].is_tagged || wi == current)
+              {
+                /* Chose the original string to print if the current one has */
+                /* been altered by a possible expansion.                     */
+                /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+                if (word_a[wi].orig != NULL)
+                  output_str = word_a[wi].orig;
+                else
+                  output_str = word_a[wi].str;
+
+                /* Trim the trailing spaces if -k is given in tabular or    */
+                /* column mode. Leading spaces are always preserved because */
+                /* I consider their presence intentional as the only way to */
+                /* have them is to use quotes in the command line.          */
+                /* """""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+                rtrim(output_str, " \t", word_a[wi].len);
+                if (!toggle.keep_spaces)
+                {
+                  ltrim(output_str, " \t");
+                  rtrim(output_str, " \t", 0);
+                }
+
+                ll_append(output_list, strdup(output_str));
+              }
+            }
+            /* And print them. */
+            /* """"""""""""""" */
+            node = output_list->head;
+            while (node->next != NULL)
+            {
+
+              fprintf(old_stdout, "%s", (char *)(node->data));
+              free(node->data);
+
+              if (win.sel_sep != NULL)
+                fprintf(old_stdout, "%s", win.sel_sep);
+              else
+                fprintf(old_stdout, " ");
+
+              node = node->next;
+            }
+
+            fprintf(old_stdout, "%s", (char *)(node->data));
+          }
+          else
+          {
+            /* Chose the original string to print if the current one has */
+            /* been altered by a possible expansion.                     */
+            /* Once this made, print it.                                 */
+            /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+            if (word_a[current].orig != NULL)
+              output_str = word_a[current].orig;
+            else
+              output_str = word_a[current].str;
+
+            /* Trim the trailing spaces if -k is given in tabular or       */
+            /* column mode. Leading spaces are always preserved because I  */
+            /* consider their presence intentional as the only way to have */
+            /* them is to use quotes in the command line.                  */
+            /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+            rtrim(output_str, " \t", word_a[current].len);
+            if (!toggle.keep_spaces)
+            {
+              ltrim(output_str, " \t");
+              rtrim(output_str, " \t", 0);
+            }
+
+            /* And print it. */
+            /* """"""""""""" */
+            fprintf(old_stdout, "%s", output_str);
+          }
 
           /* If the output stream is a terminal */
           /* """""""""""""""""""""""""""""""""" */
@@ -7052,6 +7155,39 @@ main(int argc, char * argv[])
           }
           else
             goto special_cmds_when_searching;
+
+        kins:
+          if (toggle.taggable)
+          {
+            word_a[current].is_tagged = 1;
+            nl =
+              disp_lines(word_a, &win, &toggle, current, count, search_mode,
+                         search_buf, &term, last_line, tmp_max_word, &langinfo);
+          }
+          break;
+
+        kdel:
+          if (toggle.taggable)
+          {
+            word_a[current].is_tagged = 0;
+            nl =
+              disp_lines(word_a, &win, &toggle, current, count, search_mode,
+                         search_buf, &term, last_line, tmp_max_word, &langinfo);
+          }
+          break;
+
+        case 't':
+          if (toggle.taggable)
+          {
+            if (word_a[current].is_tagged)
+              word_a[current].is_tagged = 0;
+            else
+              word_a[current].is_tagged = 1;
+            nl =
+              disp_lines(word_a, &win, &toggle, current, count, search_mode,
+                         search_buf, &term, last_line, tmp_max_word, &langinfo);
+          }
+          break;
 
         case 0x08: /* ^H */
         case 0x7f: /* BS */
