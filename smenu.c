@@ -344,7 +344,7 @@ struct word_s
 {
   int start, end;              /* start/end absolute horiz. word positions *
                                 * on the screen                            */
-  size_t mbytes;               /*  number of multibytes to display         */
+  size_t mb;                   /* number of multibytes to display          */
   int    special_level;        /* can vary from 0 to 5; 0 meaning normal   */
   char * str;                  /* display string associated with this word */
   size_t len;                  /* number of bytes of str (for trimming)    */
@@ -3368,14 +3368,14 @@ build_metadata(word_t * word_a, term_t * term, int count, win_t * win)
       len       = word_width + 1; /* Resets the current line length     */
       tab_count = 1;              /* Resets the current number of words *
                                    * in the line                        */
-      word_a[i].end    = word_width - 1;
-      word_a[i].mbytes = word_len + 1;
+      word_a[i].end = word_width - 1;
+      word_a[i].mb  = word_len + 1;
     }
     else
     {
       word_a[i].start      = len;
       word_a[i].end        = word_a[i].start + word_width - 1;
-      word_a[i].mbytes     = word_len + 1;
+      word_a[i].mb         = word_len + 1;
       line_nb_of_word_a[i] = last;
 
       len += word_width + 1; /* Increase line length */
@@ -3445,8 +3445,7 @@ disp_word(word_t * word_a, int pos, int search_mode, char * buffer,
           (void)tputs(enter_standout_mode, 1, outch);
       }
 
-      mb_strprefix(tmp_max_word, word_a[pos].str, (int)word_a[pos].mbytes - 1,
-                   &p);
+      mb_strprefix(tmp_max_word, word_a[pos].str, (int)word_a[pos].mb - 1, &p);
       (void)fputs(tmp_max_word, stdout);
 
       /* Overwrite the beginning of the word with the search buffer */
@@ -3518,8 +3517,8 @@ disp_word(word_t * word_a, int pos, int search_mode, char * buffer,
       else if (term->has_standout)
         (void)tputs(enter_standout_mode, 1, outch);
 
-      (void)mb_strprefix(tmp_max_word, word_a[pos].str,
-                         (int)word_a[pos].mbytes - 1, &p);
+      (void)mb_strprefix(tmp_max_word, word_a[pos].str, (int)word_a[pos].mb - 1,
+                         &p);
       (void)fputs(tmp_max_word, stdout);
     }
     (void)tputs(exit_attribute_mode, 1, outch);
@@ -3528,8 +3527,7 @@ disp_word(word_t * word_a, int pos, int search_mode, char * buffer,
   {
     /* Display a normal word without any attribute */
     /* """"""""""""""""""""""""""""""""""""""""""" */
-    mb_strprefix(tmp_max_word, word_a[pos].str, (int)word_a[pos].mbytes - 1,
-                 &p);
+    mb_strprefix(tmp_max_word, word_a[pos].str, (int)word_a[pos].mb - 1, &p);
 
     if (!word_a[pos].is_selectable)
     {
