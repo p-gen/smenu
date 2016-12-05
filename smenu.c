@@ -64,7 +64,7 @@ typedef struct interval_s    interval_t;
 /* Prototypes */
 /* ********** */
 
-static void help(win_t * win, term_t * term, int last_line);
+static void help(win_t * win, term_t * term, int last_line, toggle_t * toggle);
 static void short_usage(void);
 static void usage(void);
 
@@ -591,12 +591,15 @@ usage(void)
 /* Help message display */
 /* ==================== */
 void
-help(win_t * win, term_t * term, int last_line)
+help(win_t * win, term_t * term, int last_line, toggle_t * toggle)
 {
   size_t index;      /* used to identify the objects int the help line */
   int    line   = 0; /* number of windows lines used by the help line  */
   int    len    = 0; /* length of the help line                        */
-  int    offset = 0;
+  int    offset = 0; /* offset from the first column of the terminal   *
+                      * to the start of the help line                  */
+  int entries_nb;    /* number of help entries to display              */
+  int help_len;      /* total length of the help line                  */
 
   struct entry_s
   {
@@ -606,36 +609,49 @@ help(win_t * win, term_t * term, int last_line)
   };
 
   struct entry_s entries[] = {
-    { 'r', "HLP", 3 },      { 'n', " ", 1 },    { 'n', "Move:", 5 },
-    { 'b', "Arrows", 6 },   { 'n', "|", 1 },    { 'b', "h", 1 },
-    { 'b', "j", 1 },        { 'b', "k", 1 },    { 'b', "l", 1 },
-    { 'n', ",", 1 },        { 'b', "PgUp", 4 }, { 'n', "/", 1 },
-    { 'b', "PgDn", 4 },     { 'n', "/", 1 },    { 'b', "Home", 4 },
-    { 'n', "/", 1 },        { 'b', "End", 3 },  { 'n', " ", 1 },
-    { 'n', "Cancel:", 7 },  { 'b', "q", 1 },    { 'n', " ", 1 },
-    { 'n', "Confirm:", 8 }, { 'b', "CR", 2 },   { 'n', " ", 1 },
-    { 'n', "Search:", 7 },  { 'b', "/", 1 },    { 'n', "|", 1 },
-    { 'b', "^F", 2 },       { 'n', "|", 1 },    { 'b', "SP", 2 },
-    { 'n', "|", 1 },        { 'b', "n", 1 },    { (char)0, NULL, 0 }
+    { 'r', "HLP", 3 },     { 'n', " ", 1 },    { 'n', "Move:", 5 },
+    { 'b', "Arrows", 6 },  { 'n', "|", 1 },    { 'b', "h", 1 },
+    { 'b', "j", 1 },       { 'b', "k", 1 },    { 'b', "l", 1 },
+    { 'n', ",", 1 },       { 'b', "PgUp", 4 }, { 'n', "/", 1 },
+    { 'b', "PgDn", 4 },    { 'n', "/", 1 },    { 'b', "Home", 4 },
+    { 'n', "/", 1 },       { 'b', "End", 3 },  { 'n', " ", 1 },
+    { 'n', "Abort:", 6 },  { 'b', "q", 1 },    { 'n', " ", 1 },
+    { 'n', "Select:", 7 }, { 'b', "CR", 2 },   { 'n', " ", 1 },
+    { 'n', "Find:", 5 },   { 'b', "/", 1 },    { 'n', "|", 1 },
+    { 'b', "^F", 2 },      { 'n', "|", 1 },    { 'b', "SP", 2 },
+    { 'n', "|", 1 },       { 'b', "n", 1 },    { 'n', " ", 1 },
+    { 'n', "Tag:", 4 },    { 'b', "t", 1 }
   };
+
+  entries_nb = sizeof(entries) / sizeof(struct entry_s);
+
+  /* Remove the last three entries is tagging is not enables */
+  /* """"""""""""""""""""""""""""""""""""""""""""""""""""""" */
+  if (!toggle->taggable)
+    entries_nb -= 3;
+
+  /* Get the total length of the help line */
+  /* """"""""""""""""""""""""""""""""""""" */
+  help_len = 0;
+  for (index = 0; index < entries_nb; index++)
+    help_len += entries[index].len;
 
   /* Save the position of the terminal cursor so that it can be */
   /* put back there after printing of the help line             */
   /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
   (void)tputs(save_cursor, 1, outch);
 
-  /* Center the help line if the -M (Middle option is set.       */
-  /* The 39 below must correspond to the length of the help line */
-  /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+  /* Center the help line if the -M (Middle option is set. */
+  /* """"""""""""""""""""""""""""""""""""""""""""""""""""" */
   if (win->offset > 0)
-    if ((offset = win->offset + win->max_width / 2 - 39) > 0)
+    if ((offset = win->offset + win->max_width / 2 - help_len / 2) > 0)
       printf("%*s", offset, " ");
 
   /* print the different objects forming the help line */
   /* """"""""""""""""""""""""""""""""""""""""""""""""" */
-  for (index = 0; index < sizeof(entries) / sizeof(struct entry_s) - 1; index++)
+  for (index = 0; index < entries_nb; index++)
   {
-    if ((len += entries[index].len) >= term->ncolumns - 2)
+    if ((len += entries[index].len) >= term->ncolumns - 1)
     {
       line++;
 
@@ -7219,7 +7235,7 @@ main(int argc, char * argv[])
           /* """"""""" */
           if (!search_mode)
           {
-            help(&win, &term, last_line);
+            help(&win, &term, last_line, &toggle);
             help_mode = 1;
 
             /* Arm the help timer to 15s */
