@@ -6535,7 +6535,6 @@ main(int argc, char * argv[])
                 /* I consider their presence intentional as the only way to */
                 /* have them is to use quotes in the command line.          */
                 /* """""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-                rtrim(output_str, " \t", word_a[wi].len);
                 if (!toggle.keep_spaces)
                 {
                   ltrim(output_str, " \t");
@@ -6580,7 +6579,6 @@ main(int argc, char * argv[])
             /* consider their presence intentional as the only way to have */
             /* them is to use quotes in the command line.                  */
             /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-            rtrim(output_str, " \t", word_a[current].len);
             if (!toggle.keep_spaces)
             {
               ltrim(output_str, " \t");
