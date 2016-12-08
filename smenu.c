@@ -4674,9 +4674,10 @@ main(int argc, char * argv[])
       case 't':
         if (optarg != NULL)
           win.max_cols = atoi(optarg);
-        win.tab_mode   = 1;
-        win.col_mode   = 0;
-        win.line_mode  = 0;
+
+        win.tab_mode  = 1;
+        win.col_mode  = 0;
+        win.line_mode = 0;
         break;
 
       case 'k':
@@ -4736,10 +4737,7 @@ main(int argc, char * argv[])
 
       case 'C':
         if (optarg && *optarg != '-')
-        {
           cols_selector = optarg;
-          win.col_mode  = 1;
-        }
         else
           TELL("Option requires an argument -- ");
         break;
@@ -4748,8 +4746,6 @@ main(int argc, char * argv[])
         if (optarg && *optarg != '-')
         {
           rows_selector = optarg;
-          win.line_mode = 1;
-          win.tab_mode  = 0;
           win.max_cols  = 0;
         }
         else
@@ -4907,6 +4903,27 @@ main(int argc, char * argv[])
     short_usage();
 
     exit(EXIT_FAILURE);
+  }
+
+  /* Force the right modes when the -C option is given */
+  /* """"""""""""""""""""""""""""""""""""""""""""""""" */
+  if (cols_selector)
+  {
+    if (win.tab_mode || win.col_mode || win.line_mode)
+      win.tab_mode = 0;
+
+    win.col_mode = 1;
+  }
+
+  /* Force the right modes when the -R option is given */
+  /* """"""""""""""""""""""""""""""""""""""""""""""""" */
+  if (rows_selector)
+  {
+    if (win.tab_mode)
+      win.tab_mode = 0;
+
+    if (!win.col_mode && !win.line_mode)
+      win.line_mode = 1;
   }
 
   /* If we did not impose the number of columns, use the whole terminal width */
