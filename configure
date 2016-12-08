@@ -2399,8 +2399,8 @@ test "$program_suffix" != NONE &&
 ac_script='s/[\\$]/&&/g;s/;s,x,x,$//'
 program_transform_name=`$as_echo "$program_transform_name" | sed "$ac_script"`
 
-# expand $ac_aux_dir to an absolute path
-am_aux_dir=`cd $ac_aux_dir && pwd`
+# Expand $ac_aux_dir to an absolute path.
+am_aux_dir=`cd "$ac_aux_dir" && pwd`
 
 if test x"${MISSING+set}" != xset; then
   case $am_aux_dir in
@@ -4646,7 +4646,7 @@ return tgetent ();
   return 0;
 }
 _ACEOF
-for ac_lib in '' curses ncursesw ncurses; do
+for ac_lib in '' tinfo curses ncursesw ncurses; do
   if test -z "$ac_lib"; then
     ac_res="none required"
   else
