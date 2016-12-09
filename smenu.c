@@ -414,6 +414,41 @@ struct interval_s
   int high;
 };
 
+/* ********************************************************************** */
+/* custom fgetc/ungetc implementation abt to unget more than one character */
+/* ********************************************************************** */
+
+enum
+{
+  GETC_BUFF_SIZE = 16
+};
+
+static char   getc_buffer[GETC_BUFF_SIZE] = { 0 };
+static size_t next_buffer_pos             = 0; /* next free position in the *
+                                                * getc buffer               */
+
+/* ====================================== */
+/* get a (possibly pushed-back) character */
+/* ====================================== */
+int
+my_fgetc(FILE * input)
+{
+  return (next_buffer_pos > 0) ? getc_buffer[--next_buffer_pos] : fgetc(input);
+}
+
+/* ============================ */
+/* push character back on input */
+/* ============================ */
+void
+my_ungetc(int c)
+{
+  if (next_buffer_pos >= GETC_BUFF_SIZE)
+    fprintf(stderr, "Error: cannot push back more than %d characters\n",
+            GETC_BUFF_SIZE);
+  else
+    getc_buffer[next_buffer_pos++] = c;
+}
+
 /* *************************************** */
 /* Ternary Search Tree specific structures */
 /* *************************************** */
@@ -2723,7 +2758,7 @@ get_scancode(unsigned char * s, int max)
   int            i = 1;
   struct termios original_ts, nowait_ts;
 
-  if ((c = getchar()) == EOF)
+  if ((c = my_fgetc(stdin)) == EOF)
     return 0;
 
   /* Initialize the string with the first byte */
@@ -2748,12 +2783,12 @@ get_scancode(unsigned char * s, int max)
 
     /* Check if additional code is available after 0x1b */
     /* """""""""""""""""""""""""""""""""""""""""""""""" */
-    if ((c = getchar()) != EOF)
+    if ((c = my_fgetc(stdin)) != EOF)
     {
       s[1] = c;
 
       i = 2;
-      while (i < max && (c = getchar()) != EOF)
+      while (i < max && (c = my_fgetc(stdin)) != EOF)
         s[i++]             = c;
     }
     else
@@ -2786,7 +2821,7 @@ get_bytes(FILE * input, char * mb_buffer, ll_t * word_delims_list,
 
   /* read the first byte */
   /* """"""""""""""""""" */
-  byte = fgetc(input);
+  byte = my_fgetc(input);
 
   if (byte == EOF)
     return EOF;
@@ -2798,7 +2833,7 @@ get_bytes(FILE * input, char * mb_buffer, ll_t * word_delims_list,
   /* """""""""""""""""""""""""""""""""""""""""""""""""""""" */
   if (langinfo->utf8 && ((n = count_leading_set_bits(byte)) > 1))
   {
-    while (last < n && (byte = fgetc(input)) != EOF && (byte & 0xc0) == 0x80)
+    while (last < n && (byte = my_fgetc(input)) != EOF && (byte & 0xc0) == 0x80)
       mb_buffer[last++]      = byte;
 
     if (byte == EOF)
@@ -3113,17 +3148,12 @@ get_word(FILE * input, ll_t * word_delims_list, ll_t * record_delims_list,
     {
       size_t pos;
 
-      /* FIXME We cannot assume we can ungetc more than one byte          */
-      /* This seems to work with Linux/glibc though, at least for 4 bytes */
-
       pos = strlen(mb_buffer);
       while (pos > 0)
-        ungetc(mb_buffer[--pos], stdin);
-
-      /* FIXME ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ */
+        my_ungetc(mb_buffer[--pos]);
     }
     else
-      ungetc(byte, stdin);
+      my_ungetc(byte);
   }
 
   /* Mark it as the last word of a record if its sequence matches a */
