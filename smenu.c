@@ -3140,7 +3140,8 @@ get_word(FILE * input, ll_t * word_delims_list, ll_t * record_delims_list,
   if (ll_find(record_delims_list, mb_buffer, delims_cmp) == NULL)
   {
     byte = get_bytes(input, mb_buffer, word_delims_list, toggle, langinfo);
-    while (ll_find(word_delims_list, mb_buffer, delims_cmp) != NULL
+    while (byte != EOF
+           && ll_find(word_delims_list, mb_buffer, delims_cmp) != NULL
            && ll_find(record_delims_list, mb_buffer, delims_cmp) == NULL)
       byte = get_bytes(input, mb_buffer, word_delims_list, toggle, langinfo);
 
