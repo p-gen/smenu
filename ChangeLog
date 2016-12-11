@@ -1,3 +1,24 @@
+Sun Dec 11 20:00:20 UTC 2016 - p.gen.progs@gmail.com
+
+- Version 0.9.8
+* Change the cursor aspect when the selected word is tagged
+* Add a small animated gif demo
+* Fix a potential infinite loop
+* Use custom fgetc/ungetc to be able to safely push back more than one byte
+* Add libtinfo in the searched libraries an regenerate configure
+* Manage conflicts between -C, -R, -c, -l, and -t
+* Improve and fix the help line display
+* Add a -T option to enable a tagging (multi-selections) mode
+* Add the -? option to only display the synopsys
+* Adjust the code so that it can be compiled with an ansi compiler
+* Put the searched line in the middle of the displayed window if possible
+* Add a -k option to prevent trimming spaces
+* Fix the -s option
+* When not in search mode, any key except '?' should quit the help mode
+* Add a new example: yesno
+* Fix an off-by-one error when using -c and -w together
+* And many other minor changes and fixes
+
 -------------------------------------------------------------------
 Sun Mar 13 09:28:52 UTC 2016 - p.gen.progs@gmail.com
 
