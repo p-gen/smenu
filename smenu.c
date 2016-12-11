@@ -381,14 +381,15 @@ struct win_s
   unsigned char wide;      /* -w */
   unsigned char center;    /* -M */
 
-  txt_attr_t cursor_attr;       /* current cursor attributes         */
-  txt_attr_t bar_attr;          /* scrollbar attributes              */
-  txt_attr_t shift_attr;        /* shift indicator attributes        */
-  txt_attr_t search_field_attr; /* search mode field attributes      */
-  txt_attr_t search_text_attr;  /* search mode text attributes       */
-  txt_attr_t exclude_attr;      /* non-selectable words attributes   */
-  txt_attr_t tag_attr;          /* non-selectable words attributes   */
-  txt_attr_t special_attr[5];   /* special (-1,...) words attributes */
+  txt_attr_t cursor_attr;        /* current cursor attributes         */
+  txt_attr_t cursor_on_tag_attr; /* current cursor on tag attributes  */
+  txt_attr_t bar_attr;           /* scrollbar attributes              */
+  txt_attr_t shift_attr;         /* shift indicator attributes        */
+  txt_attr_t search_field_attr;  /* search mode field attributes      */
+  txt_attr_t search_text_attr;   /* search mode text attributes       */
+  txt_attr_t exclude_attr;       /* non-selectable words attributes   */
+  txt_attr_t tag_attr;           /* non-selectable words attributes   */
+  txt_attr_t special_attr[5];    /* special (-1,...) words attributes */
 };
 
 /* Sed like node structure */
@@ -1060,6 +1061,7 @@ ini_cb(win_t * win, term_t * term, limits_t * limits, const char * section,
       CHECK_ATTR(search_text)
       CHECK_ATTR(exclude)
       CHECK_ATTR(tag)
+      CHECK_ATTR(cursor_on_tag)
       CHECK_ATT_ATTR(special, 1)
       CHECK_ATT_ATTR(special, 2)
       CHECK_ATT_ATTR(special, 3)
@@ -3544,38 +3546,27 @@ disp_word(word_t * word_a, int pos, int search_mode, char * buffer,
     }
     else
     {
-      /* If we are not in search mode, display in the cursor in reverse video */
-      /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+      /* If we are not in search mode, display a normal cursor */
+      /* """"""""""""""""""""""""""""""""""""""""""""""""""""" */
       if (win->cursor_attr.is_set)
       {
-        if (win->cursor_attr.bold > 0)
-          (void)tputs(enter_bold_mode, 1, outch);
-
-        if (win->cursor_attr.dim > 0)
-          (void)tputs(enter_dim_mode, 1, outch);
-
-        if (win->cursor_attr.reverse > 0)
-          (void)tputs(enter_reverse_mode, 1, outch);
-
-        if (win->cursor_attr.standout > 0)
-          (void)tputs(enter_standout_mode, 1, outch);
-
-        if (win->cursor_attr.underline > 0)
-          (void)tputs(enter_underline_mode, 1, outch);
-
-        if (win->cursor_attr.italic > 0)
-          (void)tputs(enter_italics_mode, 1, outch);
-
-        if (win->cursor_attr.fg >= 0 && term->colors > 7)
-          set_foreground_color(term, win->cursor_attr.fg);
-
-        if (win->cursor_attr.fg >= 0 && term->colors > 7)
-          set_background_color(term, win->cursor_attr.bg);
+        if (word_a[pos].is_tagged)
+          apply_txt_attr(term, win->cursor_on_tag_attr);
+        else
+          apply_txt_attr(term, win->cursor_attr);
       }
-      else if (term->has_reverse)
-        (void)tputs(enter_reverse_mode, 1, outch);
-      else if (term->has_standout)
-        (void)tputs(enter_standout_mode, 1, outch);
+      else
+      {
+        if (word_a[pos].is_tagged)
+        {
+          if (term->has_underline)
+            (void)tputs(enter_underline_mode, 1, outch);
+        }
+        if (term->has_reverse)
+          (void)tputs(enter_reverse_mode, 1, outch);
+        else if (term->has_standout)
+          (void)tputs(enter_standout_mode, 1, outch);
+      }
 
       (void)mb_strprefix(tmp_max_word, word_a[pos].str, (int)word_a[pos].mb - 1,
                          &p);
@@ -4584,13 +4575,14 @@ main(int argc, char * argv[])
   init_attr.underline = -1;
   init_attr.italic    = -1;
 
-  win.cursor_attr       = init_attr;
-  win.bar_attr          = init_attr;
-  win.shift_attr        = init_attr;
-  win.search_field_attr = init_attr;
-  win.search_text_attr  = init_attr;
-  win.exclude_attr      = init_attr;
-  win.tag_attr          = init_attr;
+  win.cursor_attr        = init_attr;
+  win.cursor_on_tag_attr = init_attr;
+  win.bar_attr           = init_attr;
+  win.shift_attr         = init_attr;
+  win.search_field_attr  = init_attr;
+  win.search_text_attr   = init_attr;
+  win.exclude_attr       = init_attr;
+  win.tag_attr           = init_attr;
 
   win.sel_sep = NULL;
 
