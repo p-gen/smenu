@@ -3548,12 +3548,33 @@ disp_word(word_t * word_a, int pos, int search_mode, char * buffer,
     {
       /* If we are not in search mode, display a normal cursor */
       /* """"""""""""""""""""""""""""""""""""""""""""""""""""" */
-      if (win->cursor_attr.is_set)
+      if (win->cursor_attr.is_set && win->cursor_on_tag_attr.is_set)
       {
         if (word_a[pos].is_tagged)
           apply_txt_attr(term, win->cursor_on_tag_attr);
         else
           apply_txt_attr(term, win->cursor_attr);
+      }
+      else if (win->cursor_attr.is_set)
+      {
+        apply_txt_attr(term, win->cursor_attr);
+        if (word_a[pos].is_tagged)
+        {
+          if (term->has_underline)
+            (void)tputs(enter_underline_mode, 1, outch);
+        }
+      }
+      else if (win->cursor_on_tag_attr.is_set)
+      {
+        if (word_a[pos].is_tagged)
+          apply_txt_attr(term, win->cursor_on_tag_attr);
+        else
+        {
+          if (term->has_reverse)
+            (void)tputs(enter_reverse_mode, 1, outch);
+          else if (term->has_standout)
+            (void)tputs(enter_standout_mode, 1, outch);
+        }
       }
       else
       {
