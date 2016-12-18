@@ -33,5 +33,25 @@ AC_TYPE_SIZE_T
 AC_FUNC_MALLOC
 AC_CHECK_FUNCS([mblen memset nl_langinfo pathconf regcomp setlocale strchr strdup strrchr])
 
+AC_CANONICAL_HOST
+# OS-specific tests
+case "${host_os}" in
+*freebsd*|*dragonfly*)
+  CPPFLAGS="-D__BSD_VISIBLE $CPPFLAGS"
+  ;;
+
+*darwin*)
+  CPPFLAGS="-D_DARWIN_C_SOURCE $CPPFLAGS"
+  ;;
+
+*netbsd*)
+  CPPFLAGS="-D_NETBSD_SOURCE $CPPFLAGS"
+  ;;
+
+*openbsd*|*bitrig*)
+  CPPFLAGS="-D_BSD_SOURCE $CPPFLAGS"
+  ;;
+esac
+
 AC_CONFIG_FILES([Makefile])
 AC_OUTPUT([smenu.spec])
