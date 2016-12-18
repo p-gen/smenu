@@ -2802,6 +2802,10 @@ get_scancode(unsigned char * s, int max)
     /* Restore the save terminal parameters */
     /* """""""""""""""""""""""""""""""""""" */
     tcsetattr(0, TCSADRAIN, &original_ts);
+
+    /* Ignore EOF when a scancode contains an escape sequence. */
+    /* """"""""""""""""""""""""""""""""""""""""""""""""""""""" */
+    clearerr(stdin);
   }
 
   return i;
