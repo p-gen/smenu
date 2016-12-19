@@ -7,6 +7,7 @@ AC_PREREQ([2.69])
 AC_INIT([smenu], [my_version], [p.gen.progs@gmail.com])
 AC_CONFIG_SRCDIR([smenu.c])
 AC_CONFIG_HEADERS([config.h])
+AC_CONFIG_AUX_DIR([build-aux])
 AM_INIT_AUTOMAKE([no-dist-gzip dist-bzip2 foreign -Wall])
 AM_SILENT_RULES([yes])
 

@@ -82,9 +82,14 @@ bin_PROGRAMS = smenu$(EXEEXT)
 subdir = .
 DIST_COMMON = $(srcdir)/Makefile.in $(srcdir)/Makefile.am \
 	$(top_srcdir)/configure $(am__configure_deps) \
-	$(srcdir)/config.h.in $(srcdir)/smenu.spec.in depcomp \
-	$(dist_man_MANS) ChangeLog TODO config.guess config.sub \
-	install-sh missing
+	$(srcdir)/config.h.in $(srcdir)/smenu.spec.in \
+	$(top_srcdir)/build-aux/depcomp $(dist_man_MANS) ChangeLog \
+	TODO build-aux/config.guess build-aux/config.sub \
+	build-aux/depcomp build-aux/install-sh build-aux/missing \
+	$(top_srcdir)/build-aux/config.guess \
+	$(top_srcdir)/build-aux/config.sub \
+	$(top_srcdir)/build-aux/install-sh \
+	$(top_srcdir)/build-aux/missing
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
@@ -113,7 +118,7 @@ am__v_at_ = $(am__v_at_@AM_DEFAULT_V@)
 am__v_at_0 = @
 am__v_at_1 = 
 DEFAULT_INCLUDES = -I.@am__isrc@
-depcomp = $(SHELL) $(top_srcdir)/depcomp
+depcomp = $(SHELL) $(top_srcdir)/build-aux/depcomp
 am__depfiles_maybe = depfiles
 am__mv = mv -f
 COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
@@ -302,7 +307,7 @@ top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 smenu_SOURCES = smenu.c
 dist_man_MANS = smenu.1
-EXTRA_DIST = smenu.spec.in ChangeLog smenu.spec build.sh version COPYRIGHT INTERNALS.rst LICENSE.rst README.rst examples
+EXTRA_DIST = smenu.spec.in ChangeLog smenu.spec build.sh version COPYRIGHT INTERNALS.rst LICENSE.rst README.rst examples build-aux
 all: config.h
 	$(MAKE) $(AM_MAKEFLAGS) all-am
 
