@@ -424,7 +424,7 @@ enum
   GETC_BUFF_SIZE = 16
 };
 
-static char   getc_buffer[GETC_BUFF_SIZE] = { 0 };
+static char   getc_buffer[GETC_BUFF_SIZE] = { '\0' };
 static size_t next_buffer_pos             = 0; /* next free position in the *
                                                 * getc buffer               */
 
@@ -629,13 +629,13 @@ usage(void)
 void
 help(win_t * win, term_t * term, int last_line, toggle_t * toggle)
 {
-  size_t index;      /* used to identify the objects int the help line */
-  int    line   = 0; /* number of windows lines used by the help line  */
-  int    len    = 0; /* length of the help line                        */
-  int    offset = 0; /* offset from the first column of the terminal   *
-                      * to the start of the help line                  */
-  int entries_nb;    /* number of help entries to display              */
-  int help_len;      /* total length of the help line                  */
+  int index;      /* used to identify the objects int the help line */
+  int line   = 0; /* number of windows lines used by the help line  */
+  int len    = 0; /* length of the help line                        */
+  int offset = 0; /* offset from the first column of the terminal   *
+                   * to the start of the help line                  */
+  int entries_nb; /* number of help entries to display              */
+  int help_len;   /* total length of the help line                  */
 
   struct entry_s
   {
@@ -2288,11 +2288,11 @@ count_leading_set_bits(unsigned char c)
     return 1;
 }
 
-/* ============================================================== */
-/* Thank you Neil (https://github.com/sheredom)                   */
-/* Return 0 if the UTF-8 sequence is valid or the position of the */
-/* invalid UTF-8 codepoint on failure.                            */
-/* ============================================================== */
+/* ============================================================= */
+/* Thank you Neil (https://github.com/sheredom)                  */
+/* Return NULL if the UTF-8 sequence is valid or the position of */
+/* the invalid UTF-8 codepoint on failure.                       */
+/* ============================================================= */
 void *
 validate_mb(const void * str)
 {
@@ -2405,7 +2405,7 @@ validate_mb(const void * str)
     }
   }
 
-  return 0;
+  return NULL;
 }
 
 /* =============================================== */
@@ -2878,7 +2878,7 @@ get_bytes(FILE * input, char * mb_buffer, ll_t * word_delims_list,
   /* In this case the original sequence is lost (unsupported  */
   /* encoding).                                               */
   /* """""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-  if (langinfo->utf8 && validate_mb(mb_buffer) != 0)
+  if (langinfo->utf8 && validate_mb(mb_buffer) != NULL)
   {
     byte = mb_buffer[0] = '.';
     mb_buffer[1]        = '\0';
@@ -3292,7 +3292,7 @@ get_message_lines(char * message, ll_t * message_lines_list,
 
   /* For each line terminated with a EOL character */
   /* """"""""""""""""""""""""""""""""""""""""""""" */
-  while (*ptr != 0 && (cr_ptr = strchr(ptr, '\n')) != NULL)
+  while (*ptr != '\0' && (cr_ptr = strchr(ptr, '\n')) != NULL)
   {
     if (cr_ptr > ptr)
     {
@@ -3411,7 +3411,7 @@ build_metadata(word_t * word_a, term_t * term, int count, win_t * win)
   {
     /* Determine the number of screen positions used by the word */
     /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-    word_len   = mbstowcs(0, word_a[i].str, 0);
+    word_len   = mbstowcs(NULL, word_a[i].str, 0);
     word_width = wcswidth((w = mb_strtowcs(word_a[i].str)), word_len);
 
     /* Manage the case where the word is larger than the terminal width */
@@ -3539,7 +3539,8 @@ disp_word(word_t * word_a, int pos, int search_mode, char * buffer,
 
         /* Calculate the space taken by the buffer on screen */
         /* """"""""""""""""""""""""""""""""""""""""""""""""" */
-        buf_width = wcswidth((w = mb_strtowcs(buffer)), mbstowcs(0, buffer, 0));
+        buf_width =
+          wcswidth((w = mb_strtowcs(buffer)), mbstowcs(NULL, buffer, 0));
         free(w);
 
         /* Put the cursor at the beginning of the word */
@@ -4455,7 +4456,7 @@ main(int argc, char * argv[])
 
     { "CP1252", 8 },
     { "MS-ANSI", 8 },
-    { 0, 0 }
+    { NULL, 0 }
   };
 
   char * message = NULL; /* message to be displayed above the selection *
@@ -5716,7 +5717,7 @@ main(int argc, char * argv[])
           cols_real_max_size = s;
       }
 
-      s = (int)mbstowcs(0, dest, 0);
+      s = (int)mbstowcs(NULL, dest, 0);
       s = wcswidth((tmpw = mb_strtowcs(dest)), s);
       free(tmpw);
 
@@ -5772,7 +5773,7 @@ main(int argc, char * argv[])
 
     /* Store the new max word width */
     /* """""""""""""""""""""""""""" */
-    size = (int)mbstowcs(0, dest, 0);
+    size = (int)mbstowcs(NULL, dest, 0);
 
     if ((size = wcswidth((tmpw = mb_strtowcs(dest)), size)) > tab_max_size)
       tab_max_size = size;
@@ -5905,7 +5906,7 @@ main(int argc, char * argv[])
       wchar_t * w;
 
       s1         = (int)strlen(word_a[wi].str);
-      word_width = mbstowcs(0, word_a[wi].str, 0);
+      word_width = mbstowcs(NULL, word_a[wi].str, 0);
       s2 = wcswidth((w = mb_strtowcs(word_a[wi].str)), word_width);
       free(w);
       temp = xcalloc(1, col_real_max_size[col_index] + s1 - s2 + 1);
@@ -5939,7 +5940,7 @@ main(int argc, char * argv[])
       wchar_t * w;
 
       s1         = (int)strlen(word_a[wi].str);
-      word_width = mbstowcs(0, word_a[wi].str, 0);
+      word_width = mbstowcs(NULL, word_a[wi].str, 0);
       s2 = wcswidth((w = mb_strtowcs(word_a[wi].str)), word_width);
       free(w);
       temp = xcalloc(1, tab_real_max_size + s1 - s2 + 1);
@@ -7296,7 +7297,7 @@ main(int argc, char * argv[])
 
               new_search_buf = xcalloc(1, tab_real_max_size + 1);
               mb_strprefix(new_search_buf, search_buf,
-                           (int)mbstowcs(0, search_buf, 0) - 1, &pos);
+                           (int)mbstowcs(NULL, search_buf, 0) - 1, &pos);
 
               free(search_buf);
               search_buf = new_search_buf;
