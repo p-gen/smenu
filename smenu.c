@@ -270,7 +270,7 @@ struct toggle_s
   int no_scrollbar;        /* 1 to disable the scrollbar display else 0  */
   int blank_nonprintable;  /* 1 to try to display non-blanks in          *
                             * symbolic form else 0                       */
-  int keep_spaces;         /* 1 to keep the trailing spaces in columne   *
+  int keep_spaces;         /* 1 to keep the trailing spaces in columns   *
                             * and tabulate mode.                         */
   int taggable;            /* 1 if tagging is enabled                    */
 };
@@ -372,7 +372,7 @@ struct win_s
                         * mode it can be greater than the         *
                         * terminal width                          */
   int    offset;       /* window offset user when centered        */
-  char * sel_sep;      /* separator in output when tagged is anable */
+  char * sel_sep;      /* output separator when tags are enabled  */
 
   unsigned char tab_mode;  /* -t */
   unsigned char col_mode;  /* -c */
@@ -415,18 +415,18 @@ struct interval_s
   int high;
 };
 
-/* ********************************************************************** */
-/* custom fgetc/ungetc implementation abt to unget more than one character */
-/* ********************************************************************** */
+/* ************************************************************************ */
+/* custom fgetc/ungetc implementation able to unget more than one character */
+/* ************************************************************************ */
 
 enum
 {
   GETC_BUFF_SIZE = 16
 };
 
-static char   getc_buffer[GETC_BUFF_SIZE] = { '\0' };
-static size_t next_buffer_pos             = 0; /* next free position in the *
-                                                * getc buffer               */
+static char getc_buffer[GETC_BUFF_SIZE] = { '\0' };
+
+static size_t next_buffer_pos = 0; /* next free position in the getc buffer */
 
 /* ====================================== */
 /* get a (possibly pushed-back) character */
@@ -830,7 +830,7 @@ xstrdup(const char * p)
 /* u -> underline                   */
 /* i -> italic                      */
 /*                                  */
-/* Returns 0 if some unexpecte      */
+/* Returns 0 if some unexpected     */
 /* toggle is found else 0           */
 /* ================================ */
 int
@@ -878,14 +878,14 @@ decode_txt_attr_toggles(char * s, txt_attr_t * attr)
   return rc;
 }
 
-/* =========================================================== */
-/* Parse atttibutes in str in the form [fg][/bg][,toggles]     */
-/* where:                                                      */
-/* fg and bg are short representing a color value              */
-/* toggles is an array of togles (see decode_txt_attr_toggles) */
-/* Returns 1 on success else 0                                 */
-/* attr will be filled by the function                         */
-/* =========================================================== */
+/* ============================================================ */
+/* Parse attributes in str in the form [fg][/bg][,toggles]      */
+/* where:                                                       */
+/* fg and bg are short representing a color value               */
+/* toggles is an array of toggles (see decode_txt_attr_toggles) */
+/* Returns 1 on success else 0                                  */
+/* attr will be filled by the function                          */
+/* ============================================================ */
 int
 parse_txt_attr(char * str, txt_attr_t * attr, short max_color)
 {
@@ -1634,9 +1634,9 @@ isprint8(int i)
   return (c >= 0x20 && c < 0x7f) || (c >= (unsigned char)0xa0);
 }
 
-/* ************************* */
-/* Terminal utilty functions */
-/* ************************* */
+/* ************************** */
+/* Terminal utility functions */
+/* ************************** */
 
 /* ===================================================================== */
 /* outch is a function version of putchar that can be passed to tputs as */
@@ -2709,7 +2709,7 @@ tst_cb(void * elem)
 /* the words in the input flow. Each page number is then used to determine */
 /* the lower page greater than the cursor position                         */
 /* ----------------------------------------------------------------------- */
-/* This is a special version of tst_cb wich permit to find the first word  */
+/* This is a special version of tst_cb which permit to find the first word */
 /* ----------------------------------------------------------------------- */
 /* Require new_current to be set to count - 1 at start                     */
 /* Update new_current to the smallest greater position than current        */
