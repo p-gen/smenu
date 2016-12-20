@@ -803,6 +803,20 @@ xrealloc(void * p, size_t size)
   return allocated;
 }
 
+/* =================================== */
+/* strdup implementation using xmalloc */
+/* =================================== */
+char *
+xstrdup(const char * p)
+{
+  char * allocated;
+
+  allocated = xmalloc(strlen(p) + 1);
+  strcpy(allocated, p);
+
+  return allocated;
+}
+
 /* ********************************** */
 /* attributes string parsing function */
 /* ********************************** */
@@ -2032,7 +2046,7 @@ parse_sed_like_string(sed_t * sed)
 
   /* Get the separator (the 1st character) */
   /* """"""""""""""""""""""""""""""""""""" */
-  buf = strdup(sed->pattern);
+  buf = xstrdup(sed->pattern);
   sep = buf[0];
 
   /* Space like separators are not permitted */
@@ -2054,7 +2068,7 @@ parse_sed_like_string(sed_t * sed)
 
   *last_sep_pos = '\0';
 
-  sed->substitution = strdup(first_sep_pos + 1);
+  sed->substitution = xstrdup(first_sep_pos + 1);
 
   /* Get the global indicator (trailing g) */
   /* and the visual indicator (trailing v) */
@@ -3287,7 +3301,7 @@ get_message_lines(char * message, ll_t * message_lines_list,
       memcpy(str, ptr, cr_ptr - ptr);
     }
     else
-      str = strdup("");
+      str = xstrdup("");
 
     ll_append(message_lines_list, str);
 
@@ -3312,7 +3326,7 @@ get_message_lines(char * message, ll_t * message_lines_list,
   /* """"""""""""""""" */
   if (*ptr != '\0')
   {
-    ll_append(message_lines_list, strdup(ptr));
+    ll_append(message_lines_list, xstrdup(ptr));
 
     n = wcswidth((w = mb_strtowcs(ptr)), mb_strlen(ptr));
     free(w);
@@ -3327,7 +3341,7 @@ get_message_lines(char * message, ll_t * message_lines_list,
       *message_max_len = n;
   }
   else
-    ll_append(message_lines_list, strdup(""));
+    ll_append(message_lines_list, xstrdup(""));
 }
 
 /* =================================================================== */
@@ -4714,7 +4728,7 @@ main(int argc, char * argv[])
 
       case 's':
         if (optarg && *optarg != '-')
-          pre_selection_index = strdup(optarg);
+          pre_selection_index = xstrdup(optarg);
         else
           TELL("Option requires an argument -- ");
         break;
@@ -5354,7 +5368,7 @@ main(int argc, char * argv[])
   /* """"""""""""""""""""""""""""""""""""" */
   if (rows_selector != NULL)
   {
-    char * unparsed = strdup(rows_selector);
+    char * unparsed = xstrdup(rows_selector);
 
     include_rows_list = ll_new();
     exclude_rows_list = ll_new();
@@ -5377,7 +5391,7 @@ main(int argc, char * argv[])
   /* """""""""""""""""""""""""""""""""""""""" */
   if (cols_selector != NULL)
   {
-    char * unparsed = strdup(cols_selector);
+    char * unparsed = xstrdup(cols_selector);
     int    filter_type;
 
     ll_node_t *  node;
@@ -5563,7 +5577,7 @@ main(int argc, char * argv[])
 
     /* Save the original word */
     /* """""""""""""""""""""" */
-    unaltered_word = strdup(word);
+    unaltered_word = xstrdup(word);
 
     /* Possibly modify the word according to -S/-I/-E arguments */
     /* """""""""""""""""""""""""""""""""""""""""""""""""""""""" */
@@ -5584,7 +5598,7 @@ main(int argc, char * argv[])
           if (*buf == '\0')
             goto next;
           else
-            word = strdup(buf);
+            word = xstrdup(buf);
 
           if (((sed_t *)(node->data))->stop)
             break;
@@ -5614,7 +5628,7 @@ main(int argc, char * argv[])
           if (*buf == '\0')
             goto next;
           else
-            word = strdup(buf);
+            word = xstrdup(buf);
 
           if (((sed_t *)(node->data))->stop)
             break;
@@ -5630,7 +5644,7 @@ main(int argc, char * argv[])
     /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
     dest     = xmalloc(5 * strlen(word) + 1);
     len      = expand(word, dest, &langinfo);
-    new_dest = strdup(dest);
+    new_dest = xstrdup(dest);
     free(dest);
     dest = new_dest;
 
@@ -6622,7 +6636,7 @@ main(int argc, char * argv[])
                   rtrim(output_str, " \t", 0);
                 }
 
-                ll_append(output_list, strdup(output_str));
+                ll_append(output_list, xstrdup(output_str));
               }
             }
             /* And print them. */
