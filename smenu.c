@@ -112,7 +112,7 @@ static void get_terminal_size(int * const r, int * const c);
 static char * mb_strprefix(char * d, char * s, int n, int * pos);
 static int mb_strlen(char * str);
 static wchar_t * mb_strtowcs(char * s);
-static void * validate_mb(const void * str);
+static int validate_mb(const char * str, int length);
 static int outch(int c);
 static void restore_term(int const fd);
 static void setup_term(int const fd);
@@ -2288,124 +2288,102 @@ count_leading_set_bits(unsigned char c)
     return 1;
 }
 
-/* ============================================================= */
-/* Thank you Neil (https://github.com/sheredom)                  */
-/* Return NULL if the UTF-8 sequence is valid or the position of */
-/* the invalid UTF-8 codepoint on failure.                       */
-/* ============================================================= */
-void *
-validate_mb(const void * str)
+static const char trailing_bytes_for_utf8[256] = {
+  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+  1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
+  2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 3, 3, 4, 4, 4, 4, 5, 5, 5, 5
+};
+
+/* ================================================================= */
+/* UTF8 validation routine inspired by Jeff Bezanson                 */
+/*   placed in the public domain Fall 2005                           */
+/*   (https://github.com/JeffBezanson/cutef8)                        */
+/*                                                                   */
+/* Returns 1 if str contains a valid UTF8 byte sequence, 0 otherwise */
+/* ================================================================= */
+static int
+validate_mb(const char * str, int length)
 {
-  const char * s = (const char *)str;
+  const unsigned char *p, *pend = (unsigned char *)str + length;
+  unsigned char        c;
+  int                  ab;
 
-  while ('\0' != *s)
+  for (p = (unsigned char *)str; p < pend; p++)
   {
-    if (0xf0 == (0xf8 & *s))
+    c = *p;
+    if (c < 128)
+      continue;
+    if ((c & 0xc0) != 0xc0)
+      return 0;
+    ab = trailing_bytes_for_utf8[c];
+    if (length < ab)
+      return 0;
+    length -= ab;
+
+    p++;
+    /* Check top bits in the second byte */
+    /* """"""""""""""""""""""""""""""""" */
+    if ((*p & 0xc0) != 0x80)
+      return 0;
+
+    /* Check for overlong sequences for each different length */
+    /* """""""""""""""""""""""""""""""""""""""""""""""""""""" */
+    switch (ab)
     {
-      /* Ensure that each of the 3 following bytes in this 4-byte */
-      /* UTF-8 codepoint bega, with 0b10xxxxxx                    */
-      /* """""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-      if ((0x80 != (0xc0 & s[1])) || (0x80 != (0xc0 & s[2]))
-          || (0x80 != (0xc0 & s[3])))
-      {
-        return (void *)s;
-      }
+      /* Check for xx00 000x */
+      /* """"""""""""""""""" */
+      case 1:
+        if ((c & 0x3e) == 0)
+          return 0;
+        continue; /* We know there aren't any more bytes to check */
 
-      /* Ensure that our UTF-8 codepoint ended after 4 bytes */
-      /* """"""""""""""""""""""""""""""""""""""""""""""""""" */
-      if (0x80 == (0xc0 & s[4]))
-      {
-        return (void *)s;
-      }
+      /* Check for 1110 0000, xx0x xxxx */
+      /* """""""""""""""""""""""""""""" */
+      case 2:
+        if (c == 0xe0 && (*p & 0x20) == 0)
+          return 0;
+        break;
 
-      /* Ensure that the top 5 bits of this 4-byte UTF-8  */
-      /* codepoint were not 0, as then we could have used */
-      /* one of the smaller encodings                     */
-      /* """""""""""""""""""""""""""""""""""""""""""""""" */
-      if ((0 == (0x07 & s[0])) && (0 == (0x30 & s[1])))
-      {
-        return (void *)s;
-      }
+      /* Check for 1111 0000, xx00 xxxx */
+      /* """""""""""""""""""""""""""""" */
+      case 3:
+        if (c == 0xf0 && (*p & 0x30) == 0)
+          return 0;
+        break;
 
-      /* 4-byte UTF-8 code point (began with 0b11110xxx) */
-      /* """"""""""""""""""""""""""""""""""""""""""""""" */
-      s += 4;
+      /* Check for 1111 1000, xx00 0xxx */
+      /* """""""""""""""""""""""""""""" */
+      case 4:
+        if (c == 0xf8 && (*p & 0x38) == 0)
+          return 0;
+        break;
+
+      /* Check for leading 0xfe or 0xff,   */
+      /* and then for 1111 1100, xx00 00xx */
+      /* """"""""""""""""""""""""""""""""" */
+      case 5:
+        if (c == 0xfe || c == 0xff || (c == 0xfc && (*p & 0x3c) == 0))
+          return 0;
+        break;
     }
-    else if (0xe0 == (0xf0 & *s))
+
+    /* Check for valid bytes after the 2nd, if any; all must start 10 */
+    /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+    while (--ab > 0)
     {
-      /* Ensure each of the 2 following bytes in this 3-byte */
-      /* UTF-8 codepoint began with 0b10xxxxxx               */
-      /* """"""""""""""""""""""""""""""""""""""""""""""""""" */
-      if ((0x80 != (0xc0 & s[1])) || (0x80 != (0xc0 & s[2])))
-      {
-        return (void *)s;
-      }
-
-      /* Ensure that our UTF-8 codepoint ended after 3 bytes */
-      /* """"""""""""""""""""""""""""""""""""""""""""""""""" */
-      if (0x80 == (0xc0 & s[3]))
-      {
-        return (void *)s;
-      }
-
-      /* Ensure that the top 5 bits of this 3-byte UTF-8  */
-      /* codepoint were not 0, as then we could have used */
-      /* one of the smaller encodings                     */
-      /* """""""""""""""""""""""""""""""""""""""""""""""" */
-      if ((0 == (0x0f & s[0])) && (0 == (0x20 & s[1])))
-      {
-        return (void *)s;
-      }
-
-      /* 3-byte UTF-8 code point (began with 0b1110xxxx) */
-      /* """"""""""""""""""""""""""""""""""""""""""""""" */
-      s += 3;
-    }
-    else if (0xc0 == (0xe0 & *s))
-    {
-      /* Ensure the 1 following byte in this 2-byte */
-      /* UTF-8 codepoint began with 0b10xxxxxx      */
-      /* """""""""""""""""""""""""""""""""""""""""" */
-      if (0x80 != (0xc0 & s[1]))
-      {
-        return (void *)s;
-      }
-
-      /* Ensure that our UTF-8 codepoint ended after 2 bytes */
-      /* """"""""""""""""""""""""""""""""""""""""""""""""""" */
-      if (0x80 == (0xc0 & s[2]))
-      {
-        return (void *)s;
-      }
-
-      /* Ensure that the top 4 bits of this 2-byte UTD-8  */
-      /* codepoint were not 0, as then we could have used */
-      /* one of the smaller encodings                     */
-      /* """""""""""""""""""""""""""""""""""""""""""""""" */
-      if (0 == (0x1e & s[0]))
-      {
-        return (void *)s;
-      }
-
-      /* 2-byte UTF-8 code point (began with 0b110xxxxx) */
-      /* """"""""""""""""""""""""""""""""""""""""""""""" */
-      s += 2;
-    }
-    else if (0x00 == (0x80 & *s))
-    {
-      /* 1-byte ascii (began with 0b0xxxxxxx) */
-      /* """""""""""""""""""""""""""""""""""" */
-      s += 1;
-    }
-    else
-    {
-      /* We have an invalid 0b1xxxxxxx UTF-8 code point entry */
-      /* """""""""""""""""""""""""""""""""""""""""""""""""""" */
-      return (void *)s;
+      if ((*(++p) & 0xc0) != 0x80)
+        return 0;
     }
   }
 
-  return NULL;
+  return 1;
 }
 
 /* =============================================== */
@@ -2878,7 +2856,7 @@ get_bytes(FILE * input, char * mb_buffer, ll_t * word_delims_list,
   /* In this case the original sequence is lost (unsupported  */
   /* encoding).                                               */
   /* """""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-  if (langinfo->utf8 && validate_mb(mb_buffer) != NULL)
+  if (langinfo->utf8 && !validate_mb(mb_buffer, last))
   {
     byte = mb_buffer[0] = '.';
     mb_buffer[1]        = '\0';
