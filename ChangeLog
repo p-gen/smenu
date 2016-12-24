@@ -1,3 +1,15 @@
+Thu Dec 22 20:48:17 UTC 2016 - p.gen.progs@gmail.com
+
+- Version 0.9.9
+* New UTF8 validation routine
+* Man page cleanup
+* Code cleanup and improvement
+* Improved configuration process
+* Add code to detect the host system at compile time
+* Compilation is now possible on BSD system derivatives
+* Bug fix: ignore EOF when a scancode contains an escape sequence.
+* Fix the cursor appearance on tagged words
+
 Sun Dec 11 20:00:20 UTC 2016 - p.gen.progs@gmail.com
 
 - Version 0.9.8
