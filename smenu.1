@@ -4,43 +4,51 @@ smenu - filter that allows to interactively select a word from stdin
 and outputs the selection to stdout.
 .SH SYNOPSIS
 .nf
-\f(CRsmenu [\fB-h\fP|\fB-?\fP] [\fB-n\fP \fIlines\fP] [\fB-t\fP [\fIcols\fP]] \\
-      [\fB-k\fP] [\fB-s\fP \fIpattern\fP] [\fB-m\fP \fImessage\fP] [\fB-w\fP] \\
+\f(CRsmenu [\fB-h\fP|\fB-?\fP] [\fB-f\fP \fIconfiguration_file\fP] \\
+      [\fB-n\fP \fIlines\fP] [\fB-t\fP [\fIcols\fP]] [\fB-k\fP] \\
+      [\fB-s\fP \fIpattern\fP] [\fB-m\fP \fImessage\fP] [\fB-w\fP] \\
       [\fB-d\fP] [\fB-M\fP] [\fB-c\fP] [\fB-l\fP] [\fB-r\fP] [\fB-b\fP] \\
-      [\fB-i\fP \fIregex\fP] [\fB-e\fP \fIregex\fP] \\
-      [\fB-C\fP \
-[\fIa\fP|\fIA\fP|\fIs\fP|\fIS\fP|\fIr\fP|\fIR\fP|\fId\fP|\fID\fP]\
-[\fIcol1\fP[-\fIcol2\fP],[\fIcol1\fP[-\fIcol2\fP]... \\
+      [\fB-a\fP] (i:|e:|c:)\fIATTR\fP [(i:|e:|c:)\fIATTR\fP]... \\
+      [\fB-i\fP \fIregex\fP] [\fB-e\fP \fIregex\fP] [\fB-C\fP \
+[\fIa\fP|\fIs\fP|\fIi\fP|\fIr\fP|\fId\fP|\fIe\fP]<col selectors>] \\
       [\fB-R\fP \
-[\fIa\fP|\fIA\fP|\fIs\fP|\fIS\fP|\fIr\fP|\fIR\fP|\fId\fP|\fID\fP]\
-[\fIrow1\fP[-\fIrow2\fP],[\fIrow1\fP[-\fIrow2\fP]... \\
-      [\fB-S\fP \fI/regex/string/\fP[\fIg\fP][\fIv\fP][\fIs\fP][\fIi\fP]] \
-[\fB-I\fP \fI/regex/string/\fP[\fIg\fP][\fIv\fP][\fIs\fP][\fIi\fP]] \\
+[\fIa\fP|\fIs\fP|\fIi\fP|\fIr\fP|\fId\fP|\fIe\fP]<row selectors>] \\
+      [\fB-S\fP \fI/regex/string/\fP[\fIg\fP][\fIv\fP][\fIs\fP][\fIi\fP]] \\
+      [\fB-I\fP \fI/regex/string/\fP[\fIg\fP][\fIv\fP][\fIs\fP][\fIi\fP]] \\
       [\fB-E\fP \fI/regex/string/\fP[\fIg\fP][\fIv\fP][\fIs\fP][\fIi\fP]] \\
-      [\fB-A\fP \fIregex\fP] [\fB-Z\fP \fIregex\fP \\
-      [\fB-1\fP \fIregex\fP [\fIATTR\fP] \
-[\fB-2\fP \fIregex\fP [\fIATTR\fP] ... \
-[\fB-5\fP \fIregex\fP [\fIATTR\fP] \\
+      [\fB-A\fP \fIregex\fP] [\fB-Z\fP \fIregex\fP] \\
+      [\fB-1\fP \fIregex\fP [\fIATTR\fP]] \
+[\fB-2\fP \fIregex\fP [\fIATTR\fP]] ... \
+[\fB-5\fP \fIregex\fP [\fIATTR\fP]] \\
       [\fB-g\fP] [\fB-q\fP] [\fB-W\fP \fIbytes\fP] [\fB-L\fP \fIbytes\fP] \\
-      [\fB-T\fP [\fIseperator\fP]]] [\fB-V\fP]
+      [\fB-T\fP [\fIseperator\fP]] [\fB-V\fP] \\
+      [\fB-x\fP|\fB-X\fP \fItype\fP [\fIword\fP] \fIdelay\fP] [input_file]
+
+      <col selectors> ::= \fIcol1\fP[-\fIcol2\fP],...|\fI<RE>\fP,...
+      <row selectors> ::= \fIcol1\fP[-\fIcol2\fP],...|\fI<RE>\fP,...
+      <ATTR>          ::= [fg][/bg][,style]
+      <RE>            ::= \fB<char>\fIregex\fB<char>\fP
+
+      <col/row selectors> and <RE> can be freely mixed.
 .fi
 .SH DESCRIPTION
-This small utility acts as a filter (reads from stdin and writes to
-stdout). All the words taken from stdin are presented in a scrolling
-window on the terminal at the current cursor position.
+This small utility acts as a filter when no input file is given
+(reads from stdin and writes to stdout) or takes its inputs from that file.
+
+All read words are presented in a scrolling window on the terminal
+\fBat\fP the current cursor position without clearing the screen before.
 .P
-A selection cursor is initially positioned on the first selectable word
+The selection cursor is initially positioned on the first selectable word
 by default.
 .P
-It is possible to filter the selectable words in the input stream by
-using an include regular expression to match the selectable words
-and an exclude regular expression to match the non-selectable words.
+Options exists to explicitly or implicitly include or exclude some words by
+using extended regular expressions.
 
-Notice that when some words are excluded they can no more be re-included
-after.
+Notice that when some words are explicitly excluded they can no more be
+re-included after.
 .P
-Non-selectable words are skipped when moving the selection cursor and
-cannot be searched for.
+Excluded words are skipped when the selection cursor is moved and cannot
+be searched for.
 .P
 The \fB-W\fP option can be used to set the characters (or multibyte
 sequences) which will be used to delimit the input words.
@@ -55,32 +63,33 @@ characters \fIa\fP \fIb\fP \fIt\fP \fIn\fP \fIv\fP \fIf\fP \fIr\fP and
 Quotations (single and double) in the input stream enable to ignore the
 word separators so that a group of words are taken as a single entity.
 .P
-Non printable characters in words that are not a delimiter are
+Non printable characters in words that are not delimiters are
 converted to their traditional form (\fI\\n\fP for end-of-line,
 \fI\\t\fP for tabulation...) by default.
 A single dot (\fI.\fP) is also used as a placeholder otherwise.
 .P
 \fBWarning\fP, \fBUTF-8\fP encoded codepoints are quietly converted
-into a dot (\fI.\fP) when the user locale is not \fBUTF-8\fP aware like
+into dots (\fI.\fP) when the user locale is not \fBUTF-8\fP aware like
 \fBPOSIX\fP or \fBC\fP by example.
 .P
 .SS "Moving among words"
-The cursor can then be moved in every direction by using the
+The cursor can be moved in every direction by using the
 keyboard arrow keys (\fB\(<-\fP,\fB\(da\fP,\fB\(ua\fP,\fB\(->\fP)
 or the \fIvi\fP direction keys (\fBh\fP, \fBj\fP, \fBk\fP and \fBl\fP).
-\fBHOME\fP, \fBEND\fP, \fBPgDn\fP and \fBPgUp\fP can also be used if
-available and have their traditional meanings.
+\fBHOME\fP, \fBEND\fP, \fBPgDn\fP and \fBPgUp\fP can also be used, if
+available, and have their traditional meanings.
 .SS "Searching for a word"
-The key \fB/\fP or the key combination \fB^F\fP (\fBCtrl-f\fP) can be
-used to initiate a search by prefix among the words after the cursor.
+The key \fB/\fP or the key combination \fB^F\fP (\fBCTRL+f\fP) can be
+used to initiate a search by prefix among the words (possibly altered
+by \fB-S\fP/\fB-I\fP/\fB-E\fP) located after the cursor.
 .P
-After that, the cursor attribute is modified and all characters
-entered 7s after this change go into a search buffer with the cursor
-moving immediately to the next word matching this prefix.
+After that, the cursor attributes are modified and all the characters
+entered up to 7s after this change are put in a search buffer and the cursor
+moves immediately to the next word matching this prefix.
 .P
-Any character entered in the 5s after this action completes this buffer,
-resets the 5s timer and advances the cursor again if another word matches
-the new buffer.
+Any character entered before a 5s timeout after this action completes
+this buffer and resets the 5s timer and advances the cursor again if
+another word matches the new buffer.
 .P
 As soon as the timer ends, the search mode is ended and the cursor
 regains its initial appearance.
@@ -148,15 +157,15 @@ l l l l .
 /@v@/@v
 .TE
 .P
-A \fB+\fP can also appear in the scroll bar in lieu of a \fB|\fP,
+A \fB+\fP can also appear in the scroll bar in lieu of the vertical bar,
 giving the relative position of the cursor line in the bunch of input
 words.
-.SS "Terminal resizing"
+.SS "Terminal resizing (also see BUGS/LIMITATIONS)"
 The windows is redrawn if the terminal is resized.
 The redrawing is actually done only 1s after the end of the resizing to
 avoid artefacts on screen.
 The cursor will remain on the current selected word but may be displayed
-on another place in the window.
+at another place in the window.
 .SS Unicode support
 This utility is Unicode aware and should be able to display correctly
 any Unicode character (even double-width ones) as long as the current
@@ -194,12 +203,15 @@ allowed:
   bar = 7/4,b             ; scroll bar attributes
   search_field = 0/6      ; search field attributes
   search_text = 7,bu      ; search text attributes
+  ; include = b           ; selectable color attributes
   exclude = 4/0,u         ; non-selectable color attributes
   tag = 0/5               ; tagged (selected) attributes
 
   special1 = 7/4,b        ; attributes for the special level 1
   special2 = bu           ; attributes for the special level 2
   special3 = /3,b         ; attributes for the special level 3
+  special4 = 7/4          ; attributes for the special level 4
+  special5 = 7/2,b        ; attributes for the special level 5
 
 [window]
   lines = 7               ; default number of lines of the window
@@ -242,7 +254,14 @@ columns@256
 .TE
 .SH OPTIONS
 .IP "\fB-h\fP or \fB-?\fP"
-Displays a log (\fB-h\fP) or short (\fB-?\fP) help message and exits.
+Displays a long (\fB-h\fP) or short (\fB-?\fP) help message and exits.
+.IP "\fB-f\fP \fIconfiguration_file\fB"
+This option gives the possibility to select an alternative configuration
+file.  If the given file doesn't exist or is not readable then the
+default values will be used.
+
+The \fB.smenu\fP files in the user's home directory and in the current
+directory, if present, will be ignored when this option is used.
 .IP "\fB-n\fP \fIlines\fB"
 Gives the maximum number of lines in the scrolling selection window.
 By default five lines at most are displayed and the other ones, if
@@ -269,6 +288,11 @@ Pre-Position the cursor to the first word matching the specified pattern.
 .IP * 2
 A \fB#\fP immediately followed by a \fBnumber\fP giving the initial
 position of the cursor (counting from 0).
+
+If the word at this position is excluded, then the first previous non
+excluded word is selected if it exists, otherwise the first non excluded
+word is selected.
+
 If this number if greater than the number of words, the cursor will be
 set on the latest selectable position.
 .IP * 2
@@ -279,7 +303,7 @@ A string starting with a \fB/\fP indicating that we want the cursor
 to be set to the first word matching the given regular expression.
 .IP * 2
 A \fBprefix\fP string indicating that we want the cursor to be set on the
-first word matching the string given (\fBCa\fP will match \fBCancel\fP
+first word matching the string given (\fBa\fP will match \fBCancel\fP
 by example).
 .PP
 Warning, when searching for a prefix or a regular expression, smenu
@@ -331,45 +355,110 @@ This mode is the same as column mode but without any column alignment.
 .IP \fB-r\fP
 Enables \fBENTER\fP to validate the selection even in search mode.
 .IP \fB-b\fP
-Replace all non-printable characters by a blank.
+Replaces all non-printable characters by a blank.
+.IP "\fB-a \fIPREFIX:ATTR\fP [\fIPREFIX:ATTR\fP...]"
+Sets the display attributes of the elements displayed and the cursor.
+
+At least one attribute prefixed attribute must be given.
+
+\fIPREFIX\fP can take the following values:
+.RS
+.IP \fIe\fP
+excluded words.
+.IP \fIi\fP
+included words.
+.IP \fIc\fP
+cursor.
+.IP \fIb\fP
+scroll bar.
+.IP \fIs\fP
+shift indicator.
+.IP \fIt\fP
+tagged words.
+.IP \fIsf\fP
+search field.
+.IP \fIst\fP
+search buffered text.
+.RE
+
+If more than one attribute is given, then they must be separated by
+spaces.
+
+See the \fB-1\fP option for the \fIATTR\fP syntax.
 .IP "\fB-i\fP \fIregex\fP"
 Sets the \fBi\fPnclude filter to match the selectable words.
-All the other words will become non-selectable (excluded)
+All the other words will become implicitly non-selectable (excluded)
+
+\fB-i\fP can be used more than once with cumulative effect.
 .IP "\fB-e\fP \fIregex\fP"
 Sets the \fBe\fPxclude filter to match the non-selectable words.
+All the other selectable words will become implicitly selectable (included)
+
+\fB-e\fP can be used more than once with cumulative effect.
 
 This filter has a higher priority than the include filter.
-.P
-The \fIregex\fP selections above are done before the possible word
-alterations realized with \fB-I\fP or \fB-E\fP (see below).
-.IP "\fB-C\fP [a|A|s|S|r|R|d|D][col1[-col2]],[col1[-col2]]..."
-In column mode, restricts the previous selections or de-selections to
-some columns.
+.PP
+.RS
+The \fIregex\fP selections made using \fB-i\fP and/or \fB-e\fP are done
+before the possible words alterations made by \fB-I\fP or \fB-E\fP
+(see below).
+.RE
+.IP "\fB-C\fP [\fIa\fP|\fIs\fP|\fIi\fP|\fIr\fP|\fId\fP|\fIe\fP] \
+<\fIcol selectors\fP>"
+
+\fBImportant notice\fP: the letters \fIa\fP,\fIs\fP,\fIr\fP and \fId\fP
+after \fB-C\fP are deprecated and will be removed in a future release.
+Please only use \fIi\fP and \fIe\fP.
+
+These letters are case independent so \fII\fP can be used in place of
+\fIi\fP per example.
+
+In column mode, This option allows to restrict the previous selections
+or de-selections to some columns.
 If no selection is given via \fB-i\fP and \fB-e\fP this option gives the
-possibility to select entire columns by giving their numbers (1 based).
+possibility to select entire columns by giving their numbers (1 based)
+of extended regular expressions.
 
-\fBa\fP/\fBA\fP, \fBs\fP/\fBS\fP or nothing select the specified ranges
-of columns. \fBr\fP/\fBR\fP or \fBd\fP/\fBD\fP select all but the
-specified columns.
+\fIa\fP, \fIs\fP and \fIi\fP or nothing select the specified ranges
+of columns.
+\fIr\fP, \fId\fP and \fIe\fP select all but the specified ranges
+of columns.
 
-The words in the selected columns will be considered as included and the
-others excluded.
+The words in the selected columns will be considered as \fBi\fPncluded
+And the others \fBe\fPxcluded.
 
-Example of columns selection: \fI-a2,3,5-7\fP forces the cursor to only
-navigate in columns \fB2\fP,\fB3\fP,\fB5\fP,\fB6\fP and \fB7\fP.
-If \fBd\fP was used in place of \fBa\fP, all the columns would have been
-selected \fBexcept\fP the columns \fB2\fP,\fB3\fP,\fB5\fP,\fB6\fP and
-\fB7\fP.
+A selection by regular expressions means that a column containing a word
+matching one of these expression will be included or excluded according
+to the letter given after the option.
+
+Regular expressions and column numbers can be freely mixed.
+
+Example of columns selection: \f(CB-Ci2,3,/X./,5-7\fP forces the cursor
+to only navigate in columns \fB2\fP,\fB3\fP,\fB5\fP,\fB6\fP and \fB7\fP
+and those containing a two characters word starting with '\fBX\fP'.
+If \fIe\fP was used in place of \fIi\fP, all the columns would have been
+selected \fBexcept\fP the columns \fB2\fP,\fB3\fP,\fB5\fP,\fB6\fP,\fB7\fP
+and those matching the extended regular expression '\f(CBX.\fP'.
 
 Spaces are allowed in the selection string if they are protected.
 
 The column mode is forced when this option is selected.
-.IP "\fB-R\fP [a|A|s|S|r|R|d|D][col1[-col2]],[col1[-col2]]..."
+.IP "\fB-R\fP [\fIa\fP|\fIs\fP|\fIi\fP|\fIr\fP|\fId\fP|\fIe\fP] \
+<\fIrow selectors\fP>"
 Similar to \fB-C\fP but for the rows.
 
 One difference though: this is the line mode which is forced by this
 option NOT the column mode.
-.IP "\fB-S\fP /\fIregex\fP/replacement string/[g][v][s]"
+
+\fBImportant notice\fP: As with \fB-C\fP, the letters
+\fIa\fP,\fIs\fP,\fIr\fP and \fId\fP after are deprecated and will be
+removed in a future release.  Please only use \fIi\fP and \fIe\fP.
+
+\fB-C\fP and \fB-R\fP can be used more than once in a cumulative manner:
+The selection mode (selection or de-selection) is given by the first
+occurrence of the options, the other occurrences will only update the
+selected or de-selected ranges.
+.IP "\fB-S\fP /\fIregex\fP/replacement string/[\fIg\fP][\fIv\fP][\fIs\fP]"
 Post-processes the words by applying a regular expression based
 substitution.
 The argument must be formatted as in the \fBsed\fP editor.
@@ -404,24 +493,27 @@ selected meanwhile
 will display the same as above but \f(CBR\fP will contain the original
 word \fIb\fP if \fIB\fP is selected.
 In both cases, only the word \fIB\fP will be searchable and not \fIb\fP.
-.RE
+.P
 Notice that a substitution resulting in an empty string is equivalent
 to removing the word.
-.IP "\fB-I\fP /\fIregex\fP/replacement string/[g][v][s]"
+.RE
+.IP "\fB-I\fP /\fIregex\fP/replacement string/[\fIg\fP][\fIv\fP][\fIs\fP]"
 Post-processes the \fBselectable\fP words by applying a regular
 expression based substitution (see \fB-S\fP for details).
-.IP "\fB-E\fP /\fIregex\fP/replacement string/[g][v][s]"
+.IP "\fB-E\fP /\fIregex\fP/replacement string/[\fIg\fP][\fIv\fP][\fIs\fP]"
 Post-processes the \fBexcluded\fP (or \fBnon-selectable\fP) words by
 applying a regular expression based substitution (see \fB-S\fP for
 details).
-.P
+.PP
+.RS
 The \fB/\fP separator that \fB-I\fP and \fB-E\fP are using above can be
 substituted by any other character except \fISPACE\fP, \fI\\t\fP,
 \fI\\f\fP, \fI\\n\fP, \fI\\r\fP and \fI\\v\fP.
-.P
+.PP
 In the four previous options, \fIregex\fP is a \fBPOSIX\fP
 \fBE\fPxtended \fBR\fPegular \fBE\fPxpression.
 For details, please refer to the \fBregex\fP manual page.
+.RE
 .IP "\fB-A\fP \fIregex\fP"
 In column mode, forces all words matching the given regular expression
 to be the first one in the displayed line.
@@ -500,6 +592,41 @@ even contain control character as in \f(CB$'\\n'\fP.
 A space is used as the default separator if none is given.
 .IP \fB-V\fP
 Displays the current version and quits.
+.TP
+\fB-x \fItype\fP [\fIword\fP] \fIdelay\fP
+.TQ
+\fB-X \fItype\fP [\fIword\fP] \fIdelay\fP
+Sets a timeout.
+Three types of timeout are possible:
+.RS
+.TP 10
+current:
+On timeout, the current cursor position determines the selection as
+if the \fBENTER\fP has been pressed
+.TP 10
+quit:
+On timeout, nothing is selected as if the \fBq\fP key has been pressed
+.TP 10
+word:
+On timeout, the word given after the type is selected.
+Note that this word doesn't need to be part of the words coming from
+the standard input.
+.PP
+Each type can be be shortened as a prefix of the full name ("cur" for
+"current" of "q" for "quit" per example).
+
+The delay must be set in seconds and cannot be above 99999 seconds.
+
+The remaining time (in seconds) is added at the end of the message
+displayed above the selection window and is updated in real time each
+second.
+
+Each key press except \fBENTER\fP, \fBq\fP, \fBQ\fP and \fB^C\fP resets
+the timer to its initial value.
+
+The \fB-X\fP version works like \fB-x\fP but no periodic remaining
+messages is displayed above the selection window.
+.RE
 .SH NOTES
 If tabulators (\fI\\t\fP) are embedded in the input, there is no way
 to replace them with the original number of spaces.
@@ -600,8 +727,16 @@ with the cursor on \fIQuit\fP and only the numbers and "Quit" selectable.
 The selected number or string will be available in \f(CBR\fP
 
 Try to understand it as an exercise.
-.SH BUGS
-None that I am aware of.
-If you found one, please tell me.
+.SH BUGS/LIMITATIONS
+Some terminal emulators, those notably based on VTE version later than
+0.35 (see https://github.com/GNOME/vte/commit/01380d), have a new feature
+that gives them the possibility to wrap/unwrap already displayed lines
+when resizing the window.
+
+As far as I known, there is no terminfo entry to disable that.
+
+On these types of terminals, the automatic re-display of the output of
+smenu will be disturbed and some artifacts may appear on the screen if
+the terminal window is resized.
 .SH AUTHORS
 \(co 2015 Pierre Gentile (p.gen.progs@gmail.com)

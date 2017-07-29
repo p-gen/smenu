@@ -25,14 +25,17 @@ AC_SEARCH_LIBS([tgetent], [tinfo curses ncursesw ncurses], [HAVE_CURSES=True])
 
 # Checks for header files.
 AC_HEADER_STDC
-AC_CHECK_HEADERS([langinfo.h locale.h stdlib.h string.h sys/ioctl.h sys/time.h termios.h unistd.h wchar.h])
+AC_CHECK_HEADERS([fcntl.h limits.h langinfo.h locale.h stdint.h stdlib.h \
+                  string.h sys/ioctl.h sys/time.h termios.h unistd.h wchar.h])
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_TYPE_SIZE_T
 
 # Checks for library functions.
 AC_FUNC_MALLOC
-AC_CHECK_FUNCS([mblen memset nl_langinfo pathconf regcomp setlocale strchr strdup strrchr])
+AC_FUNC_REALLOC
+AC_CHECK_FUNCS([mblen memset nl_langinfo pathconf regcomp \
+                setlocale strchr strrchr strspn])
 
 AC_CANONICAL_HOST
 # OS-specific tests

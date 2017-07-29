@@ -28,9 +28,9 @@ BuildRequires:  ncurses-devel
 BuildRoot:      %{_tmppath}/%{name}-%{version}-build
 
 %description
-This simple tool reads words from the standard input, presents them in
-a cool interactive window after the current line on the terminal and writes
-the selected word, if any, on the standard output.
+This simple tool reads words from a file or the standard input, presents
+them in a cool interactive window after the current line on the terminal
+and writes the selected word, if any, on the standard output.
 
 After having unsuccessfully searched the NET for what I wanted, I
 decided to try to write my own.

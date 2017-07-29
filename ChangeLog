@@ -1,3 +1,19 @@
+- Bump to version 0.9.10
+* The words acquisition is rewritten and splitted in multiple phases
+* Add the capacity to (de)select rows an columns containing regexes
+* -i, -e, -C and -R can be used more than once and have a cumulative effect
+* Bugfix: -s is able to jump to non selectable words
+* Bugfix: The attributes are not overloaded when reading configuration files
+* Bugfix: the right bar is too far right in some cases.
+* Bugfix: the right shift indicator is omitted in some cases
+* Add a -x|-X option to set a timeout in seconds
+* Add a -f option to select an alternative configuration file
+* Add a -a option to set the attributes of the displayed elements
+* Add more controls in the selection parser
+* smenu can now read words directly from a file given as parameter
+* Rewrite the replace function used by -S/-I/-E with a more sed-like one
+* Searches should always consider the visual aspect of words (-S/-I/-E)
+
 Thu Dec 22 20:48:17 UTC 2016 - p.gen.progs@gmail.com
 
 - Version 0.9.9
