@@ -5626,8 +5626,6 @@ main(int argc, char * argv[])
       case 'x':
         if (optarg && *optarg != '-')
         {
-          int count = 1;
-
           if (strprefix("current", optarg))
             timeout.type = CURRENT;
           else if (strprefix("quit", optarg))
@@ -6359,15 +6357,10 @@ main(int argc, char * argv[])
                      mb_buffer, &is_last, &toggle, &langinfo, &win, &limits))
     != NULL)
   {
-    wchar_t * tmpw;
-    int       s;
-    char *    expanded_word;
-    char *    new_expanded_word;
-    size_t    len;
-    int       selectable;
-    int       is_first = 0;
-    int       special_level;
-    int       row_inc_matched = 0;
+    int selectable;
+    int is_first = 0;
+    int special_level;
+    int row_inc_matched = 0;
 
     if (*word == '\0')
       continue;
