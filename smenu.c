@@ -7033,6 +7033,7 @@ main(int argc, char * argv[])
 
     /* Total space taken by all the columns plus the gutter */
     /* """""""""""""""""""""""""""""""""""""""""""""""""""" */
+    win.max_width = 0;
     for (col_index = 0; col_index < cols_number; col_index++)
       win.max_width += col_max_size[col_index] + 1;
 
