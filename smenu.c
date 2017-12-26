@@ -2510,8 +2510,8 @@ build_repl_string(char * to_match, char * repl, size_t match_start,
             size_t index = (*repl) - '0' - 1 + offset;
             size_t delta = subs_a[index].end - subs_a[index].start;
 
-            if (allocated < rsize + delta)
-              str = xrealloc(str, allocated += (delta + 16));
+              if (allocated <= rsize + delta)
+                str = xrealloc(str, allocated += (delta + 16));
 
             memcpy(str + rsize, to_match + subs_a[index].start, delta);
 
@@ -2536,8 +2536,8 @@ build_repl_string(char * to_match, char * repl, size_t match_start,
         {
           size_t delta = match_end - match_start;
 
-          if (allocated < rsize + delta)
-            str = xrealloc(str, allocated += (delta + 16));
+            if (allocated <= rsize + delta)
+              str = xrealloc(str, allocated += (delta + 16));
 
           memcpy(str + rsize, to_match + match_start, delta);
 
