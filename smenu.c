@@ -4345,7 +4345,8 @@ disp_lines(word_t * word_a, win_t * win, toggle_t * toggle, int current,
 
       /* If we want to display the gutter */
       /* """""""""""""""""""""""""""""""" */
-      else if (!word_a[i].is_last && win->col_sep && win->tab_mode)
+      else if (!word_a[i].is_last && win->col_sep
+               && (win->tab_mode || win->col_mode))
       {
         if (langinfo->utf8)
           (void)fputs(broken_line_sym, stdout);
