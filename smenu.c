@@ -1985,13 +1985,13 @@ rtrim(char * str, const char * trim_str, size_t min)
     str[--len] = '\0';
 }
 
-/* ============================================ */
-/* Returns 1 if a string is only made of spaces */
-/* ============================================ */
+/* ===================================================== */
+/* Returns 1 if a string is empty or only made of spaces */
+/* ===================================================== */
 static int
 isempty(const char * s)
 {
-  while (*s)
+  while (*s != '\0')
   {
     if (!isspace(*s))
       return 0;
