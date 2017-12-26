@@ -1968,7 +1968,7 @@ ltrim(char * str, const char * trim_str)
   size_t i;
 
   if (begin > 0)
-    for (i           = begin; i <= len; ++i)
+    for (i = begin; i <= len; ++i)
       str[i - begin] = str[i];
 }
 
@@ -2617,7 +2617,7 @@ replace(char * to_match, sed_t * sed)
     {
       if (match_nb > 0)
       {
-        for (index                  = 0; index < matches_a[0].start; index++)
+        for (index = 0; index < matches_a[0].start; index++)
           word_buffer[target_len++] = to_match[index];
 
         for (match = 0; match < match_nb; match++)
@@ -3295,7 +3295,7 @@ get_scancode(unsigned char * s, int max)
 
       i = 2;
       while (i < max && (c = my_fgetc(stdin)) != EOF)
-        s[i++]             = c;
+        s[i++] = c;
     }
     else
     {
@@ -3344,7 +3344,7 @@ get_bytes(FILE * input, char * mb_buffer, ll_t * word_delims_list,
   if (langinfo->utf8 && ((n = count_leading_set_bits(byte)) > 1))
   {
     while (last < n && (byte = my_fgetc(input)) != EOF && (byte & 0xc0) == 0x80)
-      mb_buffer[last++]      = byte;
+      mb_buffer[last++] = byte;
 
     if (byte == EOF)
       return EOF;
@@ -4279,8 +4279,9 @@ disp_lines(word_t * word_a, win_t * win, toggle_t * toggle, int current,
   /* display the left arrow indicating that the first displayed column    */
   /* is not the first one.                                                */
   /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-  if (len > 1 && ((win->col_mode || win->line_mode)
-                  && win->max_width > term->ncolumns - 2))
+  if (len > 1
+      && ((win->col_mode || win->line_mode)
+          && win->max_width > term->ncolumns - 2))
   {
     if (win->first_column > 0)
     {
@@ -5096,10 +5097,10 @@ main(int argc, char * argv[])
   int * col_max_size = NULL;      /* Array of maximum sizes of each column in *
                                    * column mode                              */
 
-  int word_real_max_size = 0; /* size of the longer word after expansion */
-  int cols_real_max_size = 0; /* Max real width of all columns used when *
-                               * -w and -c are both set                  */
-  int cols_max_size = 0;      /* Same as above for the columns widths    */
+  size_t word_real_max_size = 0; /* size of the longer word after expansion */
+  int    cols_real_max_size = 0; /* Max real width of all columns used when *
+                                  * -w and -c are both set                  */
+  int cols_max_size = 0;         /* Same as above for the columns widths    */
 
   int col_index;   /* Index of the current column when reading words, used in *
                     * column mode                                             */
@@ -5110,7 +5111,7 @@ main(int argc, char * argv[])
   unsigned char * buffer = xmalloc(16); /* Input buffer                    */
 
   char * search_buf = NULL; /* Search buffer                         */
-  int    search_pos = 0;    /* Current position in the search buffer */
+  size_t search_pos = 0;    /* Current position in the search buffer */
 
   struct sigaction sa; /* Signal structure */
 
@@ -5182,7 +5183,7 @@ main(int argc, char * argv[])
 
   win.sel_sep = NULL;
 
-  for (index                = 0; index < 5; index++)
+  for (index = 0; index < 5; index++)
     win.special_attr[index] = init_attr;
 
   /* Default limits initialization */
@@ -5692,7 +5693,7 @@ main(int argc, char * argv[])
 
       case 'T':
         if (optarg != NULL)
-          win.sel_sep   = xstrdup(optarg);
+          win.sel_sep = xstrdup(optarg);
         toggle.taggable = 1;
         break;
 
@@ -5936,9 +5937,8 @@ main(int argc, char * argv[])
         break;
       case WORD:
         timeout_message =
-          xcalloc(1,
-                  4 + strlen("[     s before selecting the word ")
-                    + strlen(timeout_word));
+          xcalloc(1, 4 + strlen("[     s before selecting the word ")
+                       + strlen(timeout_word));
         strcpy(timeout_message, "[     s before selecting the word \"");
         strcat(timeout_message, timeout_word);
         strcat(timeout_message, "\"]");
@@ -6065,7 +6065,7 @@ main(int argc, char * argv[])
     col_real_max_size = xmalloc(COLSCHUNK * sizeof(int));
     col_max_size      = xmalloc(COLSCHUNK * sizeof(int));
 
-    for (ci                 = 0; ci < COLSCHUNK; ci++)
+    for (ci = 0; ci < COLSCHUNK; ci++)
       col_real_max_size[ci] = col_max_size[ci] = 0;
 
     col_index = cols_number = 0;
@@ -6731,7 +6731,7 @@ main(int argc, char * argv[])
       /* '''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''' */
       if (is_first && count > 0)
         word_a[count - 1].is_last = 1;
-      word_a[count].is_last       = is_last;
+      word_a[count].is_last = is_last;
       if (is_last)
         col_index = 0;
     }
@@ -7039,7 +7039,7 @@ main(int argc, char * argv[])
 
       s1         = (int)strlen(word_a[wi].str);
       word_width = mbstowcs(NULL, word_a[wi].str, 0);
-      s2 = wcswidth((w = mb_strtowcs(word_a[wi].str)), word_width);
+      s2         = wcswidth((w = mb_strtowcs(word_a[wi].str)), word_width);
       free(w);
       temp = xcalloc(1, col_real_max_size[col_index] + s1 - s2 + 1);
       memset(temp, ' ', col_max_size[col_index] + s1 - s2);
@@ -7073,7 +7073,7 @@ main(int argc, char * argv[])
 
       s1         = (int)strlen(word_a[wi].str);
       word_width = mbstowcs(NULL, word_a[wi].str, 0);
-      s2 = wcswidth((w = mb_strtowcs(word_a[wi].str)), word_width);
+      s2         = wcswidth((w = mb_strtowcs(word_a[wi].str)), word_width);
       free(w);
       temp = xcalloc(1, tab_real_max_size + s1 - s2 + 1);
       memset(temp, ' ', tab_max_size + s1 - s2);
@@ -7518,8 +7518,8 @@ main(int argc, char * argv[])
     {
       if (got_timeout_tick)
       {
-        unsigned i;
-        char *   timeout_string;
+        int    i;
+        char * timeout_string;
 
         got_timeout_tick = 0;
 
@@ -7575,7 +7575,7 @@ main(int argc, char * argv[])
       if (timeout.initial_value && buffer[0] != 0x0d && buffer[0] != 'q'
           && buffer[0] != 'Q' && buffer[0] != 3)
       {
-        unsigned i;
+        int i;
 
         char * timeout_string;
 
