@@ -276,8 +276,8 @@ right_margin_putp(char * s1, char * s2, langinfo_t * langinfo, term_t * term,
                   win_t * win, int line, int offset);
 
 static int
-search_nex(tst_node_t * tst, word_t * word_a, char * search_buf,
-           int after_only);
+search_next(tst_node_t * tst, word_t * word_a, char * search_buf,
+            int after_only);
 
 static void
 sig_handler(int s);
