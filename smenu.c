@@ -2691,7 +2691,10 @@ replace(char * to_match, sed_t * sed)
         subs_max++;
       }
     }
-    p += m[0].rm_eo;
+    if (m[0].rm_eo > 0)
+      p += m[0].rm_eo;
+    else
+      p++; /* Empty match */
   }
 
 fail:
