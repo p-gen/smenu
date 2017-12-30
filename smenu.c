@@ -477,9 +477,11 @@ struct win_s
   int asked_max_lines; /* requested number of lines in the window */
   int max_lines;       /* effective number of lines in the window */
   int max_cols;        /* max number of words in a single line    */
-  int max_width;       /* max line length. In column, tab or line *
+  int real_max_width;  /* max line length. In column, tab or line *
                         * mode it can be greater than the         *
                         * terminal width                          */
+  int max_width;       /* max line length or the terminal width   *
+                        * minus 2 if less                         */
   int    offset;       /* window offset user when centered        */
   char * sel_sep;      /* output separator when tags are enabled  */
 
@@ -3964,12 +3966,19 @@ build_metadata(word_t * word_a, term_t * term, int count, win_t * win)
       tab_count++;           /* We've seen another word in the line */
     }
 
-    /* If not in column mode, we need to calculate win->max_width at it */
-    /* hasn't bee already done                                          */
-    /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-    if (!win->col_mode)
-      if (len > win->max_width)
+    /* If not in column mode, we need to calculate win->(real_)max_width */
+    /* as it hasn't been already done                                    */
+    /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+    if (len > win->max_width)
+    {
+      if (len > term->ncolumns)
+        win->max_width = term->ncolumns - 2;
+      else
         win->max_width = len;
+    }
+
+    if (len > win->real_max_width)
+      win->real_max_width = len;
 
     i++;
   }
@@ -4284,7 +4293,7 @@ disp_lines(word_t * word_a, win_t * win, toggle_t * toggle, int current,
   /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
   if (len > 1
       && ((win->col_mode || win->line_mode)
-          && win->max_width > term->ncolumns - 2))
+          && win->real_max_width > term->ncolumns - 2))
   {
     if (win->first_column > 0)
     {
@@ -7054,9 +7063,15 @@ main(int argc, char * argv[])
 
     /* Total space taken by all the columns plus the gutter */
     /* """""""""""""""""""""""""""""""""""""""""""""""""""" */
-    win.max_width = 0;
+    win.max_width      = 0;
+    win.real_max_width = 0;
     for (col_index = 0; col_index < cols_number; col_index++)
-      win.max_width += col_max_size[col_index] + 1;
+    {
+      if (win.max_width + col_max_size[col_index] + 1 <= term.ncolumns - 2)
+        win.max_width += col_max_size[col_index] + 1;
+
+      win.real_max_width += col_max_size[col_index] + 1;
+    }
 
     col_index = 0;
     for (wi = 0; wi < count; wi++)
