@@ -6905,10 +6905,9 @@ main(int argc, char * argv[])
       }
     }
 
-    /* A substitution leading to an empty word or to a word      */
-    /* consisting only of spaces only is invalid in column mode. */
-    /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-    if (win.col_mode && isempty(word->str))
+    /* A substitution leading to an empty word is invalid in column mode. */
+    /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+    if (win.col_mode && *(word->str) == '\0')
       exit(EXIT_FAILURE);
 
     /* Alter the word just read be replacing special chars  by their */
@@ -7022,8 +7021,9 @@ main(int argc, char * argv[])
   }
 
   /* Third (compress) pass: remove all empty word and words containing */
-  /* only spaces.                                                      */
+  /* only spaces when not in column mode.                              */
   /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+  if (!win.col_mode)
   {
     int offset;
 
