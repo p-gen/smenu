@@ -45,7 +45,7 @@
 #include <sys/time.h>
 
 /* ******** */
-/* typedefs */
+/* Typedefs */
 /* ******** */
 
 typedef struct charsetinfo_s charsetinfo_t;
@@ -306,7 +306,7 @@ static int
 delims_cmp(const void * a, const void * b);
 
 /* ***************** */
-/* emums and structs */
+/* Emums and structs */
 /* ***************** */
 
 /* Various filter pseudo constants */
@@ -596,7 +596,7 @@ char *    timeout_seconds; /* string containing the number of remaining     *
 int quiet_timeout = 0;     /* 1 when we want no message to be displayed.    */
 
 /* ************************************************************************ */
-/* custom fgetc/ungetc implementation able to unget more than one character */
+/* Custom fgetc/ungetc implementation able to unget more than one character */
 /* ************************************************************************ */
 
 enum
@@ -609,7 +609,7 @@ static char getc_buffer[GETC_BUFF_SIZE] = { '\0' };
 static size_t next_buffer_pos = 0; /* next free position in the getc buffer */
 
 /* ====================================== */
-/* get a (possibly pushed-back) character */
+/* Get a (possibly pushed-back) character */
 /* ====================================== */
 static int
 my_fgetc(FILE * input)
@@ -618,7 +618,7 @@ my_fgetc(FILE * input)
 }
 
 /* ============================ */
-/* push character back on input */
+/* Push character back on input */
 /* ============================ */
 static void
 my_ungetc(int c)
@@ -882,7 +882,7 @@ help(win_t * win, term_t * term, int last_line, toggle_t * toggle)
     if ((offset = win->offset + win->max_width / 2 - help_len / 2) > 0)
       printf("%*s", offset, " ");
 
-  /* print the different objects forming the help line */
+  /* Print the different objects forming the help line */
   /* """"""""""""""""""""""""""""""""""""""""""""""""" */
   for (index = 0; index < entries_nb; index++)
   {
@@ -1017,7 +1017,7 @@ xstrdup(const char * p)
 }
 
 /* ********************************** */
-/* attributes string parsing function */
+/* Attributes string parsing function */
 /* ********************************** */
 
 /* ================================ */
@@ -1374,7 +1374,7 @@ ini_load(const char * filename, win_t * win, term_t * term, limits_t * limits,
 
   error = 0;
 
-  /* skip blank lines */
+  /* Skip blank lines */
   /* """""""""""""""" */
   while (fscanf(f, "%*[\n]") == 1)
   {
@@ -1410,7 +1410,7 @@ ini_load(const char * filename, win_t * win, term_t * term, limits_t * limits,
       /* To silence the compiler about unused results */
     }
 
-    /* skip blank lines */
+    /* Skip blank lines */
     /* """""""""""""""" */
     while (fscanf(f, "%*[\n]") == 1)
     {
@@ -1472,7 +1472,7 @@ make_ini_path(char * name, char * base)
 }
 
 /* ****************** */
-/* interval functions */
+/* Interval functions */
 /* ****************** */
 
 /* ===================== */
@@ -1509,7 +1509,7 @@ interval_comp(void * a, void * b)
 }
 
 /* =============================== */
-/* swap the value of two intervals */
+/* Swap the value of two intervals */
 /* =============================== */
 static void
 interval_swap(void * a, void * b)
@@ -1710,7 +1710,7 @@ ll_partition(ll_node_t * l, ll_node_t * h, int (*comp)(void *, void *),
   /* pivot) to left of pivot and all greater elements to right of pivot     */
   /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
 
-  /* set pivot as h element */
+  /* Set pivot as h element */
   /* """""""""""""""""""""" */
   void * x = h->data;
 
@@ -1960,7 +1960,7 @@ get_cursor_position(int * const r, int * const c)
 /* *********************************************** */
 
 /* ======================= */
-/* trim leading characters */
+/* Trim leading characters */
 /* ======================= */
 static void
 ltrim(char * str, const char * trim_str)
@@ -1975,7 +1975,7 @@ ltrim(char * str, const char * trim_str)
 }
 
 /* ================================================= */
-/* trim trailing characters                          */
+/* Trim trailing characters                          */
 /* The resulting string will have at least min bytes */
 /* even if trailing spaces remain.                   */
 /* ================================================= */
@@ -2155,7 +2155,7 @@ parse_selectors(char * str, int * filter, char * unparsed,
       break;
   }
 
-  /* set ptr to the start of the interval list to parse */
+  /* Set ptr to the start of the interval list to parse */
   /* """""""""""""""""""""""""""""""""""""""""""""""""" */
   ptr = str + start;
 
@@ -2186,8 +2186,8 @@ parse_selectors(char * str, int * filter, char * unparsed,
       return;
     }
 
-    /* Forbid the empty patterns (iex: xxx,,yyy) */
-    /* """"""""""""""""""""""""""""""""""""""""" */
+    /* Forbid the empty patterns (ex: xxx,,yyy) */
+    /* """""""""""""""""""""""""""""""""""""""" */
     if (oldptr == ptr)
     {
       strcpy(unparsed, ptr);
@@ -2230,7 +2230,7 @@ parse_selectors(char * str, int * filter, char * unparsed,
     }
     else if (delim2 != '\0' && (!isdigit(delim1) || !isdigit(delim2)))
     {
-      /* both delimiter must be numeric if delim2 exist */
+      /* Both delimiter must be numeric if delim2 exist */
       /* """""""""""""""""""""""""""""""""""""""""""""" */
       strcpy(unparsed, str + start);
       return;
@@ -2250,7 +2250,7 @@ parse_selectors(char * str, int * filter, char * unparsed,
 
       if (first < 1 || second < 1)
       {
-        /* both interval boundaries must be strictly positive */
+        /* Both interval boundaries must be strictly positive */
         /* """""""""""""""""""""""""""""""""""""""""""""""""" */
         strcpy(unparsed, str + start);
         return;
@@ -2331,7 +2331,7 @@ merge_intervals(ll_t * list)
     /* """"""""""""""""""""""""""""""" */
     ll_sort(list, interval_comp, interval_swap);
 
-    /* step 2: merge the list by merging the consecutive intervals */
+    /* Step 2: merge the list by merging the consecutive intervals */
     /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
     node1 = list->head;
     node2 = node1->next;
@@ -2343,7 +2343,7 @@ merge_intervals(ll_t * list)
 
       if (data1->high >= data2->low - 1)
       {
-        /* interval 1 overlaps interval 2 */
+        /* Interval 1 overlaps interval 2 */
         /* '''''''''''''''''''''''''''''' */
         if (data2->high >= data1->high)
           data1->high = data2->high;
@@ -2353,7 +2353,7 @@ merge_intervals(ll_t * list)
       }
       else
       {
-        /* no overlap */
+        /* No overlap */
         /* '''''''''' */
         node1 = node2;
         node2 = node2->next;
@@ -2575,7 +2575,7 @@ build_repl_string(char * to_match, char * repl, size_t match_start,
 /*                                                                        */
 /* to_match: original string                                              */
 /* sed:      composite variable containing the regular expression, a      */
-/*           substitution string anv various other informations.          */
+/*           substitution string and various other informations.          */
 /* output:   destination buffer                                           */
 /*                                                                        */
 /* RC:                                                                    */
@@ -2716,7 +2716,7 @@ strip_ansi_color(char * s, toggle_t * toggle)
     {
       while ((*s != '\0') && (*s++ != 'm'))
       {
-        /* do nothing */
+        /* Do nothing */
       }
     }
     /* Convert a single \x1b in '.' */
@@ -3084,7 +3084,7 @@ tst_traverse(tst_node_t * p, int (*callback)(void *), int first_call)
 }
 
 /* ============================================ */
-/* search a complete string in the Ternary tree */
+/* Search a complete string in the Ternary tree */
 /* ============================================ */
 static void *
 tst_search(tst_node_t * root, wchar_t * w)
@@ -3111,7 +3111,7 @@ tst_search(tst_node_t * root, wchar_t * w)
 }
 
 /* =============================================================== */
-/* search all strings beginning with the same prefix               */
+/* Search all strings beginning with the same prefix               */
 /* the callback function will be applied to each of theses strings */
 /* returns NULL if no string matched the prefix                    */
 /* =============================================================== */
@@ -3334,7 +3334,7 @@ get_bytes(FILE * input, char * mb_buffer, ll_t * word_delims_list,
   int last = 0;
   int n;
 
-  /* read the first byte */
+  /* Read the first byte */
   /* """"""""""""""""""" */
   byte = my_fgetc(input);
 
@@ -3420,7 +3420,8 @@ expand(char * src, char * dest, langinfo_t * langinfo)
         /* """""""""""""""""""""""""""""""""""""""""""""""" */
         do
         {
-          /* skip this byte. */
+          /* Skip this byte. */
+          /* ''''''''''''''' */
         } while (--n && ('\0' != *(src++)));
 
         *(ptr++) = '.';
@@ -3524,7 +3525,7 @@ get_word(FILE * input, ll_t * word_delims_list, ll_t * record_delims_list,
     byte = get_bytes(input, mb_buffer, word_delims_list, toggle, langinfo);
   }
 
-  /* allocate initial word storage space */
+  /* Allocate initial word storage space */
   /* """"""""""""""""""""""""""""""""""" */
   temp = xmalloc(wordsize = CHARSCHUNK);
 
@@ -3602,12 +3603,12 @@ get_word(FILE * input, ll_t * word_delims_list, ll_t * record_delims_list,
       }
     else
     {
-      /* manage double quotes */
+      /* Manage double quotes */
       /* """""""""""""""""""" */
       if (byte == '"' && !is_squote)
         is_dquote = !is_dquote;
 
-      /* manage single quotes */
+      /* Manage single quotes */
       /* """""""""""""""""""" */
       if (byte == '\'' && !is_dquote)
         is_squote = !is_squote;
@@ -3857,7 +3858,7 @@ set_win_start_end(win_t * win, int current, int last)
     win->end = count - 1;
   else
   {
-    /* in help mode we must not modify the windows start/end position as */
+    /* In help mode we must not modify the windows start/end position as */
     /* It must be redrawn exactly as it was before.                      */
     /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
     if (!help_mode)
@@ -4473,7 +4474,7 @@ disp_lines(word_t * word_a, win_t * win, toggle_t * toggle, int current,
         break;
     }
 
-    /* next word */
+    /* Next word */
     /* """"""""" */
     i++;
   }
@@ -4727,7 +4728,7 @@ egetopt(int nargc, char ** nargv, char * ostr)
     if (*place == '\0')
       ++optind;
 
-    TELL("Illegal option -- "); /* byebye */
+    TELL("Illegal option -- "); /* bye bye */
   }
 
   /* If there is no argument indicator, then we don't even try to */
@@ -5032,12 +5033,12 @@ main(int argc, char * argv[])
   ll_t * exclude_sed_list = NULL; /* idem for -E                            */
 
   ll_t * inc_col_interval_list = NULL; /* list of included or           */
-  ll_t * exc_col_interval_list = NULL; /* excluded inumerical intervals */
+  ll_t * exc_col_interval_list = NULL; /* excluded numerical intervals */
   ll_t * inc_row_interval_list = NULL; /* for lines and columns         */
   ll_t * exc_row_interval_list = NULL;
 
-  ll_t * inc_col_regex_list = NULL; /* same for lines and coluns specified */
-  ll_t * exc_col_regex_list = NULL; /* by regular expressions              */
+  ll_t * inc_col_regex_list = NULL; /* same for lines and columns specified */
+  ll_t * exc_col_regex_list = NULL; /* by regular expressions               */
   ll_t * inc_row_regex_list = NULL;
   ll_t * exc_row_regex_list = NULL;
 
@@ -5537,7 +5538,7 @@ main(int argc, char * argv[])
           txt_attr_t   attr;
           txt_attr_t * attr_to_set;
 
-          /* flags to check if an attribute is already set */
+          /* Flags to check if an attribute is already set */
           /* """"""""""""""""""""""""""""""""""""""""""""" */
           int inc_attr_set   = 0; /* included words                */
           int exc_attr_set   = 0; /* excluded words                */
@@ -6357,8 +6358,9 @@ main(int argc, char * argv[])
   else
     exc_interval = NULL;
 
+  /* First pass:                                                  */
   /* Get and process the input stream words                       */
-  /* In this first pass, the different actions will occur:        */
+  /* In this pass, the different actions will occur:              */
   /* - A new word is read from stdin                              */
   /* - A new SOL and or EOL is possibly set                       */
   /* - A special level is possibly affected to the word just read */
@@ -6433,7 +6435,7 @@ main(int argc, char * argv[])
         /* '''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''' */
         line_count++;
 
-        /* look if we need to use the next interval of the list */
+        /* Look if we need to use the next interval of the list */
         /* '''''''''''''''''''''''''''''''''''''''''''''''''''' */
         if (inc_interval_node && line_count > inc_interval->high)
         {
@@ -6478,7 +6480,7 @@ main(int argc, char * argv[])
     /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
     if (selectable != EXCLUDE_MARK)
     {
-      /* look in the excluded list of regular expressions */
+      /* Look in the excluded list of regular expressions */
       /* '''''''''''''''''''''''''''''''''''''''''''''''' */
       if (exc_row_regex_list != NULL)
       {
@@ -7214,7 +7216,7 @@ main(int argc, char * argv[])
     last_selectable--;
 
   if (pre_selection_index == NULL)
-    /* option -s was not used */
+    /* Option -s was not used */
     /* """""""""""""""""""""" */
     current = first_selectable;
   else if (*pre_selection_index == '/')
