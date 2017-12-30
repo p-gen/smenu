@@ -513,6 +513,18 @@ substituted by any other character except \fISPACE\fP, \fI\\t\fP,
 In the four previous options, \fIregex\fP is a \fBPOSIX\fP
 \fBE\fPxtended \fBR\fPegular \fBE\fPxpression.
 For details, please refer to the \fBregex\fP manual page.
+.P
+.RE
+If a post-processing action (\fB-S\fP/\fB-I\fP/\fB-E\fP) results in an
+empty or a word containing only spaces, then we have two cases:
+.RS
+.IP "in column mode:"
+Substitutions involving empty words can lead to misalignments, so it is
+necessary to prohibit them and terminate the program.
+These substitutions have to be made with other tools before using this
+utility.
+.IP "otherwise:"
+The word is simply removed.
 .RE
 .IP "\fB-A\fP \fIregex\fP"
 In column mode, forces all words matching the given regular expression

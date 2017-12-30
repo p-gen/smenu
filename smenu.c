@@ -2474,92 +2474,95 @@ build_repl_string(char * to_match, char * repl, size_t match_start,
   char * str       = xmalloc(allocated);
   int    special   = 0;
   size_t offset    = match * subs_nb; /* offset of the 1st sub      *
-                                         * corresponding to the match */
+                                       * corresponding to the match */
 
-  while (*repl)
-  {
-    switch (*repl)
+  if (*repl == '\0')
+    str = xstrdup("");
+  else
+    while (*repl)
     {
-      case '\\':
-        if (special)
-        {
-          if (allocated == rsize)
-            str      = realloc(str, allocated += 16);
-          str[rsize] = '\\';
-          rsize++;
-          str[rsize] = '\0';
-          special    = 0;
-        }
-        else
-          special = 1;
-        break;
-
-      case '1':
-      case '2':
-      case '3':
-      case '4':
-      case '5':
-      case '6':
-      case '7':
-      case '8':
-      case '9':
-        if (special)
-        {
-          if ((*repl) - '0' <= subs_nb)
+      switch (*repl)
+      {
+        case '\\':
+          if (special)
           {
-            size_t index = (*repl) - '0' - 1 + offset;
-            size_t delta = subs_a[index].end - subs_a[index].start;
+            if (allocated == rsize)
+              str = xrealloc(str, allocated += 16);
+            str[rsize] = '\\';
+            rsize++;
+            str[rsize] = '\0';
+            special    = 0;
+          }
+          else
+            special = 1;
+          break;
+
+        case '1':
+        case '2':
+        case '3':
+        case '4':
+        case '5':
+        case '6':
+        case '7':
+        case '8':
+        case '9':
+          if (special)
+          {
+            if ((*repl) - '0' <= subs_nb)
+            {
+              size_t index = (*repl) - '0' - 1 + offset;
+              size_t delta = subs_a[index].end - subs_a[index].start;
 
               if (allocated <= rsize + delta)
                 str = xrealloc(str, allocated += (delta + 16));
 
-            memcpy(str + rsize, to_match + subs_a[index].start, delta);
+              memcpy(str + rsize, to_match + subs_a[index].start, delta);
 
-            rsize += delta;
+              rsize += delta;
+              str[rsize] = '\0';
+            }
+
+            special = 0;
+          }
+          else
+          {
+            if (allocated == rsize)
+              str = xrealloc(str, allocated += 16);
+            str[rsize] = *repl;
+            rsize++;
             str[rsize] = '\0';
           }
+          break;
 
-          special = 0;
-        }
-        else
-        {
-          if (allocated == rsize)
-            str      = xrealloc(str, allocated += 16);
-          str[rsize] = *repl;
-          rsize++;
-          str[rsize] = '\0';
-        }
-        break;
-
-      case '&':
-        if (!special)
-        {
-          size_t delta = match_end - match_start;
+        case '&':
+          if (!special)
+          {
+            size_t delta = match_end - match_start;
 
             if (allocated <= rsize + delta)
               str = xrealloc(str, allocated += (delta + 16));
 
-          memcpy(str + rsize, to_match + match_start, delta);
+            memcpy(str + rsize, to_match + match_start, delta);
 
-          rsize += delta;
+            rsize += delta;
+            str[rsize] = '\0';
+
+            break;
+          }
+
+          /* No break here, '&' must be treated as a normal */
+          /* character when protected.                      */
+          /* '''''''''''''''''''''''''''''''''''''''''''''' */
+
+        default:
+          if (allocated == rsize)
+            str = xrealloc(str, allocated += 16);
+          str[rsize] = *repl;
+          rsize++;
           str[rsize] = '\0';
-
-          break;
-        }
-
-      /* No break here, '&' must be treated as a normal */
-      /* character when protected.                      */
-      /* '''''''''''''''''''''''''''''''''''''''''''''' */
-
-      default:
-        if (allocated == rsize)
-          str      = xrealloc(str, allocated += 16);
-        str[rsize] = *repl;
-        rsize++;
-        str[rsize] = '\0';
+      }
+      repl++;
     }
-    repl++;
-  }
   return str;
 }
 
@@ -6888,6 +6891,12 @@ main(int argc, char * argv[])
       }
     }
 
+    /* A substitution leading to an empty word or to a word      */
+    /* consisting only of spaces only is invalid in column mode. */
+    /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+    if (win.col_mode && isempty(word->str))
+      exit(EXIT_FAILURE);
+
     /* Alter the word just read be replacing special chars  by their */
     /* escaped equivalents.                                          */
     /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
@@ -6985,9 +6994,6 @@ main(int argc, char * argv[])
       else
         col_index++;
     }
-  next_word:
-  {
-  }
   }
 
   /* Set the minimum width of a column (-t option) */
@@ -7001,12 +7007,33 @@ main(int argc, char * argv[])
       min_size = term.ncolumns - 2;
   }
 
+  /* Third (compress) pass: remove all empty word and words containing */
+  /* only spaces.                                                      */
+  /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+  {
+    int offset;
+
+    offset = 0;
+    for (wi = 0; wi < count; wi++)
+    {
+      while (wi + offset < count && isempty(word_a[wi + offset].str))
+        offset++;
+
+      if (offset > 0)
+        word_a[wi] = word_a[wi + offset];
+    }
+    count -= offset;
+  }
+
+  if (count == 0)
+    exit(EXIT_FAILURE);
+
   /* Allocate the space for the satellites arrays */
   /* """""""""""""""""""""""""""""""""""""""""""" */
   line_nb_of_word_a    = xmalloc(count * sizeof(int));
   first_word_in_line_a = xmalloc(count * sizeof(int));
 
-  /* third pass:                                                          */
+  /* Fourth pass:                                                          */
   /* When in column or tabulating mode, we need to adjust the length of   */
   /* all the words by adding the right number of spaces so that they will */
   /* be aligned correctly. In column mode the size of each column is      */
@@ -7085,9 +7112,9 @@ main(int argc, char * argv[])
     }
   }
 
-  /* Fourth pass: transforms the remaining SOFT_EXCLUDE_MARKs with */
-  /* EXCLUDE_MARKs.                                                */
-  /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+  /* Fifth pass: transforms the remaining SOFT_EXCLUDE_MARKs with */
+  /* EXCLUDE_MARKs.                                               */
+  /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
   for (wi = 0; wi < count; wi++)
   {
     int *     data;
