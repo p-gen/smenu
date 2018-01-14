@@ -4236,10 +4236,10 @@ disp_message(ll_t * message_lines_list, int message_max_width,
 
     /* Compute the offset from the left screen border if -M option is set */
     /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-    offset = (term->ncolumns - message_max_width) / 2;
+    offset = (term->ncolumns - message_max_width - 3) / 2;
 
-    if (win->offset > 0 && offset > 0)
-      printf("%*s", offset, "");
+    if (win->center && offset > 0)
+      printf("%*s", offset, " ");
 
     /* Only print the start of a line if the screen width if too small */
     /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
