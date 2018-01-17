@@ -6779,6 +6779,11 @@ main(int argc, char * argv[])
   if (count == 0)
     exit(EXIT_FAILURE);
 
+  /* The last word is always the last of its line */
+  /* """""""""""""""""""""""""""""""""""""""""""" */
+  if (win.col_mode || win.line_mode || win.tab_mode)
+    word_a[count - 1].is_last = 1;
+
   /* Second pass to modify  the word according to all/include/exclude        */
   /* regular expressions and the columns settings set in the previous pass.  */
   /* This must be done separately because in the first  pass, some word      */
