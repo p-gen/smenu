@@ -268,13 +268,16 @@ By default five lines at most are displayed and the other ones, if
 any, need you to scroll the window.
 .IP "\fB-t\fP [\fIcolumns\fP]"
 This option sets the tabulation mode and, if a number is specified,
-limits the number of displayed columns to that number.
+attents to set the number of displayed columns to that number.
 In this mode, embedded line separators are ignored.
 The options \fB-A\fP and \fB-Z\fP can nevertheless be used to force words
 to appear in the first (respectively last) position of the displayed line.
 .P
 .RS
-Note that in this mode each column has the same width.
+Note that the number of requested columns will be automatically reduced
+if a word does not fit in the calculated column size.
+.P
+In this mode each column has the same width.
 .RE
 .IP \fB-k\fP
 By default, the spaces surrounding the output string will be deleted.

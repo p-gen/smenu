@@ -5779,6 +5779,11 @@ main(int argc, char * argv[])
   if (win.tab_mode && !win.max_cols)
     win.wide = 1;
 
+  /* Disable the wide mode if not in column mode and not in tab mode */
+  /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+  if (!win.tab_mode && !win.col_mode)
+    win.wide = 0;
+
   win.start = 0;
 
   void sig_handler(int s);
@@ -6956,7 +6961,7 @@ main(int argc, char * argv[])
       }
       /* Update the size of the longest expanded word */
       /* """""""""""""""""""""""""""""""""""""""""""" */
-      word_real_max_size = cols_max_size;
+      word_real_max_size = cols_real_max_size;
     }
     else if (win.tab_mode)
     {
@@ -7014,15 +7019,28 @@ main(int argc, char * argv[])
     }
   }
 
-  /* Set the minimum width of a column (-t option) */
-  /* """"""""""""""""""""""""""""""""""""""""""""" */
+  /* Set the minimum width of a column (-w and -t or -c option) */
+  /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
   if (win.wide)
   {
-    if (win.max_cols > 0)
-      min_size = (term.ncolumns - 2) / win.max_cols - 1;
+    if (win.tab_mode)
+    {
+      if (win.max_cols > 0)
+        min_size = (term.ncolumns - 2) / win.max_cols - 1;
 
-    if (min_size < 0)
-      min_size = term.ncolumns - 2;
+      if (min_size < tab_max_size)
+        min_size = tab_max_size;
+
+      word_real_max_size = min_size + tab_real_max_size - tab_max_size;
+    }
+    else /* column mode */
+    {
+      min_size = (term.ncolumns - 2) / cols_number;
+      if (min_size < cols_max_size)
+        min_size = cols_max_size;
+
+      word_real_max_size = cols_real_max_size;
+    }
   }
 
   /* Third (compress) pass: remove all empty word and words containing */
