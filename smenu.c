@@ -7054,7 +7054,15 @@ main(int argc, char * argv[])
     for (wi = 0; wi < count; wi++)
     {
       while (wi + offset < count && isempty(word_a[wi + offset].str))
+      {
+        /* Keep non selectable empty words to allow special effects */
+        /* '''''''''''''''''''''''''''''''''''''''''''''''''''''''' */
+        if (word_a[wi + offset].is_selectable == SOFT_EXCLUDE_MARK
+            || word_a[wi + offset].is_selectable == EXCLUDE_MARK)
+          break;
+
         offset++;
+      }
 
       if (offset > 0)
         word_a[wi] = word_a[wi + offset];
