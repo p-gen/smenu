@@ -6923,13 +6923,21 @@ main(int argc, char * argv[])
     /* Alter the word just read be replacing special chars  by their */
     /* escaped equivalents.                                          */
     /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-    expanded_word     = xmalloc(5 * strlen(word->str) + 1);
-    len               = expand(word->str, expanded_word, &langinfo);
-    new_expanded_word = xstrdup(expanded_word);
-    free(expanded_word);
-    expanded_word = new_expanded_word;
+    word_len = strlen(word->str);
 
-    word_len = len;
+    expanded_word = xmalloc(5 * word_len + 1);
+    len           = expand(word->str, expanded_word, &langinfo);
+
+    /* Update it if needed */
+    /* ''''''''''''''''''' */
+    if (strcmp(expanded_word, word->str) != 0)
+    {
+      word_len = len;
+      free(word->str);
+      word->str = xstrdup(expanded_word);
+    }
+
+    free(expanded_word);
 
     if (win.col_mode)
     {
@@ -6946,8 +6954,8 @@ main(int argc, char * argv[])
           cols_real_max_size = s;
       }
 
-      s = (int)mbstowcs(NULL, expanded_word, 0);
-      s = wcswidth((tmpw = mb_strtowcs(expanded_word)), s);
+      s = (int)mbstowcs(NULL, word->str, 0);
+      s = wcswidth((tmpw = mb_strtowcs(word->str)), s);
       free(tmpw);
 
       if (s > col_max_size[col_index])
