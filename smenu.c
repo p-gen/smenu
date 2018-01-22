@@ -1995,7 +1995,7 @@ isempty(const char * s)
 {
   while (*s != '\0')
   {
-    if (!isspace(*s))
+    if (my_isprint(*s))
       return 0;
     s++;
   }
