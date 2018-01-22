@@ -55,13 +55,24 @@ sequences) which will be used to delimit the input words.
 The default delimiters are: \fISPACE\fP, \fI\\t\fP and \fI\\n\fP.
 .P
 The \fB-L\fP has a similar meaning for lines.
-.P
+
 Special character sequences formed by a \fI\\\fP followed by one of the
 characters \fIa\fP \fIb\fP \fIt\fP \fIn\fP \fIv\fP \fIf\fP \fIr\fP and
 \fI\\\fP are understood and have their traditional meanings.
+
+UTF-8 sequences introduced by \fI\\u\fP are alse understood.
+\fI\\u\fP can be followed by 2,4,6 or 8 hexadecimal hexadecimal
+characters.
+An invalid UTF-8 sequence will be replaced by a dot  (\fI.\fP), see
+also below.
+
+Example: \fI\\uc3a9\fP means latin small letter e with acute.
 .P
-Quotations (single and double) in the input stream enable to ignore the
-word separators so that a group of words are taken as a single entity.
+Note that with most shells, the \fI\\\fP before the \fIu\fP need to be
+protected or escaped.
+.P
+Quotations (single and double) in the input stream can be used to ignore
+the word separators so that a group of words are taken as a single entity.
 .P
 Non printable characters in words that are not delimiters are
 converted to their traditional form (\fI\\n\fP for end-of-line,
@@ -315,10 +326,14 @@ the command:
 \f(CBsmenu -I/c/x/ -s/c <<< "a b c d"\fP won't find c and put the cursor
 on \fBa\fP but \f(CBsmenu -I/c/x/v -s/c <<< "a b c d"\fP will find it and
 put the cursor on the \fBx\fP substituting the \fBc\fP on screen only
+
+\fI\\u\fP sequences can be used in the pattern.
 .RE
 .IP "\fB-m\fP \fImessage\fP"
 Displays a message above the window.
 Beware, it will truncated if it does not fit on a terminal line.
+
+\fI\\u\fP sequences can be used in the message.
 .IP "\fB-w\fP"
 When \fB-t\fP is followed by a number of columns, the default is to
 compact the columns so that they use the less terminal width as
@@ -393,19 +408,20 @@ Sets the \fBi\fPnclude filter to match the selectable words.
 All the other words will become implicitly non-selectable (excluded)
 
 \fB-i\fP can be used more than once with cumulative effect.
+
+\fI\\u\fP sequences can also be used in the regexp.
 .IP "\fB-e\fP \fIregex\fP"
 Sets the \fBe\fPxclude filter to match the non-selectable words.
 All the other selectable words will become implicitly selectable (included)
 
 \fB-e\fP can be used more than once with cumulative effect.
-
 This filter has a higher priority than the include filter.
-.PP
-.RS
+
 The \fIregex\fP selections made using \fB-i\fP and/or \fB-e\fP are done
 before the possible words alterations made by \fB-I\fP or \fB-E\fP
 (see below).
-.RE
+
+\fI\\u\fP sequences can also be used in the regexp.
 .IP "\fB-C\fP [\fIa\fP|\fIs\fP|\fIi\fP|\fIr\fP|\fId\fP|\fIe\fP] \
 <\fIcol selectors\fP>"
 
@@ -435,6 +451,9 @@ matching one of these expression will be included or excluded according
 to the letter given after the option.
 
 Regular expressions and column numbers can be freely mixed.
+
+Regular expression in \fB-C\fP and \fB-R\fP can contain \fIUTF-8\fP
+characters either directly or by using the \fI\\u\fP notation.
 
 Example of columns selection: \f(CB-Ci2,3,/X./,5-7\fP forces the cursor
 to only navigate in columns \fB2\fP,\fB3\fP,\fB5\fP,\fB6\fP and \fB7\fP
@@ -513,9 +532,11 @@ The \fB/\fP separator that \fB-I\fP and \fB-E\fP are using above can be
 substituted by any other character except \fISPACE\fP, \fI\\t\fP,
 \fI\\f\fP, \fI\\n\fP, \fI\\r\fP and \fI\\v\fP.
 .PP
-In the four previous options, \fIregex\fP is a \fBPOSIX\fP
+In the three previous options, \fIregex\fP is a \fBPOSIX\fP
 \fBE\fPxtended \fBR\fPegular \fBE\fPxpression.
 For details, please refer to the \fBregex\fP manual page.
+.P
+Additionally \fI\\u\fP sequences can also be used in the regexp.
 .P
 .RE
 If a post-processing action (\fB-S\fP/\fB-I\fP/\fB-E\fP) results in an
@@ -534,9 +555,17 @@ In column mode, forces all words matching the given regular expression
 to be the first one in the displayed line.
 If you want to only rely on this method to build the lines, just specify
 an empty \fBregex\fP to set the end-of-line separator with \fI-L ''\fP)
+.P
+.RS
+\fI\\u\fP sequences can also be used in the regexp after \fB-A\fP.
+.RE
 .IP "\fB-Z\fP \fIregex\fP"
 Similar to \fB-A\fP but forces the word to be the latest of its line.
 The same trick with \fB-L\fP can also be used.
+.P
+.RS
+\fI\\u\fP sequences can also be used in the regexp after \fB-Z\fP.
+.RE
 .IP "\fB-1\fP ... \fB-5\fP \fIregex\fP [\fIATTR\fP]"
 Allows to give up to 5 classes of words specified by regular expressions a
 special display color.
@@ -564,6 +593,8 @@ Examples of possible attributes are:
   \f(CB5      \fPtext in purple
   \f(CBrb     \fPreverse bold
 .fi
+
+\fI\\u\fP sequences can be used in the pattern.
 .IP \fB-g\fP
 Replaces the blank after each words in column or tabular mode by a
 vertical bar \fB|\fP. Some users may find the output more readable
@@ -579,10 +610,16 @@ words are there.
 .IP "\fB-W\fP \fIbytes\fP"
 This option can be used to specify the characters (or multibyte
 sequences) which will be used to delimit the input words.
+
+Multibyte sequences (UTF-8) can be natives of using the same ascii
+representation used in words (a leading \fI\\u\fP following by up to 8
+hexadecimal characters).
+
 The default delimiters are: \fISPACE\fP, \fI\\t\fP and \fI\\n\fP.
 .IP "\fB-L\fP \fIbytes\fP"
 This option can be used to specify the characters (or multibyte
 sequences) which will be used to delimit the lines in the input stream.
+
 The default delimiter is: \fI\\n\fP.
 
 This option is only useful when the \fB-c\fP or \fB-l\fP option is also
@@ -591,6 +628,8 @@ set.
 The characters (or multibyte sequences) passed to \fB-L\fP are
 automatically added to the list of word delimiters as if \fB-W\fP was
 also used.
+
+\fI\\u\fP sequences can also be used here.
 .IP "\fB-T\fP [\fIseparator\fP]"
 Enables the multi-selections or tagged mode.
 In this mode, each selectable word can be selected without ending

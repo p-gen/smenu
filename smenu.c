@@ -153,7 +153,7 @@ static int
 isprint8(int i);
 
 static int
-count_leading_set_bits(unsigned char c);
+mb_get_length(unsigned char c);
 
 static int
 get_cursor_position(int * const r, int * const c);
@@ -170,8 +170,14 @@ mb_strlen(char * str);
 static wchar_t *
 mb_strtowcs(char * s);
 
+static void
+mb_sanitize(char * s);
+
+static void
+mb_interpret(char * s, langinfo_t * langinfo);
+
 static int
-validate_mb(const char * str, int length);
+mb_validate(const char * str, int length);
 
 static int
 outch(int c);
@@ -2094,7 +2100,8 @@ parse_regex_selector_part(char * str, int filter, ll_t ** inc_regex_list,
 static void
 parse_selectors(char * str, int * filter, char * unparsed,
                 ll_t ** inc_interval_list, ll_t ** inc_regex_list,
-                ll_t ** exc_interval_list, ll_t ** exc_regex_list)
+                ll_t ** exc_interval_list, ll_t ** exc_regex_list,
+                langinfo_t * langinfo)
 {
   char         mark; /* Value to set */
   char         c;
@@ -2102,6 +2109,11 @@ parse_selectors(char * str, int * filter, char * unparsed,
   int          first, second; /* range starting and ending values */
   char *       ptr;           /* pointer to the remaining string to parse */
   interval_t * interval;
+
+  /* Replace the UTF-8 ascii representation in the selector by */
+  /* their binary values.                                      */
+  /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+  mb_interpret(str, langinfo);
 
   /* Get the first character to see if this is */
   /* an additive or restrictive operation.     */
@@ -2741,13 +2753,145 @@ strip_ansi_color(char * s, toggle_t * toggle)
   *p = '\0';
 }
 
+/* ======================================================================== */
+/* unicode (UTF-8) ascii representation interprer.                          */
+/* The string passed will be altered but will not move in memory            */
+/* All sequence of \uxx, \uxxxx, \uxxxxxx and \uxxxxxxxx will be replace by */
+/* the corresponding UTF-8 character.                                       */
+/* ======================================================================== */
+void
+mb_interpret(char * s, langinfo_t * langinfo)
+{
+  char * utf8_str;          /* \uxx...                                        */
+  size_t utf8_to_eos_len;   /* bytes in s starting from the first             *
+                             * occurrence of \u                               */
+  size_t init_len;          /* initial lengths of the string to interpret     */
+  size_t utf8_ascii_len;    /* 2,4,6 or 8 bytes                               */
+  size_t len_to_remove = 0; /* number of bytes to remove after the conversion */
+  char   tmp[9];            /* temporary string                               */
+
+  /* Guard against the case where s is NULL */
+  /* """""""""""""""""""""""""""""""""""""" */
+  if (s == NULL)
+    return;
+
+  init_len = strlen(s);
+
+  while ((utf8_str = strstr(s, "\\u")) != NULL)
+  {
+    utf8_to_eos_len = strlen(utf8_str);
+    if (utf8_to_eos_len
+        < 4) /* string too short to contain a valid UTF-8 char */
+    {
+      *utf8_str       = '.';
+      *(utf8_str + 1) = '\0';
+    }
+    else /* s is long enough */
+    {
+      unsigned byte;
+      char *   utf8_seq_offset = utf8_str + 2;
+
+      /* Get the first 2 utf8 bytes */
+      *tmp       = *utf8_seq_offset;
+      *(tmp + 1) = *(utf8_seq_offset + 1);
+      *(tmp + 2) = '\0';
+
+      /* If they are invalid, replace the \u sequence by a dot */
+      /* """"""""""""""""""""""""""""""""""""""""""""""""""""" */
+      if (!isxdigit(tmp[0]) || !isxdigit(tmp[1]))
+      {
+        *utf8_str = '.';
+        if (4 >= utf8_to_eos_len)
+          *(utf8_str + 1) = '\0';
+        else
+          memmove(utf8_str, utf8_str + 4, utf8_to_eos_len - 4);
+        return;
+      }
+      else
+      {
+        /* They are valid, deduce from them the length of the sequence */
+        /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+        sscanf(tmp, "%2x", &byte);
+        utf8_ascii_len = mb_get_length(byte) * 2;
+
+        /* Check again if the inputs string is long enough */
+        /* """"""""""""""""""""""""""""""""""""""""""""""" */
+        if (utf8_to_eos_len - 2 < utf8_ascii_len)
+        {
+          *utf8_str       = '.';
+          *(utf8_str + 1) = '\0';
+        }
+        else
+        {
+          /* replace the \u sequence by the bytes forming the UTF-8 char */
+          /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+          size_t i;
+          *tmp = byte;
+
+          /* Put the bytes in the tmp string */
+          /* ''''''''''''''''''''''''''''''' */
+          if (langinfo->utf8)
+          {
+            for (i = 1; i < utf8_ascii_len / 2; i++)
+            {
+              sscanf(utf8_seq_offset + 2 * i, "%2x", &byte);
+              *(tmp + i) = byte;
+            }
+            tmp[utf8_ascii_len / 2] = '\0';
+          }
+
+          /* Does they form a valid UTF-8 char? */
+          /* ''''''''''''''''''''''''''''''''' */
+          if (langinfo->utf8 && mb_validate(tmp, utf8_ascii_len / 2))
+          {
+            /* Put them back in the original string and move */
+            /* the remaining bytes after them                */
+            /* ''''''''''''''''''''''''''''''''''''''''''''' */
+            memmove(utf8_str, tmp, utf8_ascii_len / 2);
+
+            if (utf8_to_eos_len < utf8_ascii_len)
+              *(utf8_str + utf8_ascii_len / 2 + 1) = '\0';
+            else
+              memmove(utf8_str + utf8_ascii_len / 2,
+                      utf8_seq_offset + utf8_ascii_len,
+                      utf8_to_eos_len - utf8_ascii_len - 2 + 1);
+          }
+          else
+          {
+            /* The invalid sequence is replaced by a dot */
+            /* ''''''''''''''''''''''''''''''''''''''''' */
+            *utf8_str = '.';
+            if (utf8_to_eos_len < utf8_ascii_len)
+              *(utf8_str + 1) = '\0';
+            else
+              memmove(utf8_str + 1, utf8_seq_offset + utf8_ascii_len,
+                      utf8_to_eos_len - utf8_ascii_len - 2 + 1);
+            utf8_ascii_len = 2;
+          }
+        }
+
+        /* Update the number of bytes to remove at the end */
+        /* of the initial string                           */
+        /* """"""""""""""""""""""""""""""""""""""""""""""" */
+        len_to_remove += 2 + utf8_ascii_len / 2;
+      }
+    }
+  }
+
+  /* Make sure that the string is well terminated */
+  /* """""""""""""""""""""""""""""""""""""""""""" */
+  *(s + init_len - len_to_remove) = '\0';
+
+  return;
+}
+
 /* ========================================================= */
 /* Decode the number of bytes taken by a character (UTF-8)   */
 /* It is the length of the leading sequence of bits set to 1 */
 /* (Count Leading Ones)                                      */
 /* ========================================================= */
 static int
-count_leading_set_bits(unsigned char c)
+mb_get_length(unsigned char c)
 {
   if (c >= 0xf0)
     return 4;
@@ -2757,6 +2901,31 @@ count_leading_set_bits(unsigned char c)
     return 2;
   else
     return 1;
+}
+
+/* =========================================================== */
+/* Replace any multibyte present in s by a dot inplace         */
+/* s will be modified but its address in meory will not change */
+/* =========================================================== */
+static void
+mb_sanitize(char * s)
+{
+  char * p = s;
+  int    n;
+  size_t len;
+
+  len = strlen(s);
+  while (*p)
+  {
+    n = mb_get_length(*p);
+    if (n > 1)
+    {
+      *p = '.';
+      memmove(p + 1, p + n, len - (p - s) - n + 1);
+      len -= (n - 1);
+    }
+    p++;
+  }
 }
 
 static const char trailing_bytes_for_utf8[256] = {
@@ -2780,7 +2949,7 @@ static const char trailing_bytes_for_utf8[256] = {
 /* Returns 1 if str contains a valid UTF8 byte sequence, 0 otherwise */
 /* ================================================================= */
 static int
-validate_mb(const char * str, int length)
+mb_validate(const char * str, int length)
 {
   const unsigned char *p, *pend = (unsigned char *)str + length;
   unsigned char        c;
@@ -3326,7 +3495,7 @@ get_scancode(unsigned char * s, int max)
 /* ===================================================================== */
 /* Get bytes from stdin. If the first byte is the leading character of a */
 /* multibyte one, the following ones a also read                         */
-/* The count_leading_set_bits function is used to get the number of      */
+/* The mb_get_length function is used to get the number of      */
 /* bytes of the character                                                */
 /* ===================================================================== */
 static int
@@ -3349,7 +3518,7 @@ get_bytes(FILE * input, char * mb_buffer, ll_t * word_delims_list,
   /* Check if we need to read more bytes to form a sequence */
   /* and put the number of bytes of the sequence in last.   */
   /* """""""""""""""""""""""""""""""""""""""""""""""""""""" */
-  if (langinfo->utf8 && ((n = count_leading_set_bits(byte)) > 1))
+  if (langinfo->utf8 && ((n = mb_get_length(byte)) > 1))
   {
     while (last < n && (byte = my_fgetc(input)) != EOF && (byte & 0xc0) == 0x80)
       mb_buffer[last++] = byte;
@@ -3376,7 +3545,7 @@ get_bytes(FILE * input, char * mb_buffer, ll_t * word_delims_list,
   /* In this case the original sequence is lost (unsupported  */
   /* encoding).                                               */
   /* """""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-  if (langinfo->utf8 && !validate_mb(mb_buffer, last))
+  if (langinfo->utf8 && !mb_validate(mb_buffer, last))
   {
     byte = mb_buffer[0] = '.';
     mb_buffer[1]        = '\0';
@@ -3406,7 +3575,7 @@ expand(char * src, char * dest, langinfo_t * langinfo)
 
     /* UTF-8 codepoints take more than on character */
     /* """""""""""""""""""""""""""""""""""""""""""" */
-    if ((n = count_leading_set_bits(c)) > 1)
+    if ((n = mb_get_length(c)) > 1)
     {
       if (langinfo->utf8)
         /* If the locale is UTF-8 aware, copy src into ptr. */
@@ -3599,6 +3768,12 @@ get_word(FILE * input, ll_t * word_delims_list, ll_t * record_delims_list,
           mb_buffer[1]        = '\0';
           break;
 
+        case 'u':
+          mb_buffer[0] = '\\';
+          mb_buffer[1] = 'u';
+          mb_buffer[2] = '\0';
+          break;
+
         case '\\':
           mb_buffer[0] = byte = '\\';
           mb_buffer[1]        = '\0';
@@ -3664,7 +3839,7 @@ get_word(FILE * input, ll_t * word_delims_list, ll_t * record_delims_list,
            && ll_find(record_delims_list, mb_buffer, delims_cmp) == NULL)
       byte = get_bytes(input, mb_buffer, word_delims_list, toggle, langinfo);
 
-    if (langinfo->utf8 && count_leading_set_bits(mb_buffer[0]) > 1)
+    if (langinfo->utf8 && mb_get_length(mb_buffer[0]) > 1)
     {
       size_t pos;
 
@@ -3689,6 +3864,11 @@ get_word(FILE * input, ll_t * word_delims_list, ll_t * record_delims_list,
   /* Remove the ANSI color escape sequences from the word */
   /* """""""""""""""""""""""""""""""""""""""""""""""""""" */
   strip_ansi_color(temp, toggle);
+
+  /* Replace the UTF-8 ascii representations in the word just */
+  /* read by their binary values.                             */
+  /* """""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+  mb_interpret(temp, langinfo);
 
   return temp;
 }
@@ -5316,7 +5496,10 @@ main(int argc, char * argv[])
 
       case 's':
         if (optarg && *optarg != '-')
+        {
           pre_selection_index = xstrdup(optarg);
+          mb_interpret(pre_selection_index, &langinfo);
+        }
         else
           TELL("Option requires an argument -- ");
         break;
@@ -5364,7 +5547,12 @@ main(int argc, char * argv[])
 
       case 'm':
         if (optarg && *optarg != '-')
+        {
           message = xstrdup(optarg);
+          if (!langinfo.utf8)
+            mb_sanitize(message);
+          mb_interpret(message, &langinfo);
+        }
         else
           TELL("Option requires an argument -- ");
         break;
@@ -5446,7 +5634,8 @@ main(int argc, char * argv[])
 
           sed_node          = xmalloc(sizeof(sed_t));
           sed_node->pattern = xstrdup(optarg);
-          sed_node->stop    = 0;
+          mb_interpret(sed_node->pattern, &langinfo);
+          sed_node->stop = 0;
           ll_append(sed_list, sed_node);
         }
         else
@@ -5463,7 +5652,8 @@ main(int argc, char * argv[])
 
           sed_node          = xmalloc(sizeof(sed_t));
           sed_node->pattern = xstrdup(optarg);
-          sed_node->stop    = 0;
+          mb_interpret(sed_node->pattern, &langinfo);
+          sed_node->stop = 0;
           ll_append(include_sed_list, sed_node);
         }
         else
@@ -5480,7 +5670,8 @@ main(int argc, char * argv[])
 
           sed_node          = xmalloc(sizeof(sed_t));
           sed_node->pattern = xstrdup(optarg);
-          sed_node->stop    = 0;
+          mb_interpret(sed_node->pattern, &langinfo);
+          sed_node->stop = 0;
           ll_append(exclude_sed_list, sed_node);
         }
         else
@@ -5498,6 +5689,7 @@ main(int argc, char * argv[])
           txt_attr_t attr  = init_attr;
 
           special_pattern[opt - '1'] = xstrdup(optarg);
+          mb_interpret(special_pattern[opt - '1'], &langinfo);
 
           /* Parse optional additional arguments */
           /* """"""""""""""""""""""""""""""""""" */
@@ -5654,6 +5846,7 @@ main(int argc, char * argv[])
             {
               timeout.type = WORD;
               timeout_word = argv[optind];
+              mb_interpret(timeout_word, &langinfo);
               optind++;
             }
             else
@@ -5682,28 +5875,40 @@ main(int argc, char * argv[])
 
       case 'A':
         if (optarg && *optarg != '-')
+        {
           first_word_pattern = xstrdup(optarg);
+          mb_interpret(first_word_pattern, &langinfo);
+        }
         else
           TELL("Option requires an argument -- ");
         break;
 
       case 'Z':
         if (optarg && *optarg != '-')
+        {
           last_word_pattern = xstrdup(optarg);
+          mb_interpret(last_word_pattern, &langinfo);
+        }
         else
           TELL("Option requires an argument -- ");
         break;
 
       case 'W':
         if (optarg && *optarg != '-')
+        {
           iws = xstrdup(optarg);
+          mb_interpret(iws, &langinfo);
+        }
         else
           TELL("Option requires an argument -- ");
         break;
 
       case 'L':
         if (optarg && *optarg != '-')
+        {
           ils = xstrdup(optarg);
+          mb_interpret(ils, &langinfo);
+        }
         else
           TELL("Option requires an argument -- ");
         break;
@@ -5752,6 +5957,12 @@ main(int argc, char * argv[])
   }
   else
     input_file = stdin;
+
+  /* Replace the UTF-8 ascii representations by their binary values in */
+  /* the inclusion and exclusion patterns.                             */
+  /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+  mb_interpret(include_pattern, &langinfo);
+  mb_interpret(exclude_pattern, &langinfo);
 
   /* Force the right modes when the -C option is given */
   /* """"""""""""""""""""""""""""""""""""""""""""""""" */
@@ -5810,50 +6021,36 @@ main(int argc, char * argv[])
   {
     char * str;
 
-    str                = tigetstr("cuu1");
-    term.has_cursor_up = (str == (char *)-1 || str == NULL) ? 0 : 1;
-
-    str                  = tigetstr("cud1");
-    term.has_cursor_down = (str == (char *)-1 || str == NULL) ? 0 : 1;
-
-    str                  = tigetstr("cub1");
-    term.has_cursor_left = (str == (char *)-1 || str == NULL) ? 0 : 1;
-
-    str                   = tigetstr("cuf1");
-    term.has_cursor_right = (str == (char *)-1 || str == NULL) ? 0 : 1;
-
-    str                  = tigetstr("sc");
-    term.has_save_cursor = (str == (char *)-1 || str == NULL) ? 0 : 1;
-
+    str                     = tigetstr("cuu1");
+    term.has_cursor_up      = (str == (char *)-1 || str == NULL) ? 0 : 1;
+    str                     = tigetstr("cud1");
+    term.has_cursor_down    = (str == (char *)-1 || str == NULL) ? 0 : 1;
+    str                     = tigetstr("cub1");
+    term.has_cursor_left    = (str == (char *)-1 || str == NULL) ? 0 : 1;
+    str                     = tigetstr("cuf1");
+    term.has_cursor_right   = (str == (char *)-1 || str == NULL) ? 0 : 1;
+    str                     = tigetstr("sc");
+    term.has_save_cursor    = (str == (char *)-1 || str == NULL) ? 0 : 1;
     str                     = tigetstr("rc");
     term.has_restore_cursor = (str == (char *)-1 || str == NULL) ? 0 : 1;
-
-    str           = tigetstr("setf");
-    term.has_setf = (str == (char *)-1 || str == NULL) ? 0 : 1;
-
-    str           = tigetstr("setb");
-    term.has_setb = (str == (char *)-1 || str == NULL) ? 0 : 1;
-
-    str            = tigetstr("setaf");
-    term.has_setaf = (str == (char *)-1 || str == NULL) ? 0 : 1;
-
-    str            = tigetstr("setab");
-    term.has_setab = (str == (char *)-1 || str == NULL) ? 0 : 1;
-
-    str          = tigetstr("hpa");
-    term.has_hpa = (str == (char *)-1 || str == NULL) ? 0 : 1;
-
-    str           = tigetstr("bold");
-    term.has_bold = (str == (char *)-1 || str == NULL) ? 0 : 1;
-
-    str              = tigetstr("rev");
-    term.has_reverse = (str == (char *)-1 || str == NULL) ? 0 : 1;
-
-    str                = tigetstr("smul");
-    term.has_underline = (str == (char *)-1 || str == NULL) ? 0 : 1;
-
-    str               = tigetstr("smso");
-    term.has_standout = (str == (char *)-1 || str == NULL) ? 0 : 1;
+    str                     = tigetstr("setf");
+    term.has_setf           = (str == (char *)-1 || str == NULL) ? 0 : 1;
+    str                     = tigetstr("setb");
+    term.has_setb           = (str == (char *)-1 || str == NULL) ? 0 : 1;
+    str                     = tigetstr("setaf");
+    term.has_setaf          = (str == (char *)-1 || str == NULL) ? 0 : 1;
+    str                     = tigetstr("setab");
+    term.has_setab          = (str == (char *)-1 || str == NULL) ? 0 : 1;
+    str                     = tigetstr("hpa");
+    term.has_hpa            = (str == (char *)-1 || str == NULL) ? 0 : 1;
+    str                     = tigetstr("bold");
+    term.has_bold           = (str == (char *)-1 || str == NULL) ? 0 : 1;
+    str                     = tigetstr("rev");
+    term.has_reverse        = (str == (char *)-1 || str == NULL) ? 0 : 1;
+    str                     = tigetstr("smul");
+    term.has_underline      = (str == (char *)-1 || str == NULL) ? 0 : 1;
+    str                     = tigetstr("smso");
+    term.has_standout       = (str == (char *)-1 || str == NULL) ? 0 : 1;
   }
 
   if (!term.has_cursor_up || !term.has_cursor_down || !term.has_cursor_left
@@ -6226,7 +6423,7 @@ main(int argc, char * argv[])
 
       parse_selectors(rows_selector, &filter_type, unparsed,
                       &inc_row_interval_list, &inc_row_regex_list,
-                      &exc_row_interval_list, &exc_row_regex_list);
+                      &exc_row_interval_list, &exc_row_regex_list, &langinfo);
 
       if (*unparsed != '\0')
       {
@@ -6265,7 +6462,7 @@ main(int argc, char * argv[])
 
       parse_selectors(cols_selector, &filter_type, unparsed,
                       &inc_col_interval_list, &inc_col_regex_list,
-                      &exc_col_interval_list, &exc_col_regex_list);
+                      &exc_col_interval_list, &exc_col_regex_list, &langinfo);
 
       if (*unparsed != '\0')
       {
