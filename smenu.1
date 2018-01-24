@@ -37,23 +37,23 @@ This small utility acts as a filter when no input file is given
 
 All read words are presented in a scrolling window on the terminal
 \fBat\fP the current cursor position without clearing the screen before.
-.P
+.PP
 The selection cursor is initially positioned on the first selectable word
 by default.
-.P
+.PP
 Options exists to explicitly or implicitly include or exclude some words by
 using extended regular expressions.
 
 Notice that when some words are explicitly excluded they can no more be
 re-included after.
-.P
+.PP
 Excluded words are skipped when the selection cursor is moved and cannot
 be searched for.
-.P
+.PP
 The \fB-W\fP option can be used to set the characters (or multibyte
 sequences) which will be used to delimit the input words.
 The default delimiters are: \fISPACE\fP, \fI\\t\fP and \fI\\n\fP.
-.P
+.PP
 The \fB-L\fP has a similar meaning for lines.
 
 Special character sequences formed by a \fI\\\fP followed by one of the
@@ -67,22 +67,22 @@ An invalid UTF-8 sequence will be replaced by a dot  (\fI.\fP), see
 also below.
 
 Example: \fI\\uc3a9\fP means latin small letter e with acute.
-.P
+.PP
 Note that with most shells, the \fI\\\fP before the \fIu\fP need to be
 protected or escaped.
-.P
+.PP
 Quotations (single and double) in the input stream can be used to ignore
 the word separators so that a group of words are taken as a single entity.
-.P
+.PP
 Non printable characters in words that are not delimiters are
 converted to their traditional form (\fI\\n\fP for end-of-line,
 \fI\\t\fP for tabulation...) by default.
 A single dot (\fI.\fP) is also used as a placeholder otherwise.
-.P
+.PP
 \fBWarning\fP, \fBUTF-8\fP encoded codepoints are quietly converted
 into dots (\fI.\fP) when the user locale is not \fBUTF-8\fP aware like
 \fBPOSIX\fP or \fBC\fP by example.
-.P
+.PP
 .SS "Moving among words"
 The cursor can be moved in every direction by using the
 keyboard arrow keys (\fB\(<-\fP,\fB\(da\fP,\fB\(ua\fP,\fB\(->\fP)
@@ -93,36 +93,36 @@ available, and have their traditional meanings.
 The key \fB/\fP or the key combination \fB^F\fP (\fBCTRL+f\fP) can be
 used to initiate a search by prefix among the words (possibly altered
 by \fB-S\fP/\fB-I\fP/\fB-E\fP) located after the cursor.
-.P
+.PP
 After that, the cursor attributes are modified and all the characters
 entered up to 7s after this change are put in a search buffer and the cursor
 moves immediately to the next word matching this prefix.
-.P
+.PP
 Any character entered before a 5s timeout after this action completes
 this buffer and resets the 5s timer and advances the cursor again if
 another word matches the new buffer.
-.P
+.PP
 As soon as the timer ends, the search mode is ended and the cursor
 regains its initial appearance.
-.P
+.PP
 The search buffer is persistent as long as the cursor is on a matching
 word when a new search is initialized.
-.P
+.PP
 If the cursor is moved in this mode, the timer will expire immediately
 As if \fBENTER\fP or \fBESC\fP was pressed.
-.P
+.PP
 Pressing \fBENTER\fP or \fBESC\fP immediately exits this mode.
-.P
+.PP
 Pressing \fBSPACE\fP or \fBn\fP repeats the last search if the search
 buffer is not empty.
 Nothing will happen if there is no matching word after the cursor.
-.P
+.PP
 Note that the \fBSPACE\fP and \fBn\fP keys cannot be used when the search
 mode is active because they must be available if you want to search a
 word containing these characters.
 .SS "Selection and Exit"
 Pressing \fBq\fP gives the possibility to exit without selecting anything.
-.P
+.PP
 By default, \fBENTER\fP writes the selected word to stdout when not in
 search mode otherwise it exits from this mode and does nothing more.
 If you want to be able to select a word \fIeven\fP when in search mode,
@@ -167,7 +167,7 @@ l l l l .
 |@|@|@|@/
 /@v@/@v
 .TE
-.P
+.PP
 A \fB+\fP can also appear in the scroll bar in lieu of the vertical bar,
 giving the relative position of the cursor line in the bunch of input
 words.
@@ -198,7 +198,7 @@ If a value is invalid an error message is shown and the program terminates.
 
 Here is an example giving the syntax and the names of the keywords
 allowed:
-.P
+.PP
 .nf
 \f(CR--8<------------------------------------------------------------------
 [colors]
@@ -283,11 +283,11 @@ attents to set the number of displayed columns to that number.
 In this mode, embedded line separators are ignored.
 The options \fB-A\fP and \fB-Z\fP can nevertheless be used to force words
 to appear in the first (respectively last) position of the displayed line.
-.P
+.PP
 .RS
 Note that the number of requested columns will be automatically reduced
 if a word does not fit in the calculated column size.
-.P
+.PP
 In this mode each column has the same width.
 .RE
 .IP \fB-k\fP
@@ -331,9 +331,13 @@ put the cursor on the \fBx\fP substituting the \fBc\fP on screen only
 .RE
 .IP "\fB-m\fP \fImessage\fP"
 Displays a message above the window.
-Beware, it will truncated if it does not fit on a terminal line.
+If the current locale is not \fIUTF-8\fP, then all \fIUTF-8\fP characters
+in it will be converted into a dot.
 
 \fI\\u\fP sequences can be used in the message.
+
+Note that the message will be truncated if it does not fit on a terminal
+line.
 .IP "\fB-w\fP"
 When \fB-t\fP is followed by a number of columns, the default is to
 compact the columns so that they use the less terminal width as
@@ -343,14 +347,14 @@ This option enlarges the columns in order to use the whole terminal width.
 When in column mode, \fB-w\fP can be used to force all the columns to
 have the same size (the largest one).
 See option \fB-c\fP below.
-.P
+.PP
 .RS
 Note that the column's size is only calculated once when the words are
 displayed for the first time.
 A terminal resize will not update this value.
 This choice enables a faster display.
 .RE
-.P
+.PP
 .IP \fB-d\fP
 Tells the program to clean up the display before quitting by removing
 the selection window after use as if it was never displayed.
@@ -515,7 +519,7 @@ selected meanwhile
 will display the same as above but \f(CBR\fP will contain the original
 word \fIb\fP if \fIB\fP is selected.
 In both cases, only the word \fIB\fP will be searchable and not \fIb\fP.
-.P
+.PP
 Notice that a substitution resulting in an empty string is equivalent
 to removing the word.
 .RE
@@ -535,9 +539,9 @@ substituted by any other character except \fISPACE\fP, \fI\\t\fP,
 In the three previous options, \fIregex\fP is a \fBPOSIX\fP
 \fBE\fPxtended \fBR\fPegular \fBE\fPxpression.
 For details, please refer to the \fBregex\fP manual page.
-.P
+.PP
 Additionally \fI\\u\fP sequences can also be used in the regexp.
-.P
+.PP
 .RE
 If a post-processing action (\fB-S\fP/\fB-I\fP/\fB-E\fP) results in an
 empty or a word containing only spaces, then we have two cases:
@@ -555,14 +559,14 @@ In column mode, forces all words matching the given regular expression
 to be the first one in the displayed line.
 If you want to only rely on this method to build the lines, just specify
 an empty \fBregex\fP to set the end-of-line separator with \fI-L ''\fP)
-.P
+.PP
 .RS
 \fI\\u\fP sequences can also be used in the regexp after \fB-A\fP.
 .RE
 .IP "\fB-Z\fP \fIregex\fP"
 Similar to \fB-A\fP but forces the word to be the latest of its line.
 The same trick with \fB-L\fP can also be used.
-.P
+.PP
 .RS
 \fI\\u\fP sequences can also be used in the regexp after \fB-Z\fP.
 .RE
@@ -689,7 +693,7 @@ the data.
 .SH EXAMPLES
 .SS 1
 Simple Yes/No/Cancel request with "No" as default choice:
-.P
+.PP
 .nf
 \f(CRIn \fBbash\fP:
   \f(CBread R <<< $(echo "Yes No Cancel" \\
@@ -708,10 +712,10 @@ In \fBksh\fP:
 .SS 2
 Get a 3 columns report about VM statistics for the current process in
 \fBbash\fP/\fBksh\fP on Linux:
-.P
+.PP
 .nf
 \f(CBR=$(grep Vm /proc/$$/status | expand | smenu -b -W$'\\n' -t3 -g -d)\fB
-.P
+.PP
 \fP
 .fi
 .SS 3
@@ -719,7 +723,7 @@ Create a one column selection window containing the list of the first
 20 LVM physical volumes.
 At the end, the selection window will be erased.
 This example is written in \fBksh\fP).
-.P
+.PP
 .nf
 \f(CB
 pvs -a -o pv_name --noheadings                 \\

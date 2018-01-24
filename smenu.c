@@ -153,13 +153,13 @@ static int
 isprint8(int i);
 
 static int
-mb_get_length(unsigned char c);
-
-static int
 get_cursor_position(int * const r, int * const c);
 
 static void
 get_terminal_size(int * const r, int * const c);
+
+static int
+mb_get_length(unsigned char c);
 
 static char *
 mb_strprefix(char * d, char * s, int n, int * pos);
@@ -3495,8 +3495,8 @@ get_scancode(unsigned char * s, int max)
 /* ===================================================================== */
 /* Get bytes from stdin. If the first byte is the leading character of a */
 /* multibyte one, the following ones a also read                         */
-/* The mb_get_length function is used to get the number of      */
-/* bytes of the character                                                */
+/* The mb_get_length function is used to get the number of bytes of the  */
+/* character.                                                            */
 /* ===================================================================== */
 static int
 get_bytes(FILE * input, char * mb_buffer, ll_t * word_delims_list,
