@@ -1,3 +1,17 @@
+- Version 0.9.11
+* Introduce the new \u notation for UTF-8 hex sequences
+* Non-printable characters with an escape form are expanded
+* Keep non selectable blank words to allow special effects
+* Fix the wide option when in column or tabulation mode
+* The last word is always the last of its line (-g)
+* Improve message (-m) placement in centered mode
+* Manage substitutions leading to empty strings
+* Hopefully fix the placement of the scroll bar in all cases
+* The gutter can now be displayed in column mode
+* Various other small fixes
+
+Jul 29 16:30:00 UTC 2017 - p.gen.progs@gmail.com
+
 - Bump to version 0.9.10
 * The words acquisition is rewritten and splitted in multiple phases
 * Add the capacity to (de)select rows an columns containing regexes
