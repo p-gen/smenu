@@ -79,6 +79,11 @@ converted to their traditional form (\fI\\n\fP for end-of-line,
 \fI\\t\fP for tabulation...) by default.
 A single dot (\fI.\fP) is also used as a placeholder otherwise.
 .PP
+Words containing only spaces, entered directly or resulting from a
+substitution, are also rejected unless they are not selectable.
+This allows special effects like creating blank lines for example.
+These words are also kept in column mode, selectable or not.
+.PP
 \fBWarning\fP, \fBUTF-8\fP encoded codepoints are quietly converted
 into dots (\fI.\fP) when the user locale is not \fBUTF-8\fP aware like
 \fBPOSIX\fP or \fBC\fP by example.
@@ -519,9 +524,6 @@ selected meanwhile
 will display the same as above but \f(CBR\fP will contain the original
 word \fIb\fP if \fIB\fP is selected.
 In both cases, only the word \fIB\fP will be searchable and not \fIb\fP.
-.PP
-Notice that a substitution resulting in an empty string is equivalent
-to removing the word.
 .RE
 .IP "\fB-I\fP /\fIregex\fP/replacement string/[\fIg\fP][\fIv\fP][\fIs\fP]"
 Post-processes the \fBselectable\fP words by applying a regular
@@ -544,7 +546,7 @@ Additionally \fI\\u\fP sequences can also be used in the regexp.
 .PP
 .RE
 If a post-processing action (\fB-S\fP/\fB-I\fP/\fB-E\fP) results in an
-empty or a word containing only spaces, then we have two cases:
+empty (length 0) word, then we have two cases:
 .RS
 .IP "in column mode:"
 Substitutions involving empty words can lead to misalignments, so it is
