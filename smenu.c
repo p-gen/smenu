@@ -2001,7 +2001,7 @@ isempty(const char * s)
 {
   while (*s != '\0')
   {
-    if (my_isprint(*s))
+    if (my_isprint(*s) && !isblank(*s))
       return 0;
     s++;
   }
