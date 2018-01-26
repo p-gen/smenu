@@ -5915,7 +5915,10 @@ main(int argc, char * argv[])
 
       case 'T':
         if (optarg != NULL)
+        {
           win.sel_sep = xstrdup(optarg);
+          mb_interpret(win.sel_sep, &langinfo);
+        }
         toggle.taggable = 1;
         break;
 
