@@ -8085,7 +8085,7 @@ main(int argc, char * argv[])
             }
           }
 
-          (void)tputs(cursor_normal, 1, outch);
+          (void)tputs(cursor_visible, 1, outch);
           restore_term(fileno(stdin));
 
           exit(EXIT_SUCCESS);
@@ -8277,7 +8277,7 @@ main(int argc, char * argv[])
           }
           /* Restore the visibility of the cursor */
           /* """""""""""""""""""""""""""""""""""" */
-          (void)tputs(cursor_normal, 1, outch);
+          (void)tputs(cursor_visible, 1, outch);
 
           /* Set the cursor at the start on the line an restore the */
           /* original terminal state before exiting                 */
