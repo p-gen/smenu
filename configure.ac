@@ -34,8 +34,9 @@ AC_TYPE_SIZE_T
 # Checks for library functions.
 AC_FUNC_MALLOC
 AC_FUNC_REALLOC
-AC_CHECK_FUNCS([mblen memset nl_langinfo pathconf regcomp \
-                setlocale strchr strrchr strspn])
+AC_CHECK_FUNCS([mblen memset nl_langinfo pathconf regcomp setlocale])
+AC_CHECK_FUNCS([strchr strrchr strspn])
+AC_CHECK_FUNCS([isgraph])
 
 AC_CANONICAL_HOST
 # OS-specific tests
