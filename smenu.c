@@ -2001,7 +2001,7 @@ isempty(const char * s)
 {
   while (*s != '\0')
   {
-    if (my_isprint(*s) && !isblank(*s))
+    if (my_isprint(*s) && *s != ' ' && *s != '\t')
       return 0;
     s++;
   }
@@ -2158,7 +2158,7 @@ parse_selectors(char * str, int * filter, char * unparsed,
       break;
 
     default:
-      if (!my_isprint(c))
+      if (!isgraph(c))
         return;
 
       *filter = INCLUDE_FILTER;
@@ -2226,8 +2226,8 @@ parse_selectors(char * str, int * filter, char * unparsed,
 
     /* Check is we have found a well describes regular expression */
     /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-    if (ptr - str > start + 2 && delim1 == delim2 && my_isprint(delim1)
-        && my_isprint(delim2) && !isdigit(delim1) && !isdigit(delim2))
+    if (ptr - str > start + 2 && delim1 == delim2 && isgraph(delim1)
+        && isgraph(delim2) && !isdigit(delim1) && !isdigit(delim2))
     {
       /* Process the regex */
       /* """"""""""""""""" */
@@ -5435,9 +5435,6 @@ main(int argc, char * argv[])
   else
     langinfo.utf8 = 0;
 
-#if HAVE_ISGRAPH
-  my_isprint = isgraph;
-#else
   /* my_isprint is a function pointer that points to the 7 or 8-bit */
   /* version of isprint according to the content of UTF-8           */
   /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
@@ -5445,7 +5442,6 @@ main(int argc, char * argv[])
     my_isprint = isprint8;
   else
     my_isprint = isprint7;
-#endif
 
   /* Set terminal in noncanonical, noecho mode */
   /* """"""""""""""""""""""""""""""""""""""""" */
