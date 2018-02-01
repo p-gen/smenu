@@ -21,7 +21,7 @@ and outputs the selection to stdout.
 [\fB-2\fP \fIregex\fP [\fIATTR\fP]] ... \
 [\fB-5\fP \fIregex\fP [\fIATTR\fP]] \\
       [\fB-g\fP] [\fB-q\fP] [\fB-W\fP \fIbytes\fP] [\fB-L\fP \fIbytes\fP] \\
-      [\fB-T\fP [\fIseperator\fP]] [\fB-V\fP] \\
+      [\fB-T\fP [\fIseparator\fP]] [\fB-P\fP [\fIseparator\fP]] [\fB-V\fP] \\
       [\fB-x\fP|\fB-X\fP \fItype\fP [\fIword\fP] \fIdelay\fP] [input_file]
 
       <col selectors> ::= \fIcol1\fP[-\fIcol2\fP],...|\fI<RE>\fP,...
@@ -299,7 +299,7 @@ By default, the spaces surrounding the output string will be deleted.
 This option forces them to be retained.
 Note that these spaces must have been protected to be selected.
 .IP "\fB-s\fP \fIpattern\fP"
-Pre-Position the cursor to the first word matching the specified pattern.
+Place the cursor on the first word corresponding to the specified pattern.
 
 \fIpattern\fP can be:
 .RS
@@ -649,6 +649,9 @@ Note than this \fIseparator\fP can have more than one character and can
 even contain control character as in \f(CB$'\\n'\fP.
 
 A space is used as the default separator if none is given.
+.IP "\fB-P\fP [\fIseparator\fP]"
+Works like \fB-T\fP but the word under the cursor, if not tagged, is not
+sent to stdout (\fBP\fP stands for \fIPin\fP).
 .IP \fB-V\fP
 Displays the current version and quits.
 .TP
