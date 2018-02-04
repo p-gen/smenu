@@ -542,6 +542,8 @@ struct range_s
   size_t end;
 };
 
+/* Structure used to keep track of the different timeout values */
+/* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
 struct timeout_s
 {
   unsigned type;          /* timeout type: current/quit/word */
