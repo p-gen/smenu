@@ -652,6 +652,11 @@ A space is used as the default separator if none is given.
 .IP "\fB-P\fP [\fIseparator\fP]"
 Works like \fB-T\fP but the word under the cursor, if not tagged, is not
 sent to stdout (\fBP\fP stands for \fIPin\fP).
+
+Note that unlike \fB-T\fP, the output depends on the order in which the
+words were pinned.
+In other words, the first pinned word comes first in the output, the
+second pinned word comes next, and so on.
 .IP \fB-V\fP
 Displays the current version and quits.
 .TP

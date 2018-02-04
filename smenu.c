@@ -62,6 +62,7 @@ typedef struct limits_s      limits_t;
 typedef struct sed_s         sed_t;
 typedef struct interval_s    interval_t;
 typedef struct timeout_s     timeout_t;
+typedef struct output_s      output_t;
 
 /* ********** */
 /* Prototypes */
@@ -93,6 +94,12 @@ interval_comp(void * a, void * b);
 
 static void
 interval_swap(void * a, void * b);
+
+static int
+tag_comp(void * a, void * b);
+
+static void
+tag_swap(void * a, void * b);
 
 static int
 ll_append(ll_t * const list, void * const data);
@@ -462,6 +469,8 @@ struct word_s
   int start, end;              /* start/end absolute horiz. word positions *
                                 * on the screen                            */
   size_t mb;                   /* number of multibytes to display          */
+  size_t tag_order;            /* each time a word is tagged, this value   *
+                                * is increased                             */
   int    special_level;        /* can vary from 0 to 5; 0 meaning normal   */
   char * str;                  /* display string associated with this word */
   size_t len;                  /* number of bytes of str (for trimming)    */
@@ -550,6 +559,14 @@ struct timeout_s
   unsigned initial_value; /* 0: no timeout else value in sec */
   unsigned remain;        /* remaining seconds               */
   unsigned reached;       /* 1: timeout has expired, else 0  */
+};
+
+/* Structure used during the construction of the pinned words list */
+/* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+struct output_s
+{
+  size_t order;
+  char * output_str;
 };
 
 /* **************** */
@@ -1517,9 +1534,9 @@ interval_comp(void * a, void * b)
   return 0;
 }
 
-/* =============================== */
-/* Swap the value of two intervals */
-/* =============================== */
+/* ================================ */
+/* Swap the values of two intervals */
+/* ================================ */
 static void
 interval_swap(void * a, void * b)
 {
@@ -1534,6 +1551,41 @@ interval_swap(void * a, void * b)
   tmp      = ia->high;
   ia->high = ib->high;
   ib->high = tmp;
+}
+
+/* =========================================================== */
+/* Compare the pin order of two pinned word in the output list */
+/* =========================================================== */
+static int
+tag_comp(void * a, void * b)
+{
+  output_t * oa = (output_t *)a;
+  output_t * ob = (output_t *)b;
+
+  if (oa->order == ob->order)
+    return 0;
+
+  return (oa->order < ob->order) ? -1 : 1;
+}
+
+/* ======================================================== */
+/* Swap the values of two selected words in the output list */
+/* ======================================================== */
+static void
+tag_swap(void * a, void * b)
+{
+  output_t * oa = (output_t *)a;
+  output_t * ob = (output_t *)b;
+  char *     tmp_str;
+  size_t     tmp_order;
+
+  tmp_str        = oa->output_str;
+  oa->output_str = ob->output_str;
+  ob->output_str = tmp_str;
+
+  tmp_order = oa->order;
+  oa->order = ob->order;
+  ob->order = tmp_order;
 }
 
 /* ********************* */
@@ -1732,7 +1784,7 @@ ll_partition(ll_node_t * l, ll_node_t * h, int (*comp)(void *, void *),
     {
       i = (i == NULL) ? l : i->next;
 
-      swap(&(i->data), &(j->data));
+      swap(i->data, j->data);
     }
   }
 
@@ -5402,6 +5454,11 @@ main(int argc, char * argv[])
   toggle.taggable            = 0;
   toggle.pinable             = 0;
 
+  /* Initialize the tag hit number which will permit to sort the */
+  /* pinned words when displayed.                                */
+  /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+  size_t next_tag_nb = 0;
+
   /* Columns selection variables */
   /* """"""""""""""""""""""""""" */
   char * cols_filter;
@@ -6953,6 +7010,7 @@ main(int argc, char * argv[])
 
     word_a[count].special_level = special_level;
     word_a[count].is_tagged     = 0;
+    word_a[count].tag_order     = 0;
 
     if (win.col_mode || win.line_mode || win.tab_mode)
     {
@@ -8117,9 +8175,12 @@ main(int argc, char * argv[])
           /* <Enter> has been pressed */
           /* """""""""""""""""""""""" */
 
-          int       extra_lines;
-          char *    output_str;
-          int       width;
+          int        extra_lines;
+          char *     output_str;
+          output_t * output_node;
+
+          int width = 0;
+
           wchar_t * w;
           int       i; /* generic index in this block */
 
@@ -8172,6 +8233,7 @@ main(int argc, char * argv[])
           {
             if (toggle.taggable)
             {
+              char *      str;
               ll_t *      output_list = ll_new();
               ll_node_t * node;
 
@@ -8188,10 +8250,14 @@ main(int argc, char * argv[])
                   /* Chose the original string to print if the current one */
                   /* has been altered by a possible expansion.             */
                   /* """"""""""""""""""""""""""""""""""""""""""""""""""""" */
+                  output_node = malloc(sizeof(output_t));
+
                   if (word_a[wi].orig != NULL)
-                    output_str = word_a[wi].orig;
+                    output_node->output_str = word_a[wi].orig;
                   else
-                    output_str = word_a[wi].str;
+                    output_node->output_str = word_a[wi].str;
+
+                  output_node->order = word_a[wi].tag_order;
 
                   /* Trim the trailing spaces if -k is given in tabular or    */
                   /* column mode. Leading spaces are always preserved because */
@@ -8200,11 +8266,11 @@ main(int argc, char * argv[])
                   /* """""""""""""""""""""""""""""""""""""""""""""""""""""""" */
                   if (!toggle.keep_spaces)
                   {
-                    ltrim(output_str, " \t");
-                    rtrim(output_str, " \t", 0);
+                    ltrim(output_node->output_str, " \t");
+                    rtrim(output_node->output_str, " \t", 0);
                   }
 
-                  ll_append(output_list, xstrdup(output_str));
+                  ll_append(output_list, output_node);
                 }
               }
 
@@ -8213,24 +8279,45 @@ main(int argc, char * argv[])
               if (output_list->head == NULL)
                 goto exit;
 
+              /* If -P is in use, then sort the output list */
+              /* """""""""""""""""""""""""""""""""""""""""" */
+              if (toggle.pinable)
+                ll_sort(output_list, tag_comp, tag_swap);
+
               /* And print them. */
               /* """"""""""""""" */
               node = output_list->head;
               while (node->next != NULL)
               {
+                str = ((output_t *)(node->data))->output_str;
 
-                fprintf(old_stdout, "%s", (char *)(node->data));
+                fprintf(old_stdout, "%s", str);
+                width += wcswidth((w = mb_strtowcs(str)), 65535);
+                free(w);
+                free(str);
                 free(node->data);
 
                 if (win.sel_sep != NULL)
+                {
                   fprintf(old_stdout, "%s", win.sel_sep);
+                  width += wcswidth((w = mb_strtowcs(win.sel_sep)), 65535);
+                  free(w);
+                }
                 else
+                {
                   fprintf(old_stdout, " ");
+                  width++;
+                }
 
                 node = node->next;
               }
 
-              fprintf(old_stdout, "%s", (char *)(node->data));
+              str = ((output_t *)(node->data))->output_str;
+              fprintf(old_stdout, "%s", str);
+              width += wcswidth((w = mb_strtowcs(str)), 65535);
+              free(w);
+              free(str);
+              free(node->data);
             }
             else
             {
@@ -8254,6 +8341,9 @@ main(int argc, char * argv[])
                 rtrim(output_str, " \t", 0);
               }
 
+              width = wcswidth((w = mb_strtowcs(output_str)), 65535);
+              free(w);
+
               /* And print it. */
               /* """"""""""""" */
               fprintf(old_stdout, "%s", output_str);
@@ -8263,20 +8353,11 @@ main(int argc, char * argv[])
             /* """""""""""""""""""""""""""""""""" */
             if (isatty(old_fd1))
             {
-              /* Determine the width (in term of terminal columns) of the  */
+              /* width is (in term of terminal columns) the size of the    */
               /* string to be displayed.                                   */
-              /* 65535 is arbitrary max string width                       */
-              /* if width gets the value -1, then a least one character in */
-              /* output_str is not printable. In this case we do not try   */
-              /* To remove the possible extra lines because the resulting  */
-              /* output is unpredictable.                                  */
-              /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-              width = wcswidth((w = mb_strtowcs(output_str)), 65535);
-              free(w);
-
+              /*                                                           */
               /* With that information, count the number of terminal lines */
               /* printed.                                                  */
-              /* Notice that extra_lines == 0 if width == -1               */
               /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""" */
               extra_lines = width / term.ncolumns;
 
@@ -8829,6 +8910,7 @@ main(int argc, char * argv[])
           if (toggle.taggable)
           {
             word_a[current].is_tagged = 1;
+            word_a[current].tag_order = next_tag_nb++;
             nl = disp_lines(word_a, &win, &toggle, current, count, search_mode,
                             search_buf, &term, last_line, tmp_word, &langinfo);
           }
@@ -8849,7 +8931,10 @@ main(int argc, char * argv[])
             if (word_a[current].is_tagged)
               word_a[current].is_tagged = 0;
             else
+            {
               word_a[current].is_tagged = 1;
+              word_a[current].tag_order = next_tag_nb++;
+            }
             nl = disp_lines(word_a, &win, &toggle, current, count, search_mode,
                             search_buf, &term, last_line, tmp_word, &langinfo);
           }
