@@ -5510,9 +5510,15 @@ main(int argc, char * argv[])
 
   /* Get some terminal capabilities */
   /* """""""""""""""""""""""""""""" */
-  term.colors = tigetnum("colors");
-  if (term.colors < 0)
+
+  if (getenv("NO_COLOR") != NULL)
     term.colors = 0;
+  else
+  {
+    term.colors = tigetnum("colors");
+    if (term.colors < 0)
+      term.colors = 0;
+  }
 
   /* Set the default timeout to 0: no expiration */
   /* """"""""""""""""""""""""""""""""""""""""""" */
