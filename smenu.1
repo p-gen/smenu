@@ -21,8 +21,9 @@ and outputs the selection to stdout.
 [\fB-2\fP \fIregex\fP [\fIATTR\fP]] ... \
 [\fB-5\fP \fIregex\fP [\fIATTR\fP]] \\
       [\fB-g\fP] [\fB-q\fP] [\fB-W\fP \fIbytes\fP] [\fB-L\fP \fIbytes\fP] \\
-      [\fB-T\fP [\fIseparator\fP]] [\fB-P\fP [\fIseparator\fP]] [\fB-V\fP] \\
-      [\fB-x\fP|\fB-X\fP \fItype\fP [\fIword\fP] \fIdelay\fP] [input_file]
+      [\fB-T\fP [\fIseparator\fP]] [\fB-P\fP [\fIseparator\fP]] [\fB-p\fP] \\
+      [\fB-V\fP] [\fB-x\fP|\fB-X\fP \fItype\fP [\fIword\fP] \fIdelay\fP] \\
+      [input_file]
 
       <col selectors> ::= \fIcol1\fP[-\fIcol2\fP],...|\fI<RE>\fP,...
       <row selectors> ::= \fIcol1\fP[-\fIcol2\fP],...|\fI<RE>\fP,...
@@ -60,7 +61,7 @@ Special character sequences formed by a \fI\\\fP followed by one of the
 characters \fIa\fP \fIb\fP \fIt\fP \fIn\fP \fIv\fP \fIf\fP \fIr\fP and
 \fI\\\fP are understood and have their traditional meanings.
 
-UTF-8 sequences introduced by \fI\\u\fP are alse understood.
+UTF-8 sequences introduced by \fI\\u\fP are also understood.
 \fI\\u\fP can be followed by 2,4,6 or 8 hexadecimal characters.
 An invalid UTF-8 sequence will be replaced by a dot  (\fI.\fP), see
 also below.
@@ -639,14 +640,16 @@ also used.
 Enables the multi-selections or tagged mode.
 In this mode, each selectable word can be selected without ending
 the program.
-The last selection is then done as usual by hitting the \fBENTER\fP key
-which also ends the program.
 
-All the tagged words (and the world under the cursor) are then sent
-to stdout separated by the optional argument given to the \fB-T\fP
-option.
-Note than this \fIseparator\fP can have more than one character and can
-even contain control character as in \f(CB$'\\n'\fP.
+The current word can be automatically tagged when the \fBENTER\fP key
+is pressed to finish the selection process, see the \fB-p\fP option.
+
+All the tagged words (and possibly the world under the cursor) are
+then sent to stdout separated by the optional argument given after the
+\fB-T\fP option.
+Note than this \fIseparator\fP can have more than one character, contain
+UTF-8 characters (in native or \fI\\u\fP form) and can even contain
+control character as in \f(CB$'\\n'\fP.
 
 A space is used as the default separator if none is given.
 .IP "\fB-P\fP [\fIseparator\fP]"
@@ -657,6 +660,10 @@ Note that unlike \fB-T\fP, the output depends on the order in which the
 words were pinned.
 In other words, the first pinned word comes first in the output, the
 second pinned word comes next, and so on.
+.IP \fB-p\fP
+This option modifies the default behavior or the \fB-T\fP option.
+An untagged word under the cursor will be automatically tagged when
+\fBENTER\fP is pressed.
 .IP \fB-V\fP
 Displays the current version and quits.
 .TP

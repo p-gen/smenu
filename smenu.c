@@ -394,6 +394,9 @@ struct toggle_s
                             * and tabulate mode.                         */
   int taggable;            /* 1 if tagging is enabled                    */
   int pinable;             /* 1 if pinning is selected                   */
+  int no_autotag;          /* 1 if tagging is selected and pinning is    *
+                            * not and we do no want an automatic tagging *
+                            * when the users presses <ENTER>             */
 };
 
 /* Structure to store the default or imposed smenu limits */
@@ -715,9 +718,9 @@ short_usage(void)
   fprintf(stderr, "       [-E /regex/repl/[g][v][s][i]] ");
   fprintf(stderr, "[-A regex] [-Z regex]                 \\\n");
   fprintf(stderr, "       [-1 regex [attr]] [-2 regex [attr]]... ");
-  fprintf(stderr, "[-5 regex [attr]]            \\\n");
-  fprintf(stderr, "       [-g] [-q] [-W bytes] [-L bytes] [-T [separator]] ");
-  fprintf(stderr, "[-P [separator]]   \\\n");
+  fprintf(stderr, "[-5 regex [attr]] [-g] [-q]  \\\n");
+  fprintf(stderr, "       [-W bytes] [-L bytes] [-T [separator]] ");
+  fprintf(stderr, "[-P [separator]] [-p]        \\\n");
   fprintf(stderr, "       [-V] [-x|-X current|quit|word [<word>] <seconds>] ");
   fprintf(stderr, "[input_file]\n\n");
   fprintf(stderr, "       <col selectors> ::= col1[-col2]...|<RE>...\n");
@@ -808,6 +811,7 @@ usage(void)
   fprintf(stderr, "   sets the separator string between the selected words ");
   fprintf(stderr, "on the output.\n");
   fprintf(stderr, "   A single space is the default separator.\n");
+  fprintf(stderr, "-p activates the auto-pinning when using -T.\n");
   fprintf(stderr, "-V displays the current version and quits.\n");
   fprintf(stderr,
           "-x|-X sets a timeout and specifies what to do when it expires.\n");
@@ -5452,6 +5456,7 @@ main(int argc, char * argv[])
   toggle.blank_nonprintable  = 0;
   toggle.keep_spaces         = 0;
   toggle.taggable            = 0;
+  toggle.no_autotag          = 1;
   toggle.pinable             = 0;
 
   /* Initialize the tag hit number which will permit to sort the */
@@ -5530,7 +5535,7 @@ main(int argc, char * argv[])
   /* """"""""""""""""""""""""""""" */
   while ((opt = egetopt(argc, argv,
                         "Vf:h?X:x:qdMba:i:e:S:I:E:A:Z:1:2:3:4:5:C:R:"
-                        "kclwrgn:t%m:s:W:L:T%:P%"))
+                        "kclwrgn:t%m:s:W:L:T%:P%p"))
          != -1)
   {
     switch (opt)
@@ -5989,6 +5994,10 @@ main(int argc, char * argv[])
           win.sel_sep = xstrdup(optarg);
           mb_interpret(win.sel_sep, &langinfo);
         }
+        break;
+
+      case 'p':
+        toggle.no_autotag = 0;
         break;
 
       case '?':
@@ -8250,7 +8259,8 @@ main(int argc, char * argv[])
                   /* If the -P option is used we do not take into account */
                   /* the word under the cursor.                           */
                   /* """""""""""""""""""""""""""""""""""""""""""""""""""" */
-                  if (wi == current && toggle.pinable && !word_a[wi].is_tagged)
+                  if (wi == current && (toggle.pinable || toggle.no_autotag)
+                      && !word_a[wi].is_tagged)
                     continue;
 
                   /* Chose the original string to print if the current one */
