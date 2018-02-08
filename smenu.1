@@ -637,31 +637,34 @@ also used.
 
 \fI\\u\fP sequences can also be used here.
 .IP "\fB-T\fP [\fIseparator\fP]"
-Enables the multi-selections or tagged mode.
-In this mode, each selectable word can be selected without ending
+Enables the multi-selections or tag mode.
+In this mode, several selectable words can be selected without leaving
 the program.
 
 The current word can be automatically tagged when the \fBENTER\fP key
-is pressed to finish the selection process, see the \fB-p\fP option.
+is pressed to complete the selection process, see the \fB-p\fP option.
 
-All the tagged words (and possibly the world under the cursor) are
-then sent to stdout separated by the optional argument given after the
-\fB-T\fP option.
+All the tagged words (and possibly the world under the cursor) will
+be sent to stdout separated by the optional argument given after the
+option \fB-T\fP.
+
 Note than this \fIseparator\fP can have more than one character, contain
 UTF-8 characters (in native or \fI\\u\fP form) and can even contain
 control character as in \f(CB$'\\n'\fP.
 
 A space is used as the default separator if none is given.
-.IP "\fB-P\fP [\fIseparator\fP]"
-Works like \fB-T\fP but the word under the cursor, if not tagged, is not
-sent to stdout (\fBP\fP stands for \fIPin\fP).
 
-Note that unlike \fB-T\fP, the output depends on the order in which the
-words were pinned.
-In other words, the first pinned word comes first in the output, the
-second pinned word comes next, and so on.
+\fBCaution\fP: To get exactly the same behavior as in version 0.9.11
+and earlier, you must also use the \fB-p\fP option.
+.IP "\fB-P\fP [\fIseparator\fP]"
+Works like \fB-T\fP but, unlike \fB-T\fP, the output depends on the order
+in which the words were tagged.  In other words, the first tagged word
+comes first in the output, the second tagged word comes next, and so
+on.
+\fB-P\fP stands for "Pin".
 .IP \fB-p\fP
-This option modifies the default behavior or the \fB-T\fP option.
+This option modifies the default behavior of the \fB-T\fP and \fB-P\fP
+options.
 An untagged word under the cursor will be automatically tagged when
 \fBENTER\fP is pressed.
 .IP \fB-V\fP

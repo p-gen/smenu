@@ -394,7 +394,7 @@ struct toggle_s
                             * and tabulate mode.                         */
   int taggable;            /* 1 if tagging is enabled                    */
   int pinable;             /* 1 if pinning is selected                   */
-  int no_autotag;          /* 1 if tagging is selected and pinning is    *
+  int autotag;             /* 1 if tagging is selected and pinning is    *
                             * not and we do no want an automatic tagging *
                             * when the users presses <ENTER>             */
 };
@@ -811,7 +811,7 @@ usage(void)
   fprintf(stderr, "   sets the separator string between the selected words ");
   fprintf(stderr, "on the output.\n");
   fprintf(stderr, "   A single space is the default separator.\n");
-  fprintf(stderr, "-p activates the auto-pinning when using -T.\n");
+  fprintf(stderr, "-p activates the auto-tagging when using -T or -P.\n");
   fprintf(stderr, "-V displays the current version and quits.\n");
   fprintf(stderr,
           "-x|-X sets a timeout and specifies what to do when it expires.\n");
@@ -5456,7 +5456,7 @@ main(int argc, char * argv[])
   toggle.blank_nonprintable  = 0;
   toggle.keep_spaces         = 0;
   toggle.taggable            = 0;
-  toggle.no_autotag          = 1;
+  toggle.autotag             = 0;
   toggle.pinable             = 0;
 
   /* Initialize the tag hit number which will permit to sort the */
@@ -5997,7 +5997,7 @@ main(int argc, char * argv[])
         break;
 
       case 'p':
-        toggle.no_autotag = 0;
+        toggle.autotag = 1;
         break;
 
       case '?':
@@ -8252,15 +8252,20 @@ main(int argc, char * argv[])
               ll_t *      output_list = ll_new();
               ll_node_t * node;
 
+              /* When using -P, updates the tagging order of this word to */
+              /* make sure that the output will be correctly sorted.      */
+              /* """""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+              if (toggle.pinable)
+                word_a[current].tag_order = next_tag_nb++;
+
               for (wi = 0; wi < count; wi++)
               {
                 if (word_a[wi].is_tagged || wi == current)
                 {
-                  /* If the -P option is used we do not take into account */
-                  /* the word under the cursor.                           */
-                  /* """""""""""""""""""""""""""""""""""""""""""""""""""" */
-                  if (wi == current && (toggle.pinable || toggle.no_autotag)
-                      && !word_a[wi].is_tagged)
+                  /* If the -p option is not used we do not take into */
+                  /* account an untagged word under the cursor.       */
+                  /* """""""""""""""""""""""""""""""""""""""""""""""" */
+                  if (wi == current && !toggle.autotag && !word_a[wi].is_tagged)
                     continue;
 
                   /* Chose the original string to print if the current one */
@@ -8926,7 +8931,10 @@ main(int argc, char * argv[])
           if (toggle.taggable)
           {
             word_a[current].is_tagged = 1;
-            word_a[current].tag_order = next_tag_nb++;
+
+            if (toggle.pinable)
+              word_a[current].tag_order = next_tag_nb++;
+
             nl = disp_lines(word_a, &win, &toggle, current, count, search_mode,
                             search_buf, &term, last_line, tmp_word, &langinfo);
           }
@@ -8949,7 +8957,9 @@ main(int argc, char * argv[])
             else
             {
               word_a[current].is_tagged = 1;
-              word_a[current].tag_order = next_tag_nb++;
+
+              if (toggle.pinable)
+                word_a[current].tag_order = next_tag_nb++;
             }
             nl = disp_lines(word_a, &win, &toggle, current, count, search_mode,
                             search_buf, &term, last_line, tmp_word, &langinfo);
