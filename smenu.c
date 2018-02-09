@@ -1161,11 +1161,19 @@ parse_txt_attr(char * str, txt_attr_t * attr, short max_color)
     }
   }
 
-  if (d1 >= max_color || d2 >= max_color || d1 < -1 || d2 < -1)
+  if (d1 < -1 || d2 < -1)
     return 0;
 
-  attr->fg = d1;
-  attr->bg = d2;
+  if (max_color == 0)
+  {
+    attr->fg = -1;
+    attr->bg = -1;
+  }
+  else
+  {
+    attr->fg = d1;
+    attr->bg = d2;
+  }
 
   if (n == 2)
     rc = decode_txt_attr_toggles(s2, attr);
@@ -4389,8 +4397,6 @@ disp_word(word_t * word_a, int pos, int search_mode, char * buffer,
         apply_txt_attr(term, win->exclude_attr);
       else
       {
-        if (term->has_reverse)
-          (void)tputs(enter_reverse_mode, 1, outch);
         if (term->has_bold)
           (void)tputs(enter_bold_mode, 1, outch);
         else if (term->has_standout)
