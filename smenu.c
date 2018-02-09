@@ -184,7 +184,11 @@ static int
 mb_validate(const char * str, int length);
 
 static int
+#ifdef __sun
+outch(char c);
+#else
 outch(int c);
+#endif
 
 static void
 restore_term(int const fd);
@@ -1912,7 +1916,11 @@ isprint8(int i)
 /* a routine to call.                                                    */
 /* ===================================================================== */
 static int
+#ifdef __sun
+outch(char c)
+#else
 outch(int c)
+#endif
 {
   putchar(c);
   return (1);
