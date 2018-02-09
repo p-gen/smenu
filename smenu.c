@@ -22,9 +22,6 @@
 #include "config.h"
 #include <stdio.h>
 #include <stdlib.h>
-#if defined(__sun) && defined(__SVR4)
-#include <stdbool.h>
-#endif
 #include <limits.h>
 #include <stdarg.h>
 #include <signal.h>
