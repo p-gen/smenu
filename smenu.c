@@ -464,6 +464,7 @@ struct term_s
   char has_reverse;           /* has reverse mode                       */
   char has_underline;         /* has underline mode                     */
   char has_standout;          /* has standout mode                      */
+  char has_italic;            /* has italic mode                        */
 };
 
 /* Structure describing a word */
@@ -4413,12 +4414,12 @@ disp_word(word_t * word_a, int pos, int search_mode, char * buffer,
         apply_txt_attr(term, win->special_attr[level]);
       else
       {
-        if (term->has_bold)
+        if (term->has_italic)
+          (void)tputs(enter_italics_mode, 1, outch);
+        else if (term->has_bold)
           (void)tputs(enter_bold_mode, 1, outch);
         else if (term->has_reverse)
           (void)tputs(enter_reverse_mode, 1, outch);
-        else if (term->has_standout)
-          (void)tputs(enter_standout_mode, 1, outch);
       }
     }
     else if (word_a[pos].is_tagged)
@@ -6143,6 +6144,8 @@ main(int argc, char * argv[])
     term.has_underline      = (str == (char *)-1 || str == NULL) ? 0 : 1;
     str                     = tigetstr("smso");
     term.has_standout       = (str == (char *)-1 || str == NULL) ? 0 : 1;
+    str                     = tigetstr("sitm");
+    term.has_italic         = (str == (char *)-1 || str == NULL) ? 0 : 1;
   }
 
   if (!term.has_cursor_up || !term.has_cursor_down || !term.has_cursor_left
