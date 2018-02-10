@@ -2642,6 +2642,7 @@ build_repl_string(char * to_match, char * repl, size_t match_start,
           /* '''''''''''''''''''''''''''''''''''''''''''''' */
 
         default:
+          special = 0;
           if (allocated == rsize)
             str = xrealloc(str, allocated += 16);
           str[rsize] = *repl;
