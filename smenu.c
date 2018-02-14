@@ -8965,20 +8965,26 @@ main(int argc, char * argv[])
           break;
 
         case 't':
-          if (toggle.taggable)
+          if (!search_mode)
           {
-            if (word_a[current].is_tagged)
-              word_a[current].is_tagged = 0;
-            else
+            if (toggle.taggable)
             {
-              word_a[current].is_tagged = 1;
+              if (word_a[current].is_tagged)
+                word_a[current].is_tagged = 0;
+              else
+              {
+                word_a[current].is_tagged = 1;
 
-              if (toggle.pinable)
-                word_a[current].tag_order = next_tag_nb++;
+                if (toggle.pinable)
+                  word_a[current].tag_order = next_tag_nb++;
+              }
+              nl =
+                disp_lines(word_a, &win, &toggle, current, count, search_mode,
+                           search_buf, &term, last_line, tmp_word, &langinfo);
             }
-            nl = disp_lines(word_a, &win, &toggle, current, count, search_mode,
-                            search_buf, &term, last_line, tmp_word, &langinfo);
           }
+          else
+            goto special_cmds_when_searching;
           break;
 
         case 0x08: /* ^H */
