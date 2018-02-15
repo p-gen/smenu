@@ -5491,6 +5491,10 @@ main(int argc, char * argv[])
   is_supported_charset = 0;
   charset_ptr          = all_supported_charsets;
 
+  /* Count of the words currently tagged */
+  /* """"""""""""""""""""""""""""""""""" */
+  int tagged_words = 0;
+
   while (charset_ptr->name != NULL)
   {
     if (my_stricmp(charset, charset_ptr->name) == 0)
@@ -8280,7 +8284,8 @@ main(int argc, char * argv[])
                   /* If the -p option is not used we do not take into */
                   /* account an untagged word under the cursor.       */
                   /* """""""""""""""""""""""""""""""""""""""""""""""" */
-                  if (wi == current && !toggle.autotag && !word_a[wi].is_tagged)
+                  if (wi == current && tagged_words > 0 && !toggle.autotag
+                      && !word_a[wi].is_tagged)
                     continue;
 
                   /* Chose the original string to print if the current one */
@@ -8945,22 +8950,33 @@ main(int argc, char * argv[])
         kins:
           if (toggle.taggable)
           {
-            word_a[current].is_tagged = 1;
+            if (word_a[current].is_tagged == 0)
+            {
+              tagged_words++;
+              word_a[current].is_tagged = 1;
 
-            if (toggle.pinable)
-              word_a[current].tag_order = next_tag_nb++;
+              if (toggle.pinable)
+                word_a[current].tag_order = next_tag_nb++;
 
-            nl = disp_lines(word_a, &win, &toggle, current, count, search_mode,
-                            search_buf, &term, last_line, tmp_word, &langinfo);
+              nl =
+                disp_lines(word_a, &win, &toggle, current, count, search_mode,
+                           search_buf, &term, last_line, tmp_word, &langinfo);
+            }
           }
           break;
 
         kdel:
           if (toggle.taggable)
           {
-            word_a[current].is_tagged = 0;
-            nl = disp_lines(word_a, &win, &toggle, current, count, search_mode,
-                            search_buf, &term, last_line, tmp_word, &langinfo);
+            if (word_a[current].is_tagged == 1)
+            {
+              word_a[current].is_tagged = 0;
+              tagged_words--;
+
+              nl =
+                disp_lines(word_a, &win, &toggle, current, count, search_mode,
+                           search_buf, &term, last_line, tmp_word, &langinfo);
+            }
           }
           break;
 
@@ -8970,10 +8986,14 @@ main(int argc, char * argv[])
             if (toggle.taggable)
             {
               if (word_a[current].is_tagged)
+              {
                 word_a[current].is_tagged = 0;
+                tagged_words--;
+              }
               else
               {
                 word_a[current].is_tagged = 1;
+                tagged_words++;
 
                 if (toggle.pinable)
                   word_a[current].tag_order = next_tag_nb++;
