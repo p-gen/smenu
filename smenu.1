@@ -8,7 +8,7 @@ and outputs the selection to stdout.
       [\fB-n\fP \fIlines\fP] [\fB-t\fP [\fIcols\fP]] [\fB-k\fP] \\
       [\fB-s\fP \fIpattern\fP] [\fB-m\fP \fImessage\fP] [\fB-w\fP] \\
       [\fB-d\fP] [\fB-M\fP] [\fB-c\fP] [\fB-l\fP] [\fB-r\fP] [\fB-b\fP] \\
-      [\fB-a\fP] (i:|e:|c:)\fIATTR\fP [(i:|e:|c:)\fIATTR\fP]... \\
+      [\fB-a\fP (i|e|c|b|s|t|sf|st|da):\fIATTR\fP]... \\
       [\fB-i\fP \fIregex\fP] [\fB-e\fP \fIregex\fP] [\fB-C\fP \
 [\fIa\fP|\fIs\fP|\fIi\fP|\fIr\fP|\fId\fP|\fIe\fP]<col selectors>] \\
       [\fB-R\fP \
@@ -17,6 +17,7 @@ and outputs the selection to stdout.
       [\fB-I\fP \fI/regex/string/\fP[\fIg\fP][\fIv\fP][\fIs\fP][\fIi\fP]] \\
       [\fB-E\fP \fI/regex/string/\fP[\fIg\fP][\fIv\fP][\fIs\fP][\fIi\fP]] \\
       [\fB-A\fP \fIregex\fP] [\fB-Z\fP \fIregex\fP] \\
+      [\fB-N\fP \fIregex\fP [\fIargument\fP]...] \\
       [\fB-1\fP \fIregex\fP [\fIATTR\fP]] \
 [\fB-2\fP \fIregex\fP [\fIATTR\fP]] ... \
 [\fB-5\fP \fIregex\fP [\fIATTR\fP]] \\
@@ -27,6 +28,7 @@ and outputs the selection to stdout.
 
       <col selectors> ::= \fIcol1\fP[-\fIcol2\fP],...|\fI<RE>\fP,...
       <row selectors> ::= \fIcol1\fP[-\fIcol2\fP],...|\fI<RE>\fP,...
+      <argument>      ::= [l|r:<char>]|[a:l|r]|[p:i|a|[e:m|r]|[w:<num>]
       <ATTR>          ::= [fg][/bg][,style]
       <RE>            ::= \fB<char>\fIregex\fB<char>\fP
 
@@ -222,6 +224,7 @@ allowed:
   ; include = b           ; selectable color attributes
   exclude = 4/0,u         ; non-selectable color attributes
   tag = 0/5               ; tagged (selected) attributes
+  dacess = 3,b            ; direct access tag attributes
 
   special1 = 7/4,b        ; attributes for the special level 1
   special2 = bu           ; attributes for the special level 2
@@ -237,6 +240,14 @@ allowed:
   words = 32767           ; arbitrary max number of allowed input
                           ; words (int)
   columns = 128           ; arbitrary max number of columns (int)
+
+[timers]
+  search = 60             ; search timers in 1/10 s
+  help = 150              ; duration of the help message in 1/10 s
+  window = 4              ; delay before redrawing if the size of the
+                          ; terminal's window change in 1/10 s
+  direct_access = 6       ; duration allowed to add a new digit to
+                          ; the direct word access number in 1/10 s
 --8<------------------------------------------------------------------
 \fP
 .fi
@@ -390,10 +401,10 @@ At least one attribute prefixed attribute must be given.
 
 \fIPREFIX\fP can take the following values:
 .RS
-.IP \fIe\fP
-excluded words.
 .IP \fIi\fP
 included words.
+.IP \fIe\fP
+excluded words.
 .IP \fIc\fP
 cursor.
 .IP \fIb\fP
@@ -406,6 +417,8 @@ tagged words.
 search field.
 .IP \fIst\fP
 search buffered text.
+.IP \fIda\fP
+direct access tag.
 .RE
 
 If more than one attribute is given, then they must be separated by
@@ -572,9 +585,61 @@ The same trick with \fB-L\fP can also be used.
 .RS
 \fI\\u\fP sequences can also be used in the regexp after \fB-Z\fP.
 .RE
+.IP "\fB-N\fP [\fIparameters\fP]"
+This option allows to number the selectable words matching a specific
+regular expression.
+These numbers are numbered from 1 and provides a direct access to
+the words.
+
+To use this functionality, the user must enter the number which
+corresponds to the desired entry digit per digit.
+
+Each new digit must be added in a time frame of 1/2 seconds (per default)
+otherwise the number is considered complete and a newly entered digit
+will start a new number.
+If the number does not exists, then the cursor is restored to it's
+initial position.
+
+These optional parameters must respect the format \fBx\fP:\fBy\fP where
+\fBx\fP can be:
+
+- '\f(CBl\fP'
+where \fBy\fP is the character (must be printable) before the number.
+
+- '\f(CBr\fP'
+where \fBy\fP is the character (must be printable) after the number.
+
+- '\f(CBa\fP'
+where \fBy\fP is '\f(CBl\fP' if the number must be \f(CBleft\fP aligned,
+or '\f(CBr\fP' if it must be \fIright\fP aligned.
+
+- '\f(CBp\fP'
+where \fBy\fP is '\f(CBi\fP' or '\f(CBa\fP' for the initial paddind of
+the non numbered words: '\f(CBi\fP' stands for \fIi\fPncluded only and
+'\f(CBa\fP' for \fIa\fPll non numbered words.
+
+- '\f(CBe\fP'
+where \fBy\fP is '\f(CBm\fP' if the words must \f(CBm\fPatch the regular
+expression or '\f(CBr\fP' if they must \fBNOT\fP match it (\f(BCr\fPeverse
+matching).
+
+- '\f(CBw\fP'
+where \fBy\fP is the width of the number between 1 and 5 included.
+
+Example: \f(CWr:\\> l:\\< a:l\fP
+
+To number all words with the default parameters, use the syntax:
+"\f(CW-N .\fP"
+which is a shortcut for: "\f(CW-N . l:' ' r:')' a:r p:a e:m\fP"
+
+The \fIpadding\fP directive specifies whether spaces must also be added
+in front of excluded words or not to improve compactness.
+
+When the \f(CBw\fP optional parameter is not given the width of the
+numbers is determined automatically.
 .IP "\fB-1\fP ... \fB-5\fP \fIregex\fP [\fIATTR\fP]"
-Allows to give up to 5 classes of words specified by regular expressions a
-special display color.
+Allows to give up to 5 classes of words specified by regular expressions
+a special display color.
 They are called \fBspecial levels\fP.
 Only selectable words will be considered.
 
@@ -621,12 +686,24 @@ Multibyte sequences (UTF-8) can be natives of using the same ascii
 representation used in words (a leading \fI\\u\fP following by up to 8
 hexadecimal characters).
 
-The default delimiters are: \fISPACE\fP, \fI\\t\fP and \fI\\n\fP.
+Non-printable characters in arguments should be given using the standard
+\fI$''\fP representation.
+\fI$'\\t'\fP stands for the tabulation character for example.
+
+The default delimiters are: \fISPACE\fP, \fI$'\\t'\fP and \fI$'\\n'\fP.
 .IP "\fB-L\fP \fIbytes\fP"
 This option can be used to specify the characters (or multibyte
 sequences) which will be used to delimit the lines in the input stream.
 
-The default delimiter is: \fI\\n\fP.
+Multibyte sequences (UTF-8) can be natives of using the same ascii
+representation used in words (a leading \fI\\u\fP following by up to 8
+hexadecimal characters).
+
+Non-printable characters in arguments should be given using the standard
+$'' representation.
+$'\\n' stands for the newline character for example.
+
+The default delimiter is: \fI$'\\n'\fP.
 
 This option is only useful when the \fB-c\fP or \fB-l\fP option is also
 set.
