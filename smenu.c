@@ -8388,7 +8388,8 @@ main(int argc, char * argv[])
           /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
           if (!search_mode)
           {
-            if (memcmp("\x1bOH", buffer, 3) == 0)
+            if (memcmp("\x1bOH", buffer, 3) == 0
+                || memcmp("\x1b[H", buffer, 3) == 0)
             {
               /* HOME key has been pressed */
               /* """"""""""""""""""""""""" */
@@ -8412,7 +8413,8 @@ main(int argc, char * argv[])
               break;
             }
 
-            if (memcmp("\x1bOF", buffer, 3) == 0)
+            if (memcmp("\x1bOF", buffer, 3) == 0
+                || memcmp("\x1b[F", buffer, 3) == 0)
             {
               /* END key has been pressed */
               /* """""""""""""""""""""""" */
