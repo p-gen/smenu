@@ -4370,6 +4370,37 @@ disp_word(word_t * word_a, int pos, int search_mode, char * buffer,
       if (strlen(buffer) >= word_len)
         buffer[word_len] = '\0';
 
+      mb_strprefix(tmp_word, word_a[pos].str, (int)word_a[pos].mb - 1, &p);
+      if (word_a[pos].is_numbered)
+      {
+        /* Set the direct access number attribute */
+        /* """""""""""""""""""""""""""""""""""""" */
+        if (win->daccess_attr.is_set)
+          apply_txt_attr(term, win->daccess_attr);
+        else
+        {
+          if (term->has_bold)
+            (void)tputs(enter_bold_mode, 1, outch);
+          else if (term->has_standout)
+            (void)tputs(enter_standout_mode, 1, outch);
+        }
+
+        /* And print it */
+        /* """""""""""" */
+        printf("%c", tmp_word[0]);
+        printf("%.*s", menu_index_data.length, tmp_word + 1);
+        printf("%c", tmp_word[menu_index_data.length + 1]);
+        (void)tputs(exit_attribute_mode, 1, outch);
+        printf("%c", tmp_word[menu_index_data.length + 2]);
+      }
+      else if (menu_index_data.length > 0)
+      {
+        /* prints the leading spaces */
+        /* """"""""""""""""""""""""" */
+        (void)tputs(exit_attribute_mode, 1, outch);
+        printf("%.*s", menu_index_data.length + 3, tmp_word);
+      }
+
       /* Set the search cursor attribute */
       /* """"""""""""""""""""""""""""""" */
       if (win->search_field_attr.is_set)
@@ -4384,12 +4415,14 @@ disp_word(word_t * word_a, int pos, int search_mode, char * buffer,
           (void)tputs(enter_standout_mode, 1, outch);
       }
 
-      mb_strprefix(tmp_word, word_a[pos].str, (int)word_a[pos].mb - 1, &p);
-      (void)fputs(tmp_word, stdout);
+      /* Print and overwrite the beginning of the word with the search */
+      /* buffer content if it is not empty                             */
+      /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+      if (menu_index_data.length > 0)
+        (void)fputs(tmp_word + menu_index_data.length + 3, stdout);
+      else
+        (void)fputs(tmp_word, stdout);
 
-      /* Overwrite the beginning of the word with the search buffer */
-      /* content if it is not empty                                 */
-      /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
       if (buffer[0] != '\0')
       {
         int i = 0;
@@ -4405,10 +4438,10 @@ disp_word(word_t * word_a, int pos, int search_mode, char * buffer,
 
         /* Size of the menu selector to skip to reach the word */
         /* """"""""""""""""""""""""""""""""""""""""""""""""""" */
-        if (menu_index_data.length < 0)
-          total_menu_selector_length = 0;
-        else
+        if (menu_index_data.length > 0)
           total_menu_selector_length = menu_index_data.length + 3;
+        else
+          total_menu_selector_length = 0;
 
         /* Put the cursor at the beginning of the word */
         /* """"""""""""""""""""""""""""""""""""""""""" */
