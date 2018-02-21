@@ -4450,6 +4450,7 @@ disp_word(word_t * word_a, int pos, int search_mode, char * buffer,
 
         /* Set the buffer display attribute */
         /* """""""""""""""""""""""""""""""" */
+        (void)tputs(exit_attribute_mode, 1, outch);
         if (win->search_text_attr.is_set)
           apply_txt_attr(term, win->search_text_attr);
         else if (term->has_bold)
@@ -6526,16 +6527,15 @@ main(int argc, char * argv[])
 
     if (!win.search_field_attr.is_set)
     {
-      win.search_field_attr.fg     = 0;
-      win.search_field_attr.bg     = 6;
+      win.search_field_attr.fg     = 7;
+      win.search_field_attr.bg     = 4;
       win.search_field_attr.is_set = SET;
     }
 
     if (!win.search_text_attr.is_set)
     {
-      win.search_text_attr.fg     = 6;
-      win.search_text_attr.bg     = 0;
-      win.search_text_attr.is_set = SET;
+      win.search_text_attr.reverse = 1;
+      win.search_text_attr.is_set  = SET;
     }
 
     if (!win.exclude_attr.is_set)
