@@ -8625,6 +8625,14 @@ main(int argc, char * argv[])
                           search_buf, &term, last_line, tmp_word, &langinfo);
           break;
 
+        case 0x0c: /* ^L */
+          if (current < win.start || current > win.end)
+            last_line = build_metadata(word_a, &term, count, &win);
+
+          nl = disp_lines(word_a, &win, &toggle, current, count, search_mode,
+                          search_buf, &term, last_line, tmp_word, &langinfo);
+          break;
+
         enter:
         case 0x0d: /* CR */
         {
