@@ -44,7 +44,8 @@
 /* Used for timers management */
 /* """""""""""""""""""""""""" */
 #define SECOND 1000000
-#define PERIOD (SECOND / 10)
+#define FREQ 10
+#define TICK (SECOND / FREQ)
 
 /* ******** */
 /* Typedefs */
@@ -5669,12 +5670,12 @@ main(int argc, char * argv[])
   limits.cols        = 256;
   limits.word_length = 256;
 
-  /* Default timers */
-  /* """""""""""""" */
-  timers.search        = 60;
-  timers.help          = 150;
-  timers.winch         = 4;
-  timers.direct_access = 6;
+  /* Default timers in 1/10 s */
+  /* """""""""""""""""""""""" */
+  timers.search        = 60 * FREQ / 10;
+  timers.help          = 150 * FREQ / 10;
+  timers.winch         = 4 * FREQ / 10;
+  timers.direct_access = 6 * FREQ / 10;
 
   /* Toggles initialization */
   /* """""""""""""""""""""" */
@@ -6179,7 +6180,7 @@ main(int argc, char * argv[])
           {
             if (sscanf(argv[optind], "%5u", &timeout.initial_value) == 1)
             {
-              timeout.initial_value *= 10;
+              timeout.initial_value *= FREQ;
               timeout.remain = timeout.initial_value;
             }
             else
@@ -6577,7 +6578,7 @@ main(int argc, char * argv[])
     }
 
     timeout_seconds = xcalloc(1, 6);
-    sprintf(timeout_seconds, "%5u", timeout.initial_value / 10);
+    sprintf(timeout_seconds, "%5u", timeout.initial_value / FREQ);
     memcpy(timeout_message + 1, timeout_seconds, 5);
 
     message_lines_list = ll_new();
@@ -8160,9 +8161,9 @@ main(int argc, char * argv[])
   /* Arm the periodic timer */
   /* """""""""""""""""""""" */
   periodic_itv.it_value.tv_sec     = 0;
-  periodic_itv.it_value.tv_usec    = PERIOD;
+  periodic_itv.it_value.tv_usec    = TICK;
   periodic_itv.it_interval.tv_sec  = 0;
-  periodic_itv.it_interval.tv_usec = PERIOD;
+  periodic_itv.it_interval.tv_usec = TICK;
   setitimer(ITIMER_REAL, &periodic_itv, NULL);
 
   /* Main loop */
@@ -8300,7 +8301,7 @@ main(int argc, char * argv[])
 
       /* Re-arm the timer */
       /* """""""""""""""" */
-      winch_timer = timers.winch; /* default 4 / 10 s */
+      winch_timer = timers.winch; /* default 4 / FREQ s */
 
       /* Short-circuit the loop */
       /* """""""""""""""""""""" */
@@ -8321,9 +8322,9 @@ main(int argc, char * argv[])
 
         timeout.remain--;
 
-        if (!quiet_timeout && timeout.remain % 10 == 0)
+        if (!quiet_timeout && timeout.remain % FREQ == 0)
         {
-          sprintf(timeout_seconds, "%5u", timeout.remain / 10);
+          sprintf(timeout_seconds, "%5u", timeout.remain / FREQ);
           timeout_string =
             (char *)(((ll_node_t *)(message_lines_list->tail))->data);
           memcpy(timeout_string + 1, timeout_seconds, 5);
@@ -8381,7 +8382,7 @@ main(int argc, char * argv[])
 
         if (!quiet_timeout)
         {
-          sprintf(timeout_seconds, "%5u", timeout.initial_value / 10);
+          sprintf(timeout_seconds, "%5u", timeout.initial_value / FREQ);
           timeout_string =
             (char *)(((ll_node_t *)(message_lines_list->tail))->data);
           memcpy(timeout_string + 1, timeout_seconds, 5);
