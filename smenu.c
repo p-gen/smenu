@@ -4650,6 +4650,16 @@ disp_message(ll_t * message_lines_list, int message_max_width,
   int         offset;
   wchar_t *   w;
 
+  /* Disarm the periodic timer to prevent the interruptions to corrupt */
+  /* screen by altering the timing of the decoding of the terminfo     */
+  /* capabilities de                                                   */
+  /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+  periodic_itv.it_value.tv_sec     = 0;
+  periodic_itv.it_value.tv_usec    = 0;
+  periodic_itv.it_interval.tv_sec  = 0;
+  periodic_itv.it_interval.tv_usec = 0;
+  setitimer(ITIMER_REAL, &periodic_itv, NULL);
+
   /* Do nothing if there is no message to display */
   /* """""""""""""""""""""""""""""""""""""""""""" */
   if (message_lines_list == NULL)
@@ -4701,6 +4711,14 @@ disp_message(ll_t * message_lines_list, int message_max_width,
   free(buf);
   free(buf_alt);
 
+  /* Re-arm the periodic timer */
+  /* """"""""""""""""""""""""" */
+  periodic_itv.it_value.tv_sec     = 0;
+  periodic_itv.it_value.tv_usec    = TICK;
+  periodic_itv.it_interval.tv_sec  = 0;
+  periodic_itv.it_interval.tv_usec = TICK;
+  setitimer(ITIMER_REAL, &periodic_itv, NULL);
+
   return message_lines;
 }
 
@@ -4718,6 +4736,16 @@ disp_lines(word_t * word_a, win_t * win, toggle_t * toggle, int current,
   char scroll_symbol[5];
   int  len;
   int  display_bar;
+
+  /* Disarm the periodic timer to prevent the interruptions to corrupt */
+  /* screen by altering the timing of the decoding of the terminfo     */
+  /* capabilities de                                                   */
+  /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+  periodic_itv.it_value.tv_sec     = 0;
+  periodic_itv.it_value.tv_usec    = 0;
+  periodic_itv.it_interval.tv_sec  = 0;
+  periodic_itv.it_interval.tv_usec = 0;
+  setitimer(ITIMER_REAL, &periodic_itv, NULL);
 
   scroll_symbol[0] = ' ';
   scroll_symbol[1] = '\0';
@@ -4951,6 +4979,14 @@ disp_lines(word_t * word_a, win_t * win, toggle_t * toggle, int current,
   /* We restore the cursor position saved before the display of the window */
   /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
   tputs(tparm(restore_cursor), 1, outch);
+
+  /* Re-arm the periodic timer */
+  /* """"""""""""""""""""""""" */
+  periodic_itv.it_value.tv_sec     = 0;
+  periodic_itv.it_value.tv_usec    = TICK;
+  periodic_itv.it_interval.tv_sec  = 0;
+  periodic_itv.it_interval.tv_usec = TICK;
+  setitimer(ITIMER_REAL, &periodic_itv, NULL);
 
   return lines_disp;
 }
@@ -5481,6 +5517,8 @@ main(int argc, char * argv[])
       { "CP1252", 8 },
       { "MS-ANSI", 8 },
       { NULL, 0 } };
+
+  char * out_buffer = xmalloc(4096); /* output stream buffer */
 
   char * message = NULL; /* message to be displayed above the selection *
                           * window                                      */
@@ -8102,7 +8140,7 @@ main(int argc, char * argv[])
   if (freopen("/dev/tty", "w", stdout) == NULL)
     fprintf(stderr, "%s\n", "freopen");
 
-  setbuf(stdout, NULL);
+  setvbuf(stdout, NULL, _IONBF, 0);
 
   /* Set the characteristics of the terminal */
   /* """"""""""""""""""""""""""""""""""""""" */
