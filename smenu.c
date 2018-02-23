@@ -8542,7 +8542,7 @@ main(int argc, char * argv[])
               goto kdel;
           }
 
-          if (memcmp("\x1b", buffer, 1) == 0)
+          if (buffer[0] == 0x1b && buffer[1] == '\0')
           {
             /* ESC key has been pressed */
             /* """""""""""""""""""""""" */
