@@ -8223,7 +8223,9 @@ main(int argc, char * argv[])
 
       if (search_mode)
       {
-        search_mode = 0;
+        search_mode  = 0;
+        search_timer = -1; /* Disable the timer */
+
         nl = disp_lines(word_a, &win, &toggle, current, count, search_mode,
                         search_buf, &term, last_line, tmp_word, tmp_word_alt,
                         &langinfo);
@@ -8446,128 +8448,137 @@ main(int argc, char * argv[])
         case 0x1b: /* ESC */
           /* An escape sequence or a multibyte character has been pressed */
           /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-          if (!search_mode)
+          if (memcmp("\x1bOH", buffer, 3) == 0
+              || memcmp("\x1b[H", buffer, 3) == 0)
           {
-            if (memcmp("\x1bOH", buffer, 3) == 0
-                || memcmp("\x1b[H", buffer, 3) == 0)
+            /* HOME key has been pressed */
+            /* """"""""""""""""""""""""" */
+            current = win.start;
+
+            if (search_mode)
             {
-              /* HOME key has been pressed */
-              /* """"""""""""""""""""""""" */
-              current = win.start;
-
-              /* Find the first selectable word */
-              /* """""""""""""""""""""""""""""" */
-              while (current < win.end && !word_a[current].is_selectable)
-                current++;
-
-              /* In column mode we need to take care of the */
-              /* horizontal scrolling                       */
-              /* """""""""""""""""""""""""""""""""""""""""" */
-              if (win.col_mode || win.line_mode)
-                if (word_a[current].end < win.first_column)
-                  win.first_column = word_a[current].start;
-
-              nl =
-                disp_lines(word_a, &win, &toggle, current, count, search_mode,
-                           search_buf, &term, last_line, tmp_word, &langinfo);
-              break;
+              search_mode  = 0;
+              search_timer = -1; /* Disable the timer */
             }
 
-            if (memcmp("\x1bOF", buffer, 3) == 0
-                || memcmp("\x1b[F", buffer, 3) == 0)
-            {
-              /* END key has been pressed */
-              /* """""""""""""""""""""""" */
-              current = win.end;
+            /* Find the first selectable word */
+            /* """""""""""""""""""""""""""""" */
+            while (current < win.end && !word_a[current].is_selectable)
+              current++;
 
-              /* Find the last selectable word */
-              /* """"""""""""""""""""""""""""" */
-              while (current > win.start && !word_a[current].is_selectable)
-                current--;
+            /* In column mode we need to take care of the */
+            /* horizontal scrolling                       */
+            /* """""""""""""""""""""""""""""""""""""""""" */
+            if (win.col_mode || win.line_mode)
+              if (word_a[current].end < win.first_column)
+                win.first_column = word_a[current].start;
 
-              /* In column mode we need to take care of the */
-              /* horizontal scrolling                       */
-              /* """""""""""""""""""""""""""""""""""""""""" */
-              if (win.col_mode || win.line_mode)
-              {
-                int pos;
-                int len;
-
-                len = term.ncolumns - 3;
-
-                if (word_a[current].end >= len + win.first_column)
-                {
-                  /* Find the first word to be displayed in this line */
-                  /* """""""""""""""""""""""""""""""""""""""""""""""" */
-                  pos = first_word_in_line_a[line_nb_of_word_a[current]];
-
-                  while (word_a[pos].start <= win.first_column)
-                    pos++;
-
-                  /* If the new current word cannot be displayed, search */
-                  /* the first word in the line that can be displayed by */
-                  /* iterating on pos.                                   */
-                  /* """"""""""""""""""""""""""""""""""""""""""""""""""" */
-                  pos--;
-
-                  while (word_a[current].end - word_a[pos].start >= len)
-                    pos++;
-
-                  if (word_a[pos].start > 0)
-                    win.first_column = word_a[pos].start;
-                }
-              }
-
-              nl =
-                disp_lines(word_a, &win, &toggle, current, count, search_mode,
-                           search_buf, &term, last_line, tmp_word, &langinfo);
-              break;
-            }
-
-            if (memcmp("\x1bOD", buffer, 3) == 0
-                || memcmp("\x1b[D", buffer, 3) == 0)
-              /* Left arrow key has been pressed */
-              /* """"""""""""""""""""""""""""""" */
-              goto kl;
-
-            if (memcmp("\x1bOC", buffer, 3) == 0
-                || memcmp("\x1b[C", buffer, 3) == 0)
-              /* Right arrow key has been pressed */
-              /* """""""""""""""""""""""""""""""" */
-              goto kr;
-
-            if (memcmp("\x1bOA", buffer, 3) == 0
-                || memcmp("\x1b[A", buffer, 3) == 0)
-              /* Up arrow key has been pressed */
-              /* """"""""""""""""""""""""""""" */
-              goto ku;
-
-            if (memcmp("\x1bOB", buffer, 3) == 0
-                || memcmp("\x1b[B", buffer, 3) == 0)
-              /* Down arrow key has been pressed */
-              /* """"""""""""""""""""""""""""""" */
-              goto kd;
-
-            if (memcmp("\x1b[5~", buffer, 4) == 0)
-              /* PgUp key has been pressed */
-              /* """"""""""""""""""""""""" */
-              goto kpp;
-
-            if (memcmp("\x1b[6~", buffer, 4) == 0)
-              /* PgDn key has been pressed */
-              /* """"""""""""""""""""""""" */
-              goto knp;
-
-            if (memcmp("\x1b[2~", buffer, 4) == 0)
-              /* Ins key has been pressed */
-              /* """"""""""""""""""""""""" */
-              goto kins;
-
-            if (memcmp("\x1b[3~", buffer, 4) == 0)
-              /* Del key has been pressed */
-              /* """"""""""""""""""""""""" */
-              goto kdel;
+            nl = disp_lines(word_a, &win, &toggle, current, count, search_mode,
+                            search_buf, &term, last_line, tmp_word,
+                            tmp_word_alt, &langinfo);
+            break;
           }
+
+          if (memcmp("\x1bOF", buffer, 3) == 0
+              || memcmp("\x1b[F", buffer, 3) == 0)
+          {
+            /* END key has been pressed */
+            /* """""""""""""""""""""""" */
+            current = win.end;
+
+            if (search_mode)
+            {
+              search_mode  = 0;
+              search_timer = -1; /* Disable the timer */
+            }
+
+            /* Find the last selectable word */
+            /* """"""""""""""""""""""""""""" */
+            while (current > win.start && !word_a[current].is_selectable)
+              current--;
+
+            /* In column mode we need to take care of the */
+            /* horizontal scrolling                       */
+            /* """""""""""""""""""""""""""""""""""""""""" */
+            if (win.col_mode || win.line_mode)
+            {
+              int pos;
+              int len;
+
+              len = term.ncolumns - 3;
+
+              if (word_a[current].end >= len + win.first_column)
+              {
+                /* Find the first word to be displayed in this line */
+                /* """""""""""""""""""""""""""""""""""""""""""""""" */
+                pos = first_word_in_line_a[line_nb_of_word_a[current]];
+
+                while (word_a[pos].start <= win.first_column)
+                  pos++;
+
+                /* If the new current word cannot be displayed, search */
+                /* the first word in the line that can be displayed by */
+                /* iterating on pos.                                   */
+                /* """"""""""""""""""""""""""""""""""""""""""""""""""" */
+                pos--;
+
+                while (word_a[current].end - word_a[pos].start >= len)
+                  pos++;
+
+                if (word_a[pos].start > 0)
+                  win.first_column = word_a[pos].start;
+              }
+            }
+
+            nl = disp_lines(word_a, &win, &toggle, current, count, search_mode,
+                            search_buf, &term, last_line, tmp_word,
+                            tmp_word_alt, &langinfo);
+            break;
+          }
+
+          if (memcmp("\x1bOD", buffer, 3) == 0
+              || memcmp("\x1b[D", buffer, 3) == 0)
+            /* Left arrow key has been pressed */
+            /* """"""""""""""""""""""""""""""" */
+            goto kl;
+
+          if (memcmp("\x1bOC", buffer, 3) == 0
+              || memcmp("\x1b[C", buffer, 3) == 0)
+            /* Right arrow key has been pressed */
+            /* """""""""""""""""""""""""""""""" */
+            goto kr;
+
+          if (memcmp("\x1bOA", buffer, 3) == 0
+              || memcmp("\x1b[A", buffer, 3) == 0)
+            /* Up arrow key has been pressed */
+            /* """"""""""""""""""""""""""""" */
+            goto ku;
+
+          if (memcmp("\x1bOB", buffer, 3) == 0
+              || memcmp("\x1b[B", buffer, 3) == 0)
+            /* Down arrow key has been pressed */
+            /* """"""""""""""""""""""""""""""" */
+            goto kd;
+
+          if (memcmp("\x1b[5~", buffer, 4) == 0)
+            /* PgUp key has been pressed */
+            /* """"""""""""""""""""""""" */
+            goto kpp;
+
+          if (memcmp("\x1b[6~", buffer, 4) == 0)
+            /* PgDn key has been pressed */
+            /* """"""""""""""""""""""""" */
+            goto knp;
+
+          if (memcmp("\x1b[2~", buffer, 4) == 0)
+            /* Ins key has been pressed */
+            /* """"""""""""""""""""""""" */
+            goto kins;
+
+          if (memcmp("\x1b[3~", buffer, 4) == 0)
+            /* Del key has been pressed */
+            /* """"""""""""""""""""""""" */
+            goto kdel;
 
           if (buffer[0] == 0x1b && buffer[1] == '\0')
           {
@@ -8891,10 +8902,16 @@ main(int argc, char * argv[])
         }
 
         kl:
-        case 'H':
-        case 'h':
           /* Cursor Left key has been pressed */
           /* """""""""""""""""""""""""""""""" */
+          if (search_mode)
+          {
+            search_mode  = 0;
+            search_timer = -1; /* Disable the timer */
+          }
+
+        case 'H':
+        case 'h':
           if (!search_mode)
           {
             int old_current = current;
@@ -8968,16 +8985,23 @@ main(int argc, char * argv[])
               nl = disp_lines(word_a, &win, &toggle, current, count,
                               search_mode, search_buf, &term, last_line,
                               tmp_word, tmp_word_alt, &langinfo);
-            break;
           }
           else
             goto special_cmds_when_searching;
 
+          break;
+
         kr:
-        case 'L':
-        case 'l':
           /* Right key has been pressed */
           /* """""""""""""""""""""""""" */
+          if (search_mode)
+          {
+            search_mode  = 0;
+            search_timer = -1; /* Disable the timer */
+          }
+
+        case 'L':
+        case 'l':
           if (!search_mode)
           {
             int old_current = current;
@@ -9062,10 +9086,11 @@ main(int argc, char * argv[])
               nl = disp_lines(word_a, &win, &toggle, current, count,
                               search_mode, search_buf, &term, last_line,
                               tmp_word, tmp_word_alt, &langinfo);
-            break;
           }
           else
             goto special_cmds_when_searching;
+
+          break;
 
         kpp:
           /* PgUp key has been pressed */
@@ -9073,10 +9098,16 @@ main(int argc, char * argv[])
           page = win.max_lines;
 
         ku:
-        case 'K':
-        case 'k':
           /* Cursor Up key has been pressed */
           /* """""""""""""""""""""""""""""" */
+          if (search_mode)
+          {
+            search_mode  = 0;
+            search_timer = -1; /* Disable the timer */
+          }
+
+        case 'K':
+        case 'k':
           if (!search_mode)
           {
             int cur_line;
@@ -9211,10 +9242,11 @@ main(int argc, char * argv[])
                                 tmp_word, tmp_word_alt, &langinfo);
               }
             }
-            break;
           }
           else
             goto special_cmds_when_searching;
+
+          break;
 
         knp:
           /* PgDn key has been pressed */
@@ -9222,10 +9254,16 @@ main(int argc, char * argv[])
           page = win.max_lines;
 
         kd:
-        case 'J':
-        case 'j':
           /* Cursor Down key has been pressed */
           /* """""""""""""""""""""""""""""""" */
+          if (search_mode)
+          {
+            search_mode  = 0;
+            search_timer = -1; /* Disable the timer */
+          }
+
+        case 'J':
+        case 'j':
           if (!search_mode)
           {
             int cur_line;
@@ -9374,10 +9412,11 @@ main(int argc, char * argv[])
                                 tmp_word, tmp_word_alt, &langinfo);
               }
             }
-            break;
           }
           else
             goto special_cmds_when_searching;
+
+          break;
 
         case 0x06:
         case '/':
