@@ -5695,7 +5695,7 @@ main(int argc, char * argv[])
   /* """""""""""""""""""""""" */
   timers.search        = 60 * FREQ / 10;
   timers.help          = 150 * FREQ / 10;
-  timers.winch         = 4 * FREQ / 10;
+  timers.winch         = 7 * FREQ / 10;
   timers.direct_access = 6 * FREQ / 10;
 
   /* Toggles initialization */
