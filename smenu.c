@@ -5045,7 +5045,7 @@ sig_handler(int s)
       if (winch_timer > 0)
         winch_timer--;
 
-      if (winch_timer == 0 && got_winch)
+      if (winch_timer == 0)
       {
         got_winch      = 0;
         got_help_alrm  = 0;
@@ -8282,6 +8282,12 @@ main(int argc, char * argv[])
       daccess_timer = timers.direct_access;
     }
 
+    if (got_winch)
+    {
+      got_winch   = 0;
+      winch_timer = timers.winch; /* default 7 / FREQ s */
+    }
+
     /* If the timeout is set then decrement its remaining value */
     /* Upon expiration of this alarm, we trigger a content update */
     /* of the window                                              */
@@ -8289,32 +8295,55 @@ main(int argc, char * argv[])
     if (got_winch_alrm)
     {
       int i; /* generic index in this block */
+      int nlines, ncolumns;
+      int line, column;
+
+      /* Re-arm the timer */
+      /* """""""""""""""" */
+      winch_timer = timers.winch; /* default 7 / FREQ s */
+
+      get_terminal_size(&nlines, &ncolumns);
 
       got_winch_alrm = 0;
 
-      get_terminal_size(&term.nlines, &term.ncolumns);
-
-      /* Erase the current window */
-      /* """""""""""""""""""""""" */
-      for (i = 0; i < message_lines; i++)
+      if (got_winch || term.nlines != nlines || term.ncolumns != ncolumns)
       {
-        tputs(cursor_up, 1, outch);
-        tputs(clr_bol, 1, outch);
-        tputs(clr_eol, 1, outch);
+        term.nlines   = nlines;
+        term.ncolumns = ncolumns;
+        continue;
       }
 
-      tputs(clr_bol, 1, outch);
-      tputs(clr_eol, 1, outch);
-      tputs(save_cursor, 1, outch);
+      winch_timer = -1;
+
+      /* Erase the visible part of the displayed window */
+      /* """""""""""""""""""""""""""""""""""""""""""""" */
+      for (i = 0; i < message_lines; i++)
+      {
+        tputs(tparm(clr_bol), 1, outch);
+        tputs(tparm(clr_eol), 1, outch);
+        tputs(tparm(cursor_up), 1, outch);
+      }
+
+      tputs(tparm(clr_bol), 1, outch);
+      tputs(tparm(clr_eol), 1, outch);
+      tputs(tparm(save_cursor), 1, outch);
+
+      get_cursor_position(&line, &column);
 
       for (i = 1; i < nl + message_lines; i++)
       {
-        tputs(cursor_down, 1, outch);
-        tputs(clr_bol, 1, outch);
-        tputs(clr_eol, 1, outch);
-      }
+        if (line + i >= nlines)
+          break; /* We have reached the last terminal line */
 
-      tputs(restore_cursor, 1, outch);
+        tputs(tparm(cursor_down), 1, outch);
+        tputs(tparm(clr_bol), 1, outch);
+        tputs(tparm(clr_eol), 1, outch);
+      }
+      tputs(tparm(restore_cursor), 1, outch);
+
+      /* Get new cursor position */
+      /* """"""""""""""""""""""" */
+      get_cursor_position(&term.curs_line, &term.curs_column);
 
       /* Calculate the new metadata and draw the window again */
       /* """""""""""""""""""""""""""""""""""""""""""""""""""" */
@@ -8344,15 +8373,11 @@ main(int argc, char * argv[])
                       search_buf, &term, last_line, tmp_word, tmp_word_alt,
                       &langinfo);
 
-      /* Get new cursor position */
-      /* """"""""""""""""""""""" */
-      get_cursor_position(&term.curs_line, &term.curs_column);
-
       /* Determine the number of lines to move the cursor up if the window  */
       /* display needed a terminal scrolling                                */
       /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-      if (nl + term.curs_line > term.nlines)
-        offset = term.curs_line + nl - term.nlines;
+      if (nl + message_lines + term.curs_line > term.nlines)
+        offset = term.curs_line + nl + message_lines - term.nlines;
       else
         offset = 0;
 
@@ -8364,10 +8389,6 @@ main(int argc, char * argv[])
       /* Get new cursor position */
       /* """"""""""""""""""""""" */
       get_cursor_position(&term.curs_line, &term.curs_column);
-
-      /* Re-arm the timer */
-      /* """""""""""""""" */
-      winch_timer = timers.winch; /* default 4 / FREQ s */
 
       /* Short-circuit the loop */
       /* """""""""""""""""""""" */
@@ -8399,10 +8420,11 @@ main(int argc, char * argv[])
           /* """""""""""""""""""""""" */
           for (i = 0; i < message_lines; i++)
           {
-            tputs(tparm(cursor_up), 1, outch);
             tputs(tparm(clr_bol), 1, outch);
             tputs(tparm(clr_eol), 1, outch);
+            tputs(tparm(cursor_up), 1, outch);
           }
+
           tputs(tparm(clr_bol), 1, outch);
           tputs(tparm(clr_eol), 1, outch);
 
