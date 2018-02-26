@@ -2020,7 +2020,7 @@ outch(int c)
 #endif
 {
   putchar(c);
-  return (1);
+  return 1;
 }
 
 /* =============================================== */
@@ -8253,7 +8253,7 @@ main(int argc, char * argv[])
     /* If an alarm has been triggered and we are in search mode, try to   */
     /* use the  prefix in search_buf to find the first word matching this */
     /* prefix. If a word if found trigger a window refresh as if the      */
-    /* terminal has been  resized                                         */
+    /* terminal has been resized                                          */
     /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
     if (got_search_alrm)
     {
