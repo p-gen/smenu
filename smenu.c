@@ -966,7 +966,11 @@ help(win_t * win, term_t * term, int last_line, toggle_t * toggle)
   /* """"""""""""""""""""""""""""""""""""""""""""""""""""" */
   if (win->offset > 0)
     if ((offset = win->offset + win->max_width / 2 - help_len / 2) > 0)
-      printf("%*s", offset, " ");
+    {
+      size_t i;
+      for (i = 0; i < offset; i++)
+        fputc(' ', stdout);
+    }
 
   /* Print the different objects forming the help line */
   /* """"""""""""""""""""""""""""""""""""""""""""""""" */
@@ -4644,7 +4648,6 @@ disp_message(ll_t * message_lines_list, int message_max_width,
   ll_node_t * node;
   char *      line;
   char *      buf;
-  char *      buf_alt;
   int         len;
   int         size;
   int         message_lines = 0;
@@ -4666,9 +4669,8 @@ disp_message(ll_t * message_lines_list, int message_max_width,
   if (message_lines_list == NULL)
     return 0;
 
-  node    = message_lines_list->head;
-  buf     = xmalloc(message_max_len + 1);
-  buf_alt = xmalloc(message_max_len + 1);
+  node = message_lines_list->head;
+  buf  = xmalloc(message_max_len + 1);
 
   if (term->has_bold)
     tputs(TPARM1(enter_bold_mode), 1, outch);
@@ -4693,15 +4695,16 @@ disp_message(ll_t * message_lines_list, int message_max_width,
 
     if (win->center && offset > 0)
     {
-      sprintf(buf_alt, "%*s", offset, " ");
-      tputs(buf_alt, 1, outch);
+      size_t i;
+
+      for (i = 0; i < offset; i++)
+        putc(' ', stdout);
     }
 
     /* Only print the start of a line if the screen width if too small */
     /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
     mb_strprefix(buf, line, len, &size);
-    sprintf(buf_alt, "%s\n", buf);
-    tputs(buf_alt, 1, outch);
+    puts(buf);
 
     node = node->next;
     message_lines++;
@@ -4710,7 +4713,6 @@ disp_message(ll_t * message_lines_list, int message_max_width,
   tputs(TPARM1(exit_attribute_mode), 1, outch);
 
   free(buf);
-  free(buf_alt);
 
   /* Re-arm the periodic timer */
   /* """"""""""""""""""""""""" */
@@ -4791,8 +4793,9 @@ disp_lines(word_t * word_a, win_t * win, toggle_t * toggle, int current,
   /* """""""""""""""""""" */
   if (win->offset > 0)
   {
-    sprintf(tmp_word_alt, "%*s", win->offset, " ");
-    tputs(tmp_word_alt, 1, outch);
+    size_t i;
+    for (i = 0; i < win->offset; i++)
+      fputc(' ', stdout);
   }
 
   left_margin_putp(scroll_symbol, term, win);
@@ -4918,8 +4921,9 @@ disp_lines(word_t * word_a, win_t * win, toggle_t * toggle, int current,
 
           if (win->offset > 0)
           {
-            sprintf(tmp_word_alt, "%*s", win->offset, " ");
-            tputs(tmp_word_alt, 1, outch);
+            size_t i;
+            for (i = 0; i < win->offset; i++)
+              fputc(' ', stdout);
           }
 
           left_margin_putp(scroll_symbol, term, win);
