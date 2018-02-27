@@ -18,6 +18,10 @@
 #define WORDSCHUNK 8
 #define COLSCHUNK 16
 
+#define TPARM1(p, ...) tparm(p, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+#define TPARM2(p, q, ...) tparm(p, q, 0, 0, 0, 0, 0, 0, 0, 0)
+#define TPARM3(p, q, r, ...) tparm(p, q, r, 0, 0, 0, 0, 0, 0, 0)
+
 #define _XOPEN_SOURCE 600
 #include "config.h"
 #include <stdio.h>
@@ -956,7 +960,7 @@ help(win_t * win, term_t * term, int last_line, toggle_t * toggle)
   /* Save the position of the terminal cursor so that it can be */
   /* put back there after printing of the help line             */
   /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-  tputs(tparm(save_cursor), 1, outch);
+  tputs(TPARM1(save_cursor), 1, outch);
 
   /* Center the help line if the -M (Middle option is set. */
   /* """"""""""""""""""""""""""""""""""""""""""""""""""""" */
@@ -983,27 +987,27 @@ help(win_t * win, term_t * term, int last_line, toggle_t * toggle)
     {
       case 'b':
         if (term->has_bold)
-          tputs(tparm(enter_bold_mode), 1, outch);
+          tputs(TPARM1(enter_bold_mode), 1, outch);
         break;
       case 'r':
         if (term->has_reverse)
-          tputs(tparm(enter_reverse_mode), 1, outch);
+          tputs(TPARM1(enter_reverse_mode), 1, outch);
         else if (term->has_standout)
-          tputs(tparm(enter_standout_mode), 1, outch);
+          tputs(TPARM1(enter_standout_mode), 1, outch);
         break;
       case 'n':
-        tputs(tparm(exit_attribute_mode), 1, outch);
+        tputs(TPARM1(exit_attribute_mode), 1, outch);
         break;
     }
     tputs(entries[index].str, 1, outch);
   }
 
-  tputs(tparm(exit_attribute_mode), 1, outch);
-  tputs(tparm(clr_eol), 1, outch);
+  tputs(TPARM1(exit_attribute_mode), 1, outch);
+  tputs(TPARM1(clr_eol), 1, outch);
 
   /* Relocate the cursor to its saved position */
   /* """"""""""""""""""""""""""""""""""""""""" */
-  tputs(tparm(restore_cursor), 1, outch);
+  tputs(TPARM1(restore_cursor), 1, outch);
 }
 
 /* *************************** */
@@ -1245,22 +1249,22 @@ apply_txt_attr(term_t * term, txt_attr_t attr)
     set_background_color(term, attr.bg);
 
   if (attr.bold > 0)
-    tputs(tparm(enter_bold_mode), 1, outch);
+    tputs(TPARM1(enter_bold_mode), 1, outch);
 
   if (attr.dim > 0)
-    tputs(tparm(enter_dim_mode), 1, outch);
+    tputs(TPARM1(enter_dim_mode), 1, outch);
 
   if (attr.reverse > 0)
-    tputs(tparm(enter_reverse_mode), 1, outch);
+    tputs(TPARM1(enter_reverse_mode), 1, outch);
 
   if (attr.standout > 0)
-    tputs(tparm(enter_standout_mode), 1, outch);
+    tputs(TPARM1(enter_standout_mode), 1, outch);
 
   if (attr.underline > 0)
-    tputs(tparm(enter_underline_mode), 1, outch);
+    tputs(TPARM1(enter_underline_mode), 1, outch);
 
   if (attr.italic > 0)
-    tputs(tparm(enter_italics_mode), 1, outch);
+    tputs(TPARM1(enter_italics_mode), 1, outch);
 }
 
 /* ******************** */
@@ -4042,9 +4046,9 @@ static void
 set_foreground_color(term_t * term, int color)
 {
   if (term->color_method == 0 && term->has_setf)
-    tputs(tparm(set_foreground, color, 0, 0, 0, 0, 0, 0, 0, 0), 1, outch);
+    tputs(TPARM2(set_foreground, color), 1, outch);
   else if (term->color_method == 1 && term->has_setaf)
-    tputs(tparm(set_a_foreground, color, 0, 0, 0, 0, 0, 0, 0, 0), 1, outch);
+    tputs(TPARM2(set_a_foreground, color), 1, outch);
 }
 
 /* ========================================================= */
@@ -4054,9 +4058,9 @@ static void
 set_background_color(term_t * term, int color)
 {
   if (term->color_method == 0 && term->has_setb)
-    tputs(tparm(set_background, color, 0, 0, 0, 0, 0, 0, 0, 0), 1, outch);
+    tputs(TPARM2(set_background, color), 1, outch);
   else if (term->color_method == 1 && term->has_setab)
-    tputs(tparm(set_a_background, color, 0, 0, 0, 0, 0, 0, 0, 0), 1, outch);
+    tputs(TPARM2(set_a_background, color), 1, outch);
 }
 
 /* ====================================================== */
@@ -4068,14 +4072,14 @@ left_margin_putp(char * s, term_t * term, win_t * win)
   if (win->shift_attr.is_set)
     apply_txt_attr(term, win->shift_attr);
   else if (term->has_bold)
-    tputs(tparm(enter_bold_mode), 1, outch);
+    tputs(TPARM1(enter_bold_mode), 1, outch);
 
   /* We won't print this symbol when not in column mode */
   /* """""""""""""""""""""""""""""""""""""""""""""""""" */
   if (*s != '\0')
     tputs(s, 1, outch);
 
-  tputs(tparm(exit_attribute_mode), 1, outch);
+  tputs(TPARM1(exit_attribute_mode), 1, outch);
 }
 
 /* ===================================================== */
@@ -4088,19 +4092,15 @@ right_margin_putp(char * s1, char * s2, langinfo_t * langinfo, term_t * term,
   if (win->bar_attr.is_set)
     apply_txt_attr(term, win->bar_attr);
   else if (term->has_bold)
-    tputs(tparm(enter_bold_mode), 1, outch);
+    tputs(TPARM1(enter_bold_mode), 1, outch);
 
   if (term->has_hpa)
-    tputs(tparm(column_address, offset + win->max_width + 1, 0, 0, 0, 0, 0, 0,
-                0, 0),
-          1, outch);
+    tputs(TPARM2(column_address, offset + win->max_width + 1), 1, outch);
   else if (term->has_parm_right_cursor)
-    tputs(tparm(parm_right_cursor, offset + win->max_width + 1, 0, 0, 0, 0, 0,
-                0, 0, 0),
-          1, outch);
+    tputs(TPARM2(parm_right_cursor, offset + win->max_width + 1), 1, outch);
   else
-    tputs(tparm(cursor_address, term->curs_line + line - 2,
-                offset + win->max_width + 1, 0, 0, 0, 0, 0, 0, 0),
+    tputs(TPARM3(cursor_address, term->curs_line + line - 2,
+                 offset + win->max_width + 1),
           1, outch);
 
   if (langinfo->utf8)
@@ -4108,7 +4108,7 @@ right_margin_putp(char * s1, char * s2, langinfo_t * langinfo, term_t * term,
   else
     tputs(s2, 1, outch);
 
-  tputs(tparm(exit_attribute_mode), 1, outch);
+  tputs(TPARM1(exit_attribute_mode), 1, outch);
 }
 
 /* ************** */
@@ -4382,9 +4382,9 @@ disp_word(word_t * word_a, int pos, int search_mode, char * buffer,
         else
         {
           if (term->has_bold)
-            tputs(tparm(enter_bold_mode), 1, outch);
+            tputs(TPARM1(enter_bold_mode), 1, outch);
           else if (term->has_standout)
-            tputs(tparm(enter_standout_mode), 1, outch);
+            tputs(TPARM1(enter_standout_mode), 1, outch);
         }
 
         /* And print it */
@@ -4392,7 +4392,7 @@ disp_word(word_t * word_a, int pos, int search_mode, char * buffer,
         sprintf(tmp_word_alt, "%c%.*s%c%s%c", tmp_word[0],
                 menu_index_data.length, tmp_word + 1,
                 tmp_word[menu_index_data.length + 1],
-                tparm(exit_attribute_mode),
+                TPARM1(exit_attribute_mode),
                 tmp_word[menu_index_data.length + 2]);
         tputs(tmp_word_alt, 1, outch);
       }
@@ -4400,7 +4400,7 @@ disp_word(word_t * word_a, int pos, int search_mode, char * buffer,
       {
         /* prints the leading spaces */
         /* """"""""""""""""""""""""" */
-        tputs(tparm(exit_attribute_mode), 1, outch);
+        tputs(TPARM1(exit_attribute_mode), 1, outch);
         sprintf(tmp_word_alt, "%.*s", menu_index_data.length + 3, tmp_word);
         tputs(tmp_word_alt, 1, outch);
       }
@@ -4412,11 +4412,11 @@ disp_word(word_t * word_a, int pos, int search_mode, char * buffer,
       else
       {
         if (term->has_underline)
-          tputs(tparm(enter_underline_mode), 1, outch);
+          tputs(TPARM1(enter_underline_mode), 1, outch);
         if (term->has_reverse)
-          tputs(tparm(enter_reverse_mode), 1, outch);
+          tputs(TPARM1(enter_reverse_mode), 1, outch);
         else if (term->has_standout)
-          tputs(tparm(enter_standout_mode), 1, outch);
+          tputs(TPARM1(enter_standout_mode), 1, outch);
       }
 
       /* Print and overwrite the beginning of the word with the search */
@@ -4450,22 +4450,22 @@ disp_word(word_t * word_a, int pos, int search_mode, char * buffer,
         /* Put the cursor at the beginning of the word */
         /* """"""""""""""""""""""""""""""""""""""""""" */
         for (i = 0; i < e - s + 1 - total_menu_selector_length; i++)
-          tputs(tparm(cursor_left), 1, outch);
+          tputs(TPARM1(cursor_left), 1, outch);
 
         /* Set the buffer display attribute */
         /* """""""""""""""""""""""""""""""" */
-        tputs(tparm(exit_attribute_mode), 1, outch);
+        tputs(TPARM1(exit_attribute_mode), 1, outch);
         if (win->search_text_attr.is_set)
           apply_txt_attr(term, win->search_text_attr);
         else if (term->has_bold)
-          tputs(tparm(enter_bold_mode), 1, outch);
+          tputs(TPARM1(enter_bold_mode), 1, outch);
 
         tputs(buffer, 1, outch);
 
         /* Put back the cursor after the word */
         /* """""""""""""""""""""""""""""""""" */
         for (i = 0; i < e - s - buf_width + 1 - total_menu_selector_length; i++)
-          tputs(tparm(cursor_right), 1, outch);
+          tputs(TPARM1(cursor_right), 1, outch);
       }
     }
     else
@@ -4480,21 +4480,21 @@ disp_word(word_t * word_a, int pos, int search_mode, char * buffer,
         else
         {
           if (term->has_bold)
-            tputs(tparm(enter_bold_mode), 1, outch);
+            tputs(TPARM1(enter_bold_mode), 1, outch);
           else if (term->has_standout)
-            tputs(tparm(enter_standout_mode), 1, outch);
+            tputs(TPARM1(enter_standout_mode), 1, outch);
         }
 
         /* If this word is not numbered, reset the display */
         /* attributes before printing the leading spaces.  */
         /* """"""""""""""""""""""""""""""""""""""""""""""" */
         if (!word_a[pos].is_numbered)
-          tputs(tparm(exit_attribute_mode), 1, outch);
+          tputs(TPARM1(exit_attribute_mode), 1, outch);
 
         /* Print the non significant part of the word */
         /* """""""""""""""""""""""""""""""""""""""""" */
         sprintf(tmp_word_alt, "%.*s%s%c", offset - 1, word_a[pos].str,
-                tparm(exit_attribute_mode), word_a[pos].str[offset - 1]);
+                TPARM1(exit_attribute_mode), word_a[pos].str[offset - 1]);
         tputs(tmp_word_alt, 1, outch);
       }
 
@@ -4513,7 +4513,7 @@ disp_word(word_t * word_a, int pos, int search_mode, char * buffer,
         if (word_a[pos].is_tagged)
         {
           if (term->has_underline)
-            tputs(tparm(enter_underline_mode), 1, outch);
+            tputs(TPARM1(enter_underline_mode), 1, outch);
         }
       }
       else if (win->cursor_on_tag_attr.is_set)
@@ -4523,9 +4523,9 @@ disp_word(word_t * word_a, int pos, int search_mode, char * buffer,
         else
         {
           if (term->has_reverse)
-            tputs(tparm(enter_reverse_mode), 1, outch);
+            tputs(TPARM1(enter_reverse_mode), 1, outch);
           else if (term->has_standout)
-            tputs(tparm(enter_standout_mode), 1, outch);
+            tputs(TPARM1(enter_standout_mode), 1, outch);
         }
       }
       else
@@ -4533,18 +4533,18 @@ disp_word(word_t * word_a, int pos, int search_mode, char * buffer,
         if (word_a[pos].is_tagged)
         {
           if (term->has_underline)
-            tputs(tparm(enter_underline_mode), 1, outch);
+            tputs(TPARM1(enter_underline_mode), 1, outch);
         }
         if (term->has_reverse)
-          tputs(tparm(enter_reverse_mode), 1, outch);
+          tputs(TPARM1(enter_reverse_mode), 1, outch);
         else if (term->has_standout)
-          tputs(tparm(enter_standout_mode), 1, outch);
+          tputs(TPARM1(enter_standout_mode), 1, outch);
       }
 
       mb_strprefix(tmp_word, word_a[pos].str, (int)word_a[pos].mb - 1, &p);
       tputs(tmp_word + offset, 1, outch);
     }
-    tputs(tparm(exit_attribute_mode), 1, outch);
+    tputs(TPARM1(exit_attribute_mode), 1, outch);
   }
   else
   {
@@ -4561,18 +4561,19 @@ disp_word(word_t * word_a, int pos, int search_mode, char * buffer,
       else
       {
         if (term->has_bold)
-          tputs(tparm(enter_bold_mode), 1, outch);
+          tputs(TPARM1(enter_bold_mode), 1, outch);
         else if (term->has_standout)
-          tputs(tparm(enter_standout_mode), 1, outch);
+          tputs(TPARM1(enter_standout_mode), 1, outch);
       }
       sprintf(tmp_word_alt, "%c%.*s%c%s%c", tmp_word[0], menu_index_data.length,
               tmp_word + 1, tmp_word[menu_index_data.length + 1],
-              tparm(exit_attribute_mode), tmp_word[menu_index_data.length + 2]);
+              TPARM1(exit_attribute_mode),
+              tmp_word[menu_index_data.length + 2]);
       tputs(tmp_word_alt, 1, outch);
     }
     else if (menu_index_data.length > 0)
     {
-      tputs(tparm(exit_attribute_mode), 1, outch);
+      tputs(TPARM1(exit_attribute_mode), 1, outch);
       sprintf(tmp_word_alt, "%.*s", menu_index_data.length + 3, tmp_word);
       tputs(tmp_word_alt, 1, outch);
     }
@@ -4584,11 +4585,11 @@ disp_word(word_t * word_a, int pos, int search_mode, char * buffer,
       else
       {
         if (term->has_bold)
-          tputs(tparm(enter_bold_mode), 1, outch);
+          tputs(TPARM1(enter_bold_mode), 1, outch);
         else if (term->has_standout)
-          tputs(tparm(enter_standout_mode), 1, outch);
+          tputs(TPARM1(enter_standout_mode), 1, outch);
         else if (term->has_underline)
-          tputs(tparm(enter_underline_mode), 1, outch);
+          tputs(TPARM1(enter_underline_mode), 1, outch);
       }
     }
     else if (word_a[pos].special_level > 0)
@@ -4600,11 +4601,11 @@ disp_word(word_t * word_a, int pos, int search_mode, char * buffer,
       else
       {
         if (term->has_italic)
-          tputs(tparm(enter_italics_mode), 1, outch);
+          tputs(TPARM1(enter_italics_mode), 1, outch);
         else if (term->has_bold)
-          tputs(tparm(enter_bold_mode), 1, outch);
+          tputs(TPARM1(enter_bold_mode), 1, outch);
         else if (term->has_reverse)
-          tputs(tparm(enter_reverse_mode), 1, outch);
+          tputs(TPARM1(enter_reverse_mode), 1, outch);
       }
     }
     else if (word_a[pos].is_tagged)
@@ -4614,11 +4615,11 @@ disp_word(word_t * word_a, int pos, int search_mode, char * buffer,
       else
       {
         if (term->has_underline)
-          tputs(tparm(enter_underline_mode), 1, outch);
+          tputs(TPARM1(enter_underline_mode), 1, outch);
         else if (term->has_standout)
-          tputs(tparm(enter_standout_mode), 1, outch);
+          tputs(TPARM1(enter_standout_mode), 1, outch);
         else if (term->has_reverse)
-          tputs(tparm(enter_reverse_mode), 1, outch);
+          tputs(TPARM1(enter_reverse_mode), 1, outch);
       }
     }
     else if (win->include_attr.is_set)
@@ -4629,7 +4630,7 @@ disp_word(word_t * word_a, int pos, int search_mode, char * buffer,
     else
       tputs(tmp_word, 1, outch);
 
-    tputs(tparm(exit_attribute_mode), 1, outch);
+    tputs(TPARM1(exit_attribute_mode), 1, outch);
   }
 }
 
@@ -4670,7 +4671,7 @@ disp_message(ll_t * message_lines_list, int message_max_width,
   buf_alt = xmalloc(message_max_len + 1);
 
   if (term->has_bold)
-    tputs(tparm(enter_bold_mode), 1, outch);
+    tputs(TPARM1(enter_bold_mode), 1, outch);
 
   /* Follow the message lines list and display each line */
   /* """"""""""""""""""""""""""""""""""""""""""""""""""" */
@@ -4706,7 +4707,7 @@ disp_message(ll_t * message_lines_list, int message_max_width,
     message_lines++;
   }
 
-  tputs(tparm(exit_attribute_mode), 1, outch);
+  tputs(TPARM1(exit_attribute_mode), 1, outch);
 
   free(buf);
   free(buf_alt);
@@ -4752,7 +4753,7 @@ disp_lines(word_t * word_a, win_t * win, toggle_t * toggle, int current,
 
   lines_disp = 1;
 
-  tputs(tparm(save_cursor), 1, outch);
+  tputs(TPARM1(save_cursor), 1, outch);
 
   i = win->start;
 
@@ -4819,17 +4820,17 @@ disp_lines(word_t * word_a, win_t * win, toggle_t * toggle, int current,
           else
             tputs(">", 1, outch);
 
-          tputs(tparm(exit_attribute_mode), 1, outch);
+          tputs(TPARM1(exit_attribute_mode), 1, outch);
         }
         else if (term->has_bold)
         {
-          tputs(tparm(enter_bold_mode), 1, outch);
+          tputs(TPARM1(enter_bold_mode), 1, outch);
           if (langinfo->utf8)
             tputs(shift_right_sym, 1, outch);
           else
             tputs(">", 1, outch);
 
-          tputs(tparm(exit_attribute_mode), 1, outch);
+          tputs(TPARM1(exit_attribute_mode), 1, outch);
         }
         else
         {
@@ -4865,7 +4866,7 @@ disp_lines(word_t * word_a, win_t * win, toggle_t * toggle, int current,
     /* """"""""""""""""""""""""""""""""" */
     if (i == count - 1 || (i < count - 1 && word_a[i + 1].start == 0))
     {
-      tputs(tparm(clr_eol), 1, outch);
+      tputs(TPARM1(clr_eol), 1, outch);
       if (lines_disp < win->max_lines)
       {
         /* If we have more than one line to display */
@@ -4978,7 +4979,7 @@ disp_lines(word_t * word_a, win_t * win, toggle_t * toggle, int current,
 
   /* We restore the cursor position saved before the display of the window */
   /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-  tputs(tparm(restore_cursor), 1, outch);
+  tputs(TPARM1(restore_cursor), 1, outch);
 
   /* Re-arm the periodic timer */
   /* """"""""""""""""""""""""" */
@@ -8153,7 +8154,7 @@ main(int argc, char * argv[])
 
   /* Hide the cursor */
   /* """"""""""""""" */
-  tputs(tparm(cursor_invisible), 1, outch);
+  tputs(TPARM1(cursor_invisible), 1, outch);
 
   /* Force the display to start at a beginning of line */
   /* """"""""""""""""""""""""""""""""""""""""""""""""" */
@@ -8211,7 +8212,7 @@ main(int argc, char * argv[])
     int i; /* generic index in this block */
 
     for (i = 1; i < offset; i++)
-      tputs(tparm(cursor_up), 1, outch);
+      tputs(TPARM1(cursor_up), 1, outch);
   }
 
   /* Save again the cursor current line and column positions so that we */
@@ -8319,14 +8320,14 @@ main(int argc, char * argv[])
       /* """""""""""""""""""""""""""""""""""""""""""""" */
       for (i = 0; i < message_lines; i++)
       {
-        tputs(tparm(clr_bol), 1, outch);
-        tputs(tparm(clr_eol), 1, outch);
-        tputs(tparm(cursor_up), 1, outch);
+        tputs(TPARM1(clr_bol), 1, outch);
+        tputs(TPARM1(clr_eol), 1, outch);
+        tputs(TPARM1(cursor_up), 1, outch);
       }
 
-      tputs(tparm(clr_bol), 1, outch);
-      tputs(tparm(clr_eol), 1, outch);
-      tputs(tparm(save_cursor), 1, outch);
+      tputs(TPARM1(clr_bol), 1, outch);
+      tputs(TPARM1(clr_eol), 1, outch);
+      tputs(TPARM1(save_cursor), 1, outch);
 
       get_cursor_position(&line, &column);
 
@@ -8335,11 +8336,11 @@ main(int argc, char * argv[])
         if (line + i >= nlines)
           break; /* We have reached the last terminal line */
 
-        tputs(tparm(cursor_down), 1, outch);
-        tputs(tparm(clr_bol), 1, outch);
-        tputs(tparm(clr_eol), 1, outch);
+        tputs(TPARM1(cursor_down), 1, outch);
+        tputs(TPARM1(clr_bol), 1, outch);
+        tputs(TPARM1(clr_eol), 1, outch);
       }
-      tputs(tparm(restore_cursor), 1, outch);
+      tputs(TPARM1(restore_cursor), 1, outch);
 
       /* Get new cursor position */
       /* """"""""""""""""""""""" */
@@ -8384,7 +8385,7 @@ main(int argc, char * argv[])
       /* Set the cursor to the first line of the window */
       /* """""""""""""""""""""""""""""""""""""""""""""" */
       for (i = 1; i < offset; i++)
-        tputs(tparm(cursor_up), 1, outch);
+        tputs(TPARM1(cursor_up), 1, outch);
 
       /* Get new cursor position */
       /* """"""""""""""""""""""" */
@@ -8420,13 +8421,13 @@ main(int argc, char * argv[])
           /* """""""""""""""""""""""" */
           for (i = 0; i < message_lines; i++)
           {
-            tputs(tparm(clr_bol), 1, outch);
-            tputs(tparm(clr_eol), 1, outch);
-            tputs(tparm(cursor_up), 1, outch);
+            tputs(TPARM1(clr_bol), 1, outch);
+            tputs(TPARM1(clr_eol), 1, outch);
+            tputs(TPARM1(cursor_up), 1, outch);
           }
 
-          tputs(tparm(clr_bol), 1, outch);
-          tputs(tparm(clr_eol), 1, outch);
+          tputs(TPARM1(clr_bol), 1, outch);
+          tputs(TPARM1(clr_eol), 1, outch);
 
           /* Display the words window and its title for the first time */
           /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""" */
@@ -8479,13 +8480,13 @@ main(int argc, char * argv[])
           /* """"""""""""""""" */
           for (i = 0; i < message_lines; i++)
           {
-            tputs(tparm(cursor_up), 1, outch);
-            tputs(tparm(clr_bol), 1, outch);
-            tputs(tparm(clr_eol), 1, outch);
+            tputs(TPARM1(cursor_up), 1, outch);
+            tputs(TPARM1(clr_bol), 1, outch);
+            tputs(TPARM1(clr_eol), 1, outch);
           }
 
-          tputs(tparm(clr_bol), 1, outch);
-          tputs(tparm(clr_eol), 1, outch);
+          tputs(TPARM1(clr_bol), 1, outch);
+          tputs(TPARM1(clr_eol), 1, outch);
 
           /* Display the words window and its title for the first time */
           /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""" */
@@ -8679,31 +8680,31 @@ main(int argc, char * argv[])
             int i; /* generic index in this block */
 
             for (i = 0; i < message_lines; i++)
-              tputs(tparm(cursor_up), 1, outch);
+              tputs(TPARM1(cursor_up), 1, outch);
 
             if (toggle.del_line)
             {
-              tputs(tparm(clr_eol), 1, outch);
-              tputs(tparm(clr_bol), 1, outch);
-              tputs(tparm(save_cursor), 1, outch);
+              tputs(TPARM1(clr_eol), 1, outch);
+              tputs(TPARM1(clr_bol), 1, outch);
+              tputs(TPARM1(save_cursor), 1, outch);
 
               for (i = 1; i < nl + message_lines; i++)
               {
-                tputs(tparm(cursor_down), 1, outch);
-                tputs(tparm(clr_eol), 1, outch);
-                tputs(tparm(clr_bol), 1, outch);
+                tputs(TPARM1(cursor_down), 1, outch);
+                tputs(TPARM1(clr_eol), 1, outch);
+                tputs(TPARM1(clr_bol), 1, outch);
               }
-              tputs(tparm(restore_cursor), 1, outch);
+              tputs(TPARM1(restore_cursor), 1, outch);
             }
             else
             {
               for (i = 1; i < nl + message_lines; i++)
-                tputs(tparm(cursor_down), 1, outch);
+                tputs(TPARM1(cursor_down), 1, outch);
               puts("");
             }
           }
 
-          tputs(tparm(cursor_visible), 1, outch);
+          tputs(TPARM1(cursor_visible), 1, outch);
           restore_term(fileno(stdin));
 
           exit(EXIT_SUCCESS);
@@ -8766,17 +8767,17 @@ main(int argc, char * argv[])
           if (toggle.del_line)
           {
             for (i = 0; i < message_lines; i++)
-              tputs(tparm(cursor_up), 1, outch);
+              tputs(TPARM1(cursor_up), 1, outch);
 
-            tputs(tparm(clr_eol), 1, outch);
-            tputs(tparm(clr_bol), 1, outch);
-            tputs(tparm(save_cursor), 1, outch);
+            tputs(TPARM1(clr_eol), 1, outch);
+            tputs(TPARM1(clr_bol), 1, outch);
+            tputs(TPARM1(save_cursor), 1, outch);
 
             for (i = 1; i < nl + message_lines; i++)
             {
-              tputs(tparm(cursor_down), 1, outch);
-              tputs(tparm(clr_eol), 1, outch);
-              tputs(tparm(clr_bol), 1, outch);
+              tputs(TPARM1(cursor_down), 1, outch);
+              tputs(TPARM1(clr_eol), 1, outch);
+              tputs(TPARM1(clr_bol), 1, outch);
             }
 
             tputs(restore_cursor, 1, outch);
@@ -8784,7 +8785,7 @@ main(int argc, char * argv[])
           else
           {
             for (i = 1; i < nl; i++)
-              tputs(tparm(cursor_down), 1, outch);
+              tputs(TPARM1(cursor_down), 1, outch);
             puts("");
           }
 
@@ -8935,13 +8936,13 @@ main(int argc, char * argv[])
 
               /* Clean the printed line and all the extra lines used. */
               /* """""""""""""""""""""""""""""""""""""""""""""""""""" */
-              tputs(tparm(delete_line), 1, outch);
+              tputs(TPARM1(delete_line), 1, outch);
 
               for (i = 0; i < extra_lines; i++)
               {
-                tputs(tparm(cursor_up), 1, outch);
-                tputs(tparm(clr_eol), 1, outch);
-                tputs(tparm(clr_bol), 1, outch);
+                tputs(TPARM1(cursor_up), 1, outch);
+                tputs(TPARM1(clr_eol), 1, outch);
+                tputs(TPARM1(clr_bol), 1, outch);
               }
             }
           }
@@ -8950,12 +8951,12 @@ main(int argc, char * argv[])
 
           /* Restore the visibility of the cursor */
           /* """""""""""""""""""""""""""""""""""" */
-          tputs(tparm(cursor_visible), 1, outch);
+          tputs(TPARM1(cursor_visible), 1, outch);
 
           /* Set the cursor at the start on the line an restore the */
           /* original terminal state before exiting                 */
           /* """""""""""""""""""""""""""""""""""""""""""""""""""""" */
-          tputs(tparm(carriage_return), 1, outch);
+          tputs(TPARM1(carriage_return), 1, outch);
           restore_term(fileno(stdin));
 
           exit(EXIT_SUCCESS);
