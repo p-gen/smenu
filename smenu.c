@@ -4577,9 +4577,15 @@ disp_word(word_t * word_a, int pos, int search_mode, char * buffer,
     }
     else if (menu_index_data.length > 0)
     {
+      size_t i;
+
+      /* Insert leading spaces if the word is non numbered and */
+      /* padding for all words is set                          */
+      /* """"""""""""""""""""""""""""""""""""""""""""""""""""" */
       tputs(TPARM1(exit_attribute_mode), 1, outch);
-      sprintf(tmp_word_alt, "%.*s", menu_index_data.length + 3, tmp_word);
-      tputs(tmp_word_alt, 1, outch);
+      if (menu_index_data.padding == 'a')
+        for (i = 0; i < menu_index_data.length + 3; i++)
+          fputc(' ', stdout);
     }
 
     if (!word_a[pos].is_selectable)
@@ -4629,7 +4635,8 @@ disp_word(word_t * word_a, int pos, int search_mode, char * buffer,
     else if (win->include_attr.is_set)
       apply_txt_attr(term, win->include_attr);
 
-    if (menu_index_data.length > 0)
+    if ((menu_index_data.length > 0 && menu_index_data.padding == 'a')
+        || word_a[pos].is_numbered)
       tputs(tmp_word + menu_index_data.length + 3, 1, outch);
     else
       tputs(tmp_word, 1, outch);
