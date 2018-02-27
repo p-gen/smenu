@@ -445,7 +445,7 @@ struct itimerval periodic_itv; /* refresh rate for the timeout counter */
 
 int search_timer  = -1;
 int help_timer    = -1;
-int winch_timer   = 0; /* immediately available */
+int winch_timer   = -1;
 int daccess_timer = -1;
 
 /* Structure containing the attributes components */
