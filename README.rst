@@ -52,17 +52,17 @@ for commands: (numbers are mine, yours will be different)
 
 ::
 
-  VmPeak¦    23840 kB¦
-  VmSize¦    23836 kB¦
-  VmLck ¦        0 kB¦
-  VmHWM ¦     2936 kB¦
-  VmRSS ¦     2936 kB¦
-  VmData¦     1316 kB¦
-  VmStk ¦      136 kB¦
-  VmExe ¦       28 kB¦
-  VmLib ¦     3956 kB¦
-  VmPTE ¦       64 kB¦
-  VmSwap¦        0 kB¦
+  VmPeak¦    23840 kB
+  VmSize¦    23836 kB
+  VmLck ¦        0 kB
+  VmHWM ¦     2936 kB
+  VmRSS ¦     2936 kB
+  VmData¦     1316 kB
+  VmStk ¦      136 kB
+  VmExe ¦       28 kB
+  VmLib ¦     3956 kB
+  VmPTE ¦       64 kB
+  VmSwap¦        0 kB
 
 A cursor should be under ``"VmHWM "``.
 
