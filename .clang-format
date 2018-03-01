@@ -42,3 +42,4 @@ SpacesInSquareBrackets: 'false'
 TabWidth: '2'
 UseTab: Never
 PenaltyBreakBeforeFirstCallParameter: '100'
+PenaltyBreakAssignment: '150'
