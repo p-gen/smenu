@@ -265,8 +265,7 @@ build_metadata(word_t * word_a, term_t * term, int count, win_t * win);
 static int
 disp_lines(word_t * word_a, win_t * win, toggle_t * toggle, int current,
            int count, int search_mode, char * search_buf, term_t * term,
-           int last_line, char * tmp_word, char * tmp_word_alt,
-           langinfo_t * langinfo);
+           int last_line, char * tmp_word, langinfo_t * langinfo);
 
 static void
 get_message_lines(char * message, ll_t * message_lines_list,
@@ -278,7 +277,7 @@ disp_message(ll_t * message_lines_list, int width, int max_len, term_t * term,
 
 static void
 disp_word(word_t * word_a, int pos, int search_mode, char * buffer,
-          term_t * term, win_t * win, char * tmp_word, char * tmp_word_alt);
+          term_t * term, win_t * win, char * tmp_word);
 
 static int
 egetopt(int nargc, char ** nargv, char * ostr);
@@ -2778,8 +2777,8 @@ replace(char * to_match, sed_t * sed)
   if (*to_match == '\0')
     return 1;
 
-  struct range_s * matches_a =
-    xmalloc(strlen(to_match) * sizeof(struct range_s));
+  struct range_s * matches_a = xmalloc(strlen(to_match)
+                                       * sizeof(struct range_s));
 
   struct range_s * subs_a = xmalloc(10 * sizeof(struct range_s));
 
@@ -2812,10 +2811,10 @@ replace(char * to_match, sed_t * sed)
           size_t len;
           size_t end;
 
-          exp_repl =
-            build_repl_string(to_match, sed->substitution,
-                              matches_a[match].start, matches_a[match].end,
-                              subs_a, subs_max, match);
+          exp_repl = build_repl_string(to_match, sed->substitution,
+                                       matches_a[match].start,
+                                       matches_a[match].end, subs_a, subs_max,
+                                       match);
 
           len = strlen(exp_repl);
 
@@ -3982,8 +3981,8 @@ get_word(FILE * input, ll_t * word_delims_list, ll_t * record_delims_list,
     while (mb_buffer[i] != '\0')
     {
       if (count >= wordsize - 1)
-        temp =
-          xrealloc(temp, wordsize += (count / CHARSCHUNK + 1) * CHARSCHUNK);
+        temp = xrealloc(temp,
+                        wordsize += (count / CHARSCHUNK + 1) * CHARSCHUNK);
 
       *(temp + count++) = mb_buffer[i];
       i++;
@@ -4355,7 +4354,7 @@ build_metadata(word_t * word_a, term_t * term, int count, win_t * win)
 /* ====================================================================== */
 static void
 disp_word(word_t * word_a, int pos, int search_mode, char * buffer,
-          term_t * term, win_t * win, char * tmp_word, char * tmp_word_alt)
+          term_t * term, win_t * win, char * tmp_word)
 {
   int       s = word_a[pos].start;
   int       e = word_a[pos].end;
@@ -4393,20 +4392,18 @@ disp_word(word_t * word_a, int pos, int search_mode, char * buffer,
 
         /* And print it */
         /* """""""""""" */
-        sprintf(tmp_word_alt, "%c%.*s%c%s%c", tmp_word[0],
-                menu_index_data.length, tmp_word + 1,
-                tmp_word[menu_index_data.length + 1],
-                TPARM1(exit_attribute_mode),
-                tmp_word[menu_index_data.length + 2]);
-        tputs(tmp_word_alt, 1, outch);
+        fputc(tmp_word[0], stdout);
+        printf("%.*s%c", menu_index_data.length, tmp_word + 1,
+               tmp_word[menu_index_data.length + 1]);
+        tputs(TPARM1(exit_attribute_mode), 1, outch);
+        fputc(tmp_word[menu_index_data.length + 2], stdout);
       }
       else if (menu_index_data.length > 0)
       {
         /* prints the leading spaces */
         /* """"""""""""""""""""""""" */
         tputs(TPARM1(exit_attribute_mode), 1, outch);
-        sprintf(tmp_word_alt, "%.*s", menu_index_data.length + 3, tmp_word);
-        tputs(tmp_word_alt, 1, outch);
+        printf("%.*s", menu_index_data.length + 3, tmp_word);
       }
 
       /* Set the search cursor attribute */
@@ -4440,8 +4437,8 @@ disp_word(word_t * word_a, int pos, int search_mode, char * buffer,
 
         /* Calculate the space taken by the buffer on screen */
         /* """"""""""""""""""""""""""""""""""""""""""""""""" */
-        buf_width =
-          wcswidth((w = mb_strtowcs(buffer)), mbstowcs(NULL, buffer, 0));
+        buf_width = wcswidth((w = mb_strtowcs(buffer)),
+                             mbstowcs(NULL, buffer, 0));
         free(w);
 
         /* Size of the menu selector to skip to reach the word */
@@ -4497,9 +4494,9 @@ disp_word(word_t * word_a, int pos, int search_mode, char * buffer,
 
         /* Print the non significant part of the word */
         /* """""""""""""""""""""""""""""""""""""""""" */
-        sprintf(tmp_word_alt, "%.*s%s%c", offset - 1, word_a[pos].str,
-                TPARM1(exit_attribute_mode), word_a[pos].str[offset - 1]);
-        tputs(tmp_word_alt, 1, outch);
+        printf("%.*s", offset - 1, word_a[pos].str);
+        tputs(TPARM1(exit_attribute_mode), 1, outch);
+        fputc(word_a[pos].str[offset - 1], stdout);
       }
 
       /* If we are not in search mode, display a normal cursor */
@@ -4569,11 +4566,12 @@ disp_word(word_t * word_a, int pos, int search_mode, char * buffer,
         else if (term->has_standout)
           tputs(TPARM1(enter_standout_mode), 1, outch);
       }
-      sprintf(tmp_word_alt, "%c%.*s%c%s%c", tmp_word[0], menu_index_data.length,
-              tmp_word + 1, tmp_word[menu_index_data.length + 1],
-              TPARM1(exit_attribute_mode),
-              tmp_word[menu_index_data.length + 2]);
-      tputs(tmp_word_alt, 1, outch);
+
+      fputc(tmp_word[0], stdout);
+      printf("%.*s%c", menu_index_data.length, tmp_word + 1,
+             tmp_word[menu_index_data.length + 1]);
+      tputs(TPARM1(exit_attribute_mode), 1, outch);
+      fputc(tmp_word[menu_index_data.length + 2], stdout);
     }
     else if (menu_index_data.length > 0)
     {
@@ -4738,8 +4736,7 @@ disp_message(ll_t * message_lines_list, int message_max_width,
 static int
 disp_lines(word_t * word_a, win_t * win, toggle_t * toggle, int current,
            int count, int search_mode, char * search_buf, term_t * term,
-           int last_line, char * tmp_word, char * tmp_word_alt,
-           langinfo_t * langinfo)
+           int last_line, char * tmp_word, langinfo_t * langinfo)
 {
   int  lines_disp;
   int  i;
@@ -4813,8 +4810,7 @@ disp_lines(word_t * word_a, win_t * win, toggle_t * toggle, int current,
     if (word_a[i].start >= win->first_column
         && word_a[i].end < len + win->first_column)
     {
-      disp_word(word_a, i, search_mode, search_buf, term, win, tmp_word,
-                tmp_word_alt);
+      disp_word(word_a, i, search_mode, search_buf, term, win, tmp_word);
 
       /* If there are more element to be displayed after the right margin */
       /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
@@ -5608,7 +5604,6 @@ main(int argc, char * argv[])
   char * tmp_word;        /* Temporary variable able to contain  *
                            * the beginning of the word to be     *
                            * displayed                           */
-  char *   tmp_word_alt;  /* Another tmp_word like variable      */
   int      last_line = 0; /* last logical line number (from 0) */
   int      opt;
   win_t    win;
@@ -6631,17 +6626,18 @@ main(int argc, char * argv[])
     switch (timeout.type)
     {
       case QUIT:
-        timeout_message =
-          xstrdup("[     s before quitting without selecting anything]");
+        timeout_message = xstrdup(
+          "[     s before quitting without selecting anything]");
         break;
       case CURRENT:
-        timeout_message =
-          xstrdup("[     s before selecting the current highlighted word]");
+        timeout_message = xstrdup(
+          "[     s before selecting the current highlighted word]");
         break;
       case WORD:
-        timeout_message =
-          xcalloc(1, 4 + strlen("[     s before selecting the word ")
-                       + strlen(timeout_word));
+        timeout_message = xcalloc(1, 4
+                                       + strlen(
+                                           "[     s before selecting the word ")
+                                       + strlen(timeout_word));
         strcpy(timeout_message, "[     s before selecting the word \"");
         strcat(timeout_message, timeout_word);
         strcat(timeout_message, "\"]");
@@ -7339,12 +7335,12 @@ main(int argc, char * argv[])
           {
             int ci; /* column index */
 
-            col_real_max_size =
-              xrealloc(col_real_max_size,
-                       (cols_number + COLSCHUNK) * sizeof(int));
+            col_real_max_size = xrealloc(col_real_max_size,
+                                         (cols_number + COLSCHUNK)
+                                           * sizeof(int));
 
-            col_max_size =
-              xrealloc(col_max_size, (cols_number + COLSCHUNK) * sizeof(int));
+            col_max_size = xrealloc(col_max_size,
+                                    (cols_number + COLSCHUNK) * sizeof(int));
 
             /* Initialize the max size for the new columns */
             /* ''''''''''''''''''''''''''''''''''''''''''' */
@@ -7989,8 +7985,7 @@ main(int argc, char * argv[])
 
   /* We can now allocate the space for our tmp_word work variable */
   /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-  tmp_word     = xmalloc(word_real_max_size + 1);
-  tmp_word_alt = xmalloc(word_real_max_size + 1);
+  tmp_word = xmalloc(word_real_max_size + 1);
 
   win.start = 0; /* index of the first element in the    *
                   * words array to be  displayed         */
@@ -8205,9 +8200,8 @@ main(int argc, char * argv[])
   /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
   get_cursor_position(&term.curs_line, &term.curs_column);
 
-  nl =
-    disp_lines(word_a, &win, &toggle, current, count, search_mode, search_buf,
-               &term, last_line, tmp_word, tmp_word_alt, &langinfo);
+  nl = disp_lines(word_a, &win, &toggle, current, count, search_mode,
+                  search_buf, &term, last_line, tmp_word, &langinfo);
 
   /* Determine the number of lines to move the cursor up if the window */
   /* display needed a terminal scrolling                               */
@@ -8258,8 +8252,7 @@ main(int argc, char * argv[])
 
       help_mode = 0;
       nl        = disp_lines(word_a, &win, &toggle, current, count, search_mode,
-                      search_buf, &term, last_line, tmp_word, tmp_word_alt,
-                      &langinfo);
+                      search_buf, &term, last_line, tmp_word, &langinfo);
     }
 
     /* If an alarm has been triggered and we are in search mode, try to   */
@@ -8277,8 +8270,7 @@ main(int argc, char * argv[])
         search_timer = -1; /* Disable the timer */
 
         nl = disp_lines(word_a, &win, &toggle, current, count, search_mode,
-                        search_buf, &term, last_line, tmp_word, tmp_word_alt,
-                        &langinfo);
+                        search_buf, &term, last_line, tmp_word, &langinfo);
       }
     }
 
@@ -8382,8 +8374,7 @@ main(int argc, char * argv[])
                                    message_max_len, &term, &win);
 
       nl = disp_lines(word_a, &win, &toggle, current, count, search_mode,
-                      search_buf, &term, last_line, tmp_word, tmp_word_alt,
-                      &langinfo);
+                      search_buf, &term, last_line, tmp_word, &langinfo);
 
       /* Determine the number of lines to move the cursor up if the window  */
       /* display needed a terminal scrolling                                */
@@ -8546,8 +8537,7 @@ main(int argc, char * argv[])
                 win.first_column = word_a[current].start;
 
             nl = disp_lines(word_a, &win, &toggle, current, count, search_mode,
-                            search_buf, &term, last_line, tmp_word,
-                            tmp_word_alt, &langinfo);
+                            search_buf, &term, last_line, tmp_word, &langinfo);
             break;
           }
 
@@ -8603,8 +8593,7 @@ main(int argc, char * argv[])
             }
 
             nl = disp_lines(word_a, &win, &toggle, current, count, search_mode,
-                            search_buf, &term, last_line, tmp_word,
-                            tmp_word_alt, &langinfo);
+                            search_buf, &term, last_line, tmp_word, &langinfo);
             break;
           }
 
@@ -8661,7 +8650,7 @@ main(int argc, char * argv[])
               search_mode = 0;
               nl          = disp_lines(word_a, &win, &toggle, current, count,
                               search_mode, search_buf, &term, last_line,
-                              tmp_word, tmp_word_alt, &langinfo);
+                              tmp_word, &langinfo);
               break;
             }
             else
@@ -8732,8 +8721,7 @@ main(int argc, char * argv[])
               last_line = build_metadata(word_a, &term, count, &win);
 
           nl = disp_lines(word_a, &win, &toggle, current, count, search_mode,
-                          search_buf, &term, last_line, tmp_word, tmp_word_alt,
-                          &langinfo);
+                          search_buf, &term, last_line, tmp_word, &langinfo);
           break;
 
         case 0x0c: /* ^L */
@@ -8741,8 +8729,7 @@ main(int argc, char * argv[])
             last_line = build_metadata(word_a, &term, count, &win);
 
           nl = disp_lines(word_a, &win, &toggle, current, count, search_mode,
-                          search_buf, &term, last_line, tmp_word, tmp_word_alt,
-                          &langinfo);
+                          search_buf, &term, last_line, tmp_word, &langinfo);
           break;
 
         enter:
@@ -8765,8 +8752,7 @@ main(int argc, char * argv[])
             search_mode = 0;
 
             nl = disp_lines(word_a, &win, &toggle, current, count, search_mode,
-                            search_buf, &term, last_line, tmp_word,
-                            tmp_word_alt, &langinfo);
+                            search_buf, &term, last_line, tmp_word, &langinfo);
 
             if (!toggle.enter_val_in_search)
               break;
@@ -9032,8 +9018,8 @@ main(int argc, char * argv[])
 
                     while (word_a[current - 1].end - win.first_column >= len)
                     {
-                      win.first_column +=
-                        word_a[pos].end - word_a[pos].start + 2;
+                      win.first_column += word_a[pos].end - word_a[pos].start
+                                          + 2;
 
                       pos++;
                     }
@@ -9056,7 +9042,7 @@ main(int argc, char * argv[])
             if (current != old_current)
               nl = disp_lines(word_a, &win, &toggle, current, count,
                               search_mode, search_buf, &term, last_line,
-                              tmp_word, tmp_word_alt, &langinfo);
+                              tmp_word, &langinfo);
           }
           else
             goto special_cmds_when_searching;
@@ -9157,7 +9143,7 @@ main(int argc, char * argv[])
             if (current != old_current)
               nl = disp_lines(word_a, &win, &toggle, current, count,
                               search_mode, search_buf, &term, last_line,
-                              tmp_word, tmp_word_alt, &langinfo);
+                              tmp_word, &langinfo);
           }
           else
             goto special_cmds_when_searching;
@@ -9297,7 +9283,7 @@ main(int argc, char * argv[])
             if (current != old_current)
               nl = disp_lines(word_a, &win, &toggle, current, count,
                               search_mode, search_buf, &term, last_line,
-                              tmp_word, tmp_word_alt, &langinfo);
+                              tmp_word, &langinfo);
             else
             {
               /* We couldn't move to a selectable word, */
@@ -9311,7 +9297,7 @@ main(int argc, char * argv[])
 
                 nl = disp_lines(word_a, &win, &toggle, current, count,
                                 search_mode, search_buf, &term, last_line,
-                                tmp_word, tmp_word_alt, &langinfo);
+                                tmp_word, &langinfo);
               }
             }
           }
@@ -9468,7 +9454,7 @@ main(int argc, char * argv[])
             if (current != old_current)
               nl = disp_lines(word_a, &win, &toggle, current, count,
                               search_mode, search_buf, &term, last_line,
-                              tmp_word, tmp_word_alt, &langinfo);
+                              tmp_word, &langinfo);
             else
             {
               /* We couldn't move to a selectable word, */
@@ -9481,7 +9467,7 @@ main(int argc, char * argv[])
 
                 nl = disp_lines(word_a, &win, &toggle, current, count,
                                 search_mode, search_buf, &term, last_line,
-                                tmp_word, tmp_word_alt, &langinfo);
+                                tmp_word, &langinfo);
               }
             }
           }
@@ -9512,8 +9498,7 @@ main(int argc, char * argv[])
             }
 
             nl = disp_lines(word_a, &win, &toggle, current, count, search_mode,
-                            search_buf, &term, last_line, tmp_word,
-                            tmp_word_alt, &langinfo);
+                            search_buf, &term, last_line, tmp_word, &langinfo);
             break;
           }
           else
@@ -9532,7 +9517,7 @@ main(int argc, char * argv[])
 
               nl = disp_lines(word_a, &win, &toggle, current, count,
                               search_mode, search_buf, &term, last_line,
-                              tmp_word, tmp_word_alt, &langinfo);
+                              tmp_word, &langinfo);
             }
           }
           break;
@@ -9547,7 +9532,7 @@ main(int argc, char * argv[])
 
               nl = disp_lines(word_a, &win, &toggle, current, count,
                               search_mode, search_buf, &term, last_line,
-                              tmp_word, tmp_word_alt, &langinfo);
+                              tmp_word, &langinfo);
             }
           }
           break;
@@ -9572,7 +9557,7 @@ main(int argc, char * argv[])
               }
               nl = disp_lines(word_a, &win, &toggle, current, count,
                               search_mode, search_buf, &term, last_line,
-                              tmp_word, tmp_word_alt, &langinfo);
+                              tmp_word, &langinfo);
             }
           }
           else
@@ -9616,7 +9601,7 @@ main(int argc, char * argv[])
 
               nl = disp_lines(word_a, &win, &toggle, current, count,
                               search_mode, search_buf, &term, last_line,
-                              tmp_word, tmp_word_alt, &langinfo);
+                              tmp_word, &langinfo);
             }
             else
             {
@@ -9634,7 +9619,7 @@ main(int argc, char * argv[])
 
                 nl = disp_lines(word_a, &win, &toggle, current, count,
                                 search_mode, search_buf, &term, last_line,
-                                tmp_word, tmp_word_alt, &langinfo);
+                                tmp_word, &langinfo);
               }
             }
 
@@ -9667,7 +9652,7 @@ main(int argc, char * argv[])
 
               nl = disp_lines(word_a, &win, &toggle, current, count,
                               search_mode, search_buf, &term, last_line,
-                              tmp_word, tmp_word_alt, &langinfo);
+                              tmp_word, &langinfo);
             }
           }
           if (daccess_stack_head > 0)
@@ -9720,7 +9705,7 @@ main(int argc, char * argv[])
 
               nl = disp_lines(word_a, &win, &toggle, current, count,
                               search_mode, search_buf, &term, last_line,
-                              tmp_word, tmp_word_alt, &langinfo);
+                              tmp_word, &langinfo);
             }
             else
             {
