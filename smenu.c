@@ -8432,9 +8432,9 @@ main(int argc, char * argv[])
           /* """""""""""""""""""""""" */
           for (i = 0; i < message_lines; i++)
           {
+            tputs(TPARM1(cursor_up), 1, outch);
             tputs(TPARM1(clr_bol), 1, outch);
             tputs(TPARM1(clr_eol), 1, outch);
-            tputs(TPARM1(cursor_up), 1, outch);
           }
 
           tputs(TPARM1(clr_bol), 1, outch);
