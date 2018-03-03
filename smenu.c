@@ -1399,7 +1399,7 @@ ini_cb(win_t * win, term_t * term, limits_t * limits, timers_t * timers,
       if ((error = !(sscanf(value, "%d", &v) == 1 && v > 0)))
         goto out;
       else
-        win->max_lines = v;
+        win->asked_max_lines = v;
     }
   }
   else if (strcmp(section, "limits") == 0)
@@ -6678,6 +6678,8 @@ main(int argc, char * argv[])
   /* """"""""""""""""""""""""""""""""""""""""""""""""""""""" */
   if (win.asked_max_lines > 0)
     win.max_lines = win.asked_max_lines;
+  else
+    win.asked_max_lines = win.max_lines;
 
   /* Allocate the memory for our words structures */
   /* """""""""""""""""""""""""""""""""""""""""""" */
@@ -8318,6 +8320,13 @@ main(int argc, char * argv[])
       }
 
       winch_timer = -1;
+
+      /* Reset the number of lines if the terminal has enough lines */
+      /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+      if (win.max_lines < term.nlines - message_lines)
+        win.max_lines = win.asked_max_lines;
+      else
+        win.max_lines = term.nlines - message_lines;
 
       /* Erase the visible part of the displayed window */
       /* """""""""""""""""""""""""""""""""""""""""""""" */
