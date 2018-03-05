@@ -606,10 +606,12 @@ These optional parameters must respect the format \fBx\fP:\fBy\fP where
 \fBx\fP can be:
 
 - '\f(CBl\fP'
-where \fBy\fP is the character (must be printable) before the number.
+where \fBy\fP is the UTF-8 character (in native or \fI\\u\fP form)
+to print before the number.
 
 - '\f(CBr\fP'
-where \fBy\fP is the character (must be printable) after the number.
+where \fBy\fP is the UTF-8 character (in native or \fI\\u\fP form)
+to print after the number.
 
 - '\f(CBa\fP'
 where \fBy\fP is '\f(CBl\fP' if the number must be \f(CBleft\fP aligned,

@@ -605,12 +605,12 @@ struct output_s
 /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
 struct menu_index_s
 {
-  char left;       /* character to put before the menu selector          */
-  char right;      /* character to put after the menu selector           */
-  char alignment;  /* l: left; r: right                                  */
-  char padding;    /* a: all; i: only included words are padded          */
-  char expression; /* m: match; r: reverse match the regular expression  */
-  int  length;     /* selector size (5 max)                              */
+  char * left;       /* character to put before the menu selector          */
+  char * right;      /* character to put after the menu selector           */
+  char   alignment;  /* l: left; r: right                                  */
+  char   padding;    /* a: all; i: only included words are padded          */
+  char   expression; /* m: match; r: reverse match the regular expression  */
+  int    length;     /* selector size (5 max)                              */
 };
 
 /* **************** */
@@ -4392,11 +4392,11 @@ disp_word(word_t * word_a, int pos, int search_mode, char * buffer,
 
         /* And print it */
         /* """""""""""" */
-        fputc(tmp_word[0], stdout);
-        printf("%.*s%c", menu_index_data.length, tmp_word + 1,
-               tmp_word[menu_index_data.length + 1]);
+        fputs(menu_index_data.left, stdout);
+        printf("%.*s", menu_index_data.length, tmp_word + 1);
+        fputs(menu_index_data.right, stdout);
         tputs(TPARM1(exit_attribute_mode), 1, outch);
-        fputc(tmp_word[menu_index_data.length + 2], stdout);
+        fputc(' ', stdout);
       }
       else if (menu_index_data.length > 0)
       {
@@ -4476,27 +4476,38 @@ disp_word(word_t * word_a, int pos, int search_mode, char * buffer,
       {
         offset = menu_index_data.length + 3;
 
-        if (win->daccess_attr.is_set)
-          apply_txt_attr(term, win->daccess_attr);
-        else
-        {
-          if (term->has_bold)
-            tputs(TPARM1(enter_bold_mode), 1, outch);
-          else if (term->has_standout)
-            tputs(TPARM1(enter_standout_mode), 1, outch);
-        }
-
         /* If this word is not numbered, reset the display */
         /* attributes before printing the leading spaces.  */
         /* """"""""""""""""""""""""""""""""""""""""""""""" */
         if (!word_a[pos].is_numbered)
+        {
+          /* Print the non significant part of the word */
+          /* """""""""""""""""""""""""""""""""""""""""" */
           tputs(TPARM1(exit_attribute_mode), 1, outch);
+          printf("%.*s", offset - 1, word_a[pos].str);
+          tputs(TPARM1(exit_attribute_mode), 1, outch);
+          fputc(' ', stdout);
+        }
+        else
+        {
+          if (win->daccess_attr.is_set)
+            apply_txt_attr(term, win->daccess_attr);
+          else
+          {
+            if (term->has_bold)
+              tputs(TPARM1(enter_bold_mode), 1, outch);
+            else if (term->has_standout)
+              tputs(TPARM1(enter_standout_mode), 1, outch);
+          }
 
-        /* Print the non significant part of the word */
-        /* """""""""""""""""""""""""""""""""""""""""" */
-        printf("%.*s", offset - 1, word_a[pos].str);
-        tputs(TPARM1(exit_attribute_mode), 1, outch);
-        fputc(word_a[pos].str[offset - 1], stdout);
+          /* Print the non significant part of the word */
+          /* """""""""""""""""""""""""""""""""""""""""" */
+          fputs(menu_index_data.left, stdout);
+          printf("%.*s", menu_index_data.length, word_a[pos].str + 1);
+          fputs(menu_index_data.right, stdout);
+          tputs(TPARM1(exit_attribute_mode), 1, outch);
+          fputc(' ', stdout);
+        }
       }
 
       /* If we are not in search mode, display a normal cursor */
@@ -4567,11 +4578,12 @@ disp_word(word_t * word_a, int pos, int search_mode, char * buffer,
           tputs(TPARM1(enter_standout_mode), 1, outch);
       }
 
-      fputc(tmp_word[0], stdout);
-      printf("%.*s%c", menu_index_data.length, tmp_word + 1,
-             tmp_word[menu_index_data.length + 1]);
+      fputs(menu_index_data.left, stdout);
+      printf("%.*s", menu_index_data.length, tmp_word + 1);
+      fputs(menu_index_data.right, stdout);
+
       tputs(TPARM1(exit_attribute_mode), 1, outch);
-      fputc(tmp_word[menu_index_data.length + 2], stdout);
+      fputc(' ', stdout);
     }
     else if (menu_index_data.length > 0)
     {
@@ -5835,8 +5847,8 @@ main(int argc, char * argv[])
   timeout.remain        = 0;
   timeout.reached       = 0;
 
-  menu_index_data.left       = ' ';
-  menu_index_data.right      = ')';
+  menu_index_data.left       = " ";
+  menu_index_data.right      = ")";
   menu_index_data.alignment  = 'r';
   menu_index_data.padding    = 'a';
   menu_index_data.expression = 'm';
@@ -6329,7 +6341,9 @@ main(int argc, char * argv[])
         /* """"""""""""""""""""""""""""""""""" */
         while (argv[optind] && *argv[optind] != '-')
         {
-          int pos;
+          int       pos;
+          wchar_t * w;
+          int       n;
 
           if (argv[optind][1] != ':')
             TELL("Bad format -- ");
@@ -6337,15 +6351,31 @@ main(int argc, char * argv[])
           switch (*(argv[optind]))
           {
             case 'l':
-              menu_index_data.left = argv[optind][2];
-              if (!isprint(menu_index_data.left))
-                TELL("Bad format -- ");
+              menu_index_data.left = strdup(argv[optind] + 2);
+              mb_interpret(menu_index_data.left, &langinfo);
+
+              if (mb_strlen(menu_index_data.left) != 1)
+                TELL("Too many characters after l: -- ");
+
+              n = wcswidth((w = mb_strtowcs(menu_index_data.left)), 1);
+              free(w);
+
+              if (n > 1)
+                TELL("A multi columns character is not allowed after l: -- ");
               break;
 
             case 'r':
-              menu_index_data.right = argv[optind][2];
-              if (!isprint(menu_index_data.right))
-                TELL("Bad format -- ");
+              menu_index_data.right = strdup(argv[optind] + 2);
+              mb_interpret(menu_index_data.right, &langinfo);
+
+              if (mb_strlen(menu_index_data.right) != 1)
+                TELL("Too many characters after r: -- ");
+
+              n = wcswidth((w = mb_strtowcs(menu_index_data.right)), 1);
+              free(w);
+
+              if (n > 1)
+                TELL("A multi columns character is not allowed after r: -- ");
               break;
 
             case 'a':
@@ -7639,7 +7669,7 @@ main(int argc, char * argv[])
 
           word->is_numbered = 1;
 
-          tmp[0] = menu_index_data.left;
+          tmp[0] = ' ';
           sprintf(tmp + 1, "%*d",
                   menu_index_data.alignment == 'l' ? -menu_index_data.length
                                                    : menu_index_data.length,
@@ -7651,7 +7681,7 @@ main(int argc, char * argv[])
           tst_menu = tst_insert(tst_menu, mb_strtowcs(selector), word_pos);
           free(selector);
 
-          tmp[1 + menu_index_data.length] = menu_index_data.right;
+          tmp[1 + menu_index_data.length] = ' ';
           tmp[2 + menu_index_data.length] = ' ';
 
           menu_index++;
