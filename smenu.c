@@ -9635,7 +9635,6 @@ main(int argc, char * argv[])
             else
             {
               if (current != prev_current)
-                ;
               {
                 current = prev_current;
 
