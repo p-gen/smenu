@@ -2293,20 +2293,12 @@ parse_selectors(char * str, int * filter, char * unparsed,
   {
     case 'i':
     case 'I':
-    case 'a':
-    case 'A':
-    case 's':
-    case 'S':
       *filter = INCLUDE_FILTER;
       mark    = INCLUDE_MARK;
       break;
 
     case 'e':
     case 'E':
-    case 'r':
-    case 'R':
-    case 'd':
-    case 'D':
       *filter = EXCLUDE_FILTER;
       mark    = EXCLUDE_MARK;
       break;
