@@ -5530,8 +5530,6 @@ main(int argc, char * argv[])
       { "MS-ANSI", 8 },
       { NULL, 0 } };
 
-  char * out_buffer = xmalloc(4096); /* output stream buffer */
-
   char * message = NULL; /* message to be displayed above the selection *
                           * window                                      */
   ll_t * message_lines_list = NULL; /* list of the lines in the *
