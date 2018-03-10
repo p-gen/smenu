@@ -7422,7 +7422,8 @@ main(int argc, char * argv[])
               col_regex_node = col_regex_node->next;
             }
           }
-          else if (inc_col_regex_list != NULL)
+
+          if (inc_col_regex_list != NULL)
           {
             /* Some columns must be included by regex */
             /* '''''''''''''''''''''''''''''''''''''' */
