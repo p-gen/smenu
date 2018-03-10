@@ -7652,8 +7652,9 @@ main(int argc, char * argv[])
         char * tmp = xmalloc(strlen(word->str) + 4 + menu_index_data.length);
         int *  word_pos = malloc(sizeof(int));
 
-        if (!!regexec(&menu_pattern_re, word->str, (size_t)0, NULL, 0)
-            == (menu_index_data.expression == 'm' ? 0 : 1))
+        if (!isempty(word->str)
+            && !!regexec(&menu_pattern_re, word->str, (size_t)0, NULL, 0)
+                 == (menu_index_data.expression == 'm' ? 0 : 1))
         {
           *word_pos = wi;
 
