@@ -71,7 +71,7 @@ typedef struct sed_s         sed_t;
 typedef struct interval_s    interval_t;
 typedef struct timeout_s     timeout_t;
 typedef struct output_s      output_t;
-typedef struct menu_index_s  menu_index_t;
+typedef struct daccess_s     daccess_t;
 
 /* ********** */
 /* Prototypes */
@@ -510,7 +510,7 @@ struct word_s
   unsigned char is_tagged;     /* 1 if the word is tagged, 0 if not        */
   unsigned char is_last;       /* 1 if the word is the last of a line      */
   unsigned char is_selectable; /* word is selectable                       */
-  unsigned char is_numbered;   /* word has a direct menu index             */
+  unsigned char is_numbered;   /* word has a direct access index           */
 };
 
 /* Structure describing the window in which the user */
@@ -601,12 +601,12 @@ struct output_s
   char * output_str;
 };
 
-/* Structure describing the formating of the automatic menu entries */
-/* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-struct menu_index_s
+/* Structure describing the formating of the automatic direct access entries */
+/* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+struct daccess_s
 {
-  char * left;       /* character to put before the menu selector          */
-  char * right;      /* character to put after the menu selector           */
+  char * left;       /* character to put before the direct access selector */
+  char * right;      /* character to put after the direct access selector  */
   char   alignment;  /* l: left; r: right                                  */
   char   padding;    /* a: all; i: only included words are padded          */
   char   expression; /* m: match; r: reverse match the regular expression  */
@@ -645,13 +645,10 @@ char * sbar_curs     = "\xe2\x95\x91"; /* box_drawings_double_vertical     */
 char * sbar_arr_up   = "\xe2\x96\xb2"; /* black_up_pointing_triangle       */
 char * sbar_arr_down = "\xe2\x96\xbc"; /* black_down_pointing_triangle     */
 
-tst_node_t * root;
-tst_node_t * tst_menu;
+daccess_t daccess;
 
-menu_index_t menu_index_data;
-
-/* Variables use to manage the menu direct selections */
-/* """""""""""""""""""""""""""""""""""""""""""""""""" */
+/* Variables use to manage the direct access entries */
+/* """"""""""""""""""""""""""""""""""""""""""""""""" */
 char * daccess_stack;
 int    daccess_stack_head;
 
@@ -4384,18 +4381,18 @@ disp_word(word_t * word_a, int pos, int search_mode, char * buffer,
 
         /* And print it */
         /* """""""""""" */
-        fputs(menu_index_data.left, stdout);
-        printf("%.*s", menu_index_data.length, tmp_word + 1);
-        fputs(menu_index_data.right, stdout);
+        fputs(daccess.left, stdout);
+        printf("%.*s", daccess.length, tmp_word + 1);
+        fputs(daccess.right, stdout);
         tputs(TPARM1(exit_attribute_mode), 1, outch);
         fputc(' ', stdout);
       }
-      else if (menu_index_data.length > 0)
+      else if (daccess.length > 0)
       {
         /* prints the leading spaces */
         /* """"""""""""""""""""""""" */
         tputs(TPARM1(exit_attribute_mode), 1, outch);
-        printf("%.*s", menu_index_data.length + 3, tmp_word);
+        printf("%.*s", daccess.length + 3, tmp_word);
       }
 
       /* Set the search cursor attribute */
@@ -4415,8 +4412,8 @@ disp_word(word_t * word_a, int pos, int search_mode, char * buffer,
       /* Print and overwrite the beginning of the word with the search */
       /* buffer content if it is not empty                             */
       /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-      if (menu_index_data.length > 0)
-        tputs(tmp_word + menu_index_data.length + 3, 1, outch);
+      if (daccess.length > 0)
+        tputs(tmp_word + daccess.length + 3, 1, outch);
       else
         tputs(tmp_word, 1, outch);
 
@@ -4425,7 +4422,7 @@ disp_word(word_t * word_a, int pos, int search_mode, char * buffer,
         int i = 0;
 
         int buf_width;
-        int total_menu_selector_length;
+        int total_daccess_sel_len;
 
         /* Calculate the space taken by the buffer on screen */
         /* """"""""""""""""""""""""""""""""""""""""""""""""" */
@@ -4433,16 +4430,16 @@ disp_word(word_t * word_a, int pos, int search_mode, char * buffer,
                              mbstowcs(NULL, buffer, 0));
         free(w);
 
-        /* Size of the menu selector to skip to reach the word */
-        /* """"""""""""""""""""""""""""""""""""""""""""""""""" */
-        if (menu_index_data.length > 0)
-          total_menu_selector_length = menu_index_data.length + 3;
+        /* Size of the direct access selector to skip to reach the word */
+        /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+        if (daccess.length > 0)
+          total_daccess_sel_len = daccess.length + 3;
         else
-          total_menu_selector_length = 0;
+          total_daccess_sel_len = 0;
 
         /* Put the cursor at the beginning of the word */
         /* """"""""""""""""""""""""""""""""""""""""""" */
-        for (i = 0; i < e - s + 1 - total_menu_selector_length; i++)
+        for (i = 0; i < e - s + 1 - total_daccess_sel_len; i++)
           tputs(TPARM1(cursor_left), 1, outch);
 
         /* Set the buffer display attribute */
@@ -4457,16 +4454,16 @@ disp_word(word_t * word_a, int pos, int search_mode, char * buffer,
 
         /* Put back the cursor after the word */
         /* """""""""""""""""""""""""""""""""" */
-        for (i = 0; i < e - s - buf_width + 1 - total_menu_selector_length; i++)
+        for (i = 0; i < e - s - buf_width + 1 - total_daccess_sel_len; i++)
           tputs(TPARM1(cursor_right), 1, outch);
       }
     }
     else
     {
       int offset = 0;
-      if (menu_index_data.length > 0)
+      if (daccess.length > 0)
       {
-        offset = menu_index_data.length + 3;
+        offset = daccess.length + 3;
 
         /* If this word is not numbered, reset the display */
         /* attributes before printing the leading spaces.  */
@@ -4494,9 +4491,9 @@ disp_word(word_t * word_a, int pos, int search_mode, char * buffer,
 
           /* Print the non significant part of the word */
           /* """""""""""""""""""""""""""""""""""""""""" */
-          fputs(menu_index_data.left, stdout);
-          printf("%.*s", menu_index_data.length, word_a[pos].str + 1);
-          fputs(menu_index_data.right, stdout);
+          fputs(daccess.left, stdout);
+          printf("%.*s", daccess.length, word_a[pos].str + 1);
+          fputs(daccess.right, stdout);
           tputs(TPARM1(exit_attribute_mode), 1, outch);
           fputc(' ', stdout);
         }
@@ -4570,14 +4567,14 @@ disp_word(word_t * word_a, int pos, int search_mode, char * buffer,
           tputs(TPARM1(enter_standout_mode), 1, outch);
       }
 
-      fputs(menu_index_data.left, stdout);
-      printf("%.*s", menu_index_data.length, tmp_word + 1);
-      fputs(menu_index_data.right, stdout);
+      fputs(daccess.left, stdout);
+      printf("%.*s", daccess.length, tmp_word + 1);
+      fputs(daccess.right, stdout);
 
       tputs(TPARM1(exit_attribute_mode), 1, outch);
       fputc(' ', stdout);
     }
-    else if (menu_index_data.length > 0)
+    else if (daccess.length > 0)
     {
       size_t i;
 
@@ -4585,8 +4582,8 @@ disp_word(word_t * word_a, int pos, int search_mode, char * buffer,
       /* padding for all words is set                          */
       /* """"""""""""""""""""""""""""""""""""""""""""""""""""" */
       tputs(TPARM1(exit_attribute_mode), 1, outch);
-      if (menu_index_data.padding == 'a')
-        for (i = 0; i < menu_index_data.length + 3; i++)
+      if (daccess.padding == 'a')
+        for (i = 0; i < daccess.length + 3; i++)
           fputc(' ', stdout);
     }
 
@@ -4637,9 +4634,9 @@ disp_word(word_t * word_a, int pos, int search_mode, char * buffer,
     else if (win->include_attr.is_set)
       apply_txt_attr(term, win->include_attr);
 
-    if ((menu_index_data.length > 0 && menu_index_data.padding == 'a')
+    if ((daccess.length > 0 && daccess.padding == 'a')
         || word_a[pos].is_numbered)
-      tputs(tmp_word + menu_index_data.length + 3, 1, outch);
+      tputs(tmp_word + daccess.length + 3, 1, outch);
     else
       tputs(tmp_word, 1, outch);
 
@@ -5078,19 +5075,19 @@ search_next(tst_node_t * tst, word_t * word_a, char * search_buf,
 {
   wchar_t * w;
   int       found = 0;
-  int       total_menu_selector_length;
+  int       total_daccess_sel_len;
 
-  /* Size of the menu selector to skip to reach the word */
-  /* """"""""""""""""""""""""""""""""""""""""""""""""""" */
-  if (menu_index_data.length < 0)
-    total_menu_selector_length = 0;
+  /* Size of the direct access selector to skip to reach the word */
+  /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+  if (daccess.length < 0)
+    total_daccess_sel_len = 0;
   else
-    total_menu_selector_length = menu_index_data.length + 3;
+    total_daccess_sel_len = daccess.length + 3;
 
   /* Consider a word under the cursor found if it matches the search prefix. */
   /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
   if (!after_only)
-    if (memcmp(word_a[current].str + total_menu_selector_length, search_buf,
+    if (memcmp(word_a[current].str + total_daccess_sel_len, search_buf,
                strlen(search_buf))
         == 0)
       return 1;
@@ -5542,10 +5539,10 @@ main(int argc, char * argv[])
 
   int index; /* generic counter */
 
-  int     menu_index   = 1;
-  char *  menu_pattern = NULL;
-  regex_t menu_pattern_re; /* variable to store the compiled *
-                            * menu pattern (-N) RE           */
+  int     daccess_index   = 1;
+  char *  daccess_pattern = NULL;
+  regex_t daccess_pattern_re; /* variable to store the compiled *
+                               * direct access pattern (-N) RE  */
 
   char * include_pattern     = NULL;
   char * exclude_pattern     = NULL;
@@ -5599,13 +5596,15 @@ main(int argc, char * argv[])
 
   term_t term; /* Terminal structure */
 
-  tst_node_t * tst = NULL; /* TST used by the search function */
+  tst_node_t * tst_word    = NULL; /* TST used by the search function      */
+  tst_node_t * tst_daccess = NULL; /* TST used by the direct access system */
 
-  int    page;            /* Step for the vertical cursor moves  */
-  char * word;            /* Temporary variable to work on words */
-  char * tmp_word;        /* Temporary variable able to contain  *
-                           * the beginning of the word to be     *
-                           * displayed                           */
+  int    page;     /* Step for the vertical cursor moves  */
+  char * word;     /* Temporary variable to work on words */
+  char * tmp_word; /* Temporary variable able to contain  *
+                    * the beginning of the word to be     *
+                    * displayed                           */
+
   int      last_line = 0; /* last logical line number (from 0) */
   int      opt;
   win_t    win;
@@ -5837,12 +5836,12 @@ main(int argc, char * argv[])
   timeout.remain        = 0;
   timeout.reached       = 0;
 
-  menu_index_data.left       = " ";
-  menu_index_data.right      = ")";
-  menu_index_data.alignment  = 'r';
-  menu_index_data.padding    = 'a';
-  menu_index_data.expression = 'm';
-  menu_index_data.length     = -2;
+  daccess.left       = " ";
+  daccess.right      = ")";
+  daccess.alignment  = 'r';
+  daccess.padding    = 'a';
+  daccess.expression = 'm';
+  daccess.length     = -2;
 
   /* Command line options analysis */
   /* """"""""""""""""""""""""""""" */
@@ -6322,8 +6321,8 @@ main(int argc, char * argv[])
 
       case 'N':
       {
-        if (menu_pattern == NULL)
-          menu_pattern = xstrdup(optarg);
+        if (daccess_pattern == NULL)
+          daccess_pattern = xstrdup(optarg);
         else
           TELL("Option already given -- ");
 
@@ -6341,13 +6340,13 @@ main(int argc, char * argv[])
           switch (*(argv[optind]))
           {
             case 'l':
-              menu_index_data.left = strdup(argv[optind] + 2);
-              mb_interpret(menu_index_data.left, &langinfo);
+              daccess.left = strdup(argv[optind] + 2);
+              mb_interpret(daccess.left, &langinfo);
 
-              if (mb_strlen(menu_index_data.left) != 1)
+              if (mb_strlen(daccess.left) != 1)
                 TELL("Too many characters after l: -- ");
 
-              n = wcswidth((w = mb_strtowcs(menu_index_data.left)), 1);
+              n = wcswidth((w = mb_strtowcs(daccess.left)), 1);
               free(w);
 
               if (n > 1)
@@ -6355,13 +6354,13 @@ main(int argc, char * argv[])
               break;
 
             case 'r':
-              menu_index_data.right = strdup(argv[optind] + 2);
-              mb_interpret(menu_index_data.right, &langinfo);
+              daccess.right = strdup(argv[optind] + 2);
+              mb_interpret(daccess.right, &langinfo);
 
-              if (mb_strlen(menu_index_data.right) != 1)
+              if (mb_strlen(daccess.right) != 1)
                 TELL("Too many characters after r: -- ");
 
-              n = wcswidth((w = mb_strtowcs(menu_index_data.right)), 1);
+              n = wcswidth((w = mb_strtowcs(daccess.right)), 1);
               free(w);
 
               if (n > 1)
@@ -6370,35 +6369,33 @@ main(int argc, char * argv[])
 
             case 'a':
               if (argv[optind][2] == 'l')
-                menu_index_data.alignment = 'l';
+                daccess.alignment = 'l';
               else if (argv[optind][2] == 'r')
-                menu_index_data.alignment = 'r';
+                daccess.alignment = 'r';
               else
                 TELL("Bad format -- ");
               break;
 
             case 'p':
               if (argv[optind][2] == 'a')
-                menu_index_data.padding = 'a';
+                daccess.padding = 'a';
               else if (argv[optind][2] == 'i')
-                menu_index_data.padding = 'i';
+                daccess.padding = 'i';
               else
                 TELL("Bad format -- ");
               break;
 
             case 'e':
               if (argv[optind][2] == 'm')
-                menu_index_data.expression = 'm';
+                daccess.expression = 'm';
               else if (argv[optind][2] == 'r')
-                menu_index_data.expression = 'r';
+                daccess.expression = 'r';
               else
                 TELL("Bad format -- ");
               break;
 
             case 'w':
-              if (sscanf(argv[optind] + 2, "%d%n", &menu_index_data.length,
-                         &pos)
-                  != 1)
+              if (sscanf(argv[optind] + 2, "%d%n", &daccess.length, &pos) != 1)
                 TELL("Bad format -- ");
               if (argv[optind][pos + 2] != '\0')
                 TELL("Bad format -- ");
@@ -6408,8 +6405,8 @@ main(int argc, char * argv[])
               TELL("Bad format -- ");
           }
 
-          if (menu_index_data.length <= 0 || menu_index_data.length > 5)
-            menu_index_data.length = -2; /* special value -> auto */
+          if (daccess.length <= 0 || daccess.length > 5)
+            daccess.length = -2; /* special value -> auto */
 
           optind++;
         }
@@ -6792,10 +6789,11 @@ main(int argc, char * argv[])
     col_index = cols_number = 0;
   }
 
-  if (menu_pattern
-      && regcomp(&menu_pattern_re, menu_pattern, REG_EXTENDED | REG_NOSUB) != 0)
+  if (daccess_pattern
+      && regcomp(&daccess_pattern_re, daccess_pattern, REG_EXTENDED | REG_NOSUB)
+           != 0)
   {
-    fprintf(stderr, "Bad regular expression %s\n", menu_pattern);
+    fprintf(stderr, "Bad regular expression %s\n", daccess_pattern);
 
     exit(EXIT_FAILURE);
   }
@@ -7627,35 +7625,35 @@ main(int argc, char * argv[])
 
     /* Auto determination of the length of the selector */
     /* """""""""""""""""""""""""""""""""""""""""""""""" */
-    if (menu_pattern != NULL)
+    if (daccess_pattern != NULL)
     {
-      if (menu_index_data.length == -2)
+      if (daccess.length == -2)
       {
         int n = count;
 
-        menu_index_data.length = 0;
+        daccess.length = 0;
 
         while (n)
         {
           n /= 10;
-          menu_index_data.length++;
+          daccess.length++;
         }
       }
 
-      /* The menu tag is not a part of the word */
-      /* """""""""""""""""""""""""""""""""""""" */
+      /* The direct access selector is not a part of the word */
+      /* """""""""""""""""""""""""""""""""""""""""""""""""""" */
       include_visual_only = 1;
 
       if (word->is_selectable != EXCLUDE_MARK
           && word->is_selectable != SOFT_EXCLUDE_MARK)
       {
         char * selector;
-        char * tmp = xmalloc(strlen(word->str) + 4 + menu_index_data.length);
+        char * tmp      = xmalloc(strlen(word->str) + 4 + daccess.length);
         int *  word_pos = malloc(sizeof(int));
 
         if (!isempty(word->str)
-            && !!regexec(&menu_pattern_re, word->str, (size_t)0, NULL, 0)
-                 == (menu_index_data.expression == 'm' ? 0 : 1))
+            && !!regexec(&daccess_pattern_re, word->str, (size_t)0, NULL, 0)
+                 == (daccess.expression == 'm' ? 0 : 1))
         {
           *word_pos = wi;
 
@@ -7663,26 +7661,26 @@ main(int argc, char * argv[])
 
           tmp[0] = ' ';
           sprintf(tmp + 1, "%*d",
-                  menu_index_data.alignment == 'l' ? -menu_index_data.length
-                                                   : menu_index_data.length,
-                  menu_index);
+                  daccess.alignment == 'l' ? -daccess.length : daccess.length,
+                  daccess_index);
 
           selector = strdup(tmp + 1);
           ltrim(selector, " ");
           rtrim(selector, " ", 0);
-          tst_menu = tst_insert(tst_menu, mb_strtowcs(selector), word_pos);
+          tst_daccess = tst_insert(tst_daccess, mb_strtowcs(selector),
+                                   word_pos);
           free(selector);
 
-          tmp[1 + menu_index_data.length] = ' ';
-          tmp[2 + menu_index_data.length] = ' ';
+          tmp[1 + daccess.length] = ' ';
+          tmp[2 + daccess.length] = ' ';
 
-          menu_index++;
+          daccess_index++;
         }
         else
-          for (i = 0; i < 3 + menu_index_data.length; i++)
+          for (i = 0; i < 3 + daccess.length; i++)
             tmp[i] = ' ';
 
-        strcpy(tmp + 3 + menu_index_data.length, word->str);
+        strcpy(tmp + 3 + daccess.length, word->str);
         free(word->str);
         word->str = tmp;
       }
@@ -7690,12 +7688,12 @@ main(int argc, char * argv[])
       {
         /* Should we also add space at the beginning of excluded words ? */
         /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-        if (menu_index_data.padding == 'a')
+        if (daccess.padding == 'a')
         {
-          char * tmp = xmalloc(strlen(word->str) + 4 + menu_index_data.length);
-          for (i = 0; i < 3 + menu_index_data.length; i++)
+          char * tmp = xmalloc(strlen(word->str) + 4 + daccess.length);
+          for (i = 0; i < 3 + daccess.length; i++)
             tmp[i] = ' ';
-          strcpy(tmp + 3 + menu_index_data.length, word->str);
+          strcpy(tmp + 3 + daccess.length, word->str);
           free(word->str);
           word->str = tmp;
         }
@@ -7980,10 +7978,10 @@ main(int argc, char * argv[])
 
       /* Create a wide characters string from the word screen representation */
       /* to be able to store in in the TST.                                  */
-      /* Note that the menu selector,if any, is not stored.                  */
+      /* Note that the direct access  selector,if any, is not stored.        */
       /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-      if (menu_pattern != NULL)
-        w = mb_strtowcs(word_a[wi].str + menu_index_data.length + 3);
+      if (daccess_pattern != NULL)
+        w = mb_strtowcs(word_a[wi].str + daccess.length + 3);
       else
         w = mb_strtowcs(word_a[wi].str);
 
@@ -7991,13 +7989,13 @@ main(int argc, char * argv[])
       /* the TST for it and store its index in its list.                      */
       /* Otherwise, add its index in its index list.                          */
       /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-      if (tst && (list = tst_search(tst, w)) != NULL)
+      if (tst_word && (list = tst_search(tst_word, w)) != NULL)
         ll_append(list, data);
       else
       {
         list = ll_new();
         ll_append(list, data);
-        tst = tst_insert(tst, w, list);
+        tst_word = tst_insert(tst_word, w, list);
       }
       free(w);
     }
@@ -8144,7 +8142,7 @@ main(int argc, char * argv[])
       wchar_t * w;
 
       new_current = last_selectable;
-      if (NULL != tst_prefix_search(tst, w = mb_strtowcs(ptr), tst_cb_cli))
+      if (NULL != tst_prefix_search(tst_word, w = mb_strtowcs(ptr), tst_cb_cli))
         current = new_current;
       else
         current = first_selectable;
@@ -8298,8 +8296,8 @@ main(int argc, char * argv[])
       }
     }
 
-    /* Reset the menu selector if the menu alarm rang */
-    /* """""""""""""""""""""""""""""""""""""""""""""" */
+    /* Reset the direct access selector if the direct access alarm rang */
+    /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
     if (got_daccess_alrm)
     {
       got_daccess_alrm = 0;
@@ -8686,8 +8684,8 @@ main(int argc, char * argv[])
             }
             else
             {
-              /* Reset the menu selector stack */
-              /* """"""""""""""""""""""""""""" */
+              /* Reset the direct access selector stack */
+              /* """""""""""""""""""""""""""""""""""""" */
               memset(daccess_stack, '\0', 6);
               daccess_stack_head = 0;
 
@@ -8747,7 +8745,7 @@ main(int argc, char * argv[])
           if (search_mode)
             goto special_cmds_when_searching;
 
-          if (search_next(tst, word_a, search_buf, 1))
+          if (search_next(tst_word, word_a, search_buf, 1))
             if (current > win.end)
               last_line = build_metadata(word_a, &term, count, &win);
 
@@ -9611,12 +9609,12 @@ main(int argc, char * argv[])
             wchar_t * w;
             int *     pos;
 
-            if (daccess_stack_head == menu_index_data.length)
+            if (daccess_stack_head == daccess.length)
               break;
             daccess_stack[daccess_stack_head] = buffer[0];
             daccess_stack_head++;
             w   = mb_strtowcs(daccess_stack);
-            pos = tst_search(tst_menu, w);
+            pos = tst_search(tst_daccess, w);
             free(w);
 
             if (pos != NULL)
@@ -9724,7 +9722,7 @@ main(int argc, char * argv[])
             for (c = 0; c < sc && search_pos < word_real_max_size; c++)
               search_buf[search_pos++] = buffer[c];
 
-            if (search_next(tst, word_a, search_buf, 0))
+            if (search_next(tst_word, word_a, search_buf, 0))
             {
               if (current > win.end)
                 last_line = build_metadata(word_a, &term, count, &win);
