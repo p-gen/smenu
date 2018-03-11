@@ -9604,7 +9604,7 @@ main(int argc, char * argv[])
         case '8':
         case '9':
         {
-          if (!search_mode)
+          if (!search_mode && daccess_pattern != NULL)
           {
             wchar_t * w;
             int *     pos;
