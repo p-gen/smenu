@@ -19,7 +19,7 @@ do
    echo
 
    MESSAGE="LVM management"
-   read REP <<< $(echo "$MENU" | ./menu.sh -i "$MESSAGE" "-Rd1")
+   read REP <<< $(echo "$MENU" | ./menu.sh -i "$MESSAGE" "-Re1")
 
    case $REP in
      ABORT) exit 1         ;;
