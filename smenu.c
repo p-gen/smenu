@@ -772,7 +772,7 @@ short_usage(void)
   fprintf(stderr, "       <row selectors> ::= row1[-row2]...|<RE>...\n");
   fprintf(stderr, "       <prefix>        ::= i|e|c|b|s|t|sf|st|da\n");
   fprintf(stderr, "       <arg>           ::= [l|r:<char>]|[a:l|r]|[p:i|a|");
-  fprintf(stderr, "[e:m|r]|[w:<size>]\n");
+  fprintf(stderr, "[e:m|i]|[w:<size>]\n");
   fprintf(stderr, "         (ex: l:'(' e:r)\n");
   fprintf(stderr, "       <attr>          ::= [fg][/bg][,style] \n");
   fprintf(stderr, "         (ex: 7/4,bu)\n");
@@ -848,8 +848,8 @@ usage(void)
           "-Z forces a class of words to be the latest of the line they "
           "appear in.\n");
   fprintf(stderr,
-          "-N numbers and provides a direct access to words matching a "
-          "specific regex.\n");
+          "-N numbers and provides a direct access to words matching (or not) "
+          "a specific regex.\n");
   fprintf(stderr,
           "-1,-2,...,-5 gives specific colors to up to 5 classes of "
           "selectable words.\n");
@@ -6340,7 +6340,7 @@ main(int argc, char * argv[])
 
           switch (*(argv[optind]))
           {
-            case 'l':
+            case 'l': /* left char */
               daccess.left = strdup(argv[optind] + 2);
               mb_interpret(daccess.left, &langinfo);
 
@@ -6354,7 +6354,7 @@ main(int argc, char * argv[])
                 TELL("A multi columns character is not allowed after l: -- ");
               break;
 
-            case 'r':
+            case 'r': /* right char */
               daccess.right = strdup(argv[optind] + 2);
               mb_interpret(daccess.right, &langinfo);
 
@@ -6368,34 +6368,34 @@ main(int argc, char * argv[])
                 TELL("A multi columns character is not allowed after r: -- ");
               break;
 
-            case 'a':
-              if (argv[optind][2] == 'l')
+            case 'a': /* alignment */
+              if (strprefix("left", argv[optind] + 2))
                 daccess.alignment = 'l';
-              else if (argv[optind][2] == 'r')
+              else if (strprefix("right", argv[optind] + 2))
                 daccess.alignment = 'r';
               else
                 TELL("Bad format -- ");
               break;
 
-            case 'p':
-              if (argv[optind][2] == 'a')
+            case 'p': /* padding */
+              if (strprefix("all", argv[optind] + 2))
                 daccess.padding = 'a';
-              else if (argv[optind][2] == 'i')
+              else if (strprefix("included", argv[optind] + 2))
                 daccess.padding = 'i';
               else
                 TELL("Bad format -- ");
               break;
 
-            case 'e':
-              if (argv[optind][2] == 'm')
+            case 'e': /* expression */
+              if (strprefix("match", argv[optind] + 2))
                 daccess.expression = 'm';
-              else if (argv[optind][2] == 'r')
-                daccess.expression = 'r';
+              else if (strprefix("invert", argv[optind] + 2))
+                daccess.expression = 'i';
               else
                 TELL("Bad format -- ");
               break;
 
-            case 'w':
+            case 'w': /* width */
               if (sscanf(argv[optind] + 2, "%d%n", &daccess.length, &pos) != 1)
                 TELL("Bad format -- ");
               if (argv[optind][pos + 2] != '\0')

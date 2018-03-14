@@ -614,18 +614,21 @@ where \fBy\fP is the UTF-8 character (in native or \fI\\u\fP form)
 to print after the number.
 
 - '\f(CBa\fP'
-where \fBy\fP is '\f(CBl\fP' if the number must be \f(CBleft\fP aligned,
-or '\f(CBr\fP' if it must be \fIright\fP aligned.
+where \fBy\fP is '\f(CBleft\fP' (or one of its prefixes) if the number
+must be \fIleft\fP aligned, or '\f(CBright\fP' (or one of its prefixes)
+if it must be \fIright\fP aligned.
 
 - '\f(CBp\fP'
-where \fBy\fP is '\f(CBi\fP' or '\f(CBa\fP' for the initial paddind of
-the non numbered words: '\f(CBi\fP' stands for \fIi\fPncluded only and
-'\f(CBa\fP' for \fIa\fPll non numbered words.
+where \fBy\fP is '\f(CBincluded\fP' (or one of its prefixes)
+or '\f(CBall\fP' (or one of its prefixes) for the initial padding of
+the non numbered words. '\f(CBincluded\fP' means that only
+\fIincluded\fP word will be padded while '\f(CBall\fP' means pad
+\fIall\fP words.
 
 - '\f(CBe\fP'
-where \fBy\fP is '\f(CBm\fP' if the words must \f(CBm\fPatch the regular
-expression or '\f(CBr\fP' if they must \fBNOT\fP match it (\f(BCr\fPeverse
-matching).
+where \fBy\fP is '\f(CBmatch\fP' (or one of its prefixes) if the words
+must \fImatch\fP the regular expression or '\f(CBinvert\fP' (or one of
+its prefixes) if they must \fBNOT\fP match it.
 
 - '\f(CBw\fP'
 where \fBy\fP is the width of the number between 1 and 5 included.
