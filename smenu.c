@@ -5704,6 +5704,7 @@ main(int argc, char * argv[])
   win.col_mode        = 0;
   win.line_mode       = 0;
   win.first_column    = 0;
+  win.real_max_width  = 0;
 
   init_attr.is_set    = UNSET;
   init_attr.fg        = -1;
