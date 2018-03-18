@@ -17,7 +17,9 @@ and outputs the selection to stdout.
       [\fB-I\fP \fI/regex/string/\fP[\fIg\fP][\fIv\fP][\fIs\fP][\fIi\fP]] \\
       [\fB-E\fP \fI/regex/string/\fP[\fIg\fP][\fIv\fP][\fIs\fP][\fIi\fP]] \\
       [\fB-A\fP \fIregex\fP] [\fB-Z\fP \fIregex\fP] \\
-      [\fB-N\fP \fIregex\fP [\fIargument\fP]...] \\
+      [\fB-N\fP \fIregex\fP \\
+      [\fB-F\fP \fItype\fP \\
+      [\fB-D\fP [\fIFargument\fP]...] \\
       [\fB-1\fP \fIregex\fP [\fIATTR\fP]] \
 [\fB-2\fP \fIregex\fP [\fIATTR\fP]] ... \
 [\fB-5\fP \fIregex\fP [\fIATTR\fP]] \\
@@ -29,6 +31,7 @@ and outputs the selection to stdout.
       <col selectors> ::= \fIcol1\fP[-\fIcol2\fP],...|\fI<RE>\fP,...
       <row selectors> ::= \fIcol1\fP[-\fIcol2\fP],...|\fI<RE>\fP,...
       <argument>      ::= [l|r:<char>]|[a:l|r]|[p:i|a|[e:m|r]|[w:<num>]
+                          |[o:<num>]|[s:<num>]|[d:<char>]
       <ATTR>          ::= [fg][/bg][,style]
       <RE>            ::= \fB<char>\fIregex\fB<char>\fP
 
