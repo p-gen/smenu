@@ -8369,6 +8369,11 @@ main(int argc, char * argv[])
   else
     current = first_selectable;
 
+  /* Initialize prev_current to the initial current word to be able to */
+  /* return here if the first direct access fails                      */
+  /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+  prev_current = current;
+
   /* We now need to adjust the 'start'/'end' fields of the structure 'win' */
   /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
   set_win_start_end(&win, current, last_line);
