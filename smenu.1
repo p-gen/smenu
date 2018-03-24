@@ -9,7 +9,8 @@ and outputs the selection to stdout.
       [\fB-s\fP \fIpattern\fP] [\fB-m\fP \fImessage\fP] [\fB-w\fP] \\
       [\fB-d\fP] [\fB-M\fP] [\fB-c\fP] [\fB-l\fP] [\fB-r\fP] [\fB-b\fP] \\
       [\fB-a\fP (i|e|c|b|s|t|sf|st|da):\fIATTR\fP]... \\
-      [\fB-i\fP \fIregex\fP] [\fB-e\fP \fIregex\fP] [\fB-C\fP \
+      [\fB-i\fP \fIregex\fP] [\fB-e\fP \fIregex\fP] \\
+      [\fB-C\fP \
 [\fIa\fP|\fIs\fP|\fIi\fP|\fIr\fP|\fId\fP|\fIe\fP]<col selectors>] \\
       [\fB-R\fP \
 [\fIa\fP|\fIs\fP|\fIi\fP|\fIr\fP|\fId\fP|\fIe\fP]<row selectors>] \\
@@ -17,9 +18,8 @@ and outputs the selection to stdout.
       [\fB-I\fP \fI/regex/string/\fP[\fIg\fP][\fIv\fP][\fIs\fP][\fIi\fP]] \\
       [\fB-E\fP \fI/regex/string/\fP[\fIg\fP][\fIv\fP][\fIs\fP][\fIi\fP]] \\
       [\fB-A\fP \fIregex\fP] [\fB-Z\fP \fIregex\fP] \\
-      [\fB-N\fP \fIregex\fP \\
-      [\fB-F\fP \fItype\fP \\
-      [\fB-D\fP [\fIFargument\fP]...] \\
+      [\fB-N\fP \fIregex\fP] [\fB-U\fP \fIregex\fP] [\fB-F\fP] \
+[\fB-D\fP \fIsub-option\fP...] \\
       [\fB-1\fP \fIregex\fP [\fIATTR\fP]] \
 [\fB-2\fP \fIregex\fP [\fIATTR\fP]] ... \
 [\fB-5\fP \fIregex\fP [\fIATTR\fP]] \\
@@ -30,12 +30,14 @@ and outputs the selection to stdout.
 
       <col selectors> ::= \fIcol1\fP[-\fIcol2\fP],...|\fI<RE>\fP,...
       <row selectors> ::= \fIcol1\fP[-\fIcol2\fP],...|\fI<RE>\fP,...
-      <argument>      ::= [l|r:<char>]|[a:l|r]|[p:i|a|[e:m|r]|[w:<num>]
-                          |[o:<num>]|[s:<num>]|[d:<char>]
+      <sub-option>    ::= [l|r:<char>]|[a:left|right]|[p:included|all|
+                          [w:<num>]|[f:yes|no]|[o:<num>]|[n:<num>]|
+                          [i:<num>]
       <ATTR>          ::= [fg][/bg][,style]
-      <RE>            ::= \fB<char>\fIregex\fB<char>\fP
+      <RE>            ::= \fB<char>\fIregex\fB<char>\fR
 
       <col/row selectors> and <RE> can be freely mixed.
+      The parameters of -a and -D must be delimited by blanks.
 .fi
 .SH DESCRIPTION
 This small utility acts as a filter when no input file is given
@@ -99,6 +101,17 @@ keyboard arrow keys (\fB\(<-\fP,\fB\(da\fP,\fB\(ua\fP,\fB\(->\fP)
 or the \fIvi\fP direction keys (\fBh\fP, \fBj\fP, \fBk\fP and \fBl\fP).
 \fBHOME\fP, \fBEND\fP, \fBPgDn\fP and \fBPgUp\fP can also be used, if
 available, and have their traditional meanings.
+
+If the \fB-N\fP, \fB-U\fP or \fB-F\fP are used then it is possible to
+directly access a word by entering its number.
+The numbering created using these option is done \fBbefore\fP any words
+substitution done using \fB-S\fP, \fB-I\fP or \fB-E\fP.
+
+Using a combination of these options, it is easy to control which words
+will be numbered by adding a special symbol in it before using smenu and
+removing it (substituted by nothing) afterward using \fB-I\fP by example.
+
+\fB-E\fP gives another way to do that, see below or more.
 .SS "Searching for a word"
 The key \fB/\fP or the key combination \fB^F\fP (\fBCTRL+f\fP) can be
 used to initiate a search by prefix among the words (possibly altered
@@ -399,6 +412,7 @@ This mode is the same as column mode but without any column alignment.
 Enables \fBENTER\fP to validate the selection even in search mode.
 .IP \fB-b\fP
 Replaces all non-printable characters by a blank.
+If this results in a blank word, it will be potentially deleted.
 .IP "\fB-a \fIPREFIX:ATTR\fP [\fIPREFIX:ATTR\fP...]"
 Sets the display attributes of the elements displayed and the cursor.
 
@@ -590,11 +604,11 @@ The same trick with \fB-L\fP can also be used.
 .RS
 \fI\\u\fP sequences can also be used in the regexp after \fB-Z\fP.
 .RE
-.IP "\fB-N\fP [\fIparameters\fP]"
+.IP "\fB-N\fP [\fIregex\fP]"
 This option allows to number the selectable words matching a specific
 regular expression.
-These numbers are numbered from 1 and provides a direct access to
-the words.
+These numbers are numbered starting from 1 and provides a direct access
+to the words.
 
 To use this functionality, the user must enter the number which
 corresponds to the desired entry digit per digit.
@@ -605,48 +619,111 @@ will start a new number.
 If the number does not exists, then the cursor is restored to it's
 initial position.
 
-These optional parameters must respect the format \fBx\fP:\fBy\fP where
-\fBx\fP can be:
+The sub-options of the \fB-D\fP option described below can change the
+way \fB-N\fP sets and formats the numbers.
 
-- '\f(CBl\fP'
+This option can be used more than once with cummulative effects.
+
+\fB-N\fP, \fB-U\fP and \fB-F\fP can be mixed.
+.IP "\fB-U\fP [\fIregex\fP]"
+This option allows to un-number words.
+If placed after a previous \fB-N\fP, it can be used to remove the
+numbering of selected words.
+If placed before, the word which doesn't match its regular expression
+will be numbered by default.
+
+This mechanism is similar to to the inclusion/exclusion of words by
+\fB-i\fP and \fB-e\fP.
+
+This option can be used more than once with cummulative effects.
+
+\fB-U\fP, \fB-N\fP and \fB-F\fP can be mixed.
+.IP "\fB-F\fP"
+This option is similar to \fB-N\fP but does not generate a continuous
+flow of numbers but extracts them from the word itself.
+
+With this option you can take full control of the numbering of the
+displayed word.
+Note that the numbering does not need to be ordered.
+
+The resulting word after the extraction of the number must be non empty.
+
+Some sub-option are required, see the \fB-D\fP option described below.
+
+\fBNotice\fP that for this option to work correctly, all the embedded
+numbers must have the same number of digits.
+To get that, a preprocessing may be necessary on the words before using
+this program.
+
+\fB-F\fP, \fB-N\fP and \fB-U\fP can be mixed.
+.IP "\fB-D\fP [\fIparameters\fP]"
+This option allows to change the default behaviour or the \fB-N\fP,
+\fB-U\fP and \fB-F\fP options.
+
+Its optional parameters are called sub-options and must respect the
+format \fBx\fP:\fBy\fP where \fBx\fP can be:
+
+- '\f(CBl\fP' (\fB-F\fP, \fB-N\fP and \fB-U\fP options)
+.br
 where \fBy\fP is the UTF-8 character (in native or \fI\\u\fP form)
-to print before the number.
+to print before the number. The default is a single space.
 
-- '\f(CBr\fP'
+- '\f(CBr\fP' (\fB-F\fP, \fB-N\fP and \fB-U\fP options)
+.br
 where \fBy\fP is the UTF-8 character (in native or \fI\\u\fP form)
-to print after the number.
+to print after the number. The default is \f(CB)\fP.
 
-- '\f(CBa\fP'
+- '\f(CBa\fP' (\fB-F\fP, \fB-N\fP and \fB-U\fP options)
+.br
 where \fBy\fP is '\f(CBleft\fP' (or one of its prefixes) if the number
 must be \fIleft\fP aligned, or '\f(CBright\fP' (or one of its prefixes)
-if it must be \fIright\fP aligned.
+if it must be \fIright\fP aligned. The default is \f(CBright\fP.
 
-- '\f(CBp\fP'
-where \fBy\fP is '\f(CBincluded\fP' (or one of its prefixes)
-or '\f(CBall\fP' (or one of its prefixes) for the initial padding of
-the non numbered words. '\f(CBincluded\fP' means that only
-\fIincluded\fP word will be padded while '\f(CBall\fP' means pad
-\fIall\fP words.
+- '\f(CBp\fP' (\fB-F\fP, \fB-N\fP and \fB-U\fP options)
+.br
+where \fBy\fP is '\f(CBincluded\fP' (or one of its prefixes) 
+or '\f(CBall\fP' (or one of its prefixes) for the initial \fIp\fPadding of
+the non numbered words. '\f(CBincluded\fP' means that only \fIincluded\fP
+word will be padded while '\f(CBall\fP' means pad \fIall\fP words. The
+default is \f(CBall\fP.
 
-- '\f(CBe\fP'
-where \fBy\fP is '\f(CBmatch\fP' (or one of its prefixes) if the words
-must \fImatch\fP the regular expression or '\f(CBinvert\fP' (or one of
-its prefixes) if they must \fBNOT\fP match it.
+- '\f(CBw\fP' (\fB-F\fP, \fB-N\fP and \fB-U\fP options)
+.br
+where \fBy\fP is the \fIw\fPidth of the number between 1 and 5 included.
 
-- '\f(CBw\fP'
-where \fBy\fP is the width of the number between 1 and 5 included.
+- '\f(CBf\fP' (\fB-F\fP, \fB-N\fP and \fB-U\fP options)
+.br
+where \fBy\fP controls if the numbering must \fIf\fPollow the last
+extracted number (defaults to \f(CByes\fP) or if it must remain
+independant.
+
+- '\f(CBo\fP' (\fB-F\fP option)
+.br
+where \fBy\fP is the \fIo\fPffset of the first multibyte character of
+the number to extract from the word (defaults to \f(CB0\fP).
+
+- '\f(CBn\fP' (\fB-F\fP option)
+.br
+where \fBy\fP is the \fIn\fPumber of multibyte characters to extract
+from the word starting at the offset given by the \f(CBo\fP sub-option.
+
+- '\f(CBi\fP' (\fB-F\fP option)
+.br
+where \fBy\fP is number of multibyte characters to \fIi\fPgnore after
+the extracted number
 
 Example: \f(CWr:\\> l:\\< a:l\fP
 
-To number all words with the default parameters, use the syntax:
-"\f(CW-N .\fP"
-which is a shortcut for: "\f(CW-N . l:' ' r:')' a:r p:a e:m\fP"
+To number all words with the default parameters, use the
+syntax: "\f(CW-N .\fP" which is a shortcut for:
+"\f(CW-N . l:' ' r:')' a:r p:a\fP"
 
-The \fIpadding\fP directive specifies whether spaces must also be added
-in front of excluded words or not to improve compactness.
+The \fIpadding\fP sub-option specifies whether spaces must also be
+added in front of excluded words or not to improve compactness.
 
-When the \f(CBw\fP optional parameter is not given the width of the
-numbers is determined automatically.
+When the \f(CBw\fP sub-option is not given the width of the numbers is
+determined automatically but if \fB-F\fP is set and the value of the
+\f(CBn\fP sub-option is given then this value is used.
 .IP "\fB-1\fP ... \fB-5\fP \fIregex\fP [\fIATTR\fP]"
 Allows to give up to 5 classes of words specified by regular expressions
 a special display color.
@@ -858,11 +935,11 @@ Imagine a file named \fBsample.mnu\fP with the following content:
 
 .nf
 \f(CR--8<---------------------------------
-[1] "First Entry" [3] "Third entry"
-[2] "Second entry" [4] "Fourth entry"
-@@@ @@@ [5] "Fifth entry"
+"1 First Entry" "3 Third entry"
+"2 Second entry" "4 Fourth entry"
+@@@ "5 Fifth entry"
 @@@
-[Quit] "Exit menu"
+"0 Exit menu"
 --8<---------------------------------
 \fP
 .fi
@@ -870,25 +947,26 @@ Imagine a file named \fBsample.mnu\fP with the following content:
 Then this quite esoteric command will render it (centered on the screen) as:
 
 .nf
-\f(CR+--------------------------------+
-|Test menu                       |
-|1    First Entry  3 Third entry |
-|2    Second entry 4 Fourth entry|
-|                  5 Fifth entry |
-|                                |
-|Quit Exit menu                  |
-+--------------------------------+
+\f(CR+----------------------------------+
+|            Test menu             |
+|                                  |
+| 1) First Entry   3) Third entry  |
+| 2) Second entry  4) Fourth entry |
+|                  5) Fifth entry  |
+|                                  |
+| 0) Exit menu                     |
++----------------------------------+
 \fP
 .fi
 
 with the cursor on \fIQuit\fP and only the numbers and "Quit" selectable.
 
-\f(CBR=$(smenu -q -d -s/Q -M -n 30 -c               \\
-          -e "@+" -E '/@+//'                   \\
-          -i '\\[ *[^ ]+ *\\]' -I '/[][ ]//g'    \\
-          -m "Test menu" < sample.mnu)\fP
+\f(CBR=$(smenu R=$(./smenu -q -d -s/Exit -M -n 30 -c      \\
+                      -e "@+" -E '/@+/ /'            \\
+                      -F -D n:1 i:1                  \\
+                      -m "Test menu"$'\n' < sample.mnu)
 
-The selected number or string will be available in \f(CBR\fP
+The selected entry will be available in \f(CBR\fP
 
 Try to understand it as an exercise.
 .SH ENVIRONMENT

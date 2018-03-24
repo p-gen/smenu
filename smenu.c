@@ -349,12 +349,13 @@ enum filter_types
   EXCLUDE_FILTER
 };
 
+/* Used by the -N -F and -D options */
+/* """""""""""""""""""""""""""""""" */
 enum daccess_types
 {
-  DACCESS_NONE  = 0,
-  DACCESS_AUTO  = 1,
-  DACCESS_POS   = 2,
-  DACCESS_DELIM = 4
+  DA_TYPE_NONE = 0, /* must be 0 (boolean value) */
+  DA_TYPE_AUTO = 1,
+  DA_TYPE_POS  = 2
 };
 
 /* Used when managing the -R option */
@@ -619,16 +620,15 @@ struct daccess_s
   int    type;       /* 1: auto, 2: delimiter, 4: positional               */
   char * left;       /* character to put before the direct access selector */
   char * right;      /* character to put after the direct access selector  */
-  char * delim;      /* field delimiter                                    */
   char   alignment;  /* l: left; r: right                                  */
   char   padding;    /* a: all; i: only included words are padded          */
-  char   expression; /* m: match; r: reverse match the regular expression  */
-  char   remove;     /* y: remove from word, n: don't                      */
   int    length;     /* selector size (5 max)                              */
-  int    start_off;  /* offset to the start of the selector                */
-  int    end_off;    /* offset to the end of the selector                  */
-  int    width;      /* max width of the selector                          */
-  int    skip;       /* Number of multibytes to skip after the number      */
+  int    flength;    /* 0 or length + 3 (full prefix lengh                 */
+  int    offset;     /* offset to the start of the selector                */
+  int    size;       /* size in bytes of the selector to extract           */
+  int    ignore;     /* number of multibytes to ignore after the number    */
+  int    follow;     /* y: the numbering follows the last nuber set        */
+  int    def_number; /* 1: the numbering is on by default 0: it is not     */
 };
 
 /* **************** */
@@ -779,7 +779,9 @@ short_usage(void)
   fprintf(stderr, "       [-S /regex/repl/[g][v][s][i]] ");
   fprintf(stderr, "[-I /regex/repl/[g][v][s][i]]             \\\n");
   fprintf(stderr, "       [-E /regex/repl/[g][v][s][i]] ");
-  fprintf(stderr, "[-A regex] [-Z regex] [-N regex [arg]...] \\\n");
+  fprintf(stderr, "[-A regex] [-Z regex]                     \\\n");
+  fprintf(stderr, "       [-N regex] [-U regex] [-F] [-D arg...] ");
+  fprintf(stderr, "                                 \\\n");
   fprintf(stderr, "       [-1 regex [attr]] [-2 regex [attr]]... ");
   fprintf(stderr, "[-5 regex [attr]] [-g] [-q]      \\\n");
   fprintf(stderr, "       [-W bytes] [-L bytes] [-T [separator]] ");
@@ -789,13 +791,15 @@ short_usage(void)
   fprintf(stderr, "       <col selectors> ::= col1[-col2]...|<RE>...\n");
   fprintf(stderr, "       <row selectors> ::= row1[-row2]...|<RE>...\n");
   fprintf(stderr, "       <prefix>        ::= i|e|c|b|s|t|sf|st|da\n");
-  fprintf(stderr, "       <arg>           ::= [l|r:<char>]|[a:l|r]|[p:i|a|");
-  fprintf(stderr, "[e:m|i]|[w:<size>]\n");
-  fprintf(stderr, "         (ex: l:'(' e:r)\n");
+  fprintf(stderr, "       <arg>           ::= [l|r:<char>]|[a:l|r]|[p:i|a]|");
+  fprintf(stderr, "[w:<size>]|\n");
+  fprintf(stderr, "                           [f:y|n]|[o:<num>]|[n:<num>]|");
+  fprintf(stderr, "[i:<num>]\n");
+  fprintf(stderr, "         Ex: l:'(' a:l\n");
   fprintf(stderr, "       <attr>          ::= [fg][/bg][,style] \n");
-  fprintf(stderr, "         (ex: 7/4,bu)\n");
+  fprintf(stderr, "         Ex: 7/4,bu\n");
   fprintf(stderr, "       <RE>            ::= <char>regex<char> \n");
-  fprintf(stderr, "         (ex: /regex/ or :regex:)\n\n");
+  fprintf(stderr, "         Ex: /regex/ or :regex:\n\n");
   fprintf(stderr, "       <col/row selectors> and <RE> can be freely mixed ");
   fprintf(stderr, "when used\n");
   fprintf(stderr, "       with -C and -R (ex: 2,/x/,4-5).\n");
@@ -866,8 +870,15 @@ usage(void)
           "-Z forces a class of words to be the latest of the line they "
           "appear in.\n");
   fprintf(stderr,
-          "-N numbers and provides a direct access to words matching (or not) "
-          "a specific regex.\n");
+          "-N/-U numbers/un-numbers and provides a direct access to words "
+          "matching\n");
+  fprintf(stderr, "   (or not) a specific regex.\n");
+  fprintf(stderr,
+          "-F numbers and provides a direct access to words by extracting the "
+          "number\n");
+  fprintf(stderr, "   from the words.\n");
+  fprintf(stderr,
+          "-D sets sub-options to modify the behaviour of -N, -U and -F.\n");
   fprintf(stderr,
           "-1,-2,...,-5 gives specific colors to up to 5 classes of "
           "selectable words.\n");
@@ -887,7 +898,7 @@ usage(void)
   fprintf(stderr, "\nNavigation keys are:\n");
   fprintf(stderr, "  - Left/Down/Up/Right arrows or h/j/k/l.\n");
   fprintf(stderr, "  - Home/End.\n");
-  fprintf(stderr, "  - Numbers if some words are numbered (-N).\n");
+  fprintf(stderr, "  - Numbers if some words are numbered (-N/-U/-F).\n");
   fprintf(stderr, "  - SPACE to search for the next match of a previously\n");
   fprintf(stderr, "          entered search prefix if any, see below.\n\n");
   fprintf(stderr, "Other useful keys are:\n");
@@ -4450,7 +4461,7 @@ disp_word(word_t * word_a, int pos, int search_mode, char * buffer,
         /* prints the leading spaces */
         /* """"""""""""""""""""""""" */
         tputs(TPARM1(exit_attribute_mode), 1, outch);
-        printf("%.*s", daccess.length + 3, tmp_word);
+        printf("%.*s", daccess.flength, tmp_word);
       }
 
       /* Set the search cursor attribute */
@@ -4470,17 +4481,13 @@ disp_word(word_t * word_a, int pos, int search_mode, char * buffer,
       /* Print and overwrite the beginning of the word with the search */
       /* buffer content if it is not empty                             */
       /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-      if (daccess.length > 0)
-        tputs(tmp_word + daccess.length + 3, 1, outch);
-      else
-        tputs(tmp_word, 1, outch);
+      tputs(tmp_word + daccess.flength, 1, outch);
 
       if (buffer[0] != '\0')
       {
         int i = 0;
 
         int buf_width;
-        int total_daccess_sel_len;
 
         /* Calculate the space taken by the buffer on screen */
         /* """"""""""""""""""""""""""""""""""""""""""""""""" */
@@ -4488,16 +4495,9 @@ disp_word(word_t * word_a, int pos, int search_mode, char * buffer,
                              mbstowcs(NULL, buffer, 0));
         free(w);
 
-        /* Size of the direct access selector to skip to reach the word */
-        /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-        if (daccess.length > 0)
-          total_daccess_sel_len = daccess.length + 3;
-        else
-          total_daccess_sel_len = 0;
-
         /* Put the cursor at the beginning of the word */
         /* """"""""""""""""""""""""""""""""""""""""""" */
-        for (i = 0; i < e - s + 1 - total_daccess_sel_len; i++)
+        for (i = 0; i < e - s + 1 - daccess.flength; i++)
           tputs(TPARM1(cursor_left), 1, outch);
 
         /* Set the buffer display attribute */
@@ -4512,17 +4512,14 @@ disp_word(word_t * word_a, int pos, int search_mode, char * buffer,
 
         /* Put back the cursor after the word */
         /* """""""""""""""""""""""""""""""""" */
-        for (i = 0; i < e - s - buf_width + 1 - total_daccess_sel_len; i++)
+        for (i = 0; i < e - s - buf_width + 1 - daccess.flength; i++)
           tputs(TPARM1(cursor_right), 1, outch);
       }
     }
     else
     {
-      int offset = 0;
       if (daccess.length > 0)
       {
-        offset = daccess.length + 3;
-
         /* If this word is not numbered, reset the display */
         /* attributes before printing the leading spaces.  */
         /* """"""""""""""""""""""""""""""""""""""""""""""" */
@@ -4531,7 +4528,7 @@ disp_word(word_t * word_a, int pos, int search_mode, char * buffer,
           /* Print the non significant part of the word */
           /* """""""""""""""""""""""""""""""""""""""""" */
           tputs(TPARM1(exit_attribute_mode), 1, outch);
-          printf("%.*s", offset - 1, word_a[pos].str);
+          printf("%.*s", daccess.flength - 1, word_a[pos].str);
           tputs(TPARM1(exit_attribute_mode), 1, outch);
           fputc(' ', stdout);
         }
@@ -4601,7 +4598,7 @@ disp_word(word_t * word_a, int pos, int search_mode, char * buffer,
       }
 
       mb_strprefix(tmp_word, word_a[pos].str, (int)word_a[pos].mb - 1, &p);
-      tputs(tmp_word + offset, 1, outch);
+      tputs(tmp_word + daccess.flength, 1, outch);
     }
     tputs(TPARM1(exit_attribute_mode), 1, outch);
   }
@@ -4641,7 +4638,7 @@ disp_word(word_t * word_a, int pos, int search_mode, char * buffer,
       /* """"""""""""""""""""""""""""""""""""""""""""""""""""" */
       tputs(TPARM1(exit_attribute_mode), 1, outch);
       if (daccess.padding == 'a')
-        for (i = 0; i < daccess.length + 3; i++)
+        for (i = 0; i < daccess.flength; i++)
           fputc(' ', stdout);
     }
 
@@ -4694,7 +4691,7 @@ disp_word(word_t * word_a, int pos, int search_mode, char * buffer,
 
     if ((daccess.length > 0 && daccess.padding == 'a')
         || word_a[pos].is_numbered)
-      tputs(tmp_word + daccess.length + 3, 1, outch);
+      tputs(tmp_word + daccess.flength, 1, outch);
     else
       tputs(tmp_word, 1, outch);
 
@@ -5133,19 +5130,11 @@ search_next(tst_node_t * tst, word_t * word_a, char * search_buf,
 {
   wchar_t * w;
   int       found = 0;
-  int       total_daccess_sel_len;
-
-  /* Size of the direct access selector to skip to reach the word */
-  /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-  if (daccess.length < 0)
-    total_daccess_sel_len = 0;
-  else
-    total_daccess_sel_len = daccess.length + 3;
 
   /* Consider a word under the cursor found if it matches the search prefix. */
   /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
   if (!after_only)
-    if (memcmp(word_a[current].str + total_daccess_sel_len, search_buf,
+    if (memcmp(word_a[current].str + daccess.flength, search_buf,
                strlen(search_buf))
         == 0)
       return 1;
@@ -5597,11 +5586,16 @@ main(int argc, char * argv[])
 
   int index; /* generic counter */
 
-  int     daccess_index        = 1;
-  char *  daccess_locator_type = NULL;
-  char *  daccess_pattern      = NULL;
-  regex_t daccess_pattern_re; /* variable to store the compiled *
-                               * direct access pattern (-N) RE  */
+  int    daccess_index        = 1;
+  char * daccess_locator_type = NULL;
+
+  char *  daccess_np = NULL;
+  regex_t daccess_np_re; /* variable to store the compiled *
+                          * direct access pattern (-N) RE  */
+
+  char *  daccess_up = NULL;
+  regex_t daccess_up_re; /* variable to store the compiled *
+                          * direct access pattern (-U) RE  */
 
   char * include_pattern     = NULL;
   char * exclude_pattern     = NULL;
@@ -5896,21 +5890,24 @@ main(int argc, char * argv[])
   timeout.remain        = 0;
   timeout.reached       = 0;
 
-  daccess.type       = DACCESS_NONE;
+  daccess.type       = DA_TYPE_NONE;
   daccess.left       = " ";
   daccess.right      = ")";
   daccess.alignment  = 'r';
   daccess.padding    = 'a';
-  daccess.expression = 'm';
   daccess.length     = -2;
-  daccess.width      = 0;
-  daccess.skip       = 0;
+  daccess.flength    = 0;
+  daccess.offset     = 0;
+  daccess.size       = 0;
+  daccess.ignore     = 0;
+  daccess.follow     = 'y';
+  daccess.def_number = -1;
 
   /* Command line options analysis */
   /* """"""""""""""""""""""""""""" */
   while ((opt = egetopt(argc, argv,
                         "Vf:h?X:x:qdMba:i:e:S:I:E:A:Z:1:2:3:4:5:C:R:"
-                        "kclwrgn:t%m:s:W:L:T%P%pN:F:"))
+                        "kclwrgn:t%m:s:W:L:T%P%pN:U:FD:"))
          != -1)
   {
     switch (opt)
@@ -6227,6 +6224,9 @@ main(int argc, char * argv[])
 
           optind--;
 
+          if (*argv[optind] == '-')
+            TELL("A blank is required before the first sub-option -- ");
+
           /* Parse the arguments arguments */
           /* """"""""""""""""""""""""""""" */
           while (argv[optind] && *argv[optind] != '-')
@@ -6382,183 +6382,165 @@ main(int argc, char * argv[])
         toggle.autotag = 1;
         break;
 
-      case 'N':
-      {
-        int       pos;
-        wchar_t * w;
-        int       n;
-
-        if (daccess_pattern == NULL)
-          daccess_pattern = xstrdup(optarg);
-        else
-          TELL("Option already given -- ");
-
-        daccess.type |= DACCESS_AUTO; /* auto */
-
-        /* Parse optional additional arguments */
-        /* """"""""""""""""""""""""""""""""""" */
-        while (argv[optind] && *argv[optind] != '-')
+      case 'D':
+        if (optarg && *optarg != '-')
         {
-          if (argv[optind][1] != ':')
-            TELL("Bad format -- ");
+          int       pos;
+          wchar_t * w;
+          int       n;
 
-          switch (*(argv[optind]))
+          /* Parse optional additional arguments */
+          /* """"""""""""""""""""""""""""""""""" */
+          optind--;
+
+          if (*argv[optind] == '-')
+            TELL("A blank is required before the first sub-option -- ");
+
+          while (argv[optind] && *argv[optind] != '-')
           {
-            case 'l': /* left char */
-              daccess.left = strdup(argv[optind] + 2);
-              mb_interpret(daccess.left, &langinfo);
-
-              if (mb_strlen(daccess.left) != 1)
-                TELL("Too many characters after l: -- ");
-
-              n = wcswidth((w = mb_strtowcs(daccess.left)), 1);
-              free(w);
-
-              if (n > 1)
-                TELL("A multi columns character is not allowed after l: -- ");
-              break;
-
-            case 'r': /* right char */
-              daccess.right = strdup(argv[optind] + 2);
-              mb_interpret(daccess.right, &langinfo);
-
-              if (mb_strlen(daccess.right) != 1)
-                TELL("Too many characters after r: -- ");
-
-              n = wcswidth((w = mb_strtowcs(daccess.right)), 1);
-              free(w);
-
-              if (n > 1)
-                TELL("A multi columns character is not allowed after r: -- ");
-              break;
-
-            case 'a': /* alignment */
-              if (strprefix("left", argv[optind] + 2))
-                daccess.alignment = 'l';
-              else if (strprefix("right", argv[optind] + 2))
-                daccess.alignment = 'r';
-              else
-                TELL("Bad format -- ");
-              break;
-
-            case 'p': /* padding */
-              if (strprefix("all", argv[optind] + 2))
-                daccess.padding = 'a';
-              else if (strprefix("included", argv[optind] + 2))
-                daccess.padding = 'i';
-              else
-                TELL("Bad format -- ");
-              break;
-
-            case 'e': /* expression */
-              if (strprefix("match", argv[optind] + 2))
-                daccess.expression = 'm';
-              else if (strprefix("invert", argv[optind] + 2))
-                daccess.expression = 'i';
-              else
-                TELL("Bad format -- ");
-              break;
-
-            case 'w': /* width */
-              if (sscanf(argv[optind] + 2, "%d%n", &daccess.length, &pos) != 1)
-                TELL("Bad format -- ");
-              if (argv[optind][pos + 2] != '\0')
-                TELL("Bad format -- ");
-              break;
-
-            default:
+            if (argv[optind][1] != ':')
               TELL("Bad format -- ");
+
+            switch (*(argv[optind]))
+            {
+              case 'l': /* left char */
+                daccess.left = strdup(argv[optind] + 2);
+                mb_interpret(daccess.left, &langinfo);
+
+                if (mb_strlen(daccess.left) != 1)
+                  TELL("Too many characters after l: -- ");
+
+                n = wcswidth((w = mb_strtowcs(daccess.left)), 1);
+                free(w);
+
+                if (n > 1)
+                  TELL("A multi columns character is not allowed after l: -- ");
+                break;
+
+              case 'r': /* right char */
+                daccess.right = strdup(argv[optind] + 2);
+                mb_interpret(daccess.right, &langinfo);
+
+                if (mb_strlen(daccess.right) != 1)
+                  TELL("Too many characters after r: -- ");
+
+                n = wcswidth((w = mb_strtowcs(daccess.right)), 1);
+                free(w);
+
+                if (n > 1)
+                  TELL("A multi columns character is not allowed after r: -- ");
+                break;
+
+              case 'a': /* alignment */
+                if (strprefix("left", argv[optind] + 2))
+                  daccess.alignment = 'l';
+                else if (strprefix("right", argv[optind] + 2))
+                  daccess.alignment = 'r';
+                else
+                  TELL("Bad format -- ");
+                break;
+
+              case 'p': /* padding */
+                if (strprefix("all", argv[optind] + 2))
+                  daccess.padding = 'a';
+                else if (strprefix("included", argv[optind] + 2))
+                  daccess.padding = 'i';
+                else
+                  TELL("Bad format -- ");
+                break;
+
+              case 'w': /* width */
+                if (sscanf(argv[optind] + 2, "%d%n", &daccess.length, &pos)
+                    != 1)
+                  TELL("Bad format -- ");
+                if (argv[optind][pos + 2] != '\0')
+                  TELL("Bad format -- ");
+                if (daccess.length <= 0 || daccess.length > 5)
+                  TELL("w suboption must be between 1 and 5 -- ");
+                break;
+
+              case 'o': /* start offset */
+                if (sscanf(argv[optind] + 2, "%d%n", &daccess.offset, &pos)
+                    != 1)
+                  TELL("Bad format -- ");
+                if (argv[optind][pos + 2] != '\0')
+                  TELL("Bad format -- ");
+                break;
+
+              case 'n': /* numbor of digits to extract */
+                if (sscanf(argv[optind] + 2, "%d%n", &daccess.size, &pos) != 1)
+                  TELL("Bad format -- ");
+                if (argv[optind][pos + 2] != '\0')
+                  TELL("Bad format -- ");
+                if (daccess.size <= 0 || daccess.size > 5)
+                  TELL("n suboption must be between 1 and 5 -- ");
+                break;
+
+              case 'i': /* Number of multibytes to ignore after the selector to
+                           extract */
+                if (sscanf(argv[optind] + 2, "%d%n", &daccess.ignore, &pos)
+                    != 1)
+                  TELL("Bad format -- ");
+                if (argv[optind][pos + 2] != '\0')
+                  TELL("Bad format -- ");
+                break;
+
+              case 'f': /* follow */
+                if (strprefix("yes", argv[optind] + 2))
+                  daccess.follow = 'y';
+                else if (strprefix("no", argv[optind] + 2))
+                  daccess.follow = 'n';
+                else
+                  TELL("Bad format -- ");
+                break;
+
+              default:
+                TELL("Bad format -- ");
+            }
+
+            if (daccess.length <= 0 || daccess.length > 5)
+              daccess.length = -2; /* special value -> auto */
+
+            optind++;
           }
-
-          if (daccess.length <= 0 || daccess.length > 5)
-            daccess.length = -2; /* special value -> auto */
-
-          optind++;
         }
-      }
+        else
+          TELL("Option requires an argument -- ");
 
-      break;
+        break;
+
+      case 'N':
+        if (daccess_np == NULL)
+        {
+          daccess_np = concat("(", optarg, ")", NULL);
+          daccess.type |= DA_TYPE_AUTO; /* auto */
+        }
+        else
+          daccess_np = concat(daccess_np, "|(", optarg, ")", NULL);
+
+        if (daccess.def_number < 0)
+          daccess.def_number = 0;
+
+        break;
+
+      case 'U':
+        if (daccess_up == NULL)
+        {
+          daccess_up = concat("(", optarg, ")", NULL);
+          daccess.type |= DA_TYPE_AUTO; /* auto */
+        }
+        else
+          daccess_up = concat(daccess_up, "|(", optarg, ")", NULL);
+
+        if (daccess.def_number < 0)
+          daccess.def_number = 1;
+
+        break;
 
       case 'F':
-      {
-        int       pos;
-        wchar_t * w;
-        int       n;
+        daccess.type |= DA_TYPE_POS;
 
-        if (daccess_locator_type == NULL)
-          daccess_locator_type = xstrdup(optarg);
-        else
-          TELL("Option already given -- ");
-
-        if (strprefix("delimiter", daccess_locator_type))
-          daccess.type |= DACCESS_DELIM;
-        else if (strprefix("positional", daccess_locator_type))
-          daccess.type |= DACCESS_POS;
-        else
-          TELL("Bad locator type -- ");
-
-        /* Parse optional additional arguments */
-        /* """"""""""""""""""""""""""""""""""" */
-        while (argv[optind] && *argv[optind] != '-')
-        {
-          if (argv[optind][1] != ':')
-            TELL("Bad format -- ");
-
-          switch (*(argv[optind]))
-          {
-            case 'd': /* delimiter */
-              daccess.delim = strdup(argv[optind] + 2);
-              mb_interpret(daccess.delim, &langinfo);
-
-              if (mb_strlen(daccess.delim) != 1)
-                TELL("Too many characters after d: -- ");
-
-              n = wcswidth((w = mb_strtowcs(daccess.delim)), 1);
-              free(w);
-              break;
-
-            case 'o': /* start offset */
-              if (sscanf(argv[optind] + 2, "%d%n", &daccess.start_off, &pos)
-                  != 1)
-                TELL("Bad format -- ");
-              if (argv[optind][pos + 2] != '\0')
-                TELL("Bad format -- ");
-              break;
-
-            case 'r': /* remove from word */
-              if (strprefix("yes", argv[optind] + 2))
-                daccess.remove = 'y';
-              else if (strprefix("no", argv[optind] + 2))
-                daccess.remove = 'n';
-              else
-                TELL("Bad format -- ");
-              break;
-
-            case 'w': /* max width */
-              if (sscanf(argv[optind] + 2, "%d%n", &daccess.width, &pos) != 1)
-                TELL("Bad format -- ");
-              if (argv[optind][pos + 2] != '\0')
-                TELL("Bad format -- ");
-              break;
-
-            case 's': /* skip */
-              if (sscanf(argv[optind] + 2, "%d%n", &daccess.skip, &pos) != 1)
-                TELL("Bad format -- ");
-              if (argv[optind][pos + 2] != '\0')
-                TELL("Bad format -- ");
-              break;
-          }
-
-          optind++;
-        }
-
-        /* The width is mandatory */
-        /* """""""""""""""""""""" */
-        if (daccess.width <= 0)
-          TELL("The required 'width' suboption must me greater than 0 -- ");
-      }
-
-      break;
+        break;
 
       case '?':
         fputc('\n', stderr);
@@ -6735,7 +6717,7 @@ main(int argc, char * argv[])
     free(local_ini_file);
   }
 
-  word_buffer = xcalloc(1, limits.word_length);
+  word_buffer = xcalloc(1, daccess.flength + limits.word_length + 1);
 
   /* If some attributes were not set, set their default values */
   /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""" */
@@ -6935,11 +6917,18 @@ main(int argc, char * argv[])
     col_index = cols_number = 0;
   }
 
-  if (daccess_pattern
-      && regcomp(&daccess_pattern_re, daccess_pattern, REG_EXTENDED | REG_NOSUB)
-           != 0)
+  if (daccess_np
+      && regcomp(&daccess_np_re, daccess_np, REG_EXTENDED | REG_NOSUB) != 0)
   {
-    fprintf(stderr, "Bad regular expression %s\n", daccess_pattern);
+    fprintf(stderr, "Bad regular expression %s\n", daccess_np);
+
+    exit(EXIT_FAILURE);
+  }
+
+  if (daccess_up
+      && regcomp(&daccess_up_re, daccess_up, REG_EXTENDED | REG_NOSUB) != 0)
+  {
+    fprintf(stderr, "Bad regular expression %s\n", daccess_up);
 
     exit(EXIT_FAILURE);
   }
@@ -7702,15 +7691,215 @@ main(int argc, char * argv[])
       }
     }
 
+    word = &word_a[wi];
+
+    /* Make sure that daccess.length >= daccess.size */
+    /* with DA_TYPE_POS.                             */
+    /* """"""""""""""""""""""""""""""""""""""""""""" */
+    if (daccess.type != DA_TYPE_NONE)
+    {
+      if (daccess.type & DA_TYPE_POS)
+      {
+        if (daccess.size > 0)
+          if (daccess.size > daccess.length)
+            daccess.length = daccess.size;
+      }
+
+      /* Auto determination of the length of the selector */
+      /* with DA_TYPE_AUTO.                               */
+      /* """""""""""""""""""""""""""""""""""""""""""""""" */
+      if ((daccess.type & DA_TYPE_AUTO) && daccess.length == -2)
+      {
+        int n = count;
+
+        daccess.length = 0;
+
+        while (n)
+        {
+          n /= 10;
+          daccess.length++;
+        }
+      }
+
+      /* Set the full length of the prefix in case of numbering */
+      /* """""""""""""""""""""""""""""""""""""""""""""""""""""" */
+      if (daccess.length > 0)
+        daccess.flength = 3 + daccess.length;
+
+      if (word->is_selectable != EXCLUDE_MARK
+          && word->is_selectable != SOFT_EXCLUDE_MARK)
+      {
+        char * selector;
+        char * tmp      = xmalloc(strlen(word->str) + 4 + daccess.length);
+        int *  word_pos = malloc(sizeof(int));
+        int    may_number;
+
+        if (!isempty(word->str))
+        {
+          *word_pos = wi;
+
+          tmp[0] = ' ';
+
+          /* Check if the word is eligible to the numbering process */
+          /* """""""""""""""""""""""""""""""""""""""""""""""""""""" */
+          if (daccess_up == NULL && daccess_np == NULL)
+          {
+            if (daccess.type & DA_TYPE_POS)
+              may_number = 1;
+            else
+              may_number = 0;
+          }
+          else
+          {
+            if (daccess_up != NULL
+                && !!regexec(&daccess_up_re, word->str, (size_t)0, NULL, 0)
+                     == 0)
+              may_number = 0;
+            else
+            {
+              if (daccess_np != NULL
+                  && !!regexec(&daccess_np_re, word->str, (size_t)0, NULL, 0)
+                       == 0)
+                may_number = 1;
+              else
+                may_number = daccess.def_number;
+            }
+          }
+
+          /* It is... */
+          /* """""""" */
+          if (may_number)
+          {
+            if (daccess.type & DA_TYPE_POS)
+            {
+              if (!word->is_numbered)
+              {
+                if (daccess.size > 0
+                    && daccess.offset + daccess.size + daccess.ignore
+                         < mb_strlen(word->str))
+                {
+                  unsigned selector_value; /* numerical value of the         *
+                                            * extracted selector             */
+                  int selector_offset;     /* offset in byte to the selector *
+                                            * to extract                     */
+                  char * ptr; /* points just after the selector to extract   */
+
+                  selector_offset = mb_offset(word->str, daccess.offset);
+                  ptr             = word->str + selector_offset;
+                  selector        = xstrndup(ptr, daccess.size);
+
+                  if (sscanf(selector, "%u", &selector_value) == 1)
+                  {
+
+                    sprintf(selector, "%u", selector_value);
+
+                    sprintf(tmp + 1, "%*u",
+                            daccess.alignment == 'l' ? -daccess.length
+                                                     : daccess.length,
+                            selector_value);
+
+                    /* Overwrite the end of the word to erase the selector */
+                    /* """"""""""""""""""""""""""""""""""""""""""""""""""" */
+                    strcpy(ptr,
+                           ptr + daccess.size
+                             + mb_offset(ptr + daccess.size, daccess.ignore));
+
+                    ltrim(selector, " ");
+                    rtrim(selector, " ", 0);
+
+                    tst_daccess = tst_insert(tst_daccess, mb_strtowcs(selector),
+                                             word_pos);
+
+                    if (daccess.follow == 'y')
+                      daccess_index = selector_value + 1;
+
+                    word->is_numbered = 1;
+                  }
+                  free(selector);
+                }
+              }
+            }
+
+            if (!word->is_numbered && (daccess.type & DA_TYPE_AUTO))
+            {
+              sprintf(tmp + 1, "%*d",
+                      daccess.alignment == 'l' ? -daccess.length
+                                               : daccess.length,
+                      daccess_index);
+
+              selector = strdup(tmp + 1);
+              ltrim(selector, " ");
+              rtrim(selector, " ", 0);
+
+              tst_daccess = tst_insert(tst_daccess, mb_strtowcs(selector),
+                                       word_pos);
+              daccess_index++;
+
+              free(selector);
+              word->is_numbered = 1;
+            }
+          }
+
+          if (daccess.length > 0 && !word->is_numbered)
+          {
+            for (i = 0; i < daccess.flength; i++)
+              tmp[i] = ' ';
+          }
+
+          if (daccess.length > 0)
+          {
+            tmp[1 + daccess.length] = ' ';
+            tmp[2 + daccess.length] = ' ';
+          }
+        }
+        else if (daccess.length > 0)
+        {
+          /* make sure that the prefix of empty word is blank */
+          /* as they may be display in column mode *          */
+          /* """""""""""""""""""""""""""""""""""""""""""""""" */
+          for (i = 0; i < daccess.flength; i++)
+            tmp[i] = ' ';
+        }
+
+        if (daccess.length > 0)
+        {
+          strcpy(tmp + daccess.flength, word->str);
+          free(word->str);
+          word->str = tmp;
+        }
+        else
+          free(tmp);
+      }
+      else
+      {
+        /* Should we also add space at the beginning of excluded words ? */
+        /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+        if (daccess.padding == 'a')
+        {
+          char * tmp = xmalloc(strlen(word->str) + 4 + daccess.length);
+          for (i = 0; i < daccess.flength; i++)
+            tmp[i] = ' ';
+          strcpy(tmp + daccess.flength, word->str);
+          free(word->str);
+          word->str = tmp;
+        }
+      }
+    }
+    else
+    {
+      daccess.size   = 0;
+      daccess.length = 0;
+    }
+
     /* Save the original word */
     /* """""""""""""""""""""" */
-    word           = &word_a[wi];
     unaltered_word = xstrdup(word->str);
 
     /* Possibly modify the word according to -S/-I/-E arguments */
     /* """""""""""""""""""""""""""""""""""""""""""""""""""""""" */
     {
       ll_node_t * node = NULL;
+      char *      tmp;
 
       /* Manage the -S case */
       /* """""""""""""""""" */
@@ -7720,9 +7909,14 @@ main(int argc, char * argv[])
 
         while (node != NULL)
         {
-          if (replace(word->str, (sed_t *)(node->data)))
+          tmp = xstrndup(word->str, daccess.flength);
+          if (replace(word->str + daccess.flength, (sed_t *)(node->data)))
           {
+
             free(word->str);
+            memmove(word_buffer + daccess.flength, word_buffer,
+                    strlen(word_buffer) + 1);
+            memmove(word_buffer, tmp, daccess.flength);
 
             word->str = xstrdup(word_buffer);
 
@@ -7732,6 +7926,7 @@ main(int argc, char * argv[])
 
           *word_buffer = '\0';
           node         = node->next;
+          free(tmp);
         }
       }
       else
@@ -7753,174 +7948,34 @@ main(int argc, char * argv[])
 
         while (node != NULL)
         {
-          if (replace(word->str, (sed_t *)(node->data)))
+          tmp = xstrndup(word->str, daccess.flength);
+          if (replace(word->str + daccess.flength, (sed_t *)(node->data)))
           {
+
             free(word->str);
+            memmove(word_buffer + daccess.flength, word_buffer,
+                    strlen(word_buffer) + 1);
+            memmove(word_buffer, tmp, daccess.flength);
 
             word->str = xstrdup(word_buffer);
 
             if (((sed_t *)(node->data))->stop)
               break;
           }
-
           *word_buffer = '\0';
           node         = node->next;
-        }
-      }
-    }
-
-    /* Auto determination of the length of the selector */
-    /* """""""""""""""""""""""""""""""""""""""""""""""" */
-    if (daccess.type != DACCESS_NONE)
-    {
-      if (daccess.type & DACCESS_POS)
-      {
-        if (daccess.width > 0)
-          daccess.length = daccess.width;
-        else
-          daccess.width = 5; /* TODO fatal ? */
-      }
-      else if ((daccess.type & DACCESS_AUTO) && daccess.length == -2)
-      {
-        int n = count;
-
-        daccess.length = 0;
-
-        while (n)
-        {
-          n /= 10;
-          daccess.length++;
-        }
-      }
-
-      /* The direct access selector is not a part of the word */
-      /* """""""""""""""""""""""""""""""""""""""""""""""""""" */
-      include_visual_only = 1;
-
-      if (word->is_selectable != EXCLUDE_MARK
-          && word->is_selectable != SOFT_EXCLUDE_MARK)
-      {
-        char * selector;
-        char * tmp      = xmalloc(strlen(word->str) + 4 + daccess.length);
-        int *  word_pos = malloc(sizeof(int));
-
-        if (!isempty(word->str)
-            && ((daccess_pattern != NULL
-                 && !!regexec(&daccess_pattern_re, word->str, (size_t)0, NULL,
-                              0)
-                      == (daccess.expression == 'm' ? 0 : 1))
-                || daccess.type & DACCESS_POS))
-        {
-          *word_pos = wi;
-
-          tmp[0] = ' ';
-
-          if (daccess.type & DACCESS_POS)
-          {
-            if (!word->is_numbered)
-            {
-              if (daccess.start_off + daccess.width + daccess.skip
-                  <= mb_strlen(word->str))
-              {
-                unsigned selector_value; /* numerical value of the extracted  *
-                                          * selector                          */
-                int off_to_selector;     /* offset in byte to the selector to *
-                                          * extract                           */
-                char * ptr;              /* points just after the selector to *
-                                          * extract                           */
-
-                off_to_selector = mb_offset(word->str, daccess.start_off);
-                ptr             = word->str + off_to_selector;
-                selector        = xstrndup(ptr, daccess.width);
-
-                /* Check if the selector just read is an unsigned decimal */
-                /* and if yes continue its extraction.                    */
-                /* """""""""""""""""""""""""""""""""""""""""""""""""""""" */
-                if (sscanf(selector, "%u", &selector_value) == 1)
-                {
-
-                  sprintf(selector, "%u", selector_value);
-
-                  sprintf(tmp + 1, "%*u",
-                          daccess.alignment == 'l' ? -daccess.length
-                                                   : daccess.length,
-                          selector_value);
-
-                  /* Overwrite the end of the word to erase the selector */
-                  /* """"""""""""""""""""""""""""""""""""""""""""""""""" */
-                  strcpy(ptr, ptr + daccess.width
-                                + mb_offset(ptr + daccess.width, daccess.skip));
-
-                  ltrim(selector, " ");
-                  rtrim(selector, " ", 0);
-
-                  tst_daccess = tst_insert(tst_daccess, mb_strtowcs(selector),
-                                           word_pos);
-
-                  word->is_numbered = 1;
-                }
-                free(selector);
-              }
-            }
-          }
-
-          if (daccess.type & DACCESS_AUTO)
-          {
-            if (!word->is_numbered)
-            {
-              sprintf(tmp + 1, "%*d",
-                      daccess.alignment == 'l' ? -daccess.length
-                                               : daccess.length,
-                      daccess_index);
-
-              selector = strdup(tmp + 1);
-              ltrim(selector, " ");
-              rtrim(selector, " ", 0);
-
-              tst_daccess = tst_insert(tst_daccess, mb_strtowcs(selector),
-                                       word_pos);
-              daccess_index++;
-
-              free(selector);
-              word->is_numbered = 1;
-            }
-          }
-
-          if (!word->is_numbered)
-            for (i = 0; i < 3 + daccess.length; i++)
-              tmp[i] = ' ';
-
-          tmp[1 + daccess.length] = ' ';
-          tmp[2 + daccess.length] = ' ';
-        }
-        else
-          for (i = 0; i < 3 + daccess.length; i++)
-            tmp[i] = ' ';
-
-        strcpy(tmp + 3 + daccess.length, word->str);
-        free(word->str);
-        word->str = tmp;
-      }
-      else
-      {
-        /* Should we also add space at the beginning of excluded words ? */
-        /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-        if (daccess.padding == 'a')
-        {
-          char * tmp = xmalloc(strlen(word->str) + 4 + daccess.length);
-          for (i = 0; i < 3 + daccess.length; i++)
-            tmp[i] = ' ';
-          strcpy(tmp + 3 + daccess.length, word->str);
-          free(word->str);
-          word->str = tmp;
+          free(tmp);
         }
       }
     }
 
     /* A substitution leading to an empty word is invalid in column mode. */
     /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-    if (win.col_mode && *(word->str) == '\0')
-      exit(EXIT_FAILURE);
+    if (win.col_mode)
+    {
+      if (*(word->str + daccess.flength) == '\0')
+        exit(EXIT_FAILURE);
+    }
 
     /* Alter the word just read be replacing special chars  by their */
     /* escaped equivalents.                                          */
@@ -8063,7 +8118,8 @@ main(int argc, char * argv[])
     offset = 0;
     for (wi = 0; wi < count; wi++)
     {
-      while (wi + offset < count && isempty(word_a[wi + offset].str))
+      while (wi + offset < count
+             && isempty(word_a[wi + offset].str + daccess.flength))
       {
         /* Keep non selectable empty words to allow special effects */
         /* '''''''''''''''''''''''''''''''''''''''''''''''''''''''' */
@@ -8088,7 +8144,7 @@ main(int argc, char * argv[])
   line_nb_of_word_a    = xmalloc(count * sizeof(int));
   first_word_in_line_a = xmalloc(count * sizeof(int));
 
-  /* Fourth pass:                                                          */
+  /* Fourth pass:                                                         */
   /* When in column or tabulating mode, we need to adjust the length of   */
   /* all the words by adding the right number of spaces so that they will */
   /* be aligned correctly. In column mode the size of each column is      */
@@ -8195,10 +8251,10 @@ main(int argc, char * argv[])
 
       /* Create a wide characters string from the word screen representation */
       /* to be able to store in in the TST.                                  */
-      /* Note that the direct access  selector,if any, is not stored.        */
+      /* Note that the direct access selector,if any, is not stored.         */
       /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-      if (daccess_pattern != NULL)
-        w = mb_strtowcs(word_a[wi].str + daccess.length + 3);
+      if (word_a[wi].is_numbered)
+        w = mb_strtowcs(word_a[wi].str + daccess.flength);
       else
         w = mb_strtowcs(word_a[wi].str);
 
@@ -9074,9 +9130,11 @@ main(int argc, char * argv[])
                   output_node = malloc(sizeof(output_t));
 
                   if (word_a[wi].orig != NULL)
-                    output_node->output_str = word_a[wi].orig;
+                    output_node->output_str = xstrdup(word_a[wi].orig
+                                                      + daccess.flength);
                   else
-                    output_node->output_str = word_a[wi].str;
+                    output_node->output_str = xstrdup(word_a[wi].str
+                                                      + daccess.flength);
 
                   output_node->order = word_a[wi].tag_order;
 
@@ -9147,9 +9205,9 @@ main(int argc, char * argv[])
               /* Once this made, print it.                                 */
               /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""" */
               if (word_a[current].orig != NULL)
-                output_str = word_a[current].orig;
+                output_str = word_a[current].orig + daccess.flength;
               else
-                output_str = word_a[current].str;
+                output_str = word_a[current].str + daccess.flength;
 
               /* Trim the trailing spaces if -k is given in tabular or       */
               /* column mode. Leading spaces are always preserved because I  */
@@ -9826,7 +9884,7 @@ main(int argc, char * argv[])
         case '8':
         case '9':
         {
-          if (!search_mode && daccess.type != DACCESS_NONE)
+          if (!search_mode && daccess.type != DA_TYPE_NONE)
           {
             wchar_t * w;
             int *     pos;

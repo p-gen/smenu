@@ -56,7 +56,7 @@ fi
 REP=$(../../smenu "$TITLE"                 \
             -s /Exit                       \
             -q -d -M -n 30 -c -w           \
-            -N "Exit menu" e:r             \
+            -U "Exit menu"                 \
             -a da:3,b                      \
             -e '^#' -E '/(^#)+(.*)$/ \2/v' \
             -1 'Exit' 2,r                  \
