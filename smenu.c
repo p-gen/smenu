@@ -5266,6 +5266,8 @@ egetopt(int nargc, char ** nargv, char * ostr)
     place = nargv[optind];
     if (place == NULL)
       return (EOF);
+    else if (*place == '\0')
+      return (EOF);
 
     osi = strchr(optstart, *place);
     if (osi != NULL)
