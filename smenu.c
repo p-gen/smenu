@@ -5909,7 +5909,7 @@ main(int argc, char * argv[])
   /* """"""""""""""""""""""""""""" */
   while ((opt = egetopt(argc, argv,
                         "Vf:h?X:x:qdMba:i:e:S:I:E:A:Z:1:2:3:4:5:C:R:"
-                        "kclwrgn:t%m:s:W:L:T%P%pN:U:FD:"))
+                        "kclwrgn:t%m:s:W:L:T%P%pN%U%FD:"))
          != -1)
   {
     switch (opt)
@@ -6512,6 +6512,11 @@ main(int argc, char * argv[])
         break;
 
       case 'N':
+        if (optarg == NULL)
+          optarg = ".";
+        else if (*optarg == '\0')
+          optarg = ".";
+
         if (daccess_np == NULL)
         {
           daccess_np = concat("(", optarg, ")", NULL);
@@ -6526,6 +6531,11 @@ main(int argc, char * argv[])
         break;
 
       case 'U':
+        if (optarg == NULL)
+          optarg = ".";
+        else if (*optarg == '\0')
+          optarg = ".";
+
         if (daccess_up == NULL)
         {
           daccess_up = concat("(", optarg, ")", NULL);
