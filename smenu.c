@@ -6584,7 +6584,7 @@ main(int argc, char * argv[])
     input_file = fopen(argv[argc - 1], "r");
     if (input_file == NULL)
     {
-      fprintf(stderr, "Cannot open %s\n", argv[argc - 1]);
+      fprintf(stderr, "Cannot open \"%s\"\n", argv[argc - 1]);
       short_usage();
 
       exit(EXIT_FAILURE);
