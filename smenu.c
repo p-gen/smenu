@@ -780,8 +780,8 @@ short_usage(void)
   fprintf(stderr, "[-I /regex/repl/[g][v][s][i]]             \\\n");
   fprintf(stderr, "       [-E /regex/repl/[g][v][s][i]] ");
   fprintf(stderr, "[-A regex] [-Z regex]                     \\\n");
-  fprintf(stderr, "       [-N regex] [-U regex] [-F] [-D arg...] ");
-  fprintf(stderr, "                                 \\\n");
+  fprintf(stderr, "       [-N [regex]] [-U [regex]] [-F] [-D arg...] ");
+  fprintf(stderr, "                             \\\n");
   fprintf(stderr, "       [-1 regex [attr]] [-2 regex [attr]]... ");
   fprintf(stderr, "[-5 regex [attr]] [-g] [-q]      \\\n");
   fprintf(stderr, "       [-W bytes] [-L bytes] [-T [separator]] ");

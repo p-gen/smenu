@@ -18,7 +18,7 @@ and outputs the selection to stdout.
       [\fB-I\fP \fI/regex/string/\fP[\fIg\fP][\fIv\fP][\fIs\fP][\fIi\fP]] \\
       [\fB-E\fP \fI/regex/string/\fP[\fIg\fP][\fIv\fP][\fIs\fP][\fIi\fP]] \\
       [\fB-A\fP \fIregex\fP] [\fB-Z\fP \fIregex\fP] \\
-      [\fB-N\fP \fIregex\fP] [\fB-U\fP \fIregex\fP] [\fB-F\fP] \
+      [\fB-N\fP [\fIregex\fP]] [\fB-U\fP [\fIregex\fP]] [\fB-F\fP] \
 [\fB-D\fP \fIsub-option\fP...] \\
       [\fB-1\fP \fIregex\fP [\fIATTR\fP]] \
 [\fB-2\fP \fIregex\fP [\fIATTR\fP]] ... \
@@ -662,56 +662,56 @@ This option allows to change the default behaviour or the \fB-N\fP,
 
 Its optional parameters are called sub-options and must respect the
 format \fBx\fP:\fBy\fP where \fBx\fP can be:
-
-- '\f(CBl\fP' (\fB-F\fP, \fB-N\fP and \fB-U\fP options)
-.br
-where \fBy\fP is the UTF-8 character (in native or \fI\\u\fP form)
+.RS
+.TP 
+\f(CBl\fP (\fB-F\fP, \fB-N\fP and \fB-U\fP options)
+Here \fBy\fP is the UTF-8 character (in native or \fI\\u\fP form)
 to print before the number. The default is a single space.
-
-- '\f(CBr\fP' (\fB-F\fP, \fB-N\fP and \fB-U\fP options)
-.br
-where \fBy\fP is the UTF-8 character (in native or \fI\\u\fP form)
+.
+.TP
+\f(CBr\fP (\fB-F\fP, \fB-N\fP and \fB-U\fP options)
+Here \fBy\fP is the UTF-8 character (in native or \fI\\u\fP form)
 to print after the number. The default is \f(CB)\fP.
-
-- '\f(CBa\fP' (\fB-F\fP, \fB-N\fP and \fB-U\fP options)
-.br
-where \fBy\fP is '\f(CBleft\fP' (or one of its prefixes) if the number
+.
+.TP
+\f(CBa\fP (\fB-F\fP, \fB-N\fP and \fB-U\fP options)
+Here \fBy\fP is '\f(CBleft\fP' (or one of its prefixes) if the number
 must be \fIleft\fP aligned, or '\f(CBright\fP' (or one of its prefixes)
 if it must be \fIright\fP aligned. The default is \f(CBright\fP.
-
-- '\f(CBp\fP' (\fB-F\fP, \fB-N\fP and \fB-U\fP options)
-.br
-where \fBy\fP is '\f(CBincluded\fP' (or one of its prefixes) 
+.
+.TP
+\f(CBp\fP (\fB-F\fP, \fB-N\fP and \fB-U\fP options)
+Here \fBy\fP is '\f(CBincluded\fP' (or one of its prefixes) 
 or '\f(CBall\fP' (or one of its prefixes) for the initial \fIp\fPadding of
 the non numbered words. '\f(CBincluded\fP' means that only \fIincluded\fP
 word will be padded while '\f(CBall\fP' means pad \fIall\fP words. The
 default is \f(CBall\fP.
-
-- '\f(CBw\fP' (\fB-F\fP, \fB-N\fP and \fB-U\fP options)
-.br
-where \fBy\fP is the \fIw\fPidth of the number between 1 and 5 included.
-
-- '\f(CBf\fP' (\fB-F\fP, \fB-N\fP and \fB-U\fP options)
-.br
-where \fBy\fP controls if the numbering must \fIf\fPollow the last
+.
+.TP
+\f(CBw\fP (\fB-F\fP, \fB-N\fP and \fB-U\fP options)
+Here \fBy\fP is the \fIw\fPidth of the number between 1 and 5 included.
+.
+.TP
+\f(CBf\fP (\fB-F\fP, \fB-N\fP and \fB-U\fP options)
+Here \fBy\fP controls if the numbering must \fIf\fPollow the last
 extracted number (defaults to \f(CByes\fP) or if it must remain
 independant.
-
-- '\f(CBo\fP' (\fB-F\fP option)
-.br
-where \fBy\fP is the \fIo\fPffset of the first multibyte character of
+.
+.TP
+\f(CBo\fP (\fB-F\fP option)
+Here \fBy\fP is the \fIo\fPffset of the first multibyte character of
 the number to extract from the word (defaults to \f(CB0\fP).
-
-- '\f(CBn\fP' (\fB-F\fP option)
-.br
-where \fBy\fP is the \fIn\fPumber of multibyte characters to extract
+.
+.TP
+\f(CBn\fP (\fB-F\fP option)
+Here \fBy\fP is the \fIn\fPumber of multibyte characters to extract
 from the word starting at the offset given by the \f(CBo\fP sub-option.
-
-- '\f(CBi\fP' (\fB-F\fP option)
-.br
-where \fBy\fP is number of multibyte characters to \fIi\fPgnore after
+.
+.TP
+\f(CBi\fP (\fB-F\fP option)
+Here \fBy\fP is number of multibyte characters to \fIi\fPgnore after
 the extracted number
-
+.P
 Example: \f(CWr:\\> l:\\< a:l\fP
 
 To number all words with the default parameters, use the
@@ -724,6 +724,7 @@ added in front of excluded words or not to improve compactness.
 When the \f(CBw\fP sub-option is not given the width of the numbers is
 determined automatically but if \fB-F\fP is set and the value of the
 \f(CBn\fP sub-option is given then this value is used.
+.RE
 .IP "\fB-1\fP ... \fB-5\fP \fIregex\fP [\fIATTR\fP]"
 Allows to give up to 5 classes of words specified by regular expressions
 a special display color.
