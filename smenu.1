@@ -99,8 +99,23 @@ into dots (\fI.\fP) when the user locale is not \fBUTF-8\fP aware like
 The cursor can be moved in every direction by using the
 keyboard arrow keys (\fB\(<-\fP,\fB\(da\fP,\fB\(ua\fP,\fB\(->\fP)
 or the \fIvi\fP direction keys (\fBh\fP, \fBj\fP, \fBk\fP and \fBl\fP).
-\fBHOME\fP, \fBEND\fP, \fBPgDn\fP and \fBPgUp\fP can also be used, if
-available, and have their traditional meanings.
+\fBHOME\fP, \fBEND\fP, \fBPgDn\fP and \fBPgUp\fP can also be used,
+if available, and have the following meanings:
+.TS
+tab(@);
+l l.
+\(<-, h@Previous word
+\(ua, k@Previous line
+PgUp, K@Previous pages
+Home@First word of the window
+CTRL+Home, SHIFT+Home, CTRL+k@First word
+.sp
+\(->, l@Next Word
+\(da, j@Next line
+PgDn, J@Next pages
+End@Last word of the window
+CTRL+End, SHIFT+End, CTRL+j@Last word
+.TE
 
 If the \fB-N\fP, \fB-U\fP or \fB-F\fP are used then it is possible to
 directly access a word by entering its number.

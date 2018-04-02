@@ -8860,6 +8860,12 @@ main(int argc, char * argv[])
             break;
           }
 
+          if (memcmp("\x1b[1;5H", buffer, 6) == 0
+              || memcmp("\x1b[1;2H", buffer, 6) == 0)
+            /* SHIFT/CTRL HOME key has been pressed */
+            /* """""""""""""""""""""""""""""""""""" */
+            goto kschome;
+
           if (memcmp("\x1bOF", buffer, 3) == 0
               || memcmp("\x1b[F", buffer, 3) == 0)
           {
@@ -8915,6 +8921,12 @@ main(int argc, char * argv[])
                             search_buf, &term, last_line, tmp_word, &langinfo);
             break;
           }
+
+          if (memcmp("\x1b[1;5F", buffer, 6) == 0
+              || memcmp("\x1b[1;2F", buffer, 6) == 0)
+            /* SHIFT/CTRL END key has been pressed */
+            /* """"""""""""""""""""""""""""""""""" */
+            goto kscend;
 
           if (memcmp("\x1bOD", buffer, 3) == 0
               || memcmp("\x1b[D", buffer, 3) == 0)
@@ -9471,6 +9483,15 @@ main(int argc, char * argv[])
 
           break;
 
+        case 0x0b:
+          /* ^K key has been pressed */
+          /* """"""""""""""""""""""" */
+          goto kschome;
+
+        case 'K':
+          if (search_mode)
+            goto special_cmds_when_searching;
+
         kpp:
           /* PgUp key has been pressed */
           /* """"""""""""""""""""""""" */
@@ -9485,7 +9506,6 @@ main(int argc, char * argv[])
             search_timer = -1; /* Disable the timer */
           }
 
-        case 'K':
         case 'k':
           if (!search_mode)
           {
@@ -9627,6 +9647,45 @@ main(int argc, char * argv[])
 
           break;
 
+        kschome:
+          /* Go to the first selectable word. */
+          /* """""""""""""""""""""""""""""""" */
+          current = 0;
+
+          if (search_mode)
+          {
+            search_mode  = 0;
+            search_timer = -1; /* Disable the timer */
+          }
+
+          /* Find the first selectable word */
+          /* """""""""""""""""""""""""""""" */
+          while (!word_a[current].is_selectable)
+            current++;
+
+          /* In column mode we need to take care of the */
+          /* horizontal scrolling                       */
+          /* """""""""""""""""""""""""""""""""""""""""" */
+          if (win.col_mode || win.line_mode)
+            if (word_a[current].end < win.first_column)
+              win.first_column = word_a[current].start;
+
+          if (current < win.start || current > win.end)
+            last_line = build_metadata(word_a, &term, count, &win);
+
+          nl = disp_lines(word_a, &win, &toggle, current, count, search_mode,
+                          search_buf, &term, last_line, tmp_word, &langinfo);
+          break;
+
+        case 0x0a:
+          /* ^J key has been pressed */
+          /* """"""""""""""""""""""" */
+          goto kscend;
+
+        case 'J':
+          if (search_mode)
+            goto special_cmds_when_searching;
+
         knp:
           /* PgDn key has been pressed */
           /* """"""""""""""""""""""""" */
@@ -9641,7 +9700,6 @@ main(int argc, char * argv[])
             search_timer = -1; /* Disable the timer */
           }
 
-        case 'J':
         case 'j':
           if (!search_mode)
           {
@@ -9795,6 +9853,36 @@ main(int argc, char * argv[])
           else
             goto special_cmds_when_searching;
 
+          break;
+
+        kscend:
+          /* Go to the last selectable word. */
+          /* """"""""""""""""""""""""""""""" */
+          current = count - 1;
+
+          if (search_mode)
+          {
+            search_mode  = 0;
+            search_timer = -1; /* Disable the timer */
+          }
+
+          /* Find the first selectable word */
+          /* """""""""""""""""""""""""""""" */
+          while (!word_a[current].is_selectable)
+            current--;
+
+          /* In column mode we need to take care of the */
+          /* horizontal scrolling                       */
+          /* """""""""""""""""""""""""""""""""""""""""" */
+          if (win.col_mode || win.line_mode)
+            if (word_a[current].end < win.first_column)
+              win.first_column = word_a[current].start;
+
+          if (current < win.start || current > win.end)
+            last_line = build_metadata(word_a, &term, count, &win);
+
+          nl = disp_lines(word_a, &win, &toggle, current, count, search_mode,
+                          search_buf, &term, last_line, tmp_word, &langinfo);
           break;
 
         case 0x06:
