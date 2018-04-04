@@ -9035,7 +9035,7 @@ main(int argc, char * argv[])
             }
           }
 
-          tputs(TPARM1(cursor_visible), 1, outch);
+          tputs(TPARM1(cursor_normal), 1, outch);
           restore_term(fileno(stdin));
 
           exit(EXIT_SUCCESS);
@@ -9281,7 +9281,7 @@ main(int argc, char * argv[])
 
           /* Restore the visibility of the cursor */
           /* """""""""""""""""""""""""""""""""""" */
-          tputs(TPARM1(cursor_visible), 1, outch);
+          tputs(TPARM1(cursor_normal), 1, outch);
 
           /* Set the cursor at the start on the line an restore the */
           /* original terminal state before exiting                 */
