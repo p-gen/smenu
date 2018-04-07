@@ -541,8 +541,10 @@ struct win_s
                         * terminal width                          */
   int max_width;       /* max line length or the terminal width   *
                         * minus 2 if less                         */
-  int    offset;       /* window offset user when centered        */
-  char * sel_sep;      /* output separator when tags are enabled  */
+  int     offset;      /* window offset user when centered        */
+  char *  sel_sep;     /* output separator when tags are enabled  */
+  char ** gutter_a;    /* Array of multibyte gutter characters    */
+  int     gutter_nb;   /* Number of multibyte gutter characters   */
 
   unsigned char tab_mode;  /* -t */
   unsigned char col_mode;  /* -c */
@@ -652,16 +654,15 @@ char * word_buffer;
 
 /* UTF-8 useful symbols */
 /* """"""""""""""""""""" */
-char * broken_line_sym = "\xc2\xa6";     /* broken_bar       */
-char * shift_left_sym  = "\xe2\x86\x90"; /* leftwards_arrow  */
-char * shift_right_sym = "\xe2\x86\x92"; /* rightwards_arrow */
-
-char * sbar_line     = "\xe2\x94\x82"; /* box_drawings_light_vertical      */
-char * sbar_top      = "\xe2\x94\x90"; /* box_drawings_light_down_and_left */
-char * sbar_down     = "\xe2\x94\x98"; /* box_drawings_light_up_and_left   */
-char * sbar_curs     = "\xe2\x95\x91"; /* box_drawings_double_vertical     */
-char * sbar_arr_up   = "\xe2\x96\xb2"; /* black_up_pointing_triangle       */
-char * sbar_arr_down = "\xe2\x96\xbc"; /* black_down_pointing_triangle     */
+char * vertical_bar    = "\xe2\x94\x82"; /* box drawings light vertical      */
+char * shift_left_sym  = "\xe2\x86\x90"; /* leftwards_arrow                  */
+char * shift_right_sym = "\xe2\x86\x92"; /* rightwards_arrow                 */
+char * sbar_line       = "\xe2\x94\x82"; /* box_drawings_light_vertical      */
+char * sbar_top        = "\xe2\x94\x90"; /* box_drawings_light_down_and_left */
+char * sbar_down       = "\xe2\x94\x98"; /* box_drawings_light_up_and_left   */
+char * sbar_curs       = "\xe2\x95\x91"; /* box_drawings_double_vertical     */
+char * sbar_arr_up     = "\xe2\x96\xb2"; /* black_up_pointing_triangle       */
+char * sbar_arr_down   = "\xe2\x96\xbc"; /* black_down_pointing_triangle     */
 
 daccess_t daccess;
 
@@ -783,9 +784,9 @@ short_usage(void)
   fprintf(stderr, "       [-N [regex]] [-U [regex]] [-F] [-D arg...] ");
   fprintf(stderr, "                             \\\n");
   fprintf(stderr, "       [-1 regex [attr]] [-2 regex [attr]]... ");
-  fprintf(stderr, "[-5 regex [attr]] [-g] [-q]      \\\n");
-  fprintf(stderr, "       [-W bytes] [-L bytes] [-T [separator]] ");
-  fprintf(stderr, "[-P [separator]] [-p]            \\\n");
+  fprintf(stderr, "[-5 regex [attr]] [-g [string]]  \\\n");
+  fprintf(stderr, "       [-q] [-W bytes] [-L bytes] [-T [separator]] ");
+  fprintf(stderr, "[-P [separator]] [-p]       \\\n");
   fprintf(stderr, "       [-V] [-x|-X current|quit|word [<word>] <seconds>] ");
   fprintf(stderr, "[input_file]\n\n");
   fprintf(stderr, "       <col selectors> ::= col1[-col2]...|<RE>...\n");
@@ -882,8 +883,10 @@ usage(void)
   fprintf(stderr,
           "-1,-2,...,-5 gives specific colors to up to 5 classes of "
           "selectable words.\n");
-  fprintf(stderr, "-g separates columns with '|' in tabulate mode.\n");
-  fprintf(stderr, "-q prevents the scrollbar display.\n");
+  fprintf(stderr,
+          "-g separates columns with a character in column or tabulate "
+          "mode.\n");
+  fprintf(stderr, "-q prevents the display of the scroll bar.\n");
   fprintf(stderr, "-W sets the input words separators.\n");
   fprintf(stderr, "-L sets the input lines separators.\n");
   fprintf(stderr, "-T/-P enables the tagging (multi-selections) mode. ");
@@ -896,8 +899,8 @@ usage(void)
   fprintf(stderr,
           "-x|-X sets a timeout and specifies what to do when it expires.\n");
   fprintf(stderr, "\nNavigation keys are:\n");
-  fprintf(stderr, "  - Left/Down/Up/Right arrows or h/j/k/l.\n");
-  fprintf(stderr, "  - Home/End.\n");
+  fprintf(stderr, "  - Left/Down/Up/Right arrows or h/j/k/l, J/K.\n");
+  fprintf(stderr, "  - Home/End, SHIFT|CTRL+Home/End.\n");
   fprintf(stderr, "  - Numbers if some words are numbered (-N/-U/-F).\n");
   fprintf(stderr, "  - SPACE to search for the next match of a previously\n");
   fprintf(stderr, "          entered search prefix if any, see below.\n\n");
@@ -4908,14 +4911,21 @@ disp_lines(word_t * word_a, win_t * win, toggle_t * toggle, int current,
       else if (!word_a[i].is_last && win->col_sep
                && (win->tab_mode || win->col_mode))
       {
-        if (langinfo->utf8)
-          tputs(broken_line_sym, 1, outch);
+        int pos;
+
+        /* Make sure that we are using the rigt gutter character even */
+        /* if the first displayed word is * not the fisr of its line  */
+        /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+        pos = i - first_word_in_line_a[line_nb_of_word_a[i]];
+
+        if (pos >= win->gutter_nb) /* Use the last gutter character */
+          fputs(win->gutter_a[win->gutter_nb - 1], stdout);
         else
-          tputs("|", 1, outch);
+          fputs(win->gutter_a[pos], stdout);
       }
-      /* Else just display a space */
-      /* """"""""""""""""""""""""" */
       else
+        /* Else just display a space */
+        /* """"""""""""""""""""""""" */
         tputs(" ", 1, outch);
     }
 
@@ -5909,7 +5919,7 @@ main(int argc, char * argv[])
   /* """"""""""""""""""""""""""""" */
   while ((opt = egetopt(argc, argv,
                         "Vf:h?X:x:qdMba:i:e:S:I:E:A:Z:1:2:3:4:5:C:R:"
-                        "kclwrgn:t%m:s:W:L:T%P%pN%U%FD:"))
+                        "kclwrg%n:t%m:s:W:L:T%P%pN%U%FD:"))
          != -1)
   {
     switch (opt)
@@ -5984,6 +5994,55 @@ main(int argc, char * argv[])
         break;
 
       case 'g':
+        if (win.col_sep)
+          break;
+
+        if (optarg == NULL)
+        {
+          win.gutter_a = xmalloc(1 * sizeof(char *));
+
+          if (langinfo.utf8)
+            win.gutter_a[0] = xstrdup(vertical_bar);
+          else
+            win.gutter_a[0] = xstrdup("|");
+
+          win.gutter_nb = 1;
+        }
+        else
+        {
+          int       n;
+          wchar_t * w;
+          size_t    i, mblen, offset;
+          char *    gutter;
+
+          gutter = xstrdup(optarg);
+
+          mb_interpret(gutter, &langinfo); /* Guarantees a well formed *
+                                            * UTF-8 string             */
+
+          win.gutter_nb = mb_strlen(gutter);
+          win.gutter_a  = xmalloc(win.gutter_nb * sizeof(char *));
+
+          offset = 0;
+
+          for (i = 0; i < win.gutter_nb; i++)
+          {
+            mblen           = mb_get_length(*(gutter + offset));
+            win.gutter_a[i] = xcalloc(1, mblen + 1);
+            memcpy(win.gutter_a[i], gutter + offset, mblen);
+
+            n = wcswidth((w = mb_strtowcs(win.gutter_a[i])), 1);
+            free(w);
+
+            if (n > 1)
+              TELL("A multi columns gutter is not allowed -- ");
+
+            offset += mblen;
+          }
+
+          free(gutter);
+        }
+
         win.col_sep = 1;
         break;
 

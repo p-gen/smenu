@@ -23,7 +23,8 @@ and outputs the selection to stdout.
       [\fB-1\fP \fIregex\fP [\fIATTR\fP]] \
 [\fB-2\fP \fIregex\fP [\fIATTR\fP]] ... \
 [\fB-5\fP \fIregex\fP [\fIATTR\fP]] \\
-      [\fB-g\fP] [\fB-q\fP] [\fB-W\fP \fIbytes\fP] [\fB-L\fP \fIbytes\fP] \\
+      [\fB-g\fP [\fIstring\fP]] [\fB-q\fP] \
+[\fB-W\fP \fIbytes\fP] [\fB-L\fP \fIbytes\fP] \\
       [\fB-T\fP [\fIseparator\fP]] [\fB-P\fP [\fIseparator\fP]] [\fB-p\fP] \\
       [\fB-V\fP] [\fB-x\fP|\fB-X\fP \fItype\fP [\fIword\fP] \fIdelay\fP] \\
       [input_file]
@@ -769,18 +770,28 @@ Examples of possible attributes are:
 .fi
 
 \fI\\u\fP sequences can be used in the pattern.
-.IP \fB-g\fP
-Replaces the blank after each words in column or tabular mode by a
-vertical bar \fB|\fP. Some users may find the output more readable
-with it.
+.IP \fB-g\fP [\fIstring\fP]
+Replaces the blank after each words in column or tabular mode by a column
+separator.
+
+This separator is extracted from the \fIstring\fP argument and each
+of its (multibyte) character is used one after the other to fill
+the gutter.
+
+If there are more columns that gutter characters then the last character
+is used for the remaining columns.
+
+When not given, the separator defaults to a vertical bar \fI|\fP (or a
+full height vertical bar if the locale is set to UTF-8).
+
+Each character can be given in normal or \fI\\u\fP form in the
+\fIstring\fP argument.
+
+Example: "\f(CB|- \fP" will allow to separate the first two column
+with '\f(CB|\fP', then '\f(CB-\fP' will be used and '\f(CB \fP' will
+separate the remaining columns if any.
 .IP \fB-q\fP
-Prevents the scroll bar display.
-Useful when all the input words can be
-displayed without the need of scrolling.
-By default the scroll bar is always displayed when there is more than
-one line.
-An absence of cursor in it gives a visual indication that all the input
-words are there.
+Prevents the display of the scroll bar.
 .IP "\fB-W\fP \fIbytes\fP"
 This option can be used to specify the characters (or multibyte
 sequences) which will be used to delimit the input words.
