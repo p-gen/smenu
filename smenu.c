@@ -775,8 +775,8 @@ short_usage(void)
   fprintf(stderr, "[-r] [-b]            \\\n");
   fprintf(stderr, "       [-a prefix:attr [prefix:attr]...] ");
   fprintf(stderr, "[-i regex] [-e regex]                 \\\n");
-  fprintf(stderr, "       [-C [a|s|i|r|d|e]<col selectors>] ");
-  fprintf(stderr, "[-R [a|s|i|r|d|e]<row selectors>]     \\\n");
+  fprintf(stderr, "       [-C [i|e]<col selectors>] ");
+  fprintf(stderr, "[-R [i|e]<row selectors>]                     \\\n");
   fprintf(stderr, "       [-S /regex/repl/[g][v][s][i]] ");
   fprintf(stderr, "[-I /regex/repl/[g][v][s][i]]             \\\n");
   fprintf(stderr, "       [-E /regex/repl/[g][v][s][i]] ");

@@ -11,9 +11,9 @@ and outputs the selection to stdout.
       [\fB-a\fP (i|e|c|b|s|t|sf|st|da):\fIATTR\fP]... \\
       [\fB-i\fP \fIregex\fP] [\fB-e\fP \fIregex\fP] \\
       [\fB-C\fP \
-[\fIa\fP|\fIs\fP|\fIi\fP|\fIr\fP|\fId\fP|\fIe\fP]<col selectors>] \\
+[\fIi\fP|\fIe\fP]<col selectors>] \\
       [\fB-R\fP \
-[\fIa\fP|\fIs\fP|\fIi\fP|\fIr\fP|\fId\fP|\fIe\fP]<row selectors>] \\
+[\fIi\fP|\fIe\fP]<row selectors>] \\
       [\fB-S\fP \fI/regex/string/\fP[\fIg\fP][\fIv\fP][\fIs\fP][\fIi\fP]] \\
       [\fB-I\fP \fI/regex/string/\fP[\fIg\fP][\fIv\fP][\fIs\fP][\fIi\fP]] \\
       [\fB-E\fP \fI/regex/string/\fP[\fIg\fP][\fIv\fP][\fIs\fP][\fIi\fP]] \\
@@ -479,12 +479,8 @@ before the possible words alterations made by \fB-I\fP or \fB-E\fP
 (see below).
 
 \fI\\u\fP sequences can also be used in the regexp.
-.IP "\fB-C\fP [\fIa\fP|\fIs\fP|\fIi\fP|\fIr\fP|\fId\fP|\fIe\fP] \
+.IP "\fB-C\fP [\fIi\fP|\fIe\fP] \
 <\fIcol selectors\fP>"
-
-\fBImportant notice\fP: the letters \fIa\fP,\fIs\fP,\fIr\fP and \fId\fP
-after \fB-C\fP are deprecated and will be removed in a future release.
-Please only use \fIi\fP and \fIe\fP.
 
 These letters are case independent so \fII\fP can be used in place of
 \fIi\fP per example.
@@ -495,10 +491,8 @@ If no selection is given via \fB-i\fP and \fB-e\fP this option gives the
 possibility to select entire columns by giving their numbers (1 based)
 of extended regular expressions.
 
-\fIa\fP, \fIs\fP and \fIi\fP or nothing select the specified ranges
-of columns.
-\fIr\fP, \fId\fP and \fIe\fP select all but the specified ranges
-of columns.
+\fIi\fP or nothing select the specified ranges of columns.
+\fIe\fP select all but the specified ranges of columns.
 
 The words in the selected columns will be considered as \fBi\fPncluded
 And the others \fBe\fPxcluded.
@@ -522,16 +516,12 @@ and those matching the extended regular expression '\f(CBX.\fP'.
 Spaces are allowed in the selection string if they are protected.
 
 The column mode is forced when this option is selected.
-.IP "\fB-R\fP [\fIa\fP|\fIs\fP|\fIi\fP|\fIr\fP|\fId\fP|\fIe\fP] \
+.IP "\fB-R\fP [\fIi\fP|\fIe\fP] \
 <\fIrow selectors\fP>"
 Similar to \fB-C\fP but for the rows.
 
 One difference though: this is the line mode which is forced by this
 option NOT the column mode.
-
-\fBImportant notice\fP: As with \fB-C\fP, the letters
-\fIa\fP,\fIs\fP,\fIr\fP and \fId\fP after are deprecated and will be
-removed in a future release.  Please only use \fIi\fP and \fIe\fP.
 
 \fB-C\fP and \fB-R\fP can be used more than once in a cumulative manner:
 The selection mode (selection or de-selection) is given by the first
