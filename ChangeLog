@@ -1,3 +1,26 @@
+- Version 0.9.12
+* Fix the cursor restoration
+* Fix a Solaris incompatibility
+* Fix italic handling
+* Fix the replacement of subexpressions (-S,-I,-E)
+* Fix a bug in the columns inclusion logic
+* Fix the impossibility to use the letter 't' in search mode
+* Fix possible display errors when the terminal is resized
+* Make sure that the timers does not alter the redrawing of the window
+* Add word numbering to allow direct access through their number (-N,-U,-F,-D)
+* Improve The manual
+* Allow the \u notation for UTF-8 characters in more places
+* Improve the -T option and add the related -P option
+* Add the -p for use with the -P and -T options
+* The gutter option (-g) now accepts a parameter
+* Adopt the NO_COLOR standard (http://no-color.org)
+* Improve the navigation by understanding more keys and key combinations
+* Understand CTRL+L to redraws the window in case of corruption
+* Exit from search mode when a direction key is hit
+* Adjust some values of timers
+* Remove deprecated directives in -C and -L
+* Various other small fixes and improvments
+
 - Version 0.9.11
 * Introduce the new \u notation for UTF-8 hex sequences
 * Non-printable characters with an escape form are expanded
