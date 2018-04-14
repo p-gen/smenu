@@ -490,6 +490,7 @@ struct term_s
   char has_cursor_left;       /* has cub1 terminfo capability           */
   char has_cursor_right;      /* has cuf1 terminfo capability           */
   char has_parm_right_cursor; /* has cuf terminfo capability            */
+  char has_cursor_address;    /* has cup terminfo capability            */
   char has_save_cursor;       /* has sc terminfo capability             */
   char has_restore_cursor;    /* has rc terminfo capability             */
   char has_setf;              /* has set_foreground terminfo capability */
@@ -4160,12 +4161,23 @@ right_margin_putp(char * s1, char * s2, langinfo_t * langinfo, term_t * term,
 
   if (term->has_hpa)
     tputs(TPARM2(column_address, offset + win->max_width + 1), 1, outch);
-  else if (term->has_parm_right_cursor)
-    tputs(TPARM2(parm_right_cursor, offset + win->max_width + 1), 1, outch);
-  else
+  else if (term->has_cursor_address)
     tputs(TPARM3(cursor_address, term->curs_line + line - 2,
                  offset + win->max_width + 1),
           1, outch);
+  else if (term->has_parm_right_cursor)
+  {
+    fputc('\r', stdout);
+    tputs(TPARM2(parm_right_cursor, offset + win->max_width + 1), 1, outch);
+  }
+  else
+  {
+    size_t i;
+
+    fputc('\r', stdout);
+    for (i = 0; i < offset + win->max_width + 1; i++)
+      tputs(TPARM1(cursor_right), 1, outch);
+  }
 
   if (langinfo->utf8)
     fputs(s1, stdout);
@@ -6715,38 +6727,42 @@ main(int argc, char * argv[])
   {
     char * str;
 
-    str                     = tigetstr("cuu1");
-    term.has_cursor_up      = (str == (char *)-1 || str == NULL) ? 0 : 1;
-    str                     = tigetstr("cud1");
-    term.has_cursor_down    = (str == (char *)-1 || str == NULL) ? 0 : 1;
-    str                     = tigetstr("cub1");
-    term.has_cursor_left    = (str == (char *)-1 || str == NULL) ? 0 : 1;
-    str                     = tigetstr("cuf1");
-    term.has_cursor_right   = (str == (char *)-1 || str == NULL) ? 0 : 1;
-    str                     = tigetstr("sc");
-    term.has_save_cursor    = (str == (char *)-1 || str == NULL) ? 0 : 1;
-    str                     = tigetstr("rc");
-    term.has_restore_cursor = (str == (char *)-1 || str == NULL) ? 0 : 1;
-    str                     = tigetstr("setf");
-    term.has_setf           = (str == (char *)-1 || str == NULL) ? 0 : 1;
-    str                     = tigetstr("setb");
-    term.has_setb           = (str == (char *)-1 || str == NULL) ? 0 : 1;
-    str                     = tigetstr("setaf");
-    term.has_setaf          = (str == (char *)-1 || str == NULL) ? 0 : 1;
-    str                     = tigetstr("setab");
-    term.has_setab          = (str == (char *)-1 || str == NULL) ? 0 : 1;
-    str                     = tigetstr("hpa");
-    term.has_hpa            = (str == (char *)-1 || str == NULL) ? 0 : 1;
-    str                     = tigetstr("bold");
-    term.has_bold           = (str == (char *)-1 || str == NULL) ? 0 : 1;
-    str                     = tigetstr("rev");
-    term.has_reverse        = (str == (char *)-1 || str == NULL) ? 0 : 1;
-    str                     = tigetstr("smul");
-    term.has_underline      = (str == (char *)-1 || str == NULL) ? 0 : 1;
-    str                     = tigetstr("smso");
-    term.has_standout       = (str == (char *)-1 || str == NULL) ? 0 : 1;
-    str                     = tigetstr("sitm");
-    term.has_italic         = (str == (char *)-1 || str == NULL) ? 0 : 1;
+    str                        = tigetstr("cuu1");
+    term.has_cursor_up         = (str == (char *)-1 || str == NULL) ? 0 : 1;
+    str                        = tigetstr("cud1");
+    term.has_cursor_down       = (str == (char *)-1 || str == NULL) ? 0 : 1;
+    str                        = tigetstr("cub1");
+    term.has_cursor_left       = (str == (char *)-1 || str == NULL) ? 0 : 1;
+    str                        = tigetstr("cuf1");
+    term.has_cursor_right      = (str == (char *)-1 || str == NULL) ? 0 : 1;
+    str                        = tigetstr("cup");
+    term.has_cursor_address    = (str == (char *)-1 || str == NULL) ? 0 : 1;
+    str                        = tigetstr("sc");
+    term.has_save_cursor       = (str == (char *)-1 || str == NULL) ? 0 : 1;
+    str                        = tigetstr("rc");
+    term.has_restore_cursor    = (str == (char *)-1 || str == NULL) ? 0 : 1;
+    str                        = tigetstr("setf");
+    term.has_setf              = (str == (char *)-1 || str == NULL) ? 0 : 1;
+    str                        = tigetstr("setb");
+    term.has_setb              = (str == (char *)-1 || str == NULL) ? 0 : 1;
+    str                        = tigetstr("setaf");
+    term.has_setaf             = (str == (char *)-1 || str == NULL) ? 0 : 1;
+    str                        = tigetstr("setab");
+    term.has_setab             = (str == (char *)-1 || str == NULL) ? 0 : 1;
+    str                        = tigetstr("hpa");
+    term.has_hpa               = (str == (char *)-1 || str == NULL) ? 0 : 1;
+    str                        = tigetstr("cuf");
+    term.has_parm_right_cursor = (str == (char *)-1 || str == NULL) ? 0 : 1;
+    str                        = tigetstr("bold");
+    term.has_bold              = (str == (char *)-1 || str == NULL) ? 0 : 1;
+    str                        = tigetstr("rev");
+    term.has_reverse           = (str == (char *)-1 || str == NULL) ? 0 : 1;
+    str                        = tigetstr("smul");
+    term.has_underline         = (str == (char *)-1 || str == NULL) ? 0 : 1;
+    str                        = tigetstr("smso");
+    term.has_standout          = (str == (char *)-1 || str == NULL) ? 0 : 1;
+    str                        = tigetstr("sitm");
+    term.has_italic            = (str == (char *)-1 || str == NULL) ? 0 : 1;
   }
 
   if (!term.has_cursor_up || !term.has_cursor_down || !term.has_cursor_left
