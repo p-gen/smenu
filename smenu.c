@@ -8906,7 +8906,9 @@ main(int argc, char * argv[])
           /* An escape sequence or a multibyte character has been pressed */
           /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
           if (memcmp("\x1bOH", buffer, 3) == 0
-              || memcmp("\x1b[H", buffer, 3) == 0)
+              || memcmp("\x1b[H", buffer, 3) == 0
+              || memcmp("\x1b[1~", buffer, 4) == 0
+              || memcmp("\x1b[7~", buffer, 4) == 0)
           {
             /* HOME key has been pressed */
             /* """"""""""""""""""""""""" */
@@ -8936,13 +8938,16 @@ main(int argc, char * argv[])
           }
 
           if (memcmp("\x1b[1;5H", buffer, 6) == 0
-              || memcmp("\x1b[1;2H", buffer, 6) == 0)
+              || memcmp("\x1b[1;2H", buffer, 6) == 0
+              || memcmp("\x1b[7^", buffer, 4) == 0)
             /* SHIFT/CTRL HOME key has been pressed */
             /* """""""""""""""""""""""""""""""""""" */
             goto kschome;
 
           if (memcmp("\x1bOF", buffer, 3) == 0
-              || memcmp("\x1b[F", buffer, 3) == 0)
+              || memcmp("\x1b[F", buffer, 3) == 0
+              || memcmp("\x1b[4~", buffer, 4) == 0
+              || memcmp("\x1b[8~", buffer, 4) == 0)
           {
             /* END key has been pressed */
             /* """""""""""""""""""""""" */
@@ -8998,7 +9003,8 @@ main(int argc, char * argv[])
           }
 
           if (memcmp("\x1b[1;5F", buffer, 6) == 0
-              || memcmp("\x1b[1;2F", buffer, 6) == 0)
+              || memcmp("\x1b[1;2F", buffer, 6) == 0
+              || memcmp("\x1b[8^", buffer, 4) == 0)
             /* SHIFT/CTRL END key has been pressed */
             /* """"""""""""""""""""""""""""""""""" */
             goto kscend;
@@ -9027,17 +9033,20 @@ main(int argc, char * argv[])
             /* """"""""""""""""""""""""""""""" */
             goto kd;
 
-          if (memcmp("\x1b[5~", buffer, 4) == 0)
+          if (memcmp("\x1b[I", buffer, 3) == 0
+              || memcmp("\x1b[5~", buffer, 4) == 0)
             /* PgUp key has been pressed */
             /* """"""""""""""""""""""""" */
             goto kpp;
 
-          if (memcmp("\x1b[6~", buffer, 4) == 0)
+          if (memcmp("\x1b[G", buffer, 3) == 0
+              || memcmp("\x1b[6~", buffer, 4) == 0)
             /* PgDn key has been pressed */
             /* """"""""""""""""""""""""" */
             goto knp;
 
-          if (memcmp("\x1b[2~", buffer, 4) == 0)
+          if (memcmp("\x1b[L", buffer, 3) == 0
+              || memcmp("\x1b[2~", buffer, 4) == 0)
             /* Ins key has been pressed */
             /* """"""""""""""""""""""""" */
             goto kins;
