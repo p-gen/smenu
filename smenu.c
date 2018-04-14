@@ -9747,15 +9747,25 @@ main(int argc, char * argv[])
           while (!word_a[current].is_selectable)
             current++;
 
+          if (current < win.start || current > win.end)
+            last_line = build_metadata(word_a, &term, count, &win);
+
           /* In column mode we need to take care of the */
           /* horizontal scrolling                       */
           /* """""""""""""""""""""""""""""""""""""""""" */
           if (win.col_mode || win.line_mode)
-            if (word_a[current].end < win.first_column)
-              win.first_column = word_a[current].start;
+          {
+            int pos;
 
-          if (current < win.start || current > win.end)
-            last_line = build_metadata(word_a, &term, count, &win);
+            /* Adjust win.first_column if the cursor is no more visible */
+            /* """""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+            pos = first_word_in_line_a[line_nb_of_word_a[current]];
+
+            while (word_a[current].end - word_a[pos].start >= term.ncolumns - 3)
+              pos++;
+
+            win.first_column = word_a[pos].start;
+          }
 
           nl = disp_lines(word_a, &win, &toggle, current, count, search_mode,
                           search_buf, &term, last_line, tmp_word, &langinfo);
@@ -9955,15 +9965,25 @@ main(int argc, char * argv[])
           while (!word_a[current].is_selectable)
             current--;
 
+          if (current < win.start || current > win.end)
+            last_line = build_metadata(word_a, &term, count, &win);
+
           /* In column mode we need to take care of the */
           /* horizontal scrolling                       */
           /* """""""""""""""""""""""""""""""""""""""""" */
           if (win.col_mode || win.line_mode)
-            if (word_a[current].end < win.first_column)
-              win.first_column = word_a[current].start;
+          {
+            int pos;
 
-          if (current < win.start || current > win.end)
-            last_line = build_metadata(word_a, &term, count, &win);
+            /* Adjust win.first_column if the cursor is no more visible */
+            /* """""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+            pos = first_word_in_line_a[line_nb_of_word_a[current]];
+
+            while (word_a[current].end - word_a[pos].start >= term.ncolumns - 3)
+              pos++;
+
+            win.first_column = word_a[pos].start;
+          }
 
           nl = disp_lines(word_a, &win, &toggle, current, count, search_mode,
                           search_buf, &term, last_line, tmp_word, &langinfo);
