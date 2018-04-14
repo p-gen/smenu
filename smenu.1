@@ -1,6 +1,6 @@
 .TH smenu 1 "2015" "beta"
 .SH NAME
-smenu - filter that allows to interactively select a word from stdin
+smenu - filter that allows one to interactively select a word from stdin
 and outputs the selection to stdout.
 .SH SYNOPSIS
 .nf
@@ -485,8 +485,8 @@ before the possible words alterations made by \fB-I\fP or \fB-E\fP
 These letters are case independent so \fII\fP can be used in place of
 \fIi\fP per example.
 
-In column mode, This option allows to restrict the previous selections
-or de-selections to some columns.
+In column mode, this option allows one to restrict the previous
+selections or de-selections to some columns.
 If no selection is given via \fB-i\fP and \fB-e\fP this option gives the
 possibility to select entire columns by giving their numbers (1 based)
 of extended regular expressions.
@@ -611,8 +611,8 @@ The same trick with \fB-L\fP can also be used.
 \fI\\u\fP sequences can also be used in the regexp after \fB-Z\fP.
 .RE
 .IP "\fB-N\fP [\fIregex\fP]"
-This option allows to number the selectable words matching a specific
-regular expression.
+This option allows one to number the selectable words matching a
+specific regular expression.
 These numbers are numbered starting from 1 and provides a direct access
 to the words.
 
@@ -628,11 +628,11 @@ initial position.
 The sub-options of the \fB-D\fP option described below can change the
 way \fB-N\fP sets and formats the numbers.
 
-This option can be used more than once with cummulative effects.
+This option can be used more than once with cumulative effects.
 
 \fB-N\fP, \fB-U\fP and \fB-F\fP can be mixed.
 .IP "\fB-U\fP [\fIregex\fP]"
-This option allows to un-number words.
+This option allows one to un-number words.
 If placed after a previous \fB-N\fP, it can be used to remove the
 numbering of selected words.
 If placed before, the word which doesn't match its regular expression
@@ -641,7 +641,7 @@ will be numbered by default.
 This mechanism is similar to to the inclusion/exclusion of words by
 \fB-i\fP and \fB-e\fP.
 
-This option can be used more than once with cummulative effects.
+This option can be used more than once with cumulative effects.
 
 \fB-U\fP, \fB-N\fP and \fB-F\fP can be mixed.
 .IP "\fB-F\fP"
@@ -663,7 +663,7 @@ this program.
 
 \fB-F\fP, \fB-N\fP and \fB-U\fP can be mixed.
 .IP "\fB-D\fP [\fIparameters\fP]"
-This option allows to change the default behaviour or the \fB-N\fP,
+This option allows one to change the default behaviour of the \fB-N\fP,
 \fB-U\fP and \fB-F\fP options.
 
 Its optional parameters are called sub-options and must respect the
@@ -701,7 +701,7 @@ Here \fBy\fP is the \fIw\fPidth of the number between 1 and 5 included.
 \f(CBf\fP (\fB-F\fP, \fB-N\fP and \fB-U\fP options)
 Here \fBy\fP controls if the numbering must \fIf\fPollow the last
 extracted number (defaults to \f(CByes\fP) or if it must remain
-independant.
+independent.
 .
 .TP
 \f(CBo\fP (\fB-F\fP option)
@@ -732,8 +732,8 @@ determined automatically but if \fB-F\fP is set and the value of the
 \f(CBn\fP sub-option is given then this value is used.
 .RE
 .IP "\fB-1\fP ... \fB-5\fP \fIregex\fP [\fIATTR\fP]"
-Allows to give up to 5 classes of words specified by regular expressions
-a special display color.
+Allows one to give a special display color to up to 5 classes of words
+specified by regular expressions.
 They are called \fBspecial levels\fP.
 Only selectable words will be considered.
 
@@ -760,7 +760,7 @@ Examples of possible attributes are:
 .fi
 
 \fI\\u\fP sequences can be used in the pattern.
-.IP \fB-g\fP [\fIstring\fP]
+.IP "\fB-g\fP [\fIstring\fP]"
 Replaces the blank after each words in column or tabular mode by a column
 separator.
 
@@ -777,7 +777,7 @@ full height vertical bar if the locale is set to UTF-8).
 Each character can be given in normal or \fI\\u\fP form in the
 \fIstring\fP argument.
 
-Example: "\f(CB|- \fP" will allow to separate the first two column
+Example: "\f(CB|- \fP" will allow one to separate the first two column
 with '\f(CB|\fP', then '\f(CB-\fP' will be used and '\f(CB \fP' will
 separate the remaining columns if any.
 .IP \fB-q\fP
@@ -888,7 +888,7 @@ messages is displayed above the selection window.
 .SH NOTES
 If tabulators (\fI\\t\fP) are embedded in the input, there is no way
 to replace them with the original number of spaces.
-In this case use an other filter (like \fIexpand\fR) to pre-process
+In this case use another filter (like \fIexpand\fR) to pre-process
 the data.
 .SH EXAMPLES
 .SS 1
