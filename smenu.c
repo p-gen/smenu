@@ -4948,7 +4948,7 @@ disp_lines(word_t * word_a, win_t * win, toggle_t * toggle, int current,
 
     /* Check if we must start a new line */
     /* """"""""""""""""""""""""""""""""" */
-    if (i == count - 1 || (i < count - 1 && word_a[i + 1].start == 0))
+    if (i == count - 1 || word_a[i + 1].start == 0)
     {
       tputs(TPARM1(clr_eol), 1, outch);
       if (lines_disp < win->max_lines)
