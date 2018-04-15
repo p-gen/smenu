@@ -6047,7 +6047,17 @@ main(int argc, char * argv[])
             free(w);
 
             if (n > 1)
+            {
+              size_t j;
+
+              for (j = 0; j <= i; j++)
+                free(win.gutter_a[j]);
+
+              free(win.gutter_a);
+              free(gutter);
+
               TELL("A multi columns gutter is not allowed -- ");
+            }
 
             offset += mblen;
           }
