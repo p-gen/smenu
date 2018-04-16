@@ -9399,8 +9399,9 @@ main(int argc, char * argv[])
         case 'h':
           if (!search_mode)
           {
-            int old_current = current;
-            int old_start   = win.start;
+            int old_current      = current;
+            int old_start        = win.start;
+            int old_first_column = win.first_column;
 
             do
             {
@@ -9464,6 +9465,8 @@ main(int argc, char * argv[])
             {
               current   = old_current;
               win.start = old_start;
+              if (win.col_mode || win.line_mode)
+                win.first_column = old_first_column;
             }
 
             if (current != old_current)
@@ -9489,8 +9492,9 @@ main(int argc, char * argv[])
         case 'l':
           if (!search_mode)
           {
-            int old_current = current;
-            int old_start   = win.start;
+            int old_current      = current;
+            int old_start        = win.start;
+            int old_first_column = win.first_column;
 
             do
             {
@@ -9565,6 +9569,8 @@ main(int argc, char * argv[])
             {
               current   = old_current;
               win.start = old_start;
+              if (win.col_mode || win.line_mode)
+                win.first_column = old_first_column;
             }
 
             if (current != old_current)
