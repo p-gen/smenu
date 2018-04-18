@@ -631,6 +631,7 @@ struct daccess_s
   int    size;       /* size in bytes of the selector to extract           */
   int    ignore;     /* number of multibytes to ignore after the number    */
   int    follow;     /* y: the numbering follows the last nuber set        */
+  char * num_sep;    /* character to separate de number and the selection  */
   int    def_number; /* 1: the numbering is on by default 0: it is not     */
 };
 
@@ -796,7 +797,7 @@ short_usage(void)
   fprintf(stderr, "       <arg>           ::= [l|r:<char>]|[a:l|r]|[p:i|a]|");
   fprintf(stderr, "[w:<size>]|\n");
   fprintf(stderr, "                           [f:y|n]|[o:<num>]|[n:<num>]|");
-  fprintf(stderr, "[i:<num>]\n");
+  fprintf(stderr, "[i:<num>][d:<char>]\n");
   fprintf(stderr, "         Ex: l:'(' a:l\n");
   fprintf(stderr, "       <attr>          ::= [fg][/bg][,style] \n");
   fprintf(stderr, "         Ex: 7/4,bu\n");
@@ -5925,6 +5926,7 @@ main(int argc, char * argv[])
   daccess.size       = 0;
   daccess.ignore     = 0;
   daccess.follow     = 'y';
+  daccess.num_sep    = NULL;
   daccess.def_number = -1;
 
   /* Command line options analysis */
@@ -6575,6 +6577,20 @@ main(int argc, char * argv[])
                   daccess.follow = 'n';
                 else
                   TELL("Bad format -- ");
+                break;
+
+              case 'd': /* decorate */
+                daccess.num_sep = strdup(argv[optind] + 2);
+                mb_interpret(daccess.num_sep, &langinfo);
+
+                if (mb_strlen(daccess.num_sep) != 1)
+                  TELL("Too many characters after d: -- ");
+
+                n = wcswidth((w = mb_strtowcs(daccess.num_sep)), 1);
+                free(w);
+
+                if (n > 1)
+                  TELL("A multi columns separator is not allowed after d: -- ");
                 break;
 
               default:
@@ -9219,9 +9235,11 @@ main(int argc, char * argv[])
             fprintf(old_stdout, "%s", timeout_word);
           else
           {
+            char * num_str;
+            char * str;
+
             if (toggle.taggable)
             {
-              char *      str;
               ll_t *      output_list = ll_new();
               ll_node_t * node;
 
@@ -9248,11 +9266,25 @@ main(int argc, char * argv[])
                   output_node = malloc(sizeof(output_t));
 
                   if (word_a[wi].orig != NULL)
-                    output_node->output_str = xstrdup(word_a[wi].orig
-                                                      + daccess.flength);
+                    str = word_a[wi].orig;
                   else
-                    output_node->output_str = xstrdup(word_a[wi].str
-                                                      + daccess.flength);
+                    str = word_a[wi].str;
+
+                  if (word_a[wi].is_numbered && daccess.num_sep)
+                  {
+                    num_str = xstrndup(str + 1, daccess.length);
+
+                    ltrim(num_str, " ");
+                    rtrim(num_str, " ", 0);
+
+                    output_node->output_str = concat(num_str, daccess.num_sep,
+                                                     str + daccess.flength,
+                                                     NULL);
+
+                    free(num_str);
+                  }
+                  else
+                    output_node->output_str = xstrdup(str + daccess.flength);
 
                   output_node->order = word_a[wi].tag_order;
 
@@ -9323,9 +9355,24 @@ main(int argc, char * argv[])
               /* Once this made, print it.                                 */
               /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""" */
               if (word_a[current].orig != NULL)
-                output_str = word_a[current].orig + daccess.flength;
+                str = word_a[current].orig;
               else
-                output_str = word_a[current].str + daccess.flength;
+                str = word_a[current].str;
+
+              if (word_a[current].is_numbered && daccess.num_sep)
+              {
+                num_str = xstrndup(str + 1, daccess.length);
+
+                ltrim(num_str, " ");
+                rtrim(num_str, " ", 0);
+
+                output_str = concat(num_str, daccess.num_sep,
+                                    str + daccess.flength, NULL);
+
+                free(num_str);
+              }
+              else
+                output_str = str + daccess.flength;
 
               /* Trim the trailing spaces if -k is given in tabular or       */
               /* column mode. Leading spaces are always preserved because I  */

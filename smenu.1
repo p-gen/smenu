@@ -33,7 +33,7 @@ and outputs the selection to stdout.
       <row selectors> ::= \fIcol1\fP[-\fIcol2\fP],...|\fI<RE>\fP,...
       <sub-option>    ::= [l|r:<char>]|[a:left|right]|[p:included|all|
                           [w:<num>]|[f:yes|no]|[o:<num>]|[n:<num>]|
-                          [i:<num>]
+                          [i:<num>][d:<char>]
       <ATTR>          ::= [fg][/bg][,style]
       <RE>            ::= \fB<char>\fIregex\fB<char>\fR
 
@@ -717,8 +717,22 @@ from the word starting at the offset given by the \f(CBo\fP sub-option.
 \f(CBi\fP (\fB-F\fP option)
 Here \fBy\fP is number of multibyte characters to \fIi\fPgnore after
 the extracted number
+.
+.TP
+\f(CBd\fP (\fB-F\fP, \fB-N\fP and \fB-U\fP options)
+Here \fBy\fP is a multibyte separator.
+When present, this directive instructs smenu to output the selected
+numbered word(s) \fIprefixed\fP by its(their) direct access number(s)
+and the given separator.
+
+Only the numbered word(s) will be prefixed.
+
+\f(CBd\fP stands for \fBd\fPecorate.
+
+This directive can be useful when you want to post-process the output
+according to its direct access number.
 .P
-Example: \f(CWr:\\> l:\\< a:l\fP
+Example: \f(CWr:\\> l:\\< a:l d:_ \fP
 
 To number all words with the default parameters, use the
 syntax: "\f(CW-N .\fP" which is a shortcut for:
