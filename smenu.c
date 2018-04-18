@@ -95,6 +95,15 @@ xcalloc(size_t num, size_t size);
 static void *
 xrealloc(void * ptr, size_t size);
 
+static char *
+xstrdup(const char * p);
+
+static char *
+xstrndup(const char * str, size_t len);
+
+static char *
+concat(const char * s1, ...);
+
 static interval_t *
 interval_new(void);
 
@@ -316,8 +325,17 @@ sig_handler(int s);
 static void
 set_new_first_column(win_t * win, term_t * term, word_t * word_a);
 
+static void
+merge_intervals(ll_t * list);
+
 static int
 parse_sed_like_string(sed_t * sed);
+
+static void
+parse_selectors(char * str, int * filter, char * unparsed,
+                ll_t ** inc_interval_list, ll_t ** inc_regex_list,
+                ll_t ** exc_interval_list, ll_t ** exc_regex_list,
+                langinfo_t * langinfo);
 
 static int
 replace(char * orig, sed_t * sed);
