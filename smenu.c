@@ -6489,7 +6489,7 @@ main(int argc, char * argv[])
             switch (*(argv[optind]))
             {
               case 'l': /* left char */
-                daccess.left = strdup(argv[optind] + 2);
+                daccess.left = xstrdup(argv[optind] + 2);
                 mb_interpret(daccess.left, &langinfo);
 
                 if (mb_strlen(daccess.left) != 1)
@@ -6503,7 +6503,7 @@ main(int argc, char * argv[])
                 break;
 
               case 'r': /* right char */
-                daccess.right = strdup(argv[optind] + 2);
+                daccess.right = xstrdup(argv[optind] + 2);
                 mb_interpret(daccess.right, &langinfo);
 
                 if (mb_strlen(daccess.right) != 1)
@@ -6580,7 +6580,7 @@ main(int argc, char * argv[])
                 break;
 
               case 'd': /* decorate */
-                daccess.num_sep = strdup(argv[optind] + 2);
+                daccess.num_sep = xstrdup(argv[optind] + 2);
                 mb_interpret(daccess.num_sep, &langinfo);
 
                 if (mb_strlen(daccess.num_sep) != 1)
@@ -7844,7 +7844,7 @@ main(int argc, char * argv[])
       {
         char * selector;
         char * tmp      = xmalloc(strlen(word->str) + 4 + daccess.length);
-        int *  word_pos = malloc(sizeof(int));
+        int *  word_pos = xmalloc(sizeof(int));
         int    may_number;
 
         if (!isempty(word->str))
@@ -7940,7 +7940,7 @@ main(int argc, char * argv[])
                                                : daccess.length,
                       daccess_index);
 
-              selector = strdup(tmp + 1);
+              selector = xstrdup(tmp + 1);
               ltrim(selector, " ");
               rtrim(selector, " ", 0);
 
@@ -9263,7 +9263,7 @@ main(int argc, char * argv[])
                   /* Chose the original string to print if the current one */
                   /* has been altered by a possible expansion.             */
                   /* """"""""""""""""""""""""""""""""""""""""""""""""""""" */
-                  output_node = malloc(sizeof(output_t));
+                  output_node = xmalloc(sizeof(output_t));
 
                   if (word_a[wi].orig != NULL)
                     str = word_a[wi].orig;
