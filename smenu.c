@@ -8562,11 +8562,6 @@ main(int argc, char * argv[])
   else
     current = first_selectable;
 
-  /* Initialize prev_current to the initial current word to be able to */
-  /* return here if the first direct access fails                      */
-  /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-  prev_current = current;
-
   /* We now need to adjust the 'start'/'end' fields of the structure 'win' */
   /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
   set_win_start_end(&win, current, last_line);
@@ -8718,7 +8713,6 @@ main(int argc, char * argv[])
       got_daccess_alrm = 0;
       memset(daccess_stack, '\0', 6);
       daccess_stack_head = 0;
-      prev_current       = current;
 
       daccess_timer = timers.direct_access;
     }
@@ -10180,8 +10174,15 @@ main(int argc, char * argv[])
             wchar_t * w;
             int *     pos;
 
+            /* Set prev_current to the initial current word to be    */
+            /* able to return here if the first direct access fails. */
+            /* """"""""""""""""""""""""""""""""""""""""""""""""""""" */
+            if (daccess_stack_head == 0)
+              prev_current = current;
+
             if (daccess_stack_head == daccess.length)
               break;
+
             daccess_stack[daccess_stack_head] = buffer[0];
             daccess_stack_head++;
             w   = mb_strtowcs(daccess_stack);
