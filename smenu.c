@@ -5934,8 +5934,8 @@ main(int argc, char * argv[])
   timeout.reached       = 0;
 
   daccess.type       = DA_TYPE_NONE;
-  daccess.left       = " ";
-  daccess.right      = ")";
+  daccess.left       = xstrdup(" ");
+  daccess.right      = xstrdup(")");
   daccess.alignment  = 'r';
   daccess.padding    = 'a';
   daccess.length     = -2;
@@ -6507,6 +6507,8 @@ main(int argc, char * argv[])
             switch (*(argv[optind]))
             {
               case 'l': /* left char */
+                free(daccess.left);
+
                 daccess.left = xstrdup(argv[optind] + 2);
                 mb_interpret(daccess.left, &langinfo);
 
@@ -6521,6 +6523,8 @@ main(int argc, char * argv[])
                 break;
 
               case 'r': /* right char */
+                free(daccess.right);
+
                 daccess.right = xstrdup(argv[optind] + 2);
                 mb_interpret(daccess.right, &langinfo);
 
@@ -6598,6 +6602,8 @@ main(int argc, char * argv[])
                 break;
 
               case 'd': /* decorate */
+                free(daccess.num_sep);
+
                 daccess.num_sep = xstrdup(argv[optind] + 2);
                 mb_interpret(daccess.num_sep, &langinfo);
 
