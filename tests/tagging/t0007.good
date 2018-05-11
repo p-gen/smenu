@@ -1,0 +1,15 @@
+$ OUT=$(smenu -c -P\\ue296b8 t0007.in)
+
+a b c d 
+6:07 
+e f g h 
+
+u j k l 
+0:04 2:04 
+$ 
+
+$ echo ":$OUT:"
+
+:u▸j▸d:
+
+$ exit 0

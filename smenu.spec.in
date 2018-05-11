@@ -53,6 +53,7 @@ install -d %{buildroot}%{_defaultdocdir}/%{name}
 for FILE in COPYRIGHT *.rst examples; do
   mv ${FILE} %{buildroot}%{_defaultdocdir}/%{name}
 done
+cp -rp tests %{buildroot}%{_defaultdocdir}/%{name}
 
 %files
 %defattr(-,root,root,-)

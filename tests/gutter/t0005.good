@@ -1,0 +1,11 @@
+$ OUT=$(smenu -c -g '|: ' t0005.in)
+
+ abcd|efgh:ijkl mnop qrst vwxy zabc defg hijk lmno pqrs tuvw xyza bcde efgh→
+0:01 1:07 2:07 3:07 4:07 75:01 
+$ 
+
+$ echo ":$OUT:"
+
+:abcd:
+
+$ exit 0

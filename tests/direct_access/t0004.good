@@ -1,0 +1,15 @@
+$ OUT=$(smenu -k -N "b|d" -U "a|f|b" -c t0004.in)
+
+     a      b      c   1) d 
+5:07 21:01 22:01 23:01 24:01 
+     e      f      g      h 
+
+     u      j      k      l 
+
+$ 
+
+$ echo ":$OUT:"
+
+:a:
+
+$ exit 0

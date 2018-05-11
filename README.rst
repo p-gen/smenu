@@ -102,6 +102,30 @@ On mine (``LANG`` and ``LC_ALL`` set to ``POSIX``) it displays:
 
 Note the presence of a scrollbar.
 
+Testing and reporting.
+----------------------
+The included testing system is relatively young, please be indulgent.
+
+**IMPORTANT** the testing system has some dependencies, please read the
+``test/README.rst`` before going further.
+
+**WARNING** running all the test by running ``./tests.sh`` in the
+``tests`` directory will take some time (around 15 min for now).
+
+**NOTE** on some systems like \*BSD some tests may fail. This can be
+explained by differences in posix/libc/... implementations.  This can
+notably occur when some specific regular expressions or uncommon UTF-8
+byte sequences are used.
+
+If a test fails for unknown reason, then please send me its directory
+name and the relevant ``.bad`` file.
+
+If you are hit by a bug that no test covers, then you can create a new
+test in the ``tests`` directory in a existing or new directory, read the
+``tests/README.rst`` file, use an existing test as model, create an
+``.in`` file and a ``.tst`` file and send them to me as well as the
+produced files.
+
 Interested?
 -----------
 Please use the included man page to learn more about this little program.

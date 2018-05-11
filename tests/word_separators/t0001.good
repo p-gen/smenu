@@ -1,0 +1,11 @@
+$ OUT=$(smenu -W» t0001.in)
+
+abc def ghi \n jkl mno pqr\n 
+12:07 13:07 
+$ 
+
+$ printf "%s\n" ":$OUT:"
+
+:\n:
+
+$ exit 0

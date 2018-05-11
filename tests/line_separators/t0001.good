@@ -1,0 +1,19 @@
+$ OUT=$(smenu -c -L\\ue2ac87 t0001.in)
+
+def  ▲
+5:20 
+ghi  │
+5:20 
+jkl  ║
+5:20 
+mno  │
+5:20 
+pqr  ▼
+0:07 1:07 2:07 5:20 
+$ 
+
+$ printf "%s\n" ":$OUT:"
+
+:pqr:
+
+$ exit 0

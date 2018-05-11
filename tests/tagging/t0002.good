@@ -1,0 +1,11 @@
+$ OUT=$(smenu -P " " t0002.in)
+
+a b c d e f g h u j k l 
+2:04 6:04 8:07 10:04 14:04 
+$ 
+
+$ echo ":$OUT:"
+
+:b d f h:
+
+$ exit 0

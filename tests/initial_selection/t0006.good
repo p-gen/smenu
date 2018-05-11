@@ -1,0 +1,11 @@
+$ OUT=$(smenu -sbb t0006.in)
+
+aab abb aa ab ba bb aba bab aaa 
+17:07 18:07 
+$ 
+
+$ echo ":$OUT:"
+
+:bb:
+
+$ exit 0

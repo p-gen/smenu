@@ -1,0 +1,11 @@
+$ OUT=$(smenu -s "#30" t0008.in)
+
+a b c d e f g h i j k l m n o p q r s t u v w x y z 
+50:07 
+$ 
+
+$ echo ":$OUT:"
+
+:z:
+
+$ exit 0
