@@ -5957,7 +5957,7 @@ main(int argc, char * argv[])
     switch (opt)
     {
       case 'V':
-        fprintf(stderr, "Version: " VERSION "\n");
+        fputs("Version: " VERSION "\n", stdout);
         exit(0);
 
       case 'f':
