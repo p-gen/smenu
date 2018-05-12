@@ -35,6 +35,8 @@ Usage
 - Go in the ``tests`` directory.
 - Make sure that your terminal has at least a size of 80x84.
 - Make sure that you have previously built **smenu** with ``build.sh``.
+- Make sure that **smenu** is (re-)installed as the tests will use the
+  PATH to find it.
 - if **ptylie** and/or **hlvt** are not in the PATH, then put their
   base directories in the variables ``PTYLIE_PATH`` and/or ``HLVT_PATH``
   and **export** them.
