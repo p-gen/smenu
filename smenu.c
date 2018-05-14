@@ -295,7 +295,7 @@ static int
 egetopt(int nargc, char ** nargv, char * ostr);
 
 static int
-expand(char * src, char * dest, langinfo_t * langinfo);
+expand(char * src, char * dest, langinfo_t * langinfo, toggle_t * toggle);
 
 static int
 get_bytes(FILE * input, char * mb_buffer, ll_t * word_delims_list,
@@ -3777,19 +3777,7 @@ get_bytes(FILE * input, char * mb_buffer, ll_t * word_delims_list,
       return EOF;
   }
 
-  /* Convert a well known byte (if alone in) into */
-  /* its canonical representation or into a dot   */
-  /* when not printable.                          */
-  /* """""""""""""""""""""""""""""""""""""""""""" */
-  if (last == 1 && toggle->blank_nonprintable && byte != 0x1b && byte != EOF
-      && !my_isprint(byte)
-      && ll_find(word_delims_list, mb_buffer, delims_cmp) == NULL)
-  {
-    mb_buffer[0] = ' ';
-    mb_buffer[1] = '\0';
-  }
-  else
-    mb_buffer[last] = '\0';
+  mb_buffer[last] = '\0';
 
   /* Replace an invalid UTF-8 byte sequence by a single dot.  */
   /* In this case the original sequence is lost (unsupported  */
@@ -3810,7 +3798,7 @@ get_bytes(FILE * input, char * mb_buffer, ll_t * word_delims_list,
 /* dest must be long enough to contain the expanded string                   */
 /* ==========================================================================*/
 static int
-expand(char * src, char * dest, langinfo_t * langinfo)
+expand(char * src, char * dest, langinfo_t * langinfo, toggle_t * toggle)
 {
   char   c;
   int    n;
@@ -3820,13 +3808,12 @@ expand(char * src, char * dest, langinfo_t * langinfo)
 
   while ((c = *(src++)))
   {
-    if (c != ' ')
-      all_spaces = 0;
-
     /* UTF-8 codepoints take more than on character */
     /* """""""""""""""""""""""""""""""""""""""""""" */
     if ((n = mb_get_length(c)) > 1)
     {
+      all_spaces = 0;
+
       if (langinfo->utf8)
         /* If the locale is UTF-8 aware, copy src into ptr. */
         /* """""""""""""""""""""""""""""""""""""""""""""""" */
@@ -3859,47 +3846,66 @@ expand(char * src, char * dest, langinfo_t * langinfo)
           *(ptr++) = '\\';
           *(ptr++) = 'a';
           len += 2;
+          all_spaces = 0;
           break;
         case '\b':
           *(ptr++) = '\\';
           *(ptr++) = 'b';
           len += 2;
+          all_spaces = 0;
           break;
         case '\t':
           *(ptr++) = '\\';
           *(ptr++) = 't';
           len += 2;
+          all_spaces = 0;
           break;
         case '\n':
           *(ptr++) = '\\';
           *(ptr++) = 'n';
           len += 2;
+          all_spaces = 0;
           break;
         case '\v':
           *(ptr++) = '\\';
           *(ptr++) = 'v';
           len += 2;
+          all_spaces = 0;
           break;
         case '\f':
           *(ptr++) = '\\';
           *(ptr++) = 'f';
           len += 2;
+          all_spaces = 0;
           break;
         case '\r':
           *(ptr++) = '\\';
           *(ptr++) = 'r';
           len += 2;
+          all_spaces = 0;
           break;
         case '\\':
           *(ptr++) = '\\';
           *(ptr++) = '\\';
           len += 2;
+          all_spaces = 0;
           break;
         default:
           if (my_isprint(c))
-            *(ptr++) = c;
+          {
+            *(ptr++)   = c;
+            all_spaces = 0;
+          }
           else
-            *(ptr++) = '.';
+          {
+            if (toggle->blank_nonprintable)
+              *(ptr++) = ' ';
+            else
+            {
+              *(ptr++)   = '.';
+              all_spaces = 0;
+            }
+          }
           len++;
       }
   }
@@ -4079,6 +4085,11 @@ get_word(FILE * input, ll_t * word_delims_list, ll_t * record_delims_list,
   /* """""""""""""""""""""""""""""""""""""""""" */
   *(temp + count) = '\0';
 
+  /* Replace the UTF-8 ascii representations in the word just */
+  /* read by their binary values.                             */
+  /* """""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+  mb_interpret(temp, langinfo);
+
   /* Skip all field delimiters before a record delimiter */
   /* """"""""""""""""""""""""""""""""""""""""""""""""""" */
   if (ll_find(record_delims_list, mb_buffer, delims_cmp) == NULL)
@@ -4114,11 +4125,6 @@ get_word(FILE * input, ll_t * word_delims_list, ll_t * record_delims_list,
   /* Remove the ANSI color escape sequences from the word */
   /* """""""""""""""""""""""""""""""""""""""""""""""""""" */
   strip_ansi_color(temp, toggle);
-
-  /* Replace the UTF-8 ascii representations in the word just */
-  /* read by their binary values.                             */
-  /* """""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-  mb_interpret(temp, langinfo);
 
   return temp;
 }
@@ -8120,7 +8126,7 @@ main(int argc, char * argv[])
     word_len = strlen(word->str);
 
     expanded_word = xmalloc(5 * word_len + 1);
-    len           = expand(word->str, expanded_word, &langinfo);
+    len           = expand(word->str, expanded_word, &langinfo, &toggle);
 
     /* Update it if needed */
     /* ''''''''''''''''''' */
