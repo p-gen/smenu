@@ -1,0 +1,11 @@
+$ OUT=$(smenu -X cur 5 -- t0001.in)
+
+a b c 
+2:07 
+$ 
+
+$ echo ":$OUT:"
+
+:b:
+
+$ exit 0
