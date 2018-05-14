@@ -6723,8 +6723,11 @@ main(int argc, char * argv[])
   /* Replace the UTF-8 ascii representations by their binary values in */
   /* the inclusion and exclusion patterns.                             */
   /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-  mb_interpret(include_pattern, &langinfo);
-  mb_interpret(exclude_pattern, &langinfo);
+  if (include_pattern != NULL)
+    mb_interpret(include_pattern, &langinfo);
+
+  if (exclude_pattern != NULL)
+    mb_interpret(exclude_pattern, &langinfo);
 
   /* Force the right modes when the -C option is given */
   /* """"""""""""""""""""""""""""""""""""""""""""""""" */
