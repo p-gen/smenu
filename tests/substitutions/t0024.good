@@ -1,0 +1,11 @@
+$ OUT=$(smenu '-S/a/ /' t0024.in)
+
+ bc b c bc  
+4:07 5:07 6:07 
+$ 
+
+$ echo ":$OUT:"
+
+:b c:
+
+$ exit 0

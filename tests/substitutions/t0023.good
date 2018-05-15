@@ -1,0 +1,11 @@
+$ OUT=$(smenu -S/a// -c t0023.in)
+
+$ 
+
+$ 
+
+$ echo ":$OUT:"
+
+::
+
+$ exit 0
