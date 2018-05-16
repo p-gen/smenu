@@ -3,6 +3,9 @@ WARNING
 To be able to run these tests, you first need to get two of my other small
 utilities available here: https://github.com/p-gen.
 
+Make sure you have installed the latest git commit of these two utilities
+before going any further.
+
 - The first named  **ptylie** is a kind of script without the replay capacity
   but with a mechanism to inject keystrokes in the keyboard queue of the
   slave pty running your code.
