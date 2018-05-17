@@ -811,7 +811,7 @@ short_usage(void)
   fprintf(stderr, "[input_file]\n\n");
   fprintf(stderr, "       <col selectors> ::= col1[-col2]...|<RE>...\n");
   fprintf(stderr, "       <row selectors> ::= row1[-row2]...|<RE>...\n");
-  fprintf(stderr, "       <prefix>        ::= i|e|c|b|s|t|sf|st|da\n");
+  fprintf(stderr, "       <prefix>        ::= i|e|c|b|s|t|ct|sf|st|da\n");
   fprintf(stderr, "       <arg>           ::= [l|r:<char>]|[a:l|r]|[p:i|a]|");
   fprintf(stderr, "[w:<size>]|\n");
   fprintf(stderr, "                           [f:y|n]|[o:<num>]|[n:<num>]|");
@@ -6288,15 +6288,16 @@ main(int argc, char * argv[])
 
           /* Flags to check if an attribute is already set */
           /* """"""""""""""""""""""""""""""""""""""""""""" */
-          int inc_attr_set     = 0; /* included words                */
-          int exc_attr_set     = 0; /* excluded words                */
-          int cur_attr_set     = 0; /* highlighted word (cursor)     */
-          int bar_attr_set     = 0; /* scroll bar                    */
-          int shift_attr_set   = 0; /* hor. scrolling arrows         */
-          int tag_attr_set     = 0; /* selected (tagged) words       */
-          int sf_attr_set      = 0; /* search field color            */
-          int st_attr_set      = 0; /* currently searched text color */
-          int daccess_attr_set = 0; /* currently searched text color */
+          int inc_attr_set           = 0; /* included words                  */
+          int exc_attr_set           = 0; /* excluded words                  */
+          int cur_attr_set           = 0; /* highlighted word (cursor)       */
+          int bar_attr_set           = 0; /* scroll bar                      */
+          int shift_attr_set         = 0; /* hor. scrolling arrows           */
+          int tag_attr_set           = 0; /* selected (tagged) words         */
+          int cursor_on_tag_attr_set = 0; /* selected words under the cursor */
+          int sf_attr_set            = 0; /* search field color              */
+          int st_attr_set            = 0; /* currently searched text color   */
+          int daccess_attr_set       = 0; /* currently searched text color   */
 
           /* Information relatives to the attributes to be searched and set */
           /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
@@ -6320,6 +6321,9 @@ main(int argc, char * argv[])
                 &shift_attr_set, "s:", 2 },
               { &win.tag_attr, "The tag attribute is already set -- ",
                 &tag_attr_set, "t:", 2 },
+              { &win.cursor_on_tag_attr,
+                "The cursor on tagged word attribute is already set -- ",
+                &cursor_on_tag_attr_set, "ct:", 3 },
               { &win.search_field_attr,
                 "The search field attribute is already set -- ", &sf_attr_set,
                 "sf:", 3 },
