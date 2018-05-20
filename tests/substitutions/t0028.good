@@ -1,0 +1,11 @@
+$ OUT=$(smenu '-S/a/X/ig' -c t0028.in)
+
+Xbc XBC XXb XXX 
+0:07 1:07 2:07 
+$ 
+
+$ echo ":$OUT:"
+
+:Xbc:
+
+$ exit 0
