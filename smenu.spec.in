@@ -47,19 +47,36 @@ Author: Pierre Gentile <p.gen.progs@gmail.com>
 %configure
 make %{?_smp_mflags}
 
+%package tests
+Summary: %{name} testing system
+Group:   Productivity/Text/Utilities
+
+%description tests
+This packages contains some scripts and a bunch of test to check the
+%{name} tool.
+
 %install
 make DESTDIR=%{buildroot} install %{?_smp_mflags}
 install -d %{buildroot}%{_defaultdocdir}/%{name}
-for FILE in COPYRIGHT *.rst examples; do
+for FILE in COPYRIGHT *.rst examples tests; do
   mv ${FILE} %{buildroot}%{_defaultdocdir}/%{name}
 done
-cp -rp tests %{buildroot}%{_defaultdocdir}/%{name}
+
+%files tests
+%defattr(-,root,root,-)
+%dir %{_defaultdocdir}/%{name}/tests
+%doc %{_defaultdocdir}/%{name}/tests/README.rst
+%doc %{_defaultdocdir}/%{name}/tests/test.sh
+%doc %{_defaultdocdir}/%{name}/tests/tests.sh
+%doc %{_defaultdocdir}/%{name}/tests/tests.cpio.gz
 
 %files
 %defattr(-,root,root,-)
 %attr(0755,root,root) %{_bindir}/*
 %dir %{_defaultdocdir}/%{name}
-%doc %{_defaultdocdir}/%{name}/*
+%doc %{_defaultdocdir}/%{name}/examples
+%doc %{_defaultdocdir}/%{name}/COPYRIGHT
+%doc %{_defaultdocdir}/%{name}/*.rst
 %{_mandir}/man1/*
 
 %changelog
