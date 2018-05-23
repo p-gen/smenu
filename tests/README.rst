@@ -35,7 +35,14 @@ Usage
 -----
 - Copy the ``tests`` directory to a place where you have write access
   if it is not already the case.
-- Go in the ``tests`` directory.
+- Go to the ``tests`` directory.
+- If the packaging is based on the result of ``make dist``, then you
+  may have to get the tests from a gziped cpio archive. In that case:
+
+  - Decompress the **tests.cpio.gz** archive (``gzip -dv tests.cpio.gz``).
+  - Extract the tests from the **tests.cpio** archive in this directory
+    (``cpio -idv < tests.cpio``).
+
 - Make sure that your terminal has at least a size of 80x84.
 - Make sure that you have previously built **smenu** with ``build.sh``.
 - Make sure that **smenu** is (re-)installed as the tests will use the
