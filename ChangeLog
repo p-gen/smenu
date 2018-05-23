@@ -1,3 +1,24 @@
+May 22 22:01 UTC 2018 - p.gen.progs@gmail.com
+
+- Version 0.9.13
+* Add the first roll of an automated testing system
+* Fix a FreeBSD compatibility issue
+* Update the .spec file to create a '-test' RPM subpackage
+* [-a] Add a missing setting for cursor_on_tag (ct)
+* [-b] Fix a bug about non-printable characters
+* [-V] Output the version tag on standard output
+* [-D] Add a 'decorate' directive
+* [-D] Handle multiple instances of the same directive
+* Fix a logic error in the direct access code
+* Fix an horizontal scrolling issue when going to the last word
+* Clean up the allocated gutter array before leaving in case of error
+* Understand some more terminfo sequences
+* Fix the right margin and add a degraded method to display it
+* Improve the manual
+* Various other small bug fixes
+
+Apr 08 18:32 UTC 2018 - p.gen.progs@gmail.com
+
 - Version 0.9.12
 * Fix the cursor restoration
 * Fix a Solaris incompatibility
@@ -20,6 +41,8 @@
 * Adjust some values of timers
 * Remove deprecated directives in -C and -L
 * Various other small fixes and improvments
+
+Jan 26 12:35 UTC 2018 - p.gen.progs@gmail.com
 
 - Version 0.9.11
 * Introduce the new \u notation for UTF-8 hex sequences
