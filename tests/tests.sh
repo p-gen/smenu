@@ -27,7 +27,7 @@ export DIR=${PWD}
 
 # Remove the existing .log files
 # """"""""""""""""""""""""""""""
-[ "$TESTDIR" == "." ] && rm *.log || rm ${TESTDIR}.log
+[ "$TESTDIR" == "." ] && rm -f *.log || rm -f ${TESTDIR}.log
 
 # Build the list of tests to be performed
 # """""""""""""""""""""""""""""""""""""""
