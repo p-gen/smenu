@@ -217,6 +217,12 @@ mb_interpret(char * s, langinfo_t * langinfo);
 static int
 mb_validate(const char * str, int length);
 
+char *
+mb_prev(const char * str, const char * p);
+
+char *
+mb_next(char * p);
+
 static int
 #ifdef __sun
 outch(char c);
@@ -3161,6 +3167,39 @@ mb_offset(char * s, int n)
     n--;
   }
   return i;
+}
+
+/* ================================================== */
+/* Points to the previous multibyte glyph in a string */
+/* from the given position                            */
+/* ================================================== */
+char *
+mb_prev(const char * str, const char * p)
+{
+  while ((*p & 0xc0) == 0x80)
+    p--;
+
+  for (--p; p >= str; --p)
+  {
+    if ((*p & 0xc0) != 0x80)
+      return (char *)p;
+  }
+  return NULL;
+}
+
+/* ============================================== */
+/* Points to the next multibyte glyph in a string */
+/* from the current position                      */
+/* ============================================== */
+char *
+mb_next(char * p)
+{
+  if (*p)
+  {
+    for (++p; (*p & 0xc0) == 0x80; ++p)
+      ;
+  }
+  return (*p == '\0' ? NULL : p);
 }
 
 /* =========================================================== */
