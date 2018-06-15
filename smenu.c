@@ -51,6 +51,16 @@
 #define FREQ 10
 #define TICK (SECOND / FREQ)
 
+/* Bit array management */
+/* """""""""""""""""""" */
+#define MASK (CHAR_BIT - 1)
+#define SHIFT ((CHAR_BIT == 8) ? 3 : (CHAR_BIT == 16) ? 4 : 8)
+
+#define BIT_OFF(a, x) ((void)((a)[(x) >> SHIFT] &= ~(1 << ((x)&MASK))))
+#define BIT_ON(a, x) ((void)((a)[(x) >> SHIFT] |= (1 << ((x)&MASK))))
+#define BIT_FLIP(a, x) ((void)((a)[(x) >> SHIFT] ^= (1 << ((x)&MASK))))
+#define BIT_ISSET(a, x) ((a)[(x) >> SHIFT] & (1 << ((x)&MASK)))
+
 /* ******** */
 /* Typedefs */
 /* ******** */
