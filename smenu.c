@@ -5139,9 +5139,6 @@ disp_word(int pos, search_mode_t search_mode, search_data_t * search_data,
       /* """"""""""""""""""""""""""""""""""""""""""""" */
       word_len = strlen(word_a[pos].str);
 
-      if (strlen(buffer) >= word_len)
-        buffer[word_len] = '\0';
-
       mb_strprefix(tmp_word, word_a[pos].str, (int)word_a[pos].mb - 1, &p);
       if (word_a[pos].is_numbered)
       {
@@ -9726,8 +9723,8 @@ main(int argc, char * argv[])
             /* """"""""""""""""""""""""" */
             current = win.start;
 
-            search_mode     = NONE;
-            old_search_mode = NONE;
+            if (search_mode != NONE)
+              search_mode = NONE;
 
             /* Find the first selectable word */
             /* """""""""""""""""""""""""""""" */
@@ -9884,7 +9881,8 @@ main(int argc, char * argv[])
             /* """"""""""""""""""""""""""""""""""""""""""""""""" */
             if (matches_count > 0)
             {
-              search_mode = NONE;
+              search_mode     = NONE;
+              old_search_mode = NONE;
 
               clean_matches(&search_data, word_real_max_size);
 
@@ -10271,7 +10269,7 @@ main(int argc, char * argv[])
           /* Cursor Left key has been pressed */
           /* """""""""""""""""""""""""""""""" */
           if (search_mode != NONE)
-            search_mode = 0;
+            search_mode = NONE;
 
         case 'H':
         case 'h':
