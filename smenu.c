@@ -9726,8 +9726,8 @@ main(int argc, char * argv[])
             /* """"""""""""""""""""""""" */
             current = win.start;
 
-            if (search_mode != NONE)
-              search_mode = NONE;
+            search_mode     = NONE;
+            old_search_mode = NONE;
 
             /* Find the first selectable word */
             /* """""""""""""""""""""""""""""" */
