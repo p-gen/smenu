@@ -74,14 +74,22 @@ typedef struct tst_node_s    tst_node_t;
 typedef struct toggle_s      toggle_t;
 typedef struct win_s         win_t;
 typedef struct word_s        word_t;
-typedef struct txt_attr_s    txt_attr_t;
+typedef struct attr_s        attr_t;
 typedef struct limits_s      limits_t;
 typedef struct timers_s      timers_t;
+typedef struct misc_s        misc_t;
 typedef struct sed_s         sed_t;
 typedef struct interval_s    interval_t;
 typedef struct timeout_s     timeout_t;
 typedef struct output_s      output_t;
 typedef struct daccess_s     daccess_t;
+typedef struct search_data_s search_data_t;
+
+typedef enum filter_types       filters_t;
+typedef enum daccess_modes      da_mode_t;
+typedef enum timeout_modes      to_mode_t;
+typedef enum attribute_settings attr_set_t;
+typedef enum search_modes       search_mode_t;
 
 /* ********** */
 /* Prototypes */
@@ -265,15 +273,28 @@ static int
 tst_traverse(tst_node_t * p, int (*callback)(void *), int first_call);
 
 static int
+tst_substring_traverse(tst_node_t * p, int (*callback)(void *), int first_call,
+                       wchar_t w);
+static int
+tst_fuzzy_traverse(tst_node_t * p, int (*callback)(void *), int first_call,
+                   wchar_t w);
+
+void
+mb_strtolower(char * dst, const unsigned char * src);
+
+void
+insert_sorted(int ** array, int * size, int * filled, int value);
+
+static int
 ini_load(const char * filename, win_t * win, term_t * term, limits_t * limits,
-         timers_t * timers,
+         timers_t * timers, misc_t * misc,
          int (*report)(win_t * win, term_t * term, limits_t * limits,
-                       timers_t * timers, const char * section,
+                       timers_t * timers, misc_t * misc, const char * section,
                        const char * name, char * value));
 
 static int
 ini_cb(win_t * win, term_t * term, limits_t * limits, timers_t * timers,
-       const char * section, const char * name, char * value);
+       misc_t * misc, const char * section, const char * name, char * value);
 
 static char *
 make_ini_path(char * name, char * base);
@@ -288,12 +309,13 @@ static void
 set_win_start_end(win_t * win, int current, int last);
 
 static int
-build_metadata(word_t * word_a, term_t * term, int count, win_t * win);
+build_metadata(term_t * term, int count, win_t * win);
 
 static int
-disp_lines(word_t * word_a, win_t * win, toggle_t * toggle, int current,
-           int count, int search_mode, char * search_buf, term_t * term,
-           int last_line, char * tmp_word, langinfo_t * langinfo);
+disp_lines(win_t * win, toggle_t * toggle, int current, int count,
+           search_mode_t search_mode, search_data_t * search_data,
+           term_t * term, int last_line, char * tmp_word,
+           langinfo_t * langinfo);
 
 static void
 get_message_lines(char * message, ll_t * message_lines_list,
@@ -304,7 +326,13 @@ disp_message(ll_t * message_lines_list, int width, int max_len, term_t * term,
              win_t * win);
 
 static void
-disp_word(word_t * word_a, int pos, int search_mode, char * buffer,
+update_bitmaps(search_mode_t search_mode, search_data_t * search_data);
+
+void
+disp_matching_word(int pos, win_t * win, term_t * term, int is_matching);
+
+static void
+disp_word(int pos, search_mode_t search_mode, search_data_t * search_data,
           term_t * term, win_t * win, char * tmp_word);
 
 static int
@@ -331,15 +359,11 @@ static void
 right_margin_putp(char * s1, char * s2, langinfo_t * langinfo, term_t * term,
                   win_t * win, int line, int offset);
 
-static int
-search_next(tst_node_t * tst, word_t * word_a, char * search_buf,
-            int after_only);
-
 static void
 sig_handler(int s);
 
 static void
-set_new_first_column(win_t * win, term_t * term, word_t * word_a);
+set_new_first_column(win_t * win, term_t * term);
 
 static void
 merge_intervals(ll_t * list);
@@ -348,7 +372,7 @@ static int
 parse_sed_like_string(sed_t * sed);
 
 static void
-parse_selectors(char * str, int * filter, char * unparsed,
+parse_selectors(char * str, filters_t * filter, char * unparsed,
                 ll_t ** inc_interval_list, ll_t ** inc_regex_list,
                 ll_t ** exc_interval_list, ll_t ** exc_regex_list,
                 langinfo_t * langinfo);
@@ -357,13 +381,13 @@ static int
 replace(char * orig, sed_t * sed);
 
 static int
-decode_txt_attr_toggles(char * s, txt_attr_t * attr);
+decode_attr_toggles(char * s, attr_t * attr);
 
 static int
-parse_txt_attr(char * str, txt_attr_t * attr, short max_color);
+parse_attr(char * str, attr_t * attr, short max_color);
 
 static void
-apply_txt_attr(term_t * term, txt_attr_t attr);
+apply_attr(term_t * term, attr_t attr);
 
 static int (*my_isprint)(int);
 
@@ -385,7 +409,7 @@ enum filter_types
 
 /* Used by the -N -F and -D options */
 /* """""""""""""""""""""""""""""""" */
-enum daccess_types
+enum daccess_modes
 {
   DA_TYPE_NONE = 0, /* must be 0 (boolean value) */
   DA_TYPE_AUTO = 1,
@@ -396,7 +420,7 @@ enum daccess_types
 /* """""""""""""""""""""""""""""""" */
 enum row_regex_types
 {
-  ROW_REGEX_EXCLUDE = 0,
+  ROW_REGEX_EXCLUDE = 0, /* must be 0 (boolean value) */
   ROW_REGEX_INCLUDE = 1
 };
 
@@ -414,7 +438,7 @@ enum filter_infos
                           * but can be excluded later                   */
 };
 
-enum timeout_types
+enum timeout_modes
 {
   CURRENT, /* on timeout, outputs the selected word       */
   QUIT,    /* on timeout, quit without selecting anything */
@@ -426,6 +450,14 @@ enum attribute_settings
   UNSET = 0, /* must be 0 for future testings */
   SET,
   FORCED /* an attribute setting has been given in the command line */
+};
+
+enum search_modes
+{
+  NONE,
+  PREFIX,
+  FUZZY,
+  SUBSTRING
 };
 
 /* Locale informations */
@@ -479,6 +511,13 @@ struct timers_s
   int direct_access;
 };
 
+/* Structure to store miscellaneous informations */
+/* """"""""""""""""""""""""""""""""""""""""""""" */
+struct misc_s
+{
+  search_mode_t default_search_method;
+};
+
 /* Terminal setting variables */
 /* """""""""""""""""""""""""" */
 struct termios new_in_attrs;
@@ -488,16 +527,15 @@ struct termios old_in_attrs;
 /* """""""""""""""""""" */
 struct itimerval periodic_itv; /* refresh rate for the timeout counter */
 
-int search_timer  = -1;
 int help_timer    = -1;
 int winch_timer   = -1;
 int daccess_timer = -1;
 
 /* Structure containing the attributes components */
 /* """""""""""""""""""""""""""""""""""""""""""""" */
-struct txt_attr_s
+struct attr_s
 {
-  signed char is_set;
+  attr_set_t  is_set;
   short       fg;
   short       bg;
   signed char bold;
@@ -533,6 +571,7 @@ struct term_s
   char has_setab;             /* idem for set_a_background (ANSI)       */
   char has_hpa;               /* has column_address terminfo capability */
   char has_bold;              /* has bold mode                          */
+  char has_dim;               /* has dim mode                           */
   char has_reverse;           /* has reverse mode                       */
   char has_underline;         /* has underline mode                     */
   char has_standout;          /* has standout mode                      */
@@ -543,21 +582,25 @@ struct term_s
 /* """"""""""""""""""""""""""" */
 struct word_s
 {
-  int start, end;              /* start/end absolute horiz. word positions *
-                                * on the screen                            */
-  size_t mb;                   /* number of multibytes to display          */
-  size_t tag_order;            /* each time a word is tagged, this value   *
-                                * is increased                             */
-  int    special_level;        /* can vary from 0 to 5; 0 meaning normal   */
-  char * str;                  /* display string associated with this word */
-  size_t len;                  /* number of bytes of str (for trimming)    */
-  char * orig;                 /* NULL or original string if is had been   *
-                                * shortened for being displayed or altered *
-                                * by is expansion.                         */
-  unsigned char is_tagged;     /* 1 if the word is tagged, 0 if not        */
-  unsigned char is_last;       /* 1 if the word is the last of a line      */
-  unsigned char is_selectable; /* word is selectable                       */
-  unsigned char is_numbered;   /* word has a direct access index           */
+  int start, end;       /* start/end absolute horiz. word positions *
+                         * on the screen                            */
+  size_t mb;            /* number of multibytes to display          */
+  size_t tag_order;     /* each time a word is tagged, this value   *
+                         * is increased                             */
+  int    special_level; /* can vary from 0 to 5; 0 meaning normal   */
+  char * str;           /* display string associated with this word */
+  size_t len;           /* number of bytes of str (for trimming)    */
+  char * orig;          /* NULL or original string if is had been   *
+                         * shortened for being displayed or altered *
+                         * by is expansion.                         */
+  char * bitmap;        /* used to store the the position of the    *
+                         * currently searched chars in a word. The  *
+                         * objective is to speed their display      */
+  unsigned char is_matching;
+  unsigned char is_tagged;     /* 1 if the word is tagged, 0 if not   */
+  unsigned char is_last;       /* 1 if the word is the last of a line */
+  unsigned char is_selectable; /* word is selectable                  */
+  unsigned char is_numbered;   /* word has a direct access index      */
 };
 
 /* Structure describing the window in which the user */
@@ -588,17 +631,19 @@ struct win_s
   unsigned char wide;      /* -w */
   unsigned char center;    /* -M */
 
-  txt_attr_t cursor_attr;        /* current cursor attributes         */
-  txt_attr_t cursor_on_tag_attr; /* current cursor on tag attributes  */
-  txt_attr_t bar_attr;           /* scrollbar attributes              */
-  txt_attr_t shift_attr;         /* shift indicator attributes        */
-  txt_attr_t search_field_attr;  /* search mode field attributes      */
-  txt_attr_t search_text_attr;   /* search mode text attributes       */
-  txt_attr_t include_attr;       /* selectable words attributes       */
-  txt_attr_t exclude_attr;       /* non-selectable words attributes   */
-  txt_attr_t tag_attr;           /* non-selectable words attributes   */
-  txt_attr_t daccess_attr;       /* direct access tag attributes      */
-  txt_attr_t special_attr[5];    /* special (-1,...) words attributes */
+  attr_t cursor_attr;        /* current cursor attributes         */
+  attr_t cursor_on_tag_attr; /* current cursor on tag attributes  */
+  attr_t bar_attr;           /* scrollbar attributes              */
+  attr_t shift_attr;         /* shift indicator attributes        */
+  attr_t search_field_attr;  /* search mode field attributes      */
+  attr_t search_text_attr;   /* search mode text attributes       */
+  attr_t match_field_attr;   /* matching word field attributes    */
+  attr_t match_text_attr;    /* matching word text attributes     */
+  attr_t include_attr;       /* selectable words attributes       */
+  attr_t exclude_attr;       /* non-selectable words attributes   */
+  attr_t tag_attr;           /* non-selectable words attributes   */
+  attr_t daccess_attr;       /* direct access tag attributes      */
+  attr_t special_attr[5];    /* special (-1,...) words attributes */
 };
 
 /* Sed like node structure */
@@ -636,10 +681,10 @@ struct range_s
 /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
 struct timeout_s
 {
-  unsigned type;          /* timeout type: current/quit/word */
-  unsigned initial_value; /* 0: no timeout else value in sec */
-  unsigned remain;        /* remaining seconds               */
-  unsigned reached;       /* 1: timeout has expired, else 0  */
+  to_mode_t mode;          /* timeout mode: current/quit/word */
+  unsigned  initial_value; /* 0: no timeout else value in sec */
+  unsigned  remain;        /* remaining seconds               */
+  unsigned  reached;       /* 1: timeout has expired, else 0  */
 };
 
 /* Structure used during the construction of the pinned words list */
@@ -654,37 +699,50 @@ struct output_s
 /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
 struct daccess_s
 {
-  int    type;       /* 1: auto, 2: delimiter, 4: positional               */
-  char * left;       /* character to put before the direct access selector */
-  char * right;      /* character to put after the direct access selector  */
-  char   alignment;  /* l: left; r: right                                  */
-  char   padding;    /* a: all; i: only included words are padded          */
-  int    length;     /* selector size (5 max)                              */
-  int    flength;    /* 0 or length + 3 (full prefix lengh                 */
-  int    offset;     /* offset to the start of the selector                */
-  int    size;       /* size in bytes of the selector to extract           */
-  int    ignore;     /* number of multibytes to ignore after the number    */
-  int    follow;     /* y: the numbering follows the last nuber set        */
-  char * num_sep;    /* character to separate de number and the selection  */
-  int    def_number; /* 1: the numbering is on by default 0: it is not     */
+  da_mode_t mode;       /* DA_TYPE_NONE (0), DA_TYPE_AUTO, DA_TYPE_POS        */
+  char *    left;       /* character to put before the direct access selector */
+  char *    right;      /* character to put after the direct access selector  */
+  char      alignment;  /* l: left; r: right                                  */
+  char      padding;    /* a: all; i: only included words are padded          */
+  int       length;     /* selector size (5 max)                              */
+  int       flength;    /* 0 or length + 3 (full prefix lengh                 */
+  int       offset;     /* offset to the start of the selector                */
+  int       size;       /* size in bytes of the selector to extract           */
+  int       ignore;     /* number of multibytes to ignore after the number    */
+  int       follow;     /* y: the numbering follows the last nuber set        */
+  char *    num_sep;    /* character to separate de number and the selection  */
+  int       def_number; /* 1: the numbering is on by default 0: it is not     */
+};
+
+struct search_data_s
+{
+  char * buf;        /* Search buffer                            */
+  size_t len;        /* Current position in the search buffer    */
+  size_t mb_len;     /* Current position in the search buffer in *
+                      * multibyte units                          */
+  size_t * mb_off_a; /* Array of mb offsets in buf               */
+  size_t * mb_len_a; /* Array of mb lengths in buf               */
 };
 
 /* **************** */
 /* Global variables */
 /* **************** */
 
-int dummy_rc;     /* temporary variable to silence the compiler        */
-int count = 0;    /* number of words read from stdin                   */
-int current;      /* index the current selection under the cursor)     */
-int new_current;  /* final current position, (used in search function) */
-int prev_current; /* previous position stored when using direct access */
+word_t * word_a;       /* Array containing words data (size: count) */
+int      dummy_rc;     /* temporary variable to silence the compiler        */
+int      count = 0;    /* number of words read from stdin                   */
+int      current;      /* index the current selection under the cursor)     */
+int      new_current;  /* final current position, (used in search function) */
+int      prev_current; /* previous position stored when using direct access */
 
 int * line_nb_of_word_a;    /* array containing the line number *
                              * (from 0) of each word read       */
 int * first_word_in_line_a; /* array containing the index of    *
                              * the first word of each lines     */
-int search_mode = 0;        /* 1 if in search mode else 0       */
-int help_mode   = 0;        /* 1 if help is display else 0      */
+search_mode_t search_mode     = NONE;
+search_mode_t old_search_mode = NONE;
+
+int help_mode = 0; /* 1 if help is display else 0      */
 
 char * word_buffer;
 
@@ -702,16 +760,22 @@ char * sbar_arr_down   = "\xe2\x96\xbc"; /* black_down_pointing_triangle     */
 
 daccess_t daccess;
 
-/* Variables use to manage the direct access entries */
-/* """"""""""""""""""""""""""""""""""""""""""""""""" */
+/* Variables used to manage the direct access entries */
+/* """""""""""""""""""""""""""""""""""""""""""""""""" */
 char * daccess_stack;
 int    daccess_stack_head;
+
+/* Variables used for fuzzy and substring searching */
+/* """""""""""""""""""""""""""""""""""""""""""""""" */
+ll_t * tst_search_list = NULL;
+int *  matching_words_a;
+int    matching_words_a_size;
+int    matches_count;
 
 /* Variables used in signal handlers */
 /* """"""""""""""""""""""""""""""""" */
 volatile sig_atomic_t got_winch        = 0;
 volatile sig_atomic_t got_winch_alrm   = 0;
-volatile sig_atomic_t got_search_alrm  = 0;
 volatile sig_atomic_t got_help_alrm    = 0;
 volatile sig_atomic_t got_daccess_alrm = 0;
 volatile sig_atomic_t got_timeout_tick = 0;
@@ -823,11 +887,12 @@ short_usage(void)
   fprintf(stderr, "[-5 regex [attr]] [-g [string]]  \\\n");
   fprintf(stderr, "       [-q] [-W bytes] [-L bytes] [-T [separator]] ");
   fprintf(stderr, "[-P [separator]] [-p]       \\\n");
-  fprintf(stderr, "       [-V] [-x|-X current|quit|word [<word>] <seconds>] ");
-  fprintf(stderr, "[input_file]\n\n");
+  fprintf(stderr, "       [-V] [-x|-X current|quit|word [<word>] ");
+  fprintf(stderr, "<seconds>]                       \\\n");
+  fprintf(stderr, "       [-/ prefix|substring|fuzzy] [--] [input_file]\n\n");
   fprintf(stderr, "       <col selectors> ::= col1[-col2]...|<RE>...\n");
   fprintf(stderr, "       <row selectors> ::= row1[-row2]...|<RE>...\n");
-  fprintf(stderr, "       <prefix>        ::= i|e|c|b|s|t|ct|sf|st|da\n");
+  fprintf(stderr, "       <prefix>        ::= i|e|c|b|s|t|ct|sf|st|mf|mt|da\n");
   fprintf(stderr, "       <arg>           ::= [l|r:<char>]|[a:l|r]|[p:i|a]|");
   fprintf(stderr, "[w:<size>]|\n");
   fprintf(stderr, "                           [f:y|n]|[o:<num>]|[n:<num>]|");
@@ -1208,7 +1273,7 @@ xstrndup(const char * str, size_t len)
 /* toggle is found else 0           */
 /* ================================ */
 static int
-decode_txt_attr_toggles(char * s, txt_attr_t * attr)
+decode_attr_toggles(char * s, attr_t * attr)
 {
   int rc = 1;
 
@@ -1252,16 +1317,16 @@ decode_txt_attr_toggles(char * s, txt_attr_t * attr)
   return rc;
 }
 
-/* ============================================================ */
-/* Parse attributes in str in the form [fg][/bg][,toggles]      */
-/* where:                                                       */
-/* fg and bg are short representing a color value               */
-/* toggles is an array of toggles (see decode_txt_attr_toggles) */
-/* Returns 1 on success else 0                                  */
-/* attr will be filled by the function                          */
-/* ============================================================ */
+/* =========================================================*/
+/* Parse attributes in str in the form [fg][/bg][,toggles]  */
+/* where:                                                   */
+/* fg and bg are short representing a color value           */
+/* toggles is an array of toggles (see decode_attr_toggles) */
+/* Returns 1 on success else 0                              */
+/* attr will be filled by the function                      */
+/* =========================================================*/
 static int
-parse_txt_attr(char * str, txt_attr_t * attr, short max_color)
+parse_attr(char * str, attr_t * attr, short max_color)
 {
   int    n;
   char * pos;
@@ -1300,7 +1365,7 @@ parse_txt_attr(char * str, txt_attr_t * attr, short max_color)
     if (sscanf(s1, "%hd", &d1) == 0)
     {
       d1 = -1;
-      if (n == 2 || decode_txt_attr_toggles(s1, attr) == 0)
+      if (n == 2 || decode_attr_toggles(s1, attr) == 0)
         return 0;
     }
   }
@@ -1320,7 +1385,7 @@ parse_txt_attr(char * str, txt_attr_t * attr, short max_color)
   }
 
   if (n == 2)
-    rc = decode_txt_attr_toggles(s2, attr);
+    rc = decode_attr_toggles(s2, attr);
 
   return rc;
 }
@@ -1329,7 +1394,7 @@ parse_txt_attr(char * str, txt_attr_t * attr, short max_color)
 /* Set the terminal attributes according to attr */
 /* ============================================= */
 static void
-apply_txt_attr(term_t * term, txt_attr_t attr)
+apply_attr(term_t * term, attr_t attr)
 {
   if (attr.fg >= 0)
     set_foreground_color(term, attr.fg);
@@ -1367,50 +1432,50 @@ apply_txt_attr(term_t * term, txt_attr_t attr)
 /* ===================================================== */
 static int
 ini_cb(win_t * win, term_t * term, limits_t * limits, timers_t * timers,
-       const char * section, const char * name, char * value)
+       misc_t * misc, const char * section, const char * name, char * value)
 {
   int error      = 0;
   int has_colors = (term->colors > 7);
 
   if (strcmp(section, "colors") == 0)
   {
-    txt_attr_t v = { UNSET, -1, -1, -1, -1, -1, -1, -1, -1 };
+    attr_t v = { UNSET, -1, -1, -1, -1, -1, -1, -1, -1 };
 
-#define CHECK_ATTR(x)                                 \
-  else if (strcmp(name, #x) == 0)                     \
-  {                                                   \
-    error = !parse_txt_attr(value, &v, term->colors); \
-    if (error)                                        \
-      goto out;                                       \
-    else                                              \
-    {                                                 \
-      if (win->x##_attr.is_set != FORCED)             \
-      {                                               \
-        win->x##_attr.is_set = SET;                   \
-        if (v.fg >= 0)                                \
-          win->x##_attr.fg = v.fg;                    \
-        if (v.bg >= 0)                                \
-          win->x##_attr.bg = v.bg;                    \
-        if (v.bold >= 0)                              \
-          win->x##_attr.bold = v.bold;                \
-        if (v.dim >= 0)                               \
-          win->x##_attr.dim = v.dim;                  \
-        if (v.reverse >= 0)                           \
-          win->x##_attr.reverse = v.reverse;          \
-        if (v.standout >= 0)                          \
-          win->x##_attr.standout = v.standout;        \
-        if (v.underline >= 0)                         \
-          win->x##_attr.underline = v.underline;      \
-        if (v.italic >= 0)                            \
-          win->x##_attr.italic = v.italic;            \
-      }                                               \
-    }                                                 \
+#define CHECK_ATTR(x)                             \
+  else if (strcmp(name, #x) == 0)                 \
+  {                                               \
+    error = !parse_attr(value, &v, term->colors); \
+    if (error)                                    \
+      goto out;                                   \
+    else                                          \
+    {                                             \
+      if (win->x##_attr.is_set != FORCED)         \
+      {                                           \
+        win->x##_attr.is_set = SET;               \
+        if (v.fg >= 0)                            \
+          win->x##_attr.fg = v.fg;                \
+        if (v.bg >= 0)                            \
+          win->x##_attr.bg = v.bg;                \
+        if (v.bold >= 0)                          \
+          win->x##_attr.bold = v.bold;            \
+        if (v.dim >= 0)                           \
+          win->x##_attr.dim = v.dim;              \
+        if (v.reverse >= 0)                       \
+          win->x##_attr.reverse = v.reverse;      \
+        if (v.standout >= 0)                      \
+          win->x##_attr.standout = v.standout;    \
+        if (v.underline >= 0)                     \
+          win->x##_attr.underline = v.underline;  \
+        if (v.italic >= 0)                        \
+          win->x##_attr.italic = v.italic;        \
+      }                                           \
+    }                                             \
   }
 
 #define CHECK_ATT_ATTR(x, y)                            \
   else if (strcmp(name, #x #y) == 0)                    \
   {                                                     \
-    error = !parse_txt_attr(value, &v, term->colors);   \
+    error = !parse_attr(value, &v, term->colors);       \
     if (error)                                          \
       goto out;                                         \
     else                                                \
@@ -1461,6 +1526,8 @@ ini_cb(win_t * win, term_t * term, limits_t * limits, timers_t * timers,
       CHECK_ATTR(shift)
       CHECK_ATTR(search_field)
       CHECK_ATTR(search_text)
+      CHECK_ATTR(match_field)
+      CHECK_ATTR(match_text)
       CHECK_ATTR(include)
       CHECK_ATTR(exclude)
       CHECK_ATTR(tag)
@@ -1522,14 +1589,7 @@ ini_cb(win_t * win, term_t * term, limits_t * limits, timers_t * timers,
 
     /* [timers] section */
     /* """""""""""""""" */
-    if (strcmp(name, "search") == 0)
-    {
-      if ((error = !(sscanf(value, "%d", &v) == 1 && v > 0)))
-        goto out;
-      else
-        timers->search = v;
-    }
-    else if (strcmp(name, "help") == 0)
+    if (strcmp(name, "help") == 0)
     {
       if ((error = !(sscanf(value, "%d", &v) == 1 && v > 0)))
         goto out;
@@ -1551,6 +1611,21 @@ ini_cb(win_t * win, term_t * term, limits_t * limits, timers_t * timers,
         timers->direct_access = v;
     }
   }
+  else if (strcmp(section, "misc") == 0)
+  {
+    /* [misc] section */
+    /* """""""""""""""" */
+    if (strcmp(name, "default_search_method") == 0)
+      if (misc->default_search_method == NONE)
+      {
+        if (strcmp(value, "prefix") == 0)
+          misc->default_search_method = PREFIX;
+        else if (strcmp(value, "fuzzy") == 0)
+          misc->default_search_method = FUZZY;
+        else if (strcmp(value, "substring") == 0)
+          misc->default_search_method = SUBSTRING;
+      }
+  }
 
 out:
 
@@ -1569,9 +1644,9 @@ out:
 /* ========================================================================= */
 static int
 ini_load(const char * filename, win_t * win, term_t * term, limits_t * limits,
-         timers_t * timers,
+         timers_t * timers, misc_t * misc,
          int (*report)(win_t * win, term_t * term, limits_t * limits,
-                       timers_t * timers, const char * section,
+                       timers_t * timers, misc_t * misc, const char * section,
                        const char * name, char * value))
 {
   char   name[64]     = "";
@@ -1621,7 +1696,7 @@ ini_load(const char * filename, win_t * win, term_t * term, limits_t * limits,
 
       /* Callback function calling */
       /* """"""""""""""""""""""""" */
-      error = report(win, term, limits, timers, section, name, value);
+      error = report(win, term, limits, timers, misc, section, name, value);
 
       if (error)
         goto out;
@@ -2045,6 +2120,8 @@ ll_delete(ll_t * const list, ll_node_t * node)
     node->prev->next = node->next;
   }
 
+  free(node);
+
   --list->len;
 
   return 1;
@@ -2095,6 +2172,322 @@ isprint8(int i)
   unsigned char c = i & (unsigned char)0xff;
 
   return (c >= 0x20 && c < 0x7f) || (c >= (unsigned char)0xa0);
+}
+
+/* ========================================================= */
+/* Insertion of an integer in a already sorted integer array */
+/* without duplications.                                     */
+/* ========================================================= */
+void
+insert_sorted(int ** array, int * size, int * nb, int value)
+{
+  int pos  = *nb;
+  int left = 0, right = *nb, middle;
+
+  if (*nb > 0)
+  {
+    /* bisection search */
+    /* """""""""""""""" */
+    while (left < right)
+    {
+      middle = (left + right) / 2;
+      if ((*array)[middle] == value)
+        return; /* Value already in array */
+
+      if (value < (*array)[middle])
+        right = middle;
+      else
+        left = middle + 1;
+    }
+    pos = left;
+  }
+
+  if (*nb == *size)
+  {
+    *size += 64;
+    *array = xrealloc(*array, *size * sizeof(int));
+  }
+
+  if (*nb > pos)
+    memmove((*array) + pos + 1, (*array) + pos, sizeof(int) * (*nb - pos));
+
+  (*nb)++;
+
+  (*array)[pos] = value;
+}
+
+/* ============================================================== */
+/* Fill dst whi a lowercase ocopy of src whar the character is an */
+/* ascci one. dsk must be preallocated before the call.           */
+/* ============================================================== */
+void
+mb_strtolower(char * dst, const unsigned char * src)
+{
+  unsigned char c;
+
+  while (c = *src)
+  {
+    if (c >= 0x80)
+      *dst = c;
+    else
+      *dst = tolower(c);
+
+    src++;
+    dst++;
+  }
+  *dst = '\0';
+}
+
+/* ======================================================================== */
+/* Update the bitmap associated with a word. This bitmap indicates the      */
+/* positions of the searched mb characters previously entered in the search */
+/* buffer.                                                                  */
+/* The disp_word function will use it to display these special characters.  */
+/* ======================================================================== */
+static void
+update_bitmaps(search_mode_t mode, search_data_t * data)
+{
+  size_t i, j, n;
+  size_t len, fc, bc;
+  size_t mb;
+  char * start;
+  char * p;
+  char * bm;
+  char * str;
+  char * str_orig;
+
+  char *   sb_orig = data->buf;
+  char *   sb;
+  size_t * o    = data->mb_off_a;
+  size_t * l    = data->mb_len_a;
+  size_t   last = data->mb_len - 1;
+
+  if (mode == FUZZY || mode == SUBSTRING)
+  {
+    if (mode == FUZZY)
+    {
+      sb = xstrdup(sb_orig);
+      mb_strtolower(sb, sb_orig);
+    }
+    else
+      sb = sb_orig;
+
+    for (i = 0; i < matches_count; i++)
+    {
+      n        = matching_words_a[i];
+      str_orig = word_a[n].str + daccess.flength;
+      len      = word_a[n].len - daccess.flength;
+      mb       = word_a[n].mb - 1 - daccess.flength;
+      bm       = word_a[n].bitmap;
+
+      if (mode == FUZZY)
+      {
+        str = xstrdup(str_orig);
+        mb_strtolower(str, str_orig);
+      }
+      else
+        str = str_orig;
+
+      start = str;
+      fc    = 0;
+      while (start)
+      {
+        /* Reset the bitmap */
+        /* """""""""""""""" */
+        memset(bm, '\0', mb);
+
+        if (memcmp(start, sb + o[last], l[last]) == 0)
+        {
+          /* As there is only on glyph in the search buffer, we can */
+          /* stop here.                                             */
+          /* """""""""""""""""""""""""""""""""""""""""""""""""""""" */
+          if (last == 0)
+          {
+            BIT_ON(bm, fc);
+            break;
+          }
+
+          /* If the search buffer contains more than one glyph, we need  */
+          /* to search the first combination which match the buffer in   */
+          /* the word.                                                   */
+          /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+          p = start;
+          j = last;
+
+          /* Proceed backwards from the position of last glyph of the search */
+          /* to check if all the previous glyphs ca be fond before in the    */
+          /* word. If not try to find the next position of this last glyph   */
+          /* in the word.                                                    */
+          /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+          bc = fc;
+          while (j > 0 && (p = mb_prev(str, p)) != NULL)
+          {
+            if (memcmp(p, sb + o[j - 1], l[j - 1]) == 0)
+            {
+              BIT_ON(bm, bc - 1);
+              j--;
+            }
+            else if (mode == SUBSTRING)
+              break;
+
+            bc--;
+          }
+
+          /* All the glyphs have been found */
+          /* """""""""""""""""""""""""""""" */
+          if (j == 0)
+          {
+            BIT_ON(bm, fc);
+            break;
+          }
+        }
+
+        fc++;
+        start = mb_next(start);
+      }
+      if (mode == FUZZY)
+        free(str);
+    }
+    if (mode == FUZZY)
+      free(sb);
+  }
+  else if (mode == PREFIX)
+  {
+    for (i = 0; i < matches_count; i++)
+    {
+      n   = matching_words_a[i];
+      len = word_a[n].len - daccess.flength;
+      bm  = word_a[n].bitmap;
+      mb  = word_a[n].mb - 1 - daccess.flength;
+
+      memset(bm, '\0', mb);
+      for (j = 0; j <= last; j++)
+        BIT_ON(bm, j);
+    }
+  }
+}
+
+/* ====================================================== */
+/* Find the next word index in the list of matching words */
+/* returns -1 of not found.                               */
+/* ====================================================== */
+int
+find_next_matching_word(int * array, int nb, int value)
+{
+  int left = 0, right = nb, middle;
+
+  if (nb > 0)
+  {
+    /* bisection search */
+    /* """""""""""""""" */
+    while (left < right)
+    {
+      middle = (left + right) / 2;
+
+      if (value < array[middle])
+        right = middle;
+      else
+        left = middle + 1;
+    }
+    if (left < nb - 1)
+      return array[left];
+    else
+    {
+      if (value > array[nb - 1])
+        return -1;
+      else
+        return array[nb - 1];
+    }
+  }
+  else
+    return -1;
+}
+
+/* ========================================================== */
+/* Find the previous word index in the list of matching words */
+/* returns -1 of not found.                                   */
+/* ========================================================== */
+int
+find_prev_matching_word(int * array, int nb, int value)
+{
+  int left = 0, right = nb, middle;
+
+  if (nb > 0)
+  {
+    /* bisection search */
+    /* """""""""""""""" */
+    while (left < right)
+    {
+      middle = (left + right) / 2;
+
+      if (array[middle] == value)
+      {
+        if (middle > 0)
+          return array[middle - 1];
+        else
+          return -1;
+      }
+
+      if (value < array[middle])
+        right = middle;
+      else
+        left = middle + 1;
+    }
+    if (left > 0)
+      return array[left - 1];
+    else
+      return -1;
+  }
+  else
+    return -1;
+}
+
+/* ================================================================ */
+/* Remove all traces of the matched words and redisplay the windows */
+/* ================================================================ */
+void
+clean_matches(search_data_t * search_data, size_t size)
+{
+  ll_t *     list;
+  ll_node_t *fuzzy_node, *node;
+  int        i;
+
+  /* Clean the list of lists datastrucutre containing the search levels */
+  /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+  if (tst_search_list)
+  {
+    fuzzy_node = tst_search_list->tail;
+    while (fuzzy_node)
+    {
+      list = (ll_t *)(fuzzy_node->data);
+
+      while (node = list->head)
+        ll_delete(list, node);
+
+      ll_delete(tst_search_list, tst_search_list->tail);
+
+      fuzzy_node = tst_search_list->tail;
+    }
+    if (tst_search_list->len == 0)
+      ll_append(tst_search_list, ll_new());
+  }
+
+  /* Clean the searchj buffer */
+  /* """""""""""""""""""""""" */
+  memset(search_data->buf, '\0', size - daccess.flength);
+  search_data->len    = 0;
+  search_data->mb_len = 0;
+
+  /* Clean the match flags and bitmaps */
+  /* """"""""""""""""""""""""""""""""" */
+  for (i = 0; i < matches_count; i++)
+  {
+    int n                 = matching_words_a[i];
+    word_a[n].is_matching = 0;
+    memset(word_a[n].bitmap, '\0', word_a[n].mb - 1 - daccess.flength);
+  }
+
+  matches_count = 0;
 }
 
 /* ************************** */
@@ -2299,7 +2692,7 @@ my_stricmp(const char * str1, const char * str2)
 /*                      regular expression if the filter is EXCLUDE_FILTER  */
 /* ======================================================================== */
 static void
-parse_regex_selector_part(char * str, int filter, ll_t ** inc_regex_list,
+parse_regex_selector_part(char * str, filters_t filter, ll_t ** inc_regex_list,
                           ll_t ** exc_regex_list)
 {
   regex_t * regex;
@@ -2352,7 +2745,7 @@ parse_regex_selector_part(char * str, int filter, ll_t ** inc_regex_list,
 /*                         be excluded.                                  */
 /* ===================================================================== */
 static void
-parse_selectors(char * str, int * filter, char * unparsed,
+parse_selectors(char * str, filters_t * filter, char * unparsed,
                 ll_t ** inc_interval_list, ll_t ** inc_regex_list,
                 ll_t ** exc_interval_list, ll_t ** exc_regex_list,
                 langinfo_t * langinfo)
@@ -2360,8 +2753,8 @@ parse_selectors(char * str, int * filter, char * unparsed,
   char         mark; /* Value to set */
   char         c;
   int          start = 1;     /* column string offset in the parsed string */
-  int          first, second; /* range starting and ending values */
-  char *       ptr;           /* pointer to the remaining string to parse */
+  int          first, second; /* range starting and ending values          */
+  char *       ptr;           /* pointer to the remaining string to parse  */
   interval_t * interval;
 
   /* Replace the UTF-8 ascii representation in the selector by */
@@ -2849,7 +3242,7 @@ replace(char * to_match, sed_t * sed)
   size_t match_nb = 0;   /* number of matches in the original string */
   size_t sub_nb   = 0;   /* number of remembered matches in the      *
                           * original sting                           */
-  size_t target_len = 0; /* length of the resulting string */
+  size_t target_len = 0; /* length of the resulting string           */
   size_t subs_max   = 0;
 
   if (*to_match == '\0')
@@ -2867,10 +3260,10 @@ replace(char * to_match, sed_t * sed)
   while (1)
   {
     int    i = 0;
-    size_t match;       /* current match index */
-    size_t index   = 0; /* current char index in the original string */
+    size_t match;       /* current match index                        */
+    size_t index   = 0; /* current char index in the original string  */
     int    nomatch = 0; /* equals to 1 when there is no more matching */
-    char * exp_repl;    /* expanded replacement string */
+    char * exp_repl;    /* expanded replacement string                */
 
     if (*p == '\0')
       nomatch = 1;
@@ -3088,7 +3481,7 @@ mb_interpret(char * s, langinfo_t * langinfo)
           }
 
           /* Does they form a valid UTF-8 char? */
-          /* ''''''''''''''''''''''''''''''''' */
+          /* '''''''''''''''''''''''''''''''''' */
           if (langinfo->utf8 && mb_validate(tmp, utf8_ascii_len / 2))
           {
             /* Put them back in the original string and move */
@@ -3554,9 +3947,124 @@ tst_traverse(tst_node_t * p, int (*callback)(void *), int first_call)
   return !!rc;
 }
 
-/* ============================================ */
-/* Search a complete string in the Ternary tree */
-/* ============================================ */
+/* ================================================================ */
+/* Callback to add a word index in the sorted list of matched words */
+/* ================================================================ */
+static int
+set_matching_flag(void * elem)
+{
+  ll_t * list = (ll_t *)elem;
+
+  ll_node_t * node = list->head;
+
+  while (node)
+  {
+    int pos;
+
+    pos = *(int *)(node->data);
+    if (word_a[pos].is_selectable)
+      word_a[pos].is_matching = 1;
+
+    insert_sorted(&matching_words_a, &matching_words_a_size, &matches_count,
+                  pos);
+
+    node = node->next;
+  }
+  return 1;
+}
+
+/* ======================================================================= */
+/* Traverse the word tst looking for a wchar and build a list of pointers  */
+/* containing all the sub-tst * nodes after these node potentially leading */
+/* to words containing the next wchar os the search string                 */
+/* ======================================================================= */
+static int
+tst_substring_traverse(tst_node_t * p, int (*callback)(void *), int first_call,
+                       wchar_t w)
+{
+  static int rc;
+
+  if (first_call)
+    rc = 0;
+
+  if (!p)
+    return 0;
+
+  if (p->splitchar == w)
+  {
+    ll_node_t * node;
+    ll_t *      list;
+
+    node = tst_search_list->tail;
+    list = (ll_t *)(node->data);
+
+    if (p->eqkid)
+      ll_append(list, p->eqkid);
+
+    rc = 1;
+  }
+
+  tst_substring_traverse(p->lokid, callback, 0, w);
+  if (p->splitchar != L'\0')
+    tst_substring_traverse(p->eqkid, callback, 0, w);
+  else if (callback != NULL)
+    rc += (*callback)(p->data);
+  tst_substring_traverse(p->hikid, callback, 0, w);
+
+  return !!rc;
+}
+
+/* ======================================================================= */
+/* Traverse the word tst looking for a wchar and build a list of pointers  */
+/* containing all the sub-tst * nodes after these node potentially leading */
+/* to words containing the next wchar os the search string                 */
+/* ======================================================================= */
+static int
+tst_fuzzy_traverse(tst_node_t * p, int (*callback)(void *), int first_call,
+                   wchar_t w)
+{
+  static int rc;
+  wchar_t    w1s[2];
+  wchar_t    w2s[2];
+
+  w1s[1] = w2s[1] = L'\0';
+
+  if (first_call)
+    rc = 0;
+
+  if (!p)
+    return 0;
+
+  w1s[0] = p->splitchar;
+  w2s[0] = w;
+
+  if (wcscasecmp(w1s, w2s) == 0)
+  {
+    ll_node_t * node;
+    ll_t *      list;
+
+    node = tst_search_list->tail;
+    list = (ll_t *)(node->data);
+
+    if (p->eqkid)
+      ll_append(list, p->eqkid);
+
+    rc += 1;
+  }
+
+  tst_fuzzy_traverse(p->lokid, callback, 0, w);
+  if (p->splitchar != L'\0')
+    tst_fuzzy_traverse(p->eqkid, callback, 0, w);
+  else if (callback != NULL)
+    rc += (*callback)(p->data);
+  tst_fuzzy_traverse(p->hikid, callback, 0, w);
+
+  return !!rc;
+}
+
+/* =================================================================== */
+/* Search a complete string in a Ternary tree staring from a root node */
+/* =================================================================== */
 static void *
 tst_search(tst_node_t * root, wchar_t * w)
 {
@@ -3619,18 +4127,13 @@ tst_prefix_search(tst_node_t * root, wchar_t * w, int (*callback)(void *))
 /* ======================================================================= */
 /* Callback function used by tst_traverse                                  */
 /* Iterate the linked list attached to the string containing the index of  */
-/* the words in the input flow. Each page number is then used to determine */
-/* the lower page greater than the cursor position                         */
-/* ----------------------------------------------------------------------- */
-/* Require new_current to be set to count-1 at start                       */
-/* Update new_current to the smallest greater position than current        */
+/* the words in the input flow. Each page number is then added in a sorted */
+/* array avoiding duplications keeping the array sorted.                   */
+/* Mark the identified words as a matching word.                           */
 /* ======================================================================= */
 static int
 tst_cb(void * elem)
 {
-  size_t n  = 0;
-  int    rc = 0;
-
   /* The data attached to the string in the tst is a linked list of position */
   /* of the string in the input flow, This list is naturally sorted          */
   /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
@@ -3638,35 +4141,19 @@ tst_cb(void * elem)
 
   ll_node_t * node = list->head;
 
-  while (n++ < list->len)
+  while (node)
   {
     int pos;
 
     pos = *(int *)(node->data);
 
-    /* We already are at the last word, report the finding */
-    /* """"""""""""""""""""""""""""""""""""""""""""""""""" */
-    if (pos == count - 1)
-      return 1;
-
-    /* Only consider the indexes above the current cursor position */
-    /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-    if (pos > current)
-    {
-      /* As the future new current index has been set to the highest possible */
-      /* value, each new possible position can only improve the estimation    */
-      /* we set rc to 1 to mark that                                          */
-      /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-      if (pos < new_current)
-      {
-        new_current = pos;
-        rc          = 1;
-      }
-    }
+    word_a[pos].is_matching = 1;
+    insert_sorted(&matching_words_a, &matching_words_a_size, &matches_count,
+                  pos);
 
     node = node->next;
   }
-  return rc;
+  return 1;
 }
 
 /* ======================================================================= */
@@ -3698,6 +4185,10 @@ tst_cb_cli(void * elem)
     int pos;
 
     pos = *(int *)(node->data);
+
+    word_a[pos].is_matching = 1;
+    insert_sorted(&matching_words_a, &matching_words_a_size, &matches_count,
+                  pos);
 
     /* We already are at the last word, report the finding */
     /* """"""""""""""""""""""""""""""""""""""""""""""""""" */
@@ -3845,7 +4336,7 @@ get_bytes(FILE * input, char * mb_buffer, ll_t * word_delims_list,
 /* Expand the string str by replacing all its embedded special characters by */
 /* their corresponding escape sequence                                       */
 /* dest must be long enough to contain the expanded string                   */
-/* ==========================================================================*/
+/* ========================================================================= */
 static int
 expand(char * src, char * dest, langinfo_t * langinfo, toggle_t * toggle)
 {
@@ -4208,10 +4699,7 @@ set_background_color(term_t * term, int color)
 static void
 left_margin_putp(char * s, term_t * term, win_t * win)
 {
-  if (win->shift_attr.is_set)
-    apply_txt_attr(term, win->shift_attr);
-  else if (term->has_bold)
-    tputs(TPARM1(enter_bold_mode), 1, outch);
+  apply_attr(term, win->shift_attr);
 
   /* We won't print this symbol when not in column mode */
   /* """""""""""""""""""""""""""""""""""""""""""""""""" */
@@ -4228,10 +4716,7 @@ static void
 right_margin_putp(char * s1, char * s2, langinfo_t * langinfo, term_t * term,
                   win_t * win, int line, int offset)
 {
-  if (win->bar_attr.is_set)
-    apply_txt_attr(term, win->bar_attr);
-  else if (term->has_bold)
-    tputs(TPARM1(enter_bold_mode), 1, outch);
+  apply_attr(term, win->bar_attr);
 
   if (term->has_hpa)
     tputs(TPARM2(column_address, offset + win->max_width + 1), 1, outch);
@@ -4380,7 +4865,7 @@ set_win_start_end(win_t * win, int current, int last)
 /* potentially when the search function is used.                             */
 /* ========================================================================= */
 static int
-build_metadata(word_t * word_a, term_t * term, int count, win_t * win)
+build_metadata(term_t * term, int count, win_t * win)
 {
   int    i = 0;
   size_t word_len;
@@ -4492,6 +4977,76 @@ build_metadata(word_t * word_a, term_t * term, int count, win_t * win)
   return last;
 }
 
+/* ================================================================== */
+/* helper function used by disp_word to print a word highlighting the */
+/* searched part of the word.                                         */
+/* ================================================================== */
+void
+disp_matching_word(int pos, win_t * win, term_t * term, int is_matching)
+{
+  int    i;
+  int    att_set = 0;
+  char * p       = word_a[pos].str + daccess.flength;
+  char * np      = p;
+
+  /* Set the search cursor attribute */
+  /* """"""""""""""""""""""""""""""" */
+  tputs(TPARM1(exit_attribute_mode), 1, outch);
+  if (is_matching)
+    apply_attr(term, win->match_field_attr);
+  else
+    apply_attr(term, win->search_field_attr);
+
+  if (word_a[pos].is_tagged)
+    apply_attr(term, win->tag_attr);
+
+  for (i = 0; i < word_a[pos].mb - 1 - daccess.flength; i++)
+  {
+    if (BIT_ISSET(word_a[pos].bitmap, i))
+    {
+      if (!att_set)
+      {
+        att_set = 1;
+
+        /* Set the buffer display attribute */
+        /* """""""""""""""""""""""""""""""" */
+        tputs(TPARM1(exit_attribute_mode), 1, outch);
+        if (is_matching)
+          apply_attr(term, win->match_text_attr);
+        else
+          apply_attr(term, win->search_text_attr);
+
+        if (word_a[pos].is_tagged)
+          apply_attr(term, win->tag_attr);
+      }
+    }
+    else
+    {
+      if (att_set)
+      {
+        att_set = 0;
+
+        /* Set the search cursor attribute */
+        /* """"""""""""""""""""""""""""""" */
+        tputs(TPARM1(exit_attribute_mode), 1, outch);
+        if (is_matching)
+          apply_attr(term, win->match_field_attr);
+        else
+          apply_attr(term, win->search_field_attr);
+
+        if (word_a[pos].is_tagged)
+          apply_attr(term, win->tag_attr);
+      }
+    }
+    np = mb_next(p);
+    if (np == NULL)
+      fputs(p, stdout);
+    else
+      printf("%.*s", np - p, p);
+    p = np;
+  }
+}
+
 /* ====================================================================== */
 /* Display a word in, the windows. Manages the following different cases: */
 /* - Search mode display                                                  */
@@ -4500,17 +5055,18 @@ build_metadata(word_t * word_a, term_t * term, int count, win_t * win)
 /* - Color or mono display                                                */
 /* ====================================================================== */
 static void
-disp_word(word_t * word_a, int pos, int search_mode, char * buffer,
+disp_word(int pos, search_mode_t search_mode, search_data_t * search_data,
           term_t * term, win_t * win, char * tmp_word)
 {
-  int       s = word_a[pos].start;
-  int       e = word_a[pos].end;
-  int       p;
-  wchar_t * w;
+  int s = word_a[pos].start;
+  int e = word_a[pos].end;
+  int p;
+
+  char * buffer = search_data->buf;
 
   if (pos == current)
   {
-    if (search_mode)
+    if (search_mode != NONE)
     {
       size_t word_len;
 
@@ -4527,15 +5083,7 @@ disp_word(word_t * word_a, int pos, int search_mode, char * buffer,
       {
         /* Set the direct access number attribute */
         /* """""""""""""""""""""""""""""""""""""" */
-        if (win->daccess_attr.is_set)
-          apply_txt_attr(term, win->daccess_attr);
-        else
-        {
-          if (term->has_bold)
-            tputs(TPARM1(enter_bold_mode), 1, outch);
-          else if (term->has_standout)
-            tputs(TPARM1(enter_standout_mode), 1, outch);
-        }
+        apply_attr(term, win->daccess_attr);
 
         /* And print it */
         /* """""""""""" */
@@ -4555,17 +5103,7 @@ disp_word(word_t * word_a, int pos, int search_mode, char * buffer,
 
       /* Set the search cursor attribute */
       /* """"""""""""""""""""""""""""""" */
-      if (win->search_field_attr.is_set)
-        apply_txt_attr(term, win->search_field_attr);
-      else
-      {
-        if (term->has_underline)
-          tputs(TPARM1(enter_underline_mode), 1, outch);
-        if (term->has_reverse)
-          tputs(TPARM1(enter_reverse_mode), 1, outch);
-        else if (term->has_standout)
-          tputs(TPARM1(enter_standout_mode), 1, outch);
-      }
+      apply_attr(term, win->search_field_attr);
 
       /* Print and overwrite the beginning of the word with the search */
       /* buffer content if it is not empty                             */
@@ -4576,33 +5114,20 @@ disp_word(word_t * word_a, int pos, int search_mode, char * buffer,
       {
         int i = 0;
 
-        int buf_width;
-
-        /* Calculate the space taken by the buffer on screen */
-        /* """"""""""""""""""""""""""""""""""""""""""""""""" */
-        buf_width = wcswidth((w = mb_strtowcs(buffer)),
-                             mbstowcs(NULL, buffer, 0));
-        free(w);
-
         /* Put the cursor at the beginning of the word */
         /* """"""""""""""""""""""""""""""""""""""""""" */
         for (i = 0; i < e - s + 1 - daccess.flength; i++)
           tputs(TPARM1(cursor_left), 1, outch);
 
-        /* Set the buffer display attribute */
-        /* """""""""""""""""""""""""""""""" */
-        tputs(TPARM1(exit_attribute_mode), 1, outch);
-        if (win->search_text_attr.is_set)
-          apply_txt_attr(term, win->search_text_attr);
-        else if (term->has_bold)
-          tputs(TPARM1(enter_bold_mode), 1, outch);
+        {
+          tputs(TPARM1(exit_attribute_mode), 1, outch);
 
-        fputs(buffer, stdout);
+          /* Set the search cursor attribute */
+          /* """"""""""""""""""""""""""""""" */
+          apply_attr(term, win->search_field_attr);
 
-        /* Put back the cursor after the word */
-        /* """""""""""""""""""""""""""""""""" */
-        for (i = 0; i < e - s - buf_width + 1 - daccess.flength; i++)
-          tputs(TPARM1(cursor_right), 1, outch);
+          disp_matching_word(pos, win, term, 0);
+        }
       }
     }
     else
@@ -4623,15 +5148,7 @@ disp_word(word_t * word_a, int pos, int search_mode, char * buffer,
         }
         else
         {
-          if (win->daccess_attr.is_set)
-            apply_txt_attr(term, win->daccess_attr);
-          else
-          {
-            if (term->has_bold)
-              tputs(TPARM1(enter_bold_mode), 1, outch);
-            else if (term->has_standout)
-              tputs(TPARM1(enter_standout_mode), 1, outch);
-          }
+          apply_attr(term, win->daccess_attr);
 
           /* Print the non significant part of the word */
           /* """""""""""""""""""""""""""""""""""""""""" */
@@ -4645,46 +5162,10 @@ disp_word(word_t * word_a, int pos, int search_mode, char * buffer,
 
       /* If we are not in search mode, display a normal cursor */
       /* """"""""""""""""""""""""""""""""""""""""""""""""""""" */
-      if (win->cursor_attr.is_set && win->cursor_on_tag_attr.is_set)
-      {
-        if (word_a[pos].is_tagged)
-          apply_txt_attr(term, win->cursor_on_tag_attr);
-        else
-          apply_txt_attr(term, win->cursor_attr);
-      }
-      else if (win->cursor_attr.is_set)
-      {
-        apply_txt_attr(term, win->cursor_attr);
-        if (word_a[pos].is_tagged)
-        {
-          if (term->has_underline)
-            tputs(TPARM1(enter_underline_mode), 1, outch);
-        }
-      }
-      else if (win->cursor_on_tag_attr.is_set)
-      {
-        if (word_a[pos].is_tagged)
-          apply_txt_attr(term, win->cursor_on_tag_attr);
-        else
-        {
-          if (term->has_reverse)
-            tputs(TPARM1(enter_reverse_mode), 1, outch);
-          else if (term->has_standout)
-            tputs(TPARM1(enter_standout_mode), 1, outch);
-        }
-      }
+      if (word_a[pos].is_tagged)
+        apply_attr(term, win->cursor_on_tag_attr);
       else
-      {
-        if (word_a[pos].is_tagged)
-        {
-          if (term->has_underline)
-            tputs(TPARM1(enter_underline_mode), 1, outch);
-        }
-        if (term->has_reverse)
-          tputs(TPARM1(enter_reverse_mode), 1, outch);
-        else if (term->has_standout)
-          tputs(TPARM1(enter_standout_mode), 1, outch);
-      }
+        apply_attr(term, win->cursor_attr);
 
       mb_strprefix(tmp_word, word_a[pos].str, (int)word_a[pos].mb - 1, &p);
       fputs(tmp_word + daccess.flength, stdout);
@@ -4701,15 +5182,7 @@ disp_word(word_t * word_a, int pos, int search_mode, char * buffer,
     /* """"""""""""""""""""""""""""""""""""""""""""" */
     if (word_a[pos].is_numbered)
     {
-      if (win->daccess_attr.is_set)
-        apply_txt_attr(term, win->daccess_attr);
-      else
-      {
-        if (term->has_bold)
-          tputs(TPARM1(enter_bold_mode), 1, outch);
-        else if (term->has_standout)
-          tputs(TPARM1(enter_standout_mode), 1, outch);
-      }
+      apply_attr(term, win->daccess_attr);
 
       fputs(daccess.left, stdout);
       printf("%.*s", daccess.length, tmp_word + 1);
@@ -4732,57 +5205,29 @@ disp_word(word_t * word_a, int pos, int search_mode, char * buffer,
     }
 
     if (!word_a[pos].is_selectable)
-    {
-      if (win->exclude_attr.is_set)
-        apply_txt_attr(term, win->exclude_attr);
-      else
-      {
-        if (term->has_bold)
-          tputs(TPARM1(enter_bold_mode), 1, outch);
-        else if (term->has_standout)
-          tputs(TPARM1(enter_standout_mode), 1, outch);
-        else if (term->has_underline)
-          tputs(TPARM1(enter_underline_mode), 1, outch);
-      }
-    }
+      apply_attr(term, win->exclude_attr);
     else if (word_a[pos].special_level > 0)
     {
       int level = word_a[pos].special_level - 1;
 
-      if (win->special_attr[level].is_set)
-        apply_txt_attr(term, win->special_attr[level]);
-      else
-      {
-        if (term->has_italic)
-          tputs(TPARM1(enter_italics_mode), 1, outch);
-        else if (term->has_bold)
-          tputs(TPARM1(enter_bold_mode), 1, outch);
-        else if (term->has_reverse)
-          tputs(TPARM1(enter_reverse_mode), 1, outch);
-      }
+      apply_attr(term, win->special_attr[level]);
     }
-    else if (word_a[pos].is_tagged)
-    {
-      if (win->tag_attr.is_set)
-        apply_txt_attr(term, win->tag_attr);
-      else
-      {
-        if (term->has_underline)
-          tputs(TPARM1(enter_underline_mode), 1, outch);
-        else if (term->has_standout)
-          tputs(TPARM1(enter_standout_mode), 1, outch);
-        else if (term->has_reverse)
-          tputs(TPARM1(enter_reverse_mode), 1, outch);
-      }
-    }
-    else if (win->include_attr.is_set)
-      apply_txt_attr(term, win->include_attr);
-
-    if ((daccess.length > 0 && daccess.padding == 'a')
-        || word_a[pos].is_numbered)
-      fputs(tmp_word + daccess.flength, stdout);
     else
-      fputs(tmp_word, stdout);
+      apply_attr(term, win->include_attr);
+
+    if (word_a[pos].is_matching)
+      disp_matching_word(pos, win, term, 1);
+    else
+    {
+      if (word_a[pos].is_tagged)
+        apply_attr(term, win->tag_attr);
+
+      if ((daccess.length > 0 && daccess.padding == 'a')
+          || word_a[pos].is_numbered)
+        fputs(tmp_word + daccess.flength, stdout);
+      else
+        fputs(tmp_word, stdout);
+    }
 
     tputs(TPARM1(exit_attribute_mode), 1, outch);
   }
@@ -4879,9 +5324,9 @@ disp_message(ll_t * message_lines_list, int message_max_width,
 /* Display the selection window */
 /* ============================ */
 static int
-disp_lines(word_t * word_a, win_t * win, toggle_t * toggle, int current,
-           int count, int search_mode, char * search_buf, term_t * term,
-           int last_line, char * tmp_word, langinfo_t * langinfo)
+disp_lines(win_t * win, toggle_t * toggle, int current, int count,
+           search_mode_t search_mode, search_data_t * search_data,
+           term_t * term, int last_line, char * tmp_word, langinfo_t * langinfo)
 {
   int  lines_disp;
   int  i;
@@ -4955,41 +5400,21 @@ disp_lines(word_t * word_a, win_t * win, toggle_t * toggle, int current,
     if (word_a[i].start >= win->first_column
         && word_a[i].end < len + win->first_column)
     {
-      disp_word(word_a, i, search_mode, search_buf, term, win, tmp_word);
+      disp_word(i, search_mode, search_data, term, win, tmp_word);
 
       /* If there are more element to be displayed after the right margin */
       /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
       if ((win->col_mode || win->line_mode) && i < count - 1
           && word_a[i + 1].end >= len + win->first_column)
       {
-        if (win->shift_attr.is_set)
-        {
-          apply_txt_attr(term, win->shift_attr);
+        apply_attr(term, win->shift_attr);
 
-          if (langinfo->utf8)
-            fputs(shift_right_sym, stdout);
-          else
-            fputc('>', stdout);
-
-          tputs(TPARM1(exit_attribute_mode), 1, outch);
-        }
-        else if (term->has_bold)
-        {
-          tputs(TPARM1(enter_bold_mode), 1, outch);
-          if (langinfo->utf8)
-            fputs(shift_right_sym, stdout);
-          else
-            fputc('>', stdout);
-
-          tputs(TPARM1(exit_attribute_mode), 1, outch);
-        }
+        if (langinfo->utf8)
+          fputs(shift_right_sym, stdout);
         else
-        {
-          if (langinfo->utf8)
-            fputs(shift_right_sym, stdout);
-          else
-            fputc('>', stdout);
-        }
+          fputc('>', stdout);
+
+        tputs(TPARM1(exit_attribute_mode), 1, outch);
       }
 
       /* If we want to display the gutter */
@@ -5187,17 +5612,11 @@ sig_handler(int s)
       if (help_timer > 0)
         help_timer--;
 
-      if (search_timer > 0)
-        search_timer--;
-
       if (daccess_timer > 0)
         daccess_timer--;
 
       if (help_timer == 0 && help_mode)
         got_help_alrm = 1;
-
-      if (search_timer == 0 && search_mode)
-        got_search_alrm = 1;
 
       if (daccess_timer == 0)
         got_daccess_alrm = 1;
@@ -5214,41 +5633,6 @@ sig_handler(int s)
 
       break;
   }
-}
-
-/* =========================================================== */
-/* Try to find the next word matching the prefix in search_buf */
-/* return 1 if one ha been found, 0 otherwise                  */
-/* =========================================================== */
-static int
-search_next(tst_node_t * tst, word_t * word_a, char * search_buf,
-            int after_only)
-{
-  wchar_t * w;
-  int       found = 0;
-
-  /* Consider a word under the cursor found if it matches the search prefix. */
-  /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-  if (!after_only)
-    if (memcmp(word_a[current].str + daccess.flength, search_buf,
-               strlen(search_buf))
-        == 0)
-      return 1;
-
-  /* Search the next matching word in the ternary search tree */
-  /* """""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-  w           = mb_strtowcs(search_buf);
-  new_current = count - 1;
-  if (NULL == tst_prefix_search(tst, w, tst_cb))
-    new_current = current;
-  else
-  {
-    current = new_current;
-    found   = 1;
-  }
-  free(w);
-
-  return found;
 }
 
 /* egetopt.c -- Extended 'getopt'.
@@ -5495,7 +5879,7 @@ delims_cmp(const void * a, const void * b)
 /* Alter win->first_column                                   */
 /* ========================================================= */
 static void
-set_new_first_column(win_t * win, term_t * term, word_t * word_a)
+set_new_first_column(win_t * win, term_t * term)
 {
   int pos;
 
@@ -5672,28 +6056,28 @@ main(int argc, char * argv[])
       { "MS-ANSI", 8 },
       { NULL, 0 } };
 
-  char * message = NULL; /* message to be displayed above the selection *
-                          * window                                      */
-  ll_t * message_lines_list = NULL; /* list of the lines in the *
-                                     * message to be displayed  */
-  int message_max_width = 0; /* total width of the message (longest line) */
-  int message_max_len   = 0; /* max number of bytes taken by a message    *
-                              * line                                      */
+  char * message = NULL; /* message to be displayed above the selection      *
+                          * window                                           */
+  ll_t * message_lines_list = NULL; /* list of the lines in the message to   *
+                                     * be displayed                          */
+  int message_max_width = 0; /* total width of the message (longest line)    */
+  int message_max_len   = 0; /* max number of bytes taken by a message       *
+                              * line                                         */
 
-  FILE * input_file; /* The name of the file passed as argument if any */
+  FILE * input_file; /* The name of the file passed as argument if any       */
 
-  int index; /* generic counter */
+  int index; /* generic counter                                              */
 
   int    daccess_index        = 1;
   char * daccess_locator_type = NULL;
 
   char *  daccess_np = NULL;
-  regex_t daccess_np_re; /* variable to store the compiled *
-                          * direct access pattern (-N) RE  */
+  regex_t daccess_np_re; /* variable to store the compiled direct access     *
+                          * pattern (-N) RE                                  */
 
   char *  daccess_up = NULL;
-  regex_t daccess_up_re; /* variable to store the compiled *
-                          * direct access pattern (-U) RE  */
+  regex_t daccess_up_re; /* variable to store the compiled direct access     *
+                          * pattern (-U) RE                                  */
 
   char * include_pattern     = NULL;
   char * exclude_pattern     = NULL;
@@ -5702,27 +6086,27 @@ main(int argc, char * argv[])
                                     * the words not matched will be included *
                                     * (value 1) or excluded (value 0) by     *
                                     * default.                               */
-  regex_t include_re; /* variable to store the compiled include (-i) REs */
-  regex_t exclude_re; /* variable to store the compiled exclude (-e) REs */
+  regex_t include_re; /* variable to store the compiled include (-i) REs     */
+  regex_t exclude_re; /* variable to store the compiled exclude (-e) REs     */
 
-  ll_t * sed_list = NULL;         /* List of sed like string representation *
-                                   * of regex given after (-S)              */
-  ll_t * include_sed_list = NULL; /* idem for -I                            */
-  ll_t * exclude_sed_list = NULL; /* idem for -E                            */
+  ll_t * sed_list = NULL;         /* List of sed like string representation  *
+                                   * of regex given after (-S)               */
+  ll_t * include_sed_list = NULL; /* idem for -I */
+  ll_t * exclude_sed_list = NULL; /* idem for -E */
 
-  ll_t * inc_col_interval_list = NULL; /* list of included or           */
-  ll_t * exc_col_interval_list = NULL; /* excluded numerical intervals */
-  ll_t * inc_row_interval_list = NULL; /* for lines and columns         */
+  ll_t * inc_col_interval_list = NULL; /* list of included or                */
+  ll_t * exc_col_interval_list = NULL; /* excluded numerical intervals       */
+  ll_t * inc_row_interval_list = NULL; /* for lines and columns              */
   ll_t * exc_row_interval_list = NULL;
 
-  ll_t * inc_col_regex_list = NULL; /* same for lines and columns specified */
-  ll_t * exc_col_regex_list = NULL; /* by regular expressions               */
+  ll_t * inc_col_regex_list = NULL; /* same for lines and columns specified  */
+  ll_t * exc_col_regex_list = NULL; /* by regular expressions                */
   ll_t * inc_row_regex_list = NULL;
   ll_t * exc_row_regex_list = NULL;
 
-  int rows_filter_type = UNKNOWN_FILTER;
+  filters_t rows_filter_type = UNKNOWN_FILTER;
 
-  char *  first_word_pattern = NULL; /* used by -A/-Z */
+  char *  first_word_pattern = NULL; /* used by -A/-Z                        */
   char *  last_word_pattern  = NULL;
   regex_t first_word_re;
   regex_t last_word_re;
@@ -5730,10 +6114,10 @@ main(int argc, char * argv[])
   char *  special_pattern[5] = { NULL, NULL, NULL, NULL, NULL }; /* -1 .. -5 */
   regex_t special_re[5];
 
-  int include_visual_only = 0; /* If set to 1, the original word which is *
-                                * read from stdin will be output even if  */
-  int exclude_visual_only = 0; /* its visual representation was modified  *
-                                * via -S/-I/-E                            */
+  int include_visual_only = 0; /* If set to 1, the original word which is    *
+                                * read from stdin will be output even if     */
+  int exclude_visual_only = 0; /* its visual representation was modified     *
+                                * via -S/-I/-E */
 
   ll_t * cols_selector_list = NULL;
   char * cols_selector      = NULL;
@@ -5743,100 +6127,100 @@ main(int argc, char * argv[])
 
   int message_lines;
 
-  int wi; /* word index */
+  int wi; /* word index                                                      */
 
-  term_t term; /* Terminal structure */
+  term_t term; /* Terminal structure                                         */
 
-  tst_node_t * tst_word    = NULL; /* TST used by the search function      */
-  tst_node_t * tst_daccess = NULL; /* TST used by the direct access system */
+  tst_node_t * tst_word    = NULL; /* TST used by the search function        */
+  tst_node_t * tst_daccess = NULL; /* TST used by the direct access system   */
 
-  int    page;     /* Step for the vertical cursor moves  */
-  char * word;     /* Temporary variable to work on words */
-  char * tmp_word; /* Temporary variable able to contain  *
-                    * the beginning of the word to be     *
-                    * displayed                           */
+  int    page;     /* Step for the vertical cursor moves                     */
+  char * word;     /* Temporary variable to work on words                    */
+  char * tmp_word; /* Temporary variable able to contain  the beginning of   *
+                    * the word to be displayed                               */
 
-  int      last_line = 0; /* last logical line number (from 0) */
+  int      last_line = 0; /* last logical line number (from 0)               */
   int      opt;
   win_t    win;
-  limits_t limits; /* set of various limitations */
-  timers_t timers; /* timers contents */
-  toggle_t toggle; /* set of binary indicators */
-  word_t * word_a; /* Array containing words data (size: count) */
+  limits_t limits; /* set of various limitations                             */
+  timers_t timers; /* timers contents                                        */
+  misc_t   misc;   /* misc contents                                          */
+  toggle_t toggle; /* set of binary indicators                               */
 
-  int    old_fd1;    /* backups of the old stdout file descriptor */
-  FILE * old_stdout; /* The selected word will go there           */
+  int    old_fd1;    /* backups of the old stdout file descriptor            */
+  FILE * old_stdout; /* The selected word will go there                      */
 
-  int nl;     /* Number of lines displayed in the window   */
-  int offset; /* Used to correctly put the cursor at the   *
-               * start of the selection window, even after *
-               * a terminal vertical scroll                */
+  int nl;     /* Number of lines displayed in the window                     */
+  int offset; /* Used to correctly put the cursor at the start of the        *
+               * selection window, even after a terminal vertical scroll     */
 
-  int first_selectable; /* Index of the first selectable word in the *
-                         * input stream                              */
-  int last_selectable;  /* Index of the last selectable word in the  *
-                         * input stream                              */
+  int first_selectable; /* Index of the first selectable word in the input   *
+                         * stream                                            */
+  int last_selectable;  /* Index of the last selectable word in the input    *
+                         * stream                                            */
 
-  int s, e;     /* word variable to contain the starting and *
-                 * ending terminal position of a word        */
-  int min_size; /* Minimum screen width of a column in       *
-                 * tabular mode                              */
+  int s, e;     /* word variable to contain the starting and ending          *
+                 * terminal position of a word                               */
+  int min_size; /* Minimum screen width of a column in tabular mode          */
 
-  int tab_max_size;      /* Maximum screen width of a column in  *
-                          * tabular mode                         */
-  int tab_real_max_size; /* Maximum size in bytes of a column in *
-                          * tabular mode                         */
+  int tab_max_size;      /* Maximum screen width of a column in tabular      *
+                          * mode                                             */
+  int tab_real_max_size; /* Maximum size in bytes of a column in tabular     *
+                          * mode                                             */
 
-  int * col_real_max_size = NULL; /* Array of maximum sizes (bytes) of each   *
-                                   * column in column mode                    */
-  int * col_max_size = NULL;      /* Array of maximum sizes of each column in *
-                                   * column mode                              */
+  int * col_real_max_size = NULL; /* Array of maximum sizes (bytes) of each  */
+                                  /* column in column mode                   */
+  int * col_max_size = NULL;      /* Array of maximum sizes of each column   */
+                                  /* in column mode                          */
 
-  size_t word_real_max_size = 0; /* size of the longer word after expansion */
-  int    cols_real_max_size = 0; /* Max real width of all columns used when *
-                                  * -w and -c are both set                  */
-  int cols_max_size = 0;         /* Same as above for the columns widths    */
+  size_t word_real_max_size = 0; /* size of the longer word after expansion  */
+  int    cols_real_max_size = 0; /* Max real width of all columns used when  *
+                                  * -w and -c are both set                   */
+  int cols_max_size = 0;         /* Same as above for the columns widths     */
 
-  int col_index;   /* Index of the current column when reading words, used in *
-                    * column mode                                             */
-  int cols_number; /* Number of columns in column mode */
+  int col_index;   /* Index of the current column when reading words, used   *
+                    * in column mode                                         */
+  int cols_number; /* Number of columns in column mode                       */
 
-  char * pre_selection_index = NULL;    /* pattern used to set the initial *
-                                         * cursor position                 */
-  unsigned char * buffer = xmalloc(16); /* Input buffer                    */
+  char * pre_selection_index = NULL;    /* pattern used to set the initial   *
+                                         * cursor position                   */
+  unsigned char * buffer = xmalloc(16); /* Input buffer                      */
 
-  char * search_buf = NULL; /* Search buffer                         */
-  size_t search_pos = 0;    /* Current position in the search buffer */
+  search_data_t search_data;
+  search_data.buf    = NULL; /* Search buffer                                */
+  search_data.len    = 0;    /* Current position in the search buffer        */
+  search_data.mb_len = 0;    /* Current position in the search buffer in     *
+                              * multibyte units                              */
 
-  struct sigaction sa; /* Signal structure */
+  struct sigaction sa; /* Signal structure                                   */
 
   char * iws = NULL, *ils = NULL;
   ll_t * word_delims_list   = NULL;
   ll_t * record_delims_list = NULL;
 
-  char mb_buffer[5]; /* buffer to store the bytes of a    *
-                      * multibyte character (4 chars max) */
+  char mb_buffer[5]; /* buffer to store the bytes of a multibyte character   *
+                      * (4 chars max)                                        */
   unsigned char is_last;
   char *        charset;
 
-  char * custom_ini_file = NULL; /* init file full path */
-  char * home_ini_file;          /* init file full path */
-  char * local_ini_file;         /* init file full path */
+  char * custom_ini_file = NULL; /* init file full path                      */
+  char * home_ini_file;          /* init file full path                      */
+  char * local_ini_file;         /* init file full path                      */
 
   charsetinfo_t * charset_ptr;
   langinfo_t      langinfo;
   int             is_supported_charset;
 
-  int line_count = 0; /* Only used when -R is selected */
+  int line_count = 0; /* Only used when -R is selected                       */
 
-  txt_attr_t init_attr;
+  attr_t init_attr;
 
-  ll_node_t * inc_interval_node = NULL; /* one node of this list          */
-  ll_node_t * exc_interval_node = NULL; /* one node of this list          */
+  ll_node_t * inc_interval_node = NULL; /* one node of this list             */
+  ll_node_t * exc_interval_node = NULL; /* one node of this list             */
 
-  interval_t * inc_interval;       /* the data in each node          */
-  interval_t * exc_interval;       /* the data in each node          */
-  int          row_def_selectable; /* default selectable value       */
+  interval_t * inc_interval;       /* the data in each node                  */
+  interval_t * exc_interval;       /* the data in each node                  */
+  int          row_def_selectable; /* default selectable value               */
 
   int line_selected_by_regex = 0;
   int line_excluded          = 0;
@@ -5873,6 +6257,8 @@ main(int argc, char * argv[])
   win.shift_attr         = init_attr;
   win.search_field_attr  = init_attr;
   win.search_text_attr   = init_attr;
+  win.match_field_attr   = init_attr;
+  win.match_text_attr    = init_attr;
   win.include_attr       = init_attr;
   win.exclude_attr       = init_attr;
   win.tag_attr           = init_attr;
@@ -5907,10 +6293,23 @@ main(int argc, char * argv[])
   toggle.autotag             = 0;
   toggle.pinable             = 0;
 
+  /* misc default values */
+  /* """"""""""""""""""" */
+  misc.default_search_method = NONE;
+
   /* direct access variable initialization */
   /* """"""""""""""""""""""""""""""""""""" */
   daccess_stack      = xcalloc(6, 1);
   daccess_stack_head = 0;
+
+  /* fuzzy variables initialization */
+  /* """""""""""""""""""""""""""""" */
+  tst_search_list = ll_new();
+  ll_append(tst_search_list, ll_new());
+
+  matching_words_a_size = 64;
+  matching_words_a      = xmalloc(matching_words_a_size * sizeof(int));
+  matches_count         = 0;
 
   /* Initialize the tag hit number which will permit to sort the */
   /* pinned words when displayed.                                */
@@ -5988,7 +6387,7 @@ main(int argc, char * argv[])
   timeout.remain        = 0;
   timeout.reached       = 0;
 
-  daccess.type       = DA_TYPE_NONE;
+  daccess.mode       = DA_TYPE_NONE;
   daccess.left       = xstrdup(" ");
   daccess.right      = xstrdup(")");
   daccess.alignment  = 'r';
@@ -6006,7 +6405,7 @@ main(int argc, char * argv[])
   /* """"""""""""""""""""""""""""" */
   while ((opt = egetopt(argc, argv,
                         "Vf:h?X:x:qdMba:i:e:S:I:E:A:Z:1:2:3:4:5:C:R:"
-                        "kclwrg%n:t%m:s:W:L:T%P%pN%U%FD:"))
+                        "kclwrg%n:t%m:s:W:L:T%P%pN%U%FD:/:"))
          != -1)
   {
     switch (opt)
@@ -6287,8 +6686,8 @@ main(int argc, char * argv[])
       case '5':
         if (optarg && *optarg != '-')
         {
-          int        count = 1;
-          txt_attr_t attr  = init_attr;
+          int    count = 1;
+          attr_t attr  = init_attr;
 
           special_pattern[opt - '1'] = xstrdup(optarg);
           mb_interpret(special_pattern[opt - '1'], &langinfo);
@@ -6302,7 +6701,7 @@ main(int argc, char * argv[])
 
             /* Colors must respect the format: <fg color>/<bg color> */
             /* """"""""""""""""""""""""""""""""""""""""""""""""""""" */
-            if (parse_txt_attr(argv[optind], &attr, term.colors))
+            if (parse_attr(argv[optind], &attr, term.colors))
             {
               win.special_attr[opt - '1'].is_set    = FORCED;
               win.special_attr[opt - '1'].fg        = attr.fg;
@@ -6332,8 +6731,8 @@ main(int argc, char * argv[])
           int offset; /* nb of chars to ship to find the attribute *
                        * representation (prefix size)              */
 
-          txt_attr_t   attr;
-          txt_attr_t * attr_to_set;
+          attr_t   attr;
+          attr_t * attr_to_set;
 
           /* Flags to check if an attribute is already set */
           /* """"""""""""""""""""""""""""""""""""""""""""" */
@@ -6344,19 +6743,23 @@ main(int argc, char * argv[])
           int shift_attr_set         = 0; /* hor. scrolling arrows           */
           int tag_attr_set           = 0; /* selected (tagged) words         */
           int cursor_on_tag_attr_set = 0; /* selected words under the cursor */
-          int sf_attr_set            = 0; /* search field color              */
+          int sf_attr_set            = 0; /* currently searched field color  */
           int st_attr_set            = 0; /* currently searched text color   */
-          int daccess_attr_set       = 0; /* currently searched text color   */
+          int mf_attr_set            = 0; /* matching word field color       */
+          int mt_attr_set            = 0; /* matching word text color        */
+          int daccess_attr_set       = 0; /* Direct access text color        */
 
-          /* Information relatives to the attributes to be searched and set */
-          /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+          /* Information relatives to the attributes to be searched and
+           * set */
+          /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+           */
           struct
           {
-            txt_attr_t * attr;
-            char *       msg;
-            int *        flag;
-            char *       prefix;
-            int          prefix_len;
+            attr_t * attr;
+            char *   msg;
+            int *    flag;
+            char *   prefix;
+            int      prefix_len;
           } attr_infos[] =
             { { &win.exclude_attr, "The exclude attribute is already set -- ",
                 &exc_attr_set, "e:", 2 },
@@ -6379,6 +6782,12 @@ main(int argc, char * argv[])
               { &win.search_text_attr,
                 "The search text attribute is already set -- ", &st_attr_set,
                 "st:", 3 },
+              { &win.match_field_attr,
+                "The matching word field attribute is already set -- ",
+                &mf_attr_set, "mf:", 3 },
+              { &win.match_text_attr,
+                "The matching word text attribute is already set -- ",
+                &mt_attr_set, "mt:", 3 },
               { &win.daccess_attr,
                 "The direct access tag attribute is already set -- ",
                 &daccess_attr_set, "da:", 3 },
@@ -6422,7 +6831,7 @@ main(int argc, char * argv[])
             /* Attributes must respect the format: */
             /* <fg color>/<bg color>,<styles>      */
             /* """"""""""""""""""""""""""""""""""" */
-            if (parse_txt_attr(argv[optind] + offset, &attr, term.colors))
+            if (parse_attr(argv[optind] + offset, &attr, term.colors))
             {
               attr_to_set->is_set    = FORCED;
               attr_to_set->fg        = attr.fg;
@@ -6450,14 +6859,14 @@ main(int argc, char * argv[])
         if (optarg && *optarg != '-')
         {
           if (strprefix("current", optarg))
-            timeout.type = CURRENT;
+            timeout.mode = CURRENT;
           else if (strprefix("quit", optarg))
-            timeout.type = QUIT;
+            timeout.mode = QUIT;
           else if (strprefix("word", optarg))
           {
             if (argv[optind] && *argv[optind] != '-')
             {
-              timeout.type = WORD;
+              timeout.mode = WORD;
               timeout_word = argv[optind];
               mb_interpret(timeout_word, &langinfo);
               optind++;
@@ -6578,7 +6987,9 @@ main(int argc, char * argv[])
                 free(w);
 
                 if (n > 1)
-                  TELL("A multi columns character is not allowed after l: -- ");
+                  TELL(
+                    "A multi columns character is not allowed "
+                    "after l: -- ");
                 break;
 
               case 'r': /* right char */
@@ -6594,7 +7005,9 @@ main(int argc, char * argv[])
                 free(w);
 
                 if (n > 1)
-                  TELL("A multi columns character is not allowed after r: -- ");
+                  TELL(
+                    "A multi columns character is not allowed "
+                    "after r: -- ");
                 break;
 
               case 'a': /* alignment */
@@ -6642,8 +7055,8 @@ main(int argc, char * argv[])
                   TELL("n suboption must be between 1 and 5 -- ");
                 break;
 
-              case 'i': /* Number of multibytes to ignore after the selector to
-                           extract */
+              case 'i': /* Number of multibytes to ignore after the
+                         * selector * to extract */
                 if (sscanf(argv[optind] + 2, "%d%n", &daccess.ignore, &pos)
                     != 1)
                   TELL("Bad format -- ");
@@ -6673,7 +7086,9 @@ main(int argc, char * argv[])
                 free(w);
 
                 if (n > 1)
-                  TELL("A multi columns separator is not allowed after d: -- ");
+                  TELL(
+                    "A multi columns separator is not allowed "
+                    "after d: -- ");
                 break;
 
               default:
@@ -6700,7 +7115,7 @@ main(int argc, char * argv[])
         if (daccess_np == NULL)
         {
           daccess_np = concat("(", optarg, ")", NULL);
-          daccess.type |= DA_TYPE_AUTO; /* auto */
+          daccess.mode |= DA_TYPE_AUTO; /* auto */
         }
         else
           daccess_np = concat(daccess_np, "|(", optarg, ")", NULL);
@@ -6719,7 +7134,7 @@ main(int argc, char * argv[])
         if (daccess_up == NULL)
         {
           daccess_up = concat("(", optarg, ")", NULL);
-          daccess.type |= DA_TYPE_AUTO; /* auto */
+          daccess.mode |= DA_TYPE_AUTO; /* auto */
         }
         else
           daccess_up = concat(daccess_up, "|(", optarg, ")", NULL);
@@ -6730,7 +7145,19 @@ main(int argc, char * argv[])
         break;
 
       case 'F':
-        daccess.type |= DA_TYPE_POS;
+        daccess.mode |= DA_TYPE_POS;
+
+        break;
+
+      case '/':
+        if (strprefix("prefix", optarg))
+          misc.default_search_method = PREFIX;
+        else if (strprefix("fuzzy", optarg))
+          misc.default_search_method = FUZZY;
+        else if (strprefix("substring", optarg))
+          misc.default_search_method = SUBSTRING;
+        else
+          TELL("Bad format -- ");
 
         break;
 
@@ -6867,6 +7294,8 @@ main(int argc, char * argv[])
     term.has_parm_right_cursor = (str == (char *)-1 || str == NULL) ? 0 : 1;
     str                        = tigetstr("bold");
     term.has_bold              = (str == (char *)-1 || str == NULL) ? 0 : 1;
+    str                        = tigetstr("dim");
+    term.has_dim               = (str == (char *)-1 || str == NULL) ? 0 : 1;
     str                        = tigetstr("rev");
     term.has_reverse           = (str == (char *)-1 || str == NULL) ? 0 : 1;
     str                        = tigetstr("smul");
@@ -6894,7 +7323,7 @@ main(int argc, char * argv[])
 
   if (custom_ini_file != NULL)
   {
-    if (ini_load(custom_ini_file, &win, &term, &limits, &timers, ini_cb))
+    if (ini_load(custom_ini_file, &win, &term, &limits, &timers, &misc, ini_cb))
       exit(EXIT_FAILURE);
   }
   else
@@ -6906,10 +7335,10 @@ main(int argc, char * argv[])
 
     /* Set the attributes from the configuration file if possible */
     /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-    if (ini_load(home_ini_file, &win, &term, &limits, &timers, ini_cb))
+    if (ini_load(home_ini_file, &win, &term, &limits, &timers, &misc, ini_cb))
       exit(EXIT_FAILURE);
 
-    if (ini_load(local_ini_file, &win, &term, &limits, &timers, ini_cb))
+    if (ini_load(local_ini_file, &win, &term, &limits, &timers, &misc, ini_cb))
       exit(EXIT_FAILURE);
 
     free(home_ini_file);
@@ -6918,11 +7347,45 @@ main(int argc, char * argv[])
 
   word_buffer = xcalloc(1, daccess.flength + limits.word_length + 1);
 
+  /* default_search_method is not set in the command line nor in a config */
+  /* file, set it to fuzzy.                                               */
+  /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+  if (misc.default_search_method == NONE)
+    misc.default_search_method = FUZZY;
+
   /* If some attributes were not set, set their default values */
   /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""" */
   if (term.colors > 7)
   {
     int def_attr[5] = { 1, 2, 3, 5, 6 };
+
+    if (!win.cursor_attr.is_set)
+    {
+      if (term.has_reverse)
+        win.cursor_attr.reverse = 1;
+      else if (term.has_standout)
+        win.cursor_attr.standout = 1;
+      else
+      {
+        win.cursor_attr.fg = 0;
+        win.cursor_attr.bg = 1;
+      }
+
+      win.cursor_attr.is_set = SET;
+    }
+
+    if (!win.cursor_on_tag_attr.is_set)
+    {
+      if (term.has_reverse)
+        win.cursor_on_tag_attr.reverse = 1;
+
+      if (term.has_underline)
+        win.cursor_on_tag_attr.underline = 1;
+      else
+        win.cursor_on_tag_attr.fg = 4;
+
+      win.cursor_on_tag_attr.is_set = SET;
+    }
 
     if (!win.bar_attr.is_set)
     {
@@ -6932,7 +7395,11 @@ main(int argc, char * argv[])
 
     if (!win.shift_attr.is_set)
     {
-      win.shift_attr.bold   = 1;
+      if (term.has_bold)
+        win.shift_attr.bold = 1;
+      else
+        win.shift_attr.fg = 4;
+
       win.shift_attr.is_set = SET;
     }
 
@@ -6945,14 +7412,59 @@ main(int argc, char * argv[])
 
     if (!win.search_text_attr.is_set)
     {
-      win.search_text_attr.reverse = 1;
-      win.search_text_attr.is_set  = SET;
+      win.search_text_attr.fg = 2;
+      win.search_text_attr.bg = 4;
+
+      if (term.has_bold)
+        win.search_text_attr.bold = 1;
+
+      win.search_text_attr.is_set = SET;
+    }
+
+    if (!win.match_field_attr.is_set)
+    {
+      if (term.has_bold)
+        win.match_field_attr.bold = 1;
+      else
+        win.match_field_attr.fg = 6;
+
+      win.match_field_attr.is_set = SET;
+    }
+
+    if (!win.match_text_attr.is_set)
+    {
+      win.match_text_attr.fg = 4;
+
+      if (term.has_bold)
+        win.match_text_attr.bold = 1;
+
+      win.match_text_attr.is_set = SET;
     }
 
     if (!win.exclude_attr.is_set)
     {
       win.exclude_attr.fg     = 3;
       win.exclude_attr.is_set = SET;
+    }
+
+    if (!win.tag_attr.is_set)
+    {
+      if (term.has_underline)
+        win.tag_attr.underline = 1;
+      else
+      {
+        win.tag_attr.fg = 0;
+        win.tag_attr.bg = 3;
+      }
+      win.tag_attr.is_set = SET;
+    }
+
+    if (!win.daccess_attr.is_set)
+    {
+      if (term.has_bold)
+        win.daccess_attr.bold = 1;
+
+      win.daccess_attr.is_set = SET;
     }
 
     for (index = 0; index < 5; index++)
@@ -6964,10 +7476,130 @@ main(int argc, char * argv[])
       }
     }
   }
+  else
+  {
+    if (!win.cursor_attr.is_set)
+    {
+      if (term.has_reverse)
+        win.cursor_attr.reverse = 1;
+
+      win.cursor_attr.is_set = SET;
+    }
+
+    if (!win.cursor_on_tag_attr.is_set)
+    {
+      if (term.has_reverse)
+        win.cursor_on_tag_attr.reverse = 1;
+
+      if (term.has_underline)
+        win.cursor_on_tag_attr.underline = 1;
+      else if (term.has_bold)
+        win.cursor_on_tag_attr.bold = 1;
+
+      win.cursor_on_tag_attr.is_set = SET;
+    }
+
+    if (!win.bar_attr.is_set)
+    {
+      if (term.has_bold)
+        win.bar_attr.bold = 1;
+
+      win.bar_attr.is_set = SET;
+    }
+
+    if (!win.shift_attr.is_set)
+    {
+      if (term.has_reverse)
+        win.shift_attr.reverse = 1;
+
+      win.shift_attr.is_set = SET;
+    }
+
+    if (!win.search_field_attr.is_set)
+    {
+      if (term.has_reverse)
+        win.search_field_attr.reverse = 1;
+
+      win.search_field_attr.is_set = SET;
+    }
+
+    if (!win.search_text_attr.is_set)
+    {
+      if (term.has_bold)
+        win.search_text_attr.bold = 1;
+
+      win.search_text_attr.is_set = SET;
+    }
+
+    if (!win.match_field_attr.is_set)
+    {
+      if (term.has_bold)
+        win.match_field_attr.bold = 1;
+      else if (term.has_reverse)
+        win.match_field_attr.reverse = 1;
+
+      win.match_field_attr.is_set = SET;
+    }
+
+    if (!win.match_text_attr.is_set)
+    {
+      if (term.has_reverse)
+        win.match_text_attr.reverse = 1;
+      else if (term.has_bold)
+        win.match_text_attr.bold = 1;
+
+      win.match_text_attr.is_set = SET;
+    }
+
+    if (!win.exclude_attr.is_set)
+    {
+      if (term.has_dim)
+        win.exclude_attr.dim = 1;
+      else if (term.has_italic)
+        win.exclude_attr.italic = 1;
+      else if (term.has_bold)
+        win.exclude_attr.bold = 1;
+
+      win.exclude_attr.is_set = SET;
+    }
+
+    if (!win.tag_attr.is_set)
+    {
+      if (term.has_underline)
+        win.tag_attr.underline = 1;
+      else if (term.has_standout)
+        win.tag_attr.standout = 1;
+      else if (term.has_reverse)
+        win.tag_attr.reverse = 1;
+
+      win.tag_attr.is_set = SET;
+    }
+
+    if (!win.daccess_attr.is_set)
+    {
+      if (term.has_bold)
+        win.daccess_attr.bold = 1;
+
+      win.daccess_attr.is_set = SET;
+    }
+
+    for (index = 0; index < 5; index++)
+    {
+      if (!win.special_attr[index].is_set)
+      {
+        if (term.has_bold)
+          win.special_attr[index].bold = 1;
+        else if (term.has_standout)
+          win.special_attr[index].standout = 1;
+
+        win.special_attr[index].is_set = SET;
+      }
+    }
+  }
 
   if (!quiet_timeout && timeout.initial_value > 0)
   {
-    switch (timeout.type)
+    switch (timeout.mode)
     {
       case QUIT:
         timeout_message = xstrdup(
@@ -7255,7 +7887,7 @@ main(int argc, char * argv[])
   if (rows_selector_list != NULL)
   {
     ll_node_t * node_selector = rows_selector_list->head;
-    int         filter_type;
+    filters_t   filter_type;
 
     rows_filter_type = UNKNOWN_FILTER;
     while (node_selector != NULL)
@@ -7289,7 +7921,7 @@ main(int argc, char * argv[])
   /* """""""""""""""""""""""""""""""""""""""" */
   if (cols_selector_list != NULL)
   {
-    int          filter_type, cols_filter_type;
+    filters_t    filter_type, cols_filter_type;
     interval_t * data;
     ll_node_t *  node;
     ll_node_t *  node_selector = cols_selector_list->head;
@@ -7608,10 +8240,11 @@ main(int argc, char * argv[])
       }
     }
 
-    /* If the line contains a word that matched a regex which determines the  */
-    /* inclusion of exclusion of this line, then use the regex selection flag */
-    /* to determine the inclusion/exclusion of the future words in the line.  */
-    /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+    /* If the line contains a word that matched a regex which determines */
+    /* the inclusion of exclusion of this line, then use the regex       */
+    /* selection flag to determine the inclusion/exclusion of the future */
+    /* words in the line.                                                */
+    /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
     if (line_excluded)
       selectable = EXCLUDE_MARK;
     else
@@ -7621,14 +8254,15 @@ main(int argc, char * argv[])
                        ? SOFT_EXCLUDE_MARK
                        : INCLUDE_MARK;
 
-      /* Check if the current word is matching an include or exclude pattern */
-      /* Only do it if if hasn't be explicitly deselected before.            */
-      /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+      /* Check if the current word is matching an include or exclude */
+      /* pattern                                                     */
+      /* Only do it if if hasn't be explicitly deselected before.    */
+      /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
       if (selectable != EXCLUDE_MARK)
       {
-        /* Check if the word will be excluded in the list of selectable words */
-        /* or not.                                                            */
-        /* '''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''' */
+        /* Check if the word will be excluded in the list of selectable */
+        /* words or not.                                                */
+        /* '''''''''''''''''''''''''''''''''''''''''''''''''''''''''''' */
         if (exclude_pattern)
         {
           if (regexec(&exclude_re, word, (size_t)0, NULL, 0) == 0)
@@ -7786,6 +8420,7 @@ main(int argc, char * argv[])
     word_a[count].is_selectable = selectable;
 
     word_a[count].special_level = special_level;
+    word_a[count].is_matching   = 0;
     word_a[count].is_tagged     = 0;
     word_a[count].is_numbered   = 0;
     word_a[count].tag_order     = 0;
@@ -7831,18 +8466,18 @@ main(int argc, char * argv[])
   if (win.col_mode || win.line_mode || win.tab_mode)
     word_a[count - 1].is_last = 1;
 
-  /* Second pass to modify  the word according to all/include/exclude        */
-  /* regular expressions and the columns settings set in the previous pass.  */
-  /* This must be done separately because in the first  pass, some word      */
-  /* could have been marked as excluded before the currently processed word  */
-  /*  (second part of the -C option)                                         */
-  /* In this pass the following actions will also be done:                   */
-  /* - Finish the work on columns.                                           */
-  /* - Possibly modify the word according to -S/-I/-E arguments              */
-  /* - Replace unprintable characters in the word by mnemonics               */
-  /* - Remember the max size of the words/columns/tabs                       */
-  /* - Insert the word in a TST tree for future search                       */
-  /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+  /* Second pass to modify  the word according to all/include/exclude       */
+  /* regular expressions and the columns settings set in the previous pass. */
+  /* This must be done separately because in the first  pass, some word     */
+  /* could have been marked as excluded before the currently processed word */
+  /*  (second part of the -C option)                                        */
+  /* In this pass the following actions will also be done:                  */
+  /* - Finish the work on columns.                                          */
+  /* - Possibly modify the word according to -S/-I/-E arguments             */
+  /* - Replace unprintable characters in the word by mnemonics              */
+  /* - Remember the max size of the words/columns/tabs                      */
+  /* - Insert the word in a TST tree for future search                      */
+  /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
   col_index = 0;
   for (wi = 0; wi < count; wi++)
   {
@@ -7895,9 +8530,9 @@ main(int argc, char * argv[])
     /* Make sure that daccess.length >= daccess.size */
     /* with DA_TYPE_POS.                             */
     /* """"""""""""""""""""""""""""""""""""""""""""" */
-    if (daccess.type != DA_TYPE_NONE)
+    if (daccess.mode != DA_TYPE_NONE)
     {
-      if (daccess.type & DA_TYPE_POS)
+      if (daccess.mode & DA_TYPE_POS)
       {
         if (daccess.size > 0)
           if (daccess.size > daccess.length)
@@ -7907,7 +8542,7 @@ main(int argc, char * argv[])
       /* Auto determination of the length of the selector */
       /* with DA_TYPE_AUTO.                               */
       /* """""""""""""""""""""""""""""""""""""""""""""""" */
-      if ((daccess.type & DA_TYPE_AUTO) && daccess.length == -2)
+      if ((daccess.mode & DA_TYPE_AUTO) && daccess.length == -2)
       {
         int n = count;
 
@@ -7943,7 +8578,7 @@ main(int argc, char * argv[])
           /* """""""""""""""""""""""""""""""""""""""""""""""""""""" */
           if (daccess_up == NULL && daccess_np == NULL)
           {
-            if (daccess.type & DA_TYPE_POS)
+            if (daccess.mode & DA_TYPE_POS)
               may_number = 1;
             else
               may_number = 0;
@@ -7969,7 +8604,7 @@ main(int argc, char * argv[])
           /* """""""" */
           if (may_number)
           {
-            if (daccess.type & DA_TYPE_POS)
+            if (daccess.mode & DA_TYPE_POS)
             {
               if (!word->is_numbered)
               {
@@ -8019,7 +8654,7 @@ main(int argc, char * argv[])
               }
             }
 
-            if (!word->is_numbered && (daccess.type & DA_TYPE_AUTO))
+            if (!word->is_numbered && (daccess.mode & DA_TYPE_AUTO))
             {
               sprintf(tmp + 1, "%*d",
                       daccess.alignment == 'l' ? -daccess.length
@@ -8071,8 +8706,8 @@ main(int argc, char * argv[])
       }
       else
       {
-        /* Should we also add space at the beginning of excluded words ? */
-        /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+        /* Should we also add space at the beginning of excluded words ?  */
+        /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
         if (daccess.padding == 'a')
         {
           char * tmp = xmalloc(strlen(word->str) + 4 + daccess.length);
@@ -8481,12 +9116,15 @@ main(int argc, char * argv[])
   /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
   tmp_word = xmalloc(word_real_max_size + 1);
 
+  search_data.mb_off_a = xmalloc(word_real_max_size * sizeof(size_t));
+  search_data.mb_len_a = xmalloc(word_real_max_size * sizeof(size_t));
+
   win.start = 0; /* index of the first element in the    *
                   * words array to be  displayed         */
 
   /* We can now build the first metadata */
   /* """"""""""""""""""""""""""""""""""" */
-  last_line = build_metadata(word_a, &term, count, &win);
+  last_line = build_metadata(&term, count, &win);
 
   /* Index of the selected element in the array words                */
   /* The string can be:                                              */
@@ -8495,6 +9133,9 @@ main(int argc, char * argv[])
   /*   /pref     /+a regexp          put the cursor on the first     */
   /*                                 word matching the prefix "pref" */
   /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+
+  for (wi = 0; wi < count; wi++)
+    word_a[wi].bitmap = xcalloc(1, word_a[wi].mb - 1 - daccess.flength);
 
   /* Find the first selectable word (if any) in the input stream */
   /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
@@ -8561,6 +9202,26 @@ main(int argc, char * argv[])
       if (!found)
         current = first_selectable;
     }
+  }
+  else if (*pre_selection_index == '=') /* exact search */
+  {
+    /* A prefix is expected */
+    /* """""""""""""""""""" */
+    wchar_t * w;
+
+    ll_t *      list;
+    ll_node_t * node;
+
+    list = tst_search(tst_word, w = mb_strtowcs(pre_selection_index + 1));
+    if (list != NULL)
+    {
+      node    = list->head;
+      current = *(int *)(node->data);
+    }
+    else
+      current = first_selectable;
+
+    free(w);
   }
   else if (*pre_selection_index != '\0')
   {
@@ -8650,7 +9311,7 @@ main(int argc, char * argv[])
   /* Initialize the search buffer with tab_real_max_size+1 NULs  */
   /* It will never be reallocated, only cleared.                 */
   /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-  search_buf = xcalloc(1, word_real_max_size + 1);
+  search_data.buf = xcalloc(1, word_real_max_size + 1 - daccess.flength);
 
   /* Hide the cursor */
   /* """"""""""""""" */
@@ -8694,8 +9355,8 @@ main(int argc, char * argv[])
   /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
   get_cursor_position(&term.curs_line, &term.curs_column);
 
-  nl = disp_lines(word_a, &win, &toggle, current, count, search_mode,
-                  search_buf, &term, last_line, tmp_word, &langinfo);
+  nl = disp_lines(&win, &toggle, current, count, search_mode, &search_data,
+                  &term, last_line, tmp_word, &langinfo);
 
   /* Determine the number of lines to move the cursor up if the window */
   /* display needed a terminal scrolling                               */
@@ -8742,30 +9403,11 @@ main(int argc, char * argv[])
 
       /* Calculate the new metadata and draw the window again */
       /* """""""""""""""""""""""""""""""""""""""""""""""""""" */
-      last_line = build_metadata(word_a, &term, count, &win);
+      last_line = build_metadata(&term, count, &win);
 
       help_mode = 0;
-      nl        = disp_lines(word_a, &win, &toggle, current, count, search_mode,
-                      search_buf, &term, last_line, tmp_word, &langinfo);
-    }
-
-    /* If an alarm has been triggered and we are in search mode, try to   */
-    /* use the  prefix in search_buf to find the first word matching this */
-    /* prefix. If a word if found trigger a window refresh as if the      */
-    /* terminal has been resized                                          */
-    /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-    if (got_search_alrm)
-    {
-      got_search_alrm = 0;
-
-      if (search_mode)
-      {
-        search_mode  = 0;
-        search_timer = -1; /* Disable the timer */
-
-        nl = disp_lines(word_a, &win, &toggle, current, count, search_mode,
-                        search_buf, &term, last_line, tmp_word, &langinfo);
-      }
+      nl = disp_lines(&win, &toggle, current, count, search_mode, &search_data,
+                      &term, last_line, tmp_word, &langinfo);
     }
 
     /* Reset the direct access selector if the direct access alarm rang */
@@ -8785,7 +9427,7 @@ main(int argc, char * argv[])
       winch_timer = timers.winch; /* default 7 / FREQ s */
     }
 
-    /* If the timeout is set then decrement its remaining value */
+    /* If the timeout is set then decrement its remaining value   */
     /* Upon expiration of this alarm, we trigger a content update */
     /* of the window                                              */
     /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
@@ -8851,7 +9493,7 @@ main(int argc, char * argv[])
 
       /* Calculate the new metadata and draw the window again */
       /* """""""""""""""""""""""""""""""""""""""""""""""""""" */
-      last_line = build_metadata(word_a, &term, count, &win);
+      last_line = build_metadata(&term, count, &win);
 
       if (win.col_mode || win.line_mode)
       {
@@ -8873,8 +9515,8 @@ main(int argc, char * argv[])
       message_lines = disp_message(message_lines_list, message_max_width,
                                    message_max_len, &term, &win);
 
-      nl = disp_lines(word_a, &win, &toggle, current, count, search_mode,
-                      search_buf, &term, last_line, tmp_word, &langinfo);
+      nl = disp_lines(&win, &toggle, current, count, search_mode, &search_data,
+                      &term, last_line, tmp_word, &langinfo);
 
       /* Determine the number of lines to move the cursor up if the window  */
       /* display needed a terminal scrolling                                */
@@ -8901,7 +9543,7 @@ main(int argc, char * argv[])
     /* and possibly set its reached value.                      */
     /* The counter is frozen in search and help mode            */
     /* """""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-    if (timeout.initial_value && !search_mode && !help_mode)
+    if (timeout.initial_value && search_mode == NONE && !help_mode)
     {
       if (got_timeout_tick)
       {
@@ -8945,9 +9587,9 @@ main(int argc, char * argv[])
 
     if (timeout.reached)
     {
-      if (timeout.type == QUIT)
+      if (timeout.mode == QUIT)
         goto quit;
-      else if (timeout.type == CURRENT || timeout.type == WORD)
+      else if (timeout.mode == CURRENT || timeout.mode == WORD)
         goto enter;
     }
 
@@ -8999,7 +9641,7 @@ main(int argc, char * argv[])
         setitimer(ITIMER_REAL, &periodic_itv, NULL);
       }
 
-      if (!search_mode)
+      if (search_mode == NONE)
         if (help_mode && buffer[0] != '?')
         {
           got_help_alrm = 1;
@@ -9020,11 +9662,8 @@ main(int argc, char * argv[])
             /* """"""""""""""""""""""""" */
             current = win.start;
 
-            if (search_mode)
-            {
-              search_mode  = 0;
-              search_timer = -1; /* Disable the timer */
-            }
+            if (search_mode != NONE)
+              search_mode = NONE;
 
             /* Find the first selectable word */
             /* """""""""""""""""""""""""""""" */
@@ -9038,8 +9677,9 @@ main(int argc, char * argv[])
               if (word_a[current].end < win.first_column)
                 win.first_column = word_a[current].start;
 
-            nl = disp_lines(word_a, &win, &toggle, current, count, search_mode,
-                            search_buf, &term, last_line, tmp_word, &langinfo);
+            nl = disp_lines(&win, &toggle, current, count, search_mode,
+                            &search_data, &term, last_line, tmp_word,
+                            &langinfo);
             break;
           }
 
@@ -9059,11 +9699,8 @@ main(int argc, char * argv[])
             /* """""""""""""""""""""""" */
             current = win.end;
 
-            if (search_mode)
-            {
-              search_mode  = 0;
-              search_timer = -1; /* Disable the timer */
-            }
+            if (search_mode != NONE)
+              search_mode = NONE;
 
             /* Find the last selectable word */
             /* """"""""""""""""""""""""""""" */
@@ -9103,8 +9740,9 @@ main(int argc, char * argv[])
               }
             }
 
-            nl = disp_lines(word_a, &win, &toggle, current, count, search_mode,
-                            search_buf, &term, last_line, tmp_word, &langinfo);
+            nl = disp_lines(&win, &toggle, current, count, search_mode,
+                            &search_data, &term, last_line, tmp_word,
+                            &langinfo);
             break;
           }
 
@@ -9166,23 +9804,31 @@ main(int argc, char * argv[])
           {
             /* ESC key has been pressed */
             /* """""""""""""""""""""""" */
-            if (search_mode || help_mode)
-            {
-              search_mode = 0;
-              nl          = disp_lines(word_a, &win, &toggle, current, count,
-                              search_mode, search_buf, &term, last_line,
-                              tmp_word, &langinfo);
-              break;
-            }
-            else
-            {
-              /* Reset the direct access selector stack */
-              /* """""""""""""""""""""""""""""""""""""" */
-              memset(daccess_stack, '\0', 6);
-              daccess_stack_head = 0;
+            if (help_mode)
+              nl = disp_lines(&win, &toggle, current, count, search_mode,
+                              &search_data, &term, last_line, tmp_word,
+                              &langinfo);
 
-              daccess_timer = timers.direct_access;
+            /* Reset the direct access selector stack */
+            /* """""""""""""""""""""""""""""""""""""" */
+            memset(daccess_stack, '\0', 6);
+            daccess_stack_head = 0;
+
+            daccess_timer = timers.direct_access;
+
+            /* Clean the potential matching words non empty list */
+            /* """"""""""""""""""""""""""""""""""""""""""""""""" */
+            if (matches_count > 0)
+            {
+              search_mode = NONE;
+
+              clean_matches(&search_data, word_real_max_size);
+
+              nl = disp_lines(&win, &toggle, current, count, search_mode,
+                              &search_data, &term, last_line, tmp_word,
+                              &langinfo);
             }
+            break;
           }
 
           /* Else ignore key */
@@ -9194,7 +9840,7 @@ main(int argc, char * argv[])
         case 3: /* ^C */
           /* q or Q of ^C has been pressed */
           /* """"""""""""""""""""""""""""" */
-          if (search_mode)
+          if (search_mode != NONE)
             goto special_cmds_when_searching;
 
           {
@@ -9230,27 +9876,64 @@ main(int argc, char * argv[])
 
           exit(EXIT_SUCCESS);
 
+        case 0x0c: /* ^L */
+          if (current < win.start || current > win.end)
+            last_line = build_metadata(&term, count, &win);
+
+          nl = disp_lines(&win, &toggle, current, count, search_mode,
+                          &search_data, &term, last_line, tmp_word, &langinfo);
+          break;
+
         case 'n':
         case ' ':
           /* n or <Space Bar> has been pressed */
           /* """"""""""""""""""""""""""""""""" */
-          if (search_mode)
+          if (search_mode != NONE)
             goto special_cmds_when_searching;
 
-          if (search_next(tst_word, word_a, search_buf, 1))
-            if (current > win.end)
-              last_line = build_metadata(word_a, &term, count, &win);
+          if (matches_count > 0)
+          {
+            int pos = find_next_matching_word(matching_words_a, matches_count,
+                                              current);
+            if (pos >= 0)
+              current = pos;
 
-          nl = disp_lines(word_a, &win, &toggle, current, count, search_mode,
-                          search_buf, &term, last_line, tmp_word, &langinfo);
+            if (current < win.start || current > win.end)
+              last_line = build_metadata(&term, count, &win);
+
+            /* Set new first column to display */
+            /* """"""""""""""""""""""""""""""" */
+            set_new_first_column(&win, &term);
+
+            nl = disp_lines(&win, &toggle, current, count, search_mode,
+                            &search_data, &term, last_line, tmp_word,
+                            &langinfo);
+          }
           break;
 
-        case 0x0c: /* ^L */
-          if (current < win.start || current > win.end)
-            last_line = build_metadata(word_a, &term, count, &win);
+        case 'N':
+          /* N or has been pressed */
+          /* """"""""""""""""""""" */
+          if (search_mode != NONE)
+            goto special_cmds_when_searching;
 
-          nl = disp_lines(word_a, &win, &toggle, current, count, search_mode,
-                          search_buf, &term, last_line, tmp_word, &langinfo);
+          if (matches_count > 0)
+          {
+            int pos = find_prev_matching_word(matching_words_a, matches_count,
+                                              current);
+            if (pos >= 0)
+              current = pos;
+          }
+
+          if (current < win.start || current > win.end)
+            last_line = build_metadata(&term, count, &win);
+
+          /* Set new first column to display */
+          /* """"""""""""""""""""""""""""""" */
+          set_new_first_column(&win, &term);
+
+          nl = disp_lines(&win, &toggle, current, count, search_mode,
+                          &search_data, &term, last_line, tmp_word, &langinfo);
           break;
 
         enter:
@@ -9268,12 +9951,19 @@ main(int argc, char * argv[])
           wchar_t * w;
           int       i; /* generic index in this block */
 
-          if (search_mode || help_mode)
-          {
-            search_mode = 0;
+          if (help_mode)
+            nl = disp_lines(&win, &toggle, current, count, search_mode,
+                            &search_data, &term, last_line, tmp_word,
+                            &langinfo);
 
-            nl = disp_lines(word_a, &win, &toggle, current, count, search_mode,
-                            search_buf, &term, last_line, tmp_word, &langinfo);
+          if (search_mode != NONE)
+          {
+            old_search_mode = search_mode;
+            search_mode     = NONE;
+
+            nl = disp_lines(&win, &toggle, current, count, search_mode,
+                            &search_data, &term, last_line, tmp_word,
+                            &langinfo);
 
             if (!toggle.enter_val_in_search)
               break;
@@ -9311,7 +10001,7 @@ main(int argc, char * argv[])
           /* else prints the current selected entries.                     */
           /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
           if (timeout.initial_value > 0 && timeout.remain == 0
-              && timeout.type == WORD)
+              && timeout.mode == WORD)
             fprintf(old_stdout, "%s", timeout_word);
           else
           {
@@ -9516,15 +10206,12 @@ main(int argc, char * argv[])
         kl:
           /* Cursor Left key has been pressed */
           /* """""""""""""""""""""""""""""""" */
-          if (search_mode)
-          {
-            search_mode  = 0;
-            search_timer = -1; /* Disable the timer */
-          }
+          if (search_mode != NONE)
+            search_mode = 0;
 
         case 'H':
         case 'h':
-          if (!search_mode)
+          if (search_mode == NONE)
           {
             int old_current      = current;
             int old_start        = win.start;
@@ -9597,9 +10284,9 @@ main(int argc, char * argv[])
             }
 
             if (current != old_current)
-              nl = disp_lines(word_a, &win, &toggle, current, count,
-                              search_mode, search_buf, &term, last_line,
-                              tmp_word, &langinfo);
+              nl = disp_lines(&win, &toggle, current, count, search_mode,
+                              &search_data, &term, last_line, tmp_word,
+                              &langinfo);
           }
           else
             goto special_cmds_when_searching;
@@ -9609,15 +10296,12 @@ main(int argc, char * argv[])
         kr:
           /* Right key has been pressed */
           /* """""""""""""""""""""""""" */
-          if (search_mode)
-          {
-            search_mode  = 0;
-            search_timer = -1; /* Disable the timer */
-          }
+          if (search_mode != NONE)
+            search_mode = NONE;
 
         case 'L':
         case 'l':
-          if (!search_mode)
+          if (search_mode == NONE)
           {
             int old_current      = current;
             int old_start        = win.start;
@@ -9701,9 +10385,9 @@ main(int argc, char * argv[])
             }
 
             if (current != old_current)
-              nl = disp_lines(word_a, &win, &toggle, current, count,
-                              search_mode, search_buf, &term, last_line,
-                              tmp_word, &langinfo);
+              nl = disp_lines(&win, &toggle, current, count, search_mode,
+                              &search_data, &term, last_line, tmp_word,
+                              &langinfo);
           }
           else
             goto special_cmds_when_searching;
@@ -9716,7 +10400,7 @@ main(int argc, char * argv[])
           goto kschome;
 
         case 'K':
-          if (search_mode)
+          if (search_mode != NONE)
             goto special_cmds_when_searching;
 
         kpp:
@@ -9727,14 +10411,11 @@ main(int argc, char * argv[])
         ku:
           /* Cursor Up key has been pressed */
           /* """""""""""""""""""""""""""""" */
-          if (search_mode)
-          {
-            search_mode  = 0;
-            search_timer = -1; /* Disable the timer */
-          }
+          if (search_mode != NONE)
+            search_mode = NONE;
 
         case 'k':
-          if (!search_mode)
+          if (search_mode == NONE)
           {
             int cur_line;
             int start_line;
@@ -9810,7 +10491,7 @@ main(int argc, char * argv[])
 
               /* Set new first column to display */
               /* """"""""""""""""""""""""""""""" */
-              set_new_first_column(&win, &term, word_a);
+              set_new_first_column(&win, &term);
 
               /* If the word is not selectable, try to find a selectable word */
               /* in ts line                                                   */
@@ -9849,9 +10530,9 @@ main(int argc, char * argv[])
             /* Display the window */
             /* """""""""""""""""" */
             if (current != old_current)
-              nl = disp_lines(word_a, &win, &toggle, current, count,
-                              search_mode, search_buf, &term, last_line,
-                              tmp_word, &langinfo);
+              nl = disp_lines(&win, &toggle, current, count, search_mode,
+                              &search_data, &term, last_line, tmp_word,
+                              &langinfo);
             else
             {
               /* We couldn't move to a selectable word, */
@@ -9863,9 +10544,9 @@ main(int argc, char * argv[])
                 win.start =
                   first_word_in_line_a[line_nb_of_word_a[old_start] - 1];
 
-                nl = disp_lines(word_a, &win, &toggle, current, count,
-                                search_mode, search_buf, &term, last_line,
-                                tmp_word, &langinfo);
+                nl = disp_lines(&win, &toggle, current, count, search_mode,
+                                &search_data, &term, last_line, tmp_word,
+                                &langinfo);
               }
             }
           }
@@ -9879,11 +10560,8 @@ main(int argc, char * argv[])
           /* """""""""""""""""""""""""""""""" */
           current = 0;
 
-          if (search_mode)
-          {
-            search_mode  = 0;
-            search_timer = -1; /* Disable the timer */
-          }
+          if (search_mode != NONE)
+            search_mode = NONE;
 
           /* Find the first selectable word */
           /* """""""""""""""""""""""""""""" */
@@ -9891,7 +10569,7 @@ main(int argc, char * argv[])
             current++;
 
           if (current < win.start || current > win.end)
-            last_line = build_metadata(word_a, &term, count, &win);
+            last_line = build_metadata(&term, count, &win);
 
           /* In column mode we need to take care of the */
           /* horizontal scrolling                       */
@@ -9910,8 +10588,8 @@ main(int argc, char * argv[])
             win.first_column = word_a[pos].start;
           }
 
-          nl = disp_lines(word_a, &win, &toggle, current, count, search_mode,
-                          search_buf, &term, last_line, tmp_word, &langinfo);
+          nl = disp_lines(&win, &toggle, current, count, search_mode,
+                          &search_data, &term, last_line, tmp_word, &langinfo);
           break;
 
         case 0x0a:
@@ -9920,7 +10598,7 @@ main(int argc, char * argv[])
           goto kscend;
 
         case 'J':
-          if (search_mode)
+          if (search_mode != NONE)
             goto special_cmds_when_searching;
 
         knp:
@@ -9931,14 +10609,11 @@ main(int argc, char * argv[])
         kd:
           /* Cursor Down key has been pressed */
           /* """""""""""""""""""""""""""""""" */
-          if (search_mode)
-          {
-            search_mode  = 0;
-            search_timer = -1; /* Disable the timer */
-          }
+          if (search_mode != NONE)
+            search_mode = NONE;
 
         case 'j':
-          if (!search_mode)
+          if (search_mode == NONE)
           {
             int cur_line;
             int start_line;
@@ -10032,7 +10707,7 @@ main(int argc, char * argv[])
 
               /* Set the new first column to display */
               /* """"""""""""""""""""""""""""""""""" */
-              set_new_first_column(&win, &term, word_a);
+              set_new_first_column(&win, &term);
 
               /* If the word is not selectable, try to find a selectable word */
               /* in ts line                                                   */
@@ -10068,9 +10743,9 @@ main(int argc, char * argv[])
             /* Display the window */
             /* """""""""""""""""" */
             if (current != old_current)
-              nl = disp_lines(word_a, &win, &toggle, current, count,
-                              search_mode, search_buf, &term, last_line,
-                              tmp_word, &langinfo);
+              nl = disp_lines(&win, &toggle, current, count, search_mode,
+                              &search_data, &term, last_line, tmp_word,
+                              &langinfo);
             else
             {
               /* We couldn't move to a selectable word, */
@@ -10081,9 +10756,9 @@ main(int argc, char * argv[])
                 win.start =
                   first_word_in_line_a[line_nb_of_word_a[old_start] + 1];
 
-                nl = disp_lines(word_a, &win, &toggle, current, count,
-                                search_mode, search_buf, &term, last_line,
-                                tmp_word, &langinfo);
+                nl = disp_lines(&win, &toggle, current, count, search_mode,
+                                &search_data, &term, last_line, tmp_word,
+                                &langinfo);
               }
             }
           }
@@ -10097,11 +10772,8 @@ main(int argc, char * argv[])
           /* """"""""""""""""""""""""""""""" */
           current = count - 1;
 
-          if (search_mode)
-          {
-            search_mode  = 0;
-            search_timer = -1; /* Disable the timer */
-          }
+          if (search_mode != NONE)
+            search_mode = NONE;
 
           /* Find the first selectable word */
           /* """""""""""""""""""""""""""""" */
@@ -10109,7 +10781,7 @@ main(int argc, char * argv[])
             current--;
 
           if (current < win.start || current > win.end)
-            last_line = build_metadata(word_a, &term, count, &win);
+            last_line = build_metadata(&term, count, &win);
 
           /* In column mode we need to take care of the */
           /* horizontal scrolling                       */
@@ -10128,37 +10800,102 @@ main(int argc, char * argv[])
             win.first_column = word_a[pos].start;
           }
 
-          nl = disp_lines(word_a, &win, &toggle, current, count, search_mode,
-                          search_buf, &term, last_line, tmp_word, &langinfo);
+          nl = disp_lines(&win, &toggle, current, count, search_mode,
+                          &search_data, &term, last_line, tmp_word, &langinfo);
           break;
 
-        case 0x06:
         case '/':
-          /* / or CTRL-F key has been pressed (start of a search session) */
-          /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-          if (!search_mode)
-          {
-            search_mode = 1;
+          /* generic search method according the misc settings */
+          /* """"""""""""""""""""""""""""""""""""""""""""""""" */
+          if (misc.default_search_method == PREFIX)
+            goto prefix_method;
+          else if (misc.default_search_method == SUBSTRING)
+            goto substring_method;
+          else if (misc.default_search_method == FUZZY)
+            goto fuzzy_method;
 
-            /* Arm the search timer */
-            /* """""""""""""""""""" */
-            search_timer = timers.search; /* default 6 s */
+          break;
+
+        case '~':
+        case '*':
+        /* ~ or * key has been pressed       */
+        /* (start of a fuzzy search session) */
+        /* """"""""""""""""""""""""""""""""" */
+        fuzzy_method:
+
+          if (search_mode == NONE)
+          {
+            search_mode = FUZZY;
+
+            if (old_search_mode != FUZZY)
+              clean_matches(&search_data, word_real_max_size);
+
+            nl = disp_lines(&win, &toggle, current, count, search_mode,
+                            &search_data, &term, last_line, tmp_word,
+                            &langinfo);
+          }
+          else
+            goto special_cmds_when_searching;
+
+          break;
+
+        case '\'':
+        case '\"':
+        /* ' or " key has been pressed           */
+        /* (start of a substring search session) */
+        /* """"""""""""""""""""""""""""""""""""" */
+        substring_method:
+
+          if (search_mode == NONE)
+          {
+            search_mode = SUBSTRING;
+
+            if (old_search_mode != SUBSTRING)
+              clean_matches(&search_data, word_real_max_size);
+
+            nl = disp_lines(&win, &toggle, current, count, search_mode,
+                            &search_data, &term, last_line, tmp_word,
+                            &langinfo);
+          }
+          else
+            goto special_cmds_when_searching;
+
+          break;
+
+        case '=':
+        case '^':
+        /* ^ or = key has been pressed        */
+        /* (start of a prefix search session) */
+        /* """""""""""""""""""""""""""""""""" */
+        prefix_method:
+
+          if (search_mode == NONE)
+          {
+            search_mode = PREFIX;
+
+            if (old_search_mode != PREFIX)
+              clean_matches(&search_data, word_real_max_size);
 
             /* Clear the search buffer when the cursor is on a word which */
             /* doesn't match the current prefix                           */
             /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-            if (search_pos > 0 && !strprefix(word_a[current].str, search_buf))
+            if (search_data.len > 0
+                && !strprefix(word_a[current].str, search_data.buf))
             {
-              memset(search_buf, '\0', word_real_max_size);
-              search_pos = 0;
+              memset(search_data.buf, '\0', word_real_max_size);
+              search_data.len    = 0;
+              search_data.mb_len = 0;
             }
 
-            nl = disp_lines(word_a, &win, &toggle, current, count, search_mode,
-                            search_buf, &term, last_line, tmp_word, &langinfo);
+            nl = disp_lines(&win, &toggle, current, count, search_mode,
+                            &search_data, &term, last_line, tmp_word,
+                            &langinfo);
             break;
           }
           else
             goto special_cmds_when_searching;
+
+          break;
 
         kins:
           if (toggle.taggable)
@@ -10171,9 +10908,9 @@ main(int argc, char * argv[])
               if (toggle.pinable)
                 word_a[current].tag_order = next_tag_nb++;
 
-              nl = disp_lines(word_a, &win, &toggle, current, count,
-                              search_mode, search_buf, &term, last_line,
-                              tmp_word, &langinfo);
+              nl = disp_lines(&win, &toggle, current, count, search_mode,
+                              &search_data, &term, last_line, tmp_word,
+                              &langinfo);
             }
           }
           break;
@@ -10186,15 +10923,15 @@ main(int argc, char * argv[])
               word_a[current].is_tagged = 0;
               tagged_words--;
 
-              nl = disp_lines(word_a, &win, &toggle, current, count,
-                              search_mode, search_buf, &term, last_line,
-                              tmp_word, &langinfo);
+              nl = disp_lines(&win, &toggle, current, count, search_mode,
+                              &search_data, &term, last_line, tmp_word,
+                              &langinfo);
             }
           }
           break;
 
         case 't':
-          if (!search_mode)
+          if (search_mode == NONE)
           {
             if (toggle.taggable)
             {
@@ -10211,9 +10948,43 @@ main(int argc, char * argv[])
                 if (toggle.pinable)
                   word_a[current].tag_order = next_tag_nb++;
               }
-              nl = disp_lines(word_a, &win, &toggle, current, count,
-                              search_mode, search_buf, &term, last_line,
-                              tmp_word, &langinfo);
+              nl = disp_lines(&win, &toggle, current, count, search_mode,
+                              &search_data, &term, last_line, tmp_word,
+                              &langinfo);
+            }
+          }
+          else
+            goto special_cmds_when_searching;
+          break;
+
+        case 'T':
+          if (search_mode == NONE)
+          {
+            if (toggle.taggable)
+            {
+              int i, n;
+
+              for (i = 0; i < matches_count; i++)
+              {
+                n = matching_words_a[i];
+
+                if (word_a[n].is_tagged)
+                {
+                  word_a[n].is_tagged = 0;
+                  tagged_words--;
+                }
+                else
+                {
+                  word_a[n].is_tagged = 1;
+                  tagged_words++;
+
+                  if (toggle.pinable)
+                    word_a[n].tag_order = next_tag_nb++;
+                }
+              }
+              nl = disp_lines(&win, &toggle, current, count, search_mode,
+                              &search_data, &term, last_line, tmp_word,
+                              &langinfo);
             }
           }
           else
@@ -10231,7 +11002,7 @@ main(int argc, char * argv[])
         case '8':
         case '9':
         {
-          if (!search_mode && daccess.type != DA_TYPE_NONE)
+          if (search_mode == NONE && daccess.mode != DA_TYPE_NONE)
           {
             wchar_t * w;
             int *     pos;
@@ -10255,16 +11026,16 @@ main(int argc, char * argv[])
             {
               current = *pos;
 
-              if (current > win.end || current < win.start)
-                last_line = build_metadata(word_a, &term, count, &win);
+              if (current < win.start || current > win.end)
+                last_line = build_metadata(&term, count, &win);
 
               /* Set new first column to display */
               /* """"""""""""""""""""""""""""""" */
-              set_new_first_column(&win, &term, word_a);
+              set_new_first_column(&win, &term);
 
-              nl = disp_lines(word_a, &win, &toggle, current, count,
-                              search_mode, search_buf, &term, last_line,
-                              tmp_word, &langinfo);
+              nl = disp_lines(&win, &toggle, current, count, search_mode,
+                              &search_data, &term, last_line, tmp_word,
+                              &langinfo);
             }
             else
             {
@@ -10272,16 +11043,16 @@ main(int argc, char * argv[])
               {
                 current = prev_current;
 
-                if (current > win.end || current < win.start)
-                  last_line = build_metadata(word_a, &term, count, &win);
+                if (current < win.start || current > win.end)
+                  last_line = build_metadata(&term, count, &win);
 
                 /* Set new first column to display */
                 /* """"""""""""""""""""""""""""""" */
-                set_new_first_column(&win, &term, word_a);
+                set_new_first_column(&win, &term);
 
-                nl = disp_lines(word_a, &win, &toggle, current, count,
-                                search_mode, search_buf, &term, last_line,
-                                tmp_word, &langinfo);
+                nl = disp_lines(&win, &toggle, current, count, search_mode,
+                                &search_data, &term, last_line, tmp_word,
+                                &langinfo);
               }
             }
 
@@ -10294,38 +11065,75 @@ main(int argc, char * argv[])
 
         case 0x08: /* ^H */
         case 0x7f: /* BS */
+        {
+          int i;
+
           /* Backspace or CTRL-H */
           /* """"""""""""""""""" */
-          if (search_mode)
-          {
-            if (*search_buf != '\0')
-            {
-              char * new_search_buf;
-
-              int pos;
-
-              new_search_buf = xcalloc(1, word_real_max_size + 1);
-              mb_strprefix(new_search_buf, search_buf,
-                           (int)mbstowcs(NULL, search_buf, 0) - 1, &pos);
-
-              free(search_buf);
-              search_buf = new_search_buf;
-              search_pos = pos;
-
-              nl = disp_lines(word_a, &win, &toggle, current, count,
-                              search_mode, search_buf, &term, last_line,
-                              tmp_word, &langinfo);
-            }
-          }
           if (daccess_stack_head > 0)
             daccess_stack[--daccess_stack_head] = '\0';
 
-          break;
+          if (search_mode != NONE)
+          {
+            if (search_data.mb_len > 0)
+            {
+              char * prev;
+
+              int pos;
+
+              prev = mb_prev(search_data.buf,
+                             search_data.buf + search_data.len - 1);
+
+              search_data.mb_len--;
+
+              if (prev)
+              {
+                *(mb_next(prev)) = '\0';
+                search_data.len  = prev - search_data.buf + 1;
+              }
+              else
+              {
+                *search_data.buf = '\0';
+                search_data.len  = 0;
+
+                for (i = 0; i < matches_count; i++)
+                  word_a[matching_words_a[i]].is_matching = 0;
+
+                matches_count = 0;
+
+                nl = disp_lines(&win, &toggle, current, count, search_mode,
+                                &search_data, &term, last_line, tmp_word,
+                                &langinfo);
+              }
+            }
+
+            if (search_data.mb_len > 0)
+              goto special_cmds_when_searching;
+            else
+              /* When there is only one glyph in the search list in       */
+              /* FUZZY and SUBSTRING mode then all is already done except */
+              /* the cleanup of the first level of the tst_search_list.   */
+              /* """""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+              if (search_mode != PREFIX)
+            {
+              ll_t *      list;
+              ll_node_t * node;
+
+              node = tst_search_list->tail;
+              list = (ll_t *)(node->data);
+
+              while (node = list->head)
+                ll_delete(list, node);
+            }
+          }
+        }
+
+        break;
 
         case '?':
           /* Help mode */
           /* """"""""" */
-          if (!search_mode)
+          if (search_mode == NONE)
           {
             help(&win, &term, last_line, &toggle);
             help_mode = 1;
@@ -10343,36 +11151,319 @@ main(int argc, char * argv[])
         {
           int c; /* byte index in the scancode string */
 
-          if (search_mode)
+          if (search_mode != NONE)
           {
-            int old_pos = search_pos;
+            size_t      old_len    = search_data.len;
+            size_t      old_mb_len = search_data.mb_len;
+            size_t      word_mb_len;
+            int         i;
+            ll_node_t * node;
 
-            /* Re-arm the search timer */
-            /* """"""""""""""""""""""" */
-            search_timer = timers.search; /* default 6 s */
+            /* store the length in multibytes of the current word */
+            /* """""""""""""""""""""""""""""""""""""""""""""""""" */
+            word_mb_len = word_a[current].mb - 1;
 
             /* Copy all the bytes included in the key press to buffer */
             /* """""""""""""""""""""""""""""""""""""""""""""""""""""" */
-            for (c = 0; c < sc && search_pos < word_real_max_size; c++)
-              search_buf[search_pos++] = buffer[c];
-
-            if (search_next(tst_word, word_a, search_buf, 0))
+            if (buffer[0] != 0x08 && buffer[0] != 0x7f) /* Backspace */
             {
-              if (current > win.end)
-                last_line = build_metadata(word_a, &term, count, &win);
+              int   i;
+              char *p1, *p2;
 
-              /* Set new first column to display */
-              /* """"""""""""""""""""""""""""""" */
-              set_new_first_column(&win, &term, word_a);
+              /* The only case where we have to manage backspace hits */
+              /* here is if the user has entered them in fuzzy search */
+              /* mode. As the search buffer has already been amended, */
+              /* we do not have to update the search buffer again.    */
+              /* '''''''''''''''''''''''''''''''''''''''''''''''''''' */
+              for (c = 0;
+                   c < sc
+                   && search_data.mb_len < word_real_max_size - daccess.flength;
+                   c++)
+                search_data.buf[search_data.len++] = buffer[c];
 
-              nl = disp_lines(word_a, &win, &toggle, current, count,
-                              search_mode, search_buf, &term, last_line,
-                              tmp_word, &langinfo);
+              /* Update the glyph array with the content of the search buffer */
+              /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+              if (search_data.mb_len < word_real_max_size - daccess.flength)
+              {
+                search_data.mb_off_a[search_data.mb_len] = old_len;
+                search_data.mb_len_a[search_data.mb_len] = search_data.len
+                                                           - old_len;
+                search_data.mb_len++;
+              }
             }
-            else
+
+            if (search_mode == PREFIX)
             {
-              search_pos             = old_pos;
-              search_buf[search_pos] = '\0';
+              wchar_t * ws;
+
+              ws = mb_strtowcs(search_data.buf);
+
+              /* Trivial but fast */
+              for (i = 0; i < matches_count; i++)
+              {
+                int n = matching_words_a[i];
+
+                word_a[n].is_matching = 0;
+
+                memset(word_a[n].bitmap, '\0',
+                       word_a[n].mb - 1 - daccess.flength);
+              }
+
+              matches_count = 0;
+
+              tst_prefix_search(tst_word, ws, tst_cb);
+
+              /* matches_count is updated by tst_cb */
+              /* """"""""""""""""""""""""""""""""""""" */
+              if (matches_count > 0)
+              {
+                update_bitmaps(search_mode, &search_data);
+                current = matching_words_a[0];
+
+                if (current < win.start || current > win.end)
+                  last_line = build_metadata(&term, count, &win);
+
+                /* Set new first column to display */
+                /* """"""""""""""""""""""""""""""" */
+                set_new_first_column(&win, &term);
+
+                nl = disp_lines(&win, &toggle, current, count, search_mode,
+                                &search_data, &term, last_line, tmp_word,
+                                &langinfo);
+              }
+              else
+              {
+                search_data.len                  = old_len;
+                search_data.mb_len               = old_mb_len;
+                search_data.buf[search_data.len] = '\0';
+              }
+            }
+            else if (search_mode == FUZZY)
+            {
+              /* tst_search_list: [ll_t *] -> [ll_t *] ->  [ll_t *] ...  */
+              /*                    ^           ^            ^          */
+              /*                    |           |            |          */
+              /*                  level 1     level_2      level 3      */
+              /* each ll_t * is a pinter to a list of nodes in tst_word */
+              /* """""""""""""""""""""""""""""""""""""""""""""""""""""" */
+              wchar_t * w = mb_strtowcs(search_data.buf + old_len);
+              ll_t *    list;
+
+              /* zero previous matching indicators */
+              /* """"""""""""""""""""""""""""""""" */
+              for (i = 0; i < matches_count; i++)
+                word_a[matching_words_a[i]].is_matching = 0;
+
+              matches_count = 0;
+
+              if (buffer[0] == 0x08 || buffer[0] == 0x7f) /* Backspace */
+              {
+                node = tst_search_list->tail;
+                list = (ll_t *)(node->data);
+
+                while (node = list->head)
+                  ll_delete(list, node);
+
+                if (tst_search_list->len > 0)
+                  ll_delete(tst_search_list, tst_search_list->tail);
+                else
+                  matches_count = 0;
+              }
+              else
+              {
+                if (search_data.mb_len == 1)
+                {
+                  /* Search all the sub-tst trees having the searched       */
+                  /* character as children, the resulting sub-tst are put   */
+                  /* in in the level list corresponding to the letter order */
+                  /* """""""""""""""""""""""""""""""""""""""""""""""""""""" */
+                  tst_fuzzy_traverse(tst_word, NULL, 0, w[0]);
+
+                  node = tst_search_list->tail;
+                  list = (ll_t *)(node->data);
+                  if (list->len == 0)
+                  {
+                    search_data.len    = 0;
+                    search_data.mb_len = 0;
+                    search_data.buf[0] = '\0';
+
+                    break;
+                  }
+                }
+                else
+                {
+                  /* Prevent the list to grow larger than the maximal */
+                  /* word's length.                                   */
+                  /* """""""""""""""""""""""""""""""""""""""""""""""" */
+                  if (tst_search_list->len
+                      < word_real_max_size - daccess.flength)
+                  {
+                    /* use the results in the level n-1 list to build the */
+                    /* level n list                                       */
+                    /* """""""""""""""""""""""""""""""""""""""""""""""""" */
+                    int rc;
+
+                    ll_t * tst_fuzzy_partial_list;
+
+                    tst_fuzzy_partial_list = ll_new();
+                    ll_append(tst_search_list, tst_fuzzy_partial_list);
+
+                    node = tst_search_list->tail->prev;
+                    node = ((ll_t *)(node->data))->head;
+
+                    rc = 0;
+                    while (node)
+                    {
+                      rc += tst_fuzzy_traverse((tst_node_t *)(node->data), NULL,
+                                               1, w[0]);
+
+                      node = node->next;
+                    }
+
+                    if (rc == 0)
+                    {
+                      while (tst_fuzzy_partial_list->len > 0)
+                        ll_delete(tst_fuzzy_partial_list,
+                                  tst_fuzzy_partial_list->head);
+
+                      ll_delete(tst_search_list, tst_search_list->tail);
+
+                      search_data.len                  = old_len;
+                      search_data.mb_len               = old_mb_len;
+                      search_data.buf[search_data.len] = '\0';
+                    }
+                  }
+                }
+              }
+              free(w);
+
+              /* Process this level to mark the word found as a matching word */
+              /* if any.                                                      */
+              /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+              node = tst_search_list->tail;
+              node = ((ll_t *)(node->data))->head;
+
+              if (node)
+              {
+                while (node)
+                {
+                  tst_traverse((tst_node_t *)(node->data), set_matching_flag,
+                               0);
+
+                  node = node->next;
+                }
+              }
+
+              /* Update the bitmap and re-display the window */
+              /* """"""""""""""""""""""""""""""""""""""""""" */
+              if (matches_count > 0)
+              {
+                update_bitmaps(search_mode, &search_data);
+                current = matching_words_a[0];
+
+                if (current < win.start || current > win.end)
+                  last_line = build_metadata(&term, count, &win);
+
+                /* Set new first column to display */
+                /* """"""""""""""""""""""""""""""" */
+                set_new_first_column(&win, &term);
+
+                nl = disp_lines(&win, &toggle, current, count, search_mode,
+                                &search_data, &term, last_line, tmp_word,
+                                &langinfo);
+              }
+            }
+            else /* SUBSTRING */
+            {
+              wchar_t * w = mb_strtowcs(search_data.buf);
+              ll_t *    list;
+
+              /* Trivial but fast */
+              for (i = 0; i < matches_count; i++)
+              {
+                int n = matching_words_a[i];
+
+                word_a[n].is_matching = 0;
+                memset(word_a[n].bitmap, '\0',
+                       word_a[n].mb - 1 - daccess.flength);
+              }
+
+              matches_count = 0;
+
+              if (search_data.len == 0
+                  && (buffer[0] == 0x08 || buffer[0] == 0x7f)) /* Backspace */
+              {
+                node = tst_search_list->tail;
+                list = (ll_t *)(node->data);
+
+                while (node = list->head)
+                  ll_delete(list, node);
+
+                ll_delete(tst_search_list, tst_search_list->tail);
+
+                if (tst_search_list->len == 0)
+                  ll_append(tst_search_list, ll_new());
+              }
+              else
+              {
+                if (search_data.mb_len == 1)
+                {
+                  /* Search all the sub-tst trees having the searched       */
+                  /* character as children, the resulting sub-tst are put   */
+                  /* in in the level list corresponding to the letter order */
+                  /* """""""""""""""""""""""""""""""""""""""""""""""""""""" */
+                  tst_substring_traverse(tst_word, NULL, 0, w[0]);
+
+                  node = tst_search_list->tail;
+                  node = ((ll_t *)(node->data))->head;
+
+                  if (node)
+                  {
+                    while (node)
+                    {
+                      tst_traverse((tst_node_t *)(node->data),
+                                   set_matching_flag, 0);
+
+                      node = node->next;
+                    }
+                  }
+                }
+                else
+                {
+                  node = tst_search_list->tail;
+                  node = ((ll_t *)(node->data))->head;
+
+                  while (node)
+                  {
+                    tst_prefix_search((tst_node_t *)(node->data), w + 1,
+                                      tst_cb);
+                    node = node->next;
+                  }
+                }
+              }
+
+              if (matches_count > 0)
+              {
+                update_bitmaps(search_mode, &search_data);
+                current = matching_words_a[0];
+
+                if (current < win.start || current > win.end)
+                  last_line = build_metadata(&term, count, &win);
+
+                /* Set new first column to display */
+                /* """"""""""""""""""""""""""""""" */
+                set_new_first_column(&win, &term);
+
+                nl = disp_lines(&win, &toggle, current, count, search_mode,
+                                &search_data, &term, last_line, tmp_word,
+                                &langinfo);
+              }
+              else
+              {
+                search_data.len = old_len;
+                search_data.mb_len--;
+                search_data.buf[search_data.len] = '\0';
+              }
             }
           }
         }
