@@ -187,7 +187,14 @@ static int
 isempty(const char * str);
 
 static int
-my_stricmp(const char * str1, const char * str2);
+my_strcasecmp(const char * str1, const char * str2);
+
+static void *
+my_memmem(const void * buf, size_t buflen, const void * pattern, size_t patlen);
+
+static void *
+my_memrmem(const void * buf, size_t buflen, const void * pattern,
+           size_t patlen);
 
 static int
 isprint7(int i);
@@ -2660,8 +2667,11 @@ isempty(const char * s)
 /* from http://c.snippets.org/code/stricmp.c */
 /* ========================================= */
 static int
-my_stricmp(const char * str1, const char * str2)
+my_strcasecmp(const char * str1, const char * str2)
 {
+#ifdef HAVE_STRCASECMP
+  return strcasecmp(str1, str2);
+#else
   int retval = 0;
 
   while (1)
@@ -2677,6 +2687,60 @@ my_stricmp(const char * str1, const char * str2)
       break;
   }
   return retval;
+#endif
+}
+
+static void *
+my_memmem(const void * buf, size_t buflen, const void * pattern, size_t patlen)
+{
+#ifdef HAVE_MEMMEM
+  return memmem(buf, buflen, pattern, patlen);
+#else
+  char * bf = (char *)buf;
+  char * pt = (char *)pattern;
+  char * p  = bf;
+
+  while (patlen <= (buflen - (p - bf)))
+  {
+    if ((p = memchr(p, (int)(*pt), buflen - (p - bf))) != NULL)
+    {
+      static if (memcmp(p, pattern, patlen) == 0) return p;
+      else ++p;
+    }
+    else
+      break;
+  }
+  return NULL;
+#endif
+}
+
+static void *
+my_memrmem(const void * buf, size_t buflen, const void * pattern, size_t patlen)
+{
+#ifdef HAVE_MEMRMEM
+  return memrmem(buf, buflen, pattern, patlen);
+#else
+  char * bf = (char *)buf;
+  char * pt = (char *)pattern;
+  char * p;
+
+  size_t i = buflen - patlen + 1;
+
+  if (pt - 1 >= bf)
+    return NULL;
+
+  bf += buflen - 1;
+  while ((p = memrchr(bf - i + 1, pt[patlen - 1], i)))
+  {
+    if ((memcmp(p - patlen + 1, pt, patlen - 1)) == 0)
+      return p;
+
+    i -= bf - p + 1;
+    bf = p - 1;
+  }
+
+  return NULL;
+#endif
 }
 
 /* ======================================================================== */
@@ -6336,7 +6400,7 @@ main(int argc, char * argv[])
 
   while (charset_ptr->name != NULL)
   {
-    if (my_stricmp(charset, charset_ptr->name) == 0)
+    if (my_strcasecmp(charset, charset_ptr->name) == 0)
     {
       is_supported_charset = 1;
       langinfo.bits        = charset_ptr->bits;
