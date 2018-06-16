@@ -8,7 +8,7 @@ and outputs the selection to stdout.
       [\fB-n\fP \fIlines\fP] [\fB-t\fP [\fIcols\fP]] [\fB-k\fP] \\
       [\fB-s\fP \fIpattern\fP] [\fB-m\fP \fImessage\fP] [\fB-w\fP] \\
       [\fB-d\fP] [\fB-M\fP] [\fB-c\fP] [\fB-l\fP] [\fB-r\fP] [\fB-b\fP] \\
-      [\fB-a\fP (i|e|c|b|s|t|ct|sf|st|da):\fIATTR\fP]... \\
+      [\fB-a\fP (i|e|c|b|s|t|ct|sf|st|mf|mt|da):\fIATTR\fP]... \\
       [\fB-i\fP \fIregex\fP] [\fB-e\fP \fIregex\fP] \\
       [\fB-C\fP \
 [\fIi\fP|\fIe\fP]<col selectors>] \\
@@ -26,7 +26,8 @@ and outputs the selection to stdout.
       [\fB-g\fP [\fIstring\fP]] [\fB-q\fP] \
 [\fB-W\fP \fIbytes\fP] [\fB-L\fP \fIbytes\fP] \\
       [\fB-T\fP [\fIseparator\fP]] [\fB-P\fP [\fIseparator\fP]] [\fB-p\fP] \\
-      [\fB-V\fP] [\fB-x\fP|\fB-X\fP \fItype\fP [\fIword\fP] \fIdelay\fP] \\
+      [\fB-V\fP] [\fB-x\fP|\fB-X\fP \fItype\fP [\fIword\fP] \fIdelay\fP] \
+[\fB-/\fP \fIprefix\fP|\fIsubstring\fP|\fIfuzzy\fP] \\
       [input_file]
 
       <col selectors> ::= \fIcol1\fP[-\fIcol2\fP],...|\fI<RE>\fP,...
@@ -129,36 +130,51 @@ removing it (substituted by nothing) afterward using \fB-I\fP by example.
 
 \fB-E\fP gives another way to do that, see below or more.
 .SS "Searching for a word"
-The key \fB/\fP or the key combination \fB^F\fP (\fBCTRL+f\fP) can be
-used to initiate a search by prefix among the words (possibly altered
-by \fB-S\fP/\fB-I\fP/\fB-E\fP) located after the cursor.
+A word can be searched using different algorithms: \fIprefix\fP,
+\fIsubstring\fP of \fIfuzzy\fP.
+.TP
+\fIprefix\fP (keys \fB^\fP or \fB=\fP):
+The sequence of characters entered must match the beginning of a word.
+.TP
+\fIsubstring\fP (keys \fB"\fP or \fB'\fP):
+The sequence of characters entered must match a substring in a word.
+.TP
+\fIfuzzy\fP (keys \fB~\fP or \fB*\fP):
+All the character in the entered sequence must appear in the same order
+in a word must not necessarily be consecutive.
+The case is also ignored.
 .PP
-After that, the cursor attributes are modified and all the characters
-entered up to a default of 6s after this change are put in a search buffer
-and the cursor moves immediately to the next word matching this prefix.
+During a search session, the cursor changes and each character entered is
+added in (or removed from) the search buffer.
+The display is refreshed after each change in this buffer.
 .PP
-Any character entered before a default of 6s timeout after this action
-completes this buffer and resets the 6s timer and advances the cursor
-again if another word matches the new buffer.
+The \fB/\fP key can also be used instead of any of these keys. By default
+is is programmed to do a \fIfuzzy\fP search but this can be altered by
+using the command line option (\fB-/\fP) or by tuning a configuration
+file, see below.
 .PP
-As soon as the timer expires, the search mode is ended and the cursor
-regains its initial appearance.
+All the words matching the current search are highlighted.
+The characters present in current search buffer are highlighted in one way
+and the other characters in another way.
+Both of these highlighting methods are configurable.
 .PP
-The search buffer is persistent as long as the cursor is on a matching
-word when a new search is initialized.
+Typically, if the user has entered the search sequence: \fBo\fP, \fBs\fP,
+then the matching word "words" will be displayed as
+\fBw\fP\fIo\fP\fBrd\fP\fIs\fP when the \fIfuzzy\fP algorithm is in use
+depending of the display attributes configured.
 .PP
-If the cursor is moved in this mode, the timer will expire immediately
-As if \fBENTER\fP or \fBESC\fP was pressed and the move is attempted.
+\fBESC\fP can be used anytime to abort the current search session.
+\fBENTER\fP and all cursor moves also terminate the search
+session but do not clear the list of the matching words.
 .PP
-Pressing \fBENTER\fP or \fBESC\fP immediately exits this mode.
+The user can then use the \fBn\fP/\fBSPACE\fP keys (forward) and the
+\fBN\fP key (backward) to navigate in the mathing words list.
 .PP
-Pressing \fBSPACE\fP or \fBn\fP repeats the last search if the search
-buffer is not empty.
-Nothing will happen if there is no matching word after the cursor.
+When not in a search session \fBESC\fP can be used to clear this list
+and reset the search buffer.
 .PP
-Note that the \fBSPACE\fP and \fBn\fP keys cannot be used when the search
-mode is active because they must be available if you want to search a
-word containing these characters.
+Note that the search buffer is persistent as long as the same search
+algorithm is used and \fBESC\fP has not been pressed.
 .SS "Selection and Exit"
 Pressing \fBq\fP gives the possibility to exit without selecting anything.
 .PP
@@ -166,6 +182,24 @@ By default, \fBENTER\fP writes the selected word to stdout when not in
 search mode otherwise it exits from this mode and does nothing more.
 If you want to be able to select a word \fIeven\fP when in search mode,
 use the \fB-r\fP option to change this behavior.
+.SS "Tagging (multi-selections)"
+When the tagging is activated by using the command line \fB-T\fP or
+\fB-P\fP option, then the keys \fBt\fP, \fBT\fP, \fBINS\fP and \fBDEL\fP
+can be used to tag/untag some words.
+These tagged words will then be output on the standard output when
+\fBENTER\fP is pressed.
+.TP
+\fBt\fP
+Tag/untag the word under the cursor (toggle).
+.TP
+\fBT\fP
+Tag/untag the matching words if any (toggle).
+.TP
+\fBINS\fP
+Tag the word under the cursor.
+.TP
+\fBDEL\fP
+Untag the word under the cursor.
 .SS Help
 A small help message can be displayed when hitting \fB?\fP.
 This display will last for 10s or until a valid key or \fBESC\fP is
@@ -255,10 +289,12 @@ allowed:
   bar = 7/4,b             ; scroll bar attributes
   search_field = 0/6      ; search field attributes
   search_text = 7,bu      ; search text attributes
+  match_field = 1,b       ; matching words field attributes
+  match_text = 7,bu       ; matching words text attributes
   ; include = b           ; selectable color attributes
   exclude = 4/0,u         ; non-selectable color attributes
   tag = 0/5               ; tagged (selected) attributes
-  dacess = 3,b            ; direct access tag attributes
+  daccess = 3,b           ; direct access tag attributes
 
   special1 = 7/4,b        ; attributes for the special level 1
   special2 = bu           ; attributes for the special level 2
@@ -282,6 +318,9 @@ allowed:
                           ; terminal's window change in 1/10 s
   direct_access = 6       ; duration allowed to add a new digit to
                           ; the direct word access number in 1/10 s
+
+[misc]
+  default_search_method = substring
 --8<------------------------------------------------------------------
 \fP
 .fi
@@ -453,7 +492,11 @@ cursor on tagged words.
 .IP \fIsf\fP
 search field.
 .IP \fIst\fP
-search buffered text.
+search text.
+.IP \fImf\fP
+matched words field.
+.IP \fImt\fP
+matched words text.
 .IP \fIda\fP
 direct access tag.
 .RE
@@ -886,7 +929,7 @@ word:
 At the timeout, the word given after the type is selected.  Note that this
 word doesn't need to be part of the words coming from the standard input.
 .PP
-Each type can be be shortened as a prefix of the full name ("cur" for
+Each type can be be shortened as a prefix of its full name ("cur" for
 "current" of "q" for "quit" per example).
 
 The delay must be set in seconds and cannot be above 99999 seconds.
@@ -901,6 +944,12 @@ the timer to its initial value.
 The \fB-X\fP version works like \fB-x\fP but no periodic remaining
 messages is displayed above the selection window.
 .RE
+.IP "\fB-/\fP \fIprefix|\fIsubstring\fP|\fIfuzzy\fP"
+Associates one of the search algorithm to the \fB/\fP key. By default
+the \fIfuzzy\fP algorithm is selected.
+
+Again, each algorithm name can be be shortened as a prefix of its
+full name ("pre" for "prefix" of "s" for "substring" per example).
 .SH NOTES
 If tabulators (\fI\\t\fP) are embedded in the input, there is no way
 to replace them with the original number of spaces.
