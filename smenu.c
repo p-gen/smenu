@@ -2379,9 +2379,14 @@ update_bitmaps(search_mode_t mode, search_data_t * data)
 /* returns -1 of not found.                               */
 /* ====================================================== */
 int
-find_next_matching_word(int * array, int nb, int value)
+find_next_matching_word(int * array, int nb, int value, int * index)
 {
   int left = 0, right = nb, middle;
+
+  /* Use the cached value when possible */
+  /* """""""""""""""""""""""""""""""""" */
+  if (*index < nb - 1 && array[*index] == value)
+    return (array[++(*index)]);
 
   if (nb > 0)
   {
@@ -2397,17 +2402,29 @@ find_next_matching_word(int * array, int nb, int value)
         left = middle + 1;
     }
     if (left < nb - 1)
-      return array[left];
+    {
+      *index = left;
+      return array[*index];
+    }
     else
     {
       if (value > array[nb - 1])
-        return -1;
+      {
+        *index = -1;
+        return *index;
+      }
       else
-        return array[nb - 1];
+      {
+        *index = nb - 1;
+        return array[*index];
+      }
     }
   }
   else
-    return -1;
+  {
+    *index = -1;
+    return *index;
+  }
 }
 
 /* ========================================================== */
@@ -2415,9 +2432,14 @@ find_next_matching_word(int * array, int nb, int value)
 /* returns -1 of not found.                                   */
 /* ========================================================== */
 int
-find_prev_matching_word(int * array, int nb, int value)
+find_prev_matching_word(int * array, int nb, int value, int * index)
 {
   int left = 0, right = nb, middle;
+
+  /* Use the cached value when possible */
+  /* """""""""""""""""""""""""""""""""" */
+  if (*index > 0 && array[*index] == value)
+    return (array[--(*index)]);
 
   if (nb > 0)
   {
@@ -2430,9 +2452,15 @@ find_prev_matching_word(int * array, int nb, int value)
       if (array[middle] == value)
       {
         if (middle > 0)
-          return array[middle - 1];
+        {
+          *index = middle - 1;
+          return array[*index];
+        }
         else
-          return -1;
+        {
+          *index = -1;
+          return *index;
+        }
       }
 
       if (value < array[middle])
@@ -2441,12 +2469,21 @@ find_prev_matching_word(int * array, int nb, int value)
         left = middle + 1;
     }
     if (left > 0)
-      return array[left - 1];
+    {
+      *index = left - 1;
+      return array[*index];
+    }
     else
-      return -1;
+    {
+      *index = -1;
+      return *index;
+    }
   }
   else
-    return -1;
+  {
+    *index = -1;
+    return *index;
+  }
 }
 
 /* ================================================================ */
@@ -6253,6 +6290,9 @@ main(int argc, char * argv[])
   search_data.mb_len = 0;    /* Current position in the search buffer in     *
                               * multibyte units                              */
 
+  int matching_word_cur_index = -1; /* cache for the next/previous moves     *
+                                     * in the matching words array           */
+
   struct sigaction sa; /* Signal structure                                   */
 
   char * iws = NULL, *ils = NULL;
@@ -9956,7 +9996,8 @@ main(int argc, char * argv[])
           if (matches_count > 0)
           {
             int pos = find_next_matching_word(matching_words_a, matches_count,
-                                              current);
+                                              current,
+                                              &matching_word_cur_index);
             if (pos >= 0)
               current = pos;
 
@@ -9982,7 +10023,8 @@ main(int argc, char * argv[])
           if (matches_count > 0)
           {
             int pos = find_prev_matching_word(matching_words_a, matches_count,
-                                              current);
+                                              current,
+                                              &matching_word_cur_index);
             if (pos >= 0)
               current = pos;
           }
