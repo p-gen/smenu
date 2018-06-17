@@ -336,6 +336,9 @@ static void
 update_bitmaps(search_mode_t search_mode, search_data_t * search_data);
 
 void
+disp_cursor_word(int pos, win_t * win, term_t * term);
+
+void
 disp_matching_word(int pos, win_t * win, term_t * term, int is_matching);
 
 static void
@@ -5078,10 +5081,74 @@ build_metadata(term_t * term, int count, win_t * win)
   return last;
 }
 
-/* ================================================================== */
-/* helper function used by disp_word to print a word highlighting the */
-/* searched part of the word.                                         */
-/* ================================================================== */
+/* ==================================================================== */
+/* Helper function used by disp_word to print a matching word under the */
+/* cursor withe the matching characters of the word highlighted.        */
+/* ==================================================================== */
+void
+disp_cursor_word(int pos, win_t * win, term_t * term)
+{
+  int    i;
+  int    att_set = 0;
+  char * p       = word_a[pos].str + daccess.flength;
+  char * np      = p;
+
+  /* Set the search cursor attribute */
+  /* """"""""""""""""""""""""""""""" */
+  tputs(TPARM1(exit_attribute_mode), 1, outch);
+
+  if (word_a[pos].is_tagged)
+    apply_attr(term, win->cursor_on_tag_attr);
+  else
+    apply_attr(term, win->cursor_attr);
+
+  for (i = 0; i < word_a[pos].mb - 1 - daccess.flength; i++)
+  {
+    if (BIT_ISSET(word_a[pos].bitmap, i))
+    {
+      if (!att_set)
+      {
+        att_set = 1;
+
+        /* Set the buffer display attribute */
+        /* """""""""""""""""""""""""""""""" */
+        tputs(TPARM1(exit_attribute_mode), 1, outch);
+        if (word_a[pos].is_tagged)
+          apply_attr(term, win->cursor_on_tag_attr);
+        else
+          apply_attr(term, win->cursor_attr);
+
+        apply_attr(term, win->match_text_attr);
+      }
+    }
+    else
+    {
+      if (att_set)
+      {
+        att_set = 0;
+
+        /* Set the search cursor attribute */
+        /* """"""""""""""""""""""""""""""" */
+        tputs(TPARM1(exit_attribute_mode), 1, outch);
+        if (word_a[pos].is_tagged)
+          apply_attr(term, win->cursor_on_tag_attr);
+        else
+          apply_attr(term, win->cursor_attr);
+      }
+    }
+    np = mb_next(p);
+    if (np == NULL)
+      fputs(p, stdout);
+    else
+      printf("%.*s", np - p, p);
+    p = np;
+  }
+}
+
+/* ==================================================================== */
+/* Helper function used by disp_word to print a matching word NOT under */
+/* the cursor withe the matching characters of the word highlighted.    */
+/* ==================================================================== */
 void
 disp_matching_word(int pos, win_t * win, term_t * term, int is_matching)
 {
@@ -5266,7 +5333,10 @@ disp_word(int pos, search_mode_t search_mode, search_data_t * search_data,
         apply_attr(term, win->cursor_attr);
 
       mb_strprefix(tmp_word, word_a[pos].str, (int)word_a[pos].mb - 1, &p);
-      fputs(tmp_word + daccess.flength, stdout);
+      if (word_a[pos].is_matching)
+        disp_cursor_word(pos, win, term);
+      else
+        fputs(tmp_word + daccess.flength, stdout);
     }
     tputs(TPARM1(exit_attribute_mode), 1, outch);
   }
