@@ -2501,8 +2501,7 @@ clean_matches(search_data_t * search_data, size_t size)
   /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
   if (tst_search_list)
   {
-    fuzzy_node = tst_search_list->tail;
-    while (fuzzy_node)
+    while (fuzzy_node = tst_search_list->tail)
     {
       list = (ll_t *)(fuzzy_node->data);
 
@@ -2510,8 +2509,6 @@ clean_matches(search_data_t * search_data, size_t size)
         ll_delete(list, node);
 
       ll_delete(tst_search_list, tst_search_list->tail);
-
-      fuzzy_node = tst_search_list->tail;
     }
     if (tst_search_list->len == 0)
       ll_append(tst_search_list, ll_new());
@@ -5089,7 +5086,7 @@ disp_cursor_word(int pos, win_t * win, term_t * term)
   int    i;
   int    att_set = 0;
   char * p       = word_a[pos].str + daccess.flength;
-  char * np      = p;
+  char * np;
 
   /* Set the search cursor attribute */
   /* """"""""""""""""""""""""""""""" */
@@ -5153,7 +5150,7 @@ disp_matching_word(int pos, win_t * win, term_t * term, int is_matching)
   int    i;
   int    att_set = 0;
   char * p       = word_a[pos].str + daccess.flength;
-  char * np      = p;
+  char * np;
 
   /* Set the search cursor attribute */
   /* """"""""""""""""""""""""""""""" */
