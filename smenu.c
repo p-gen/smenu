@@ -7564,45 +7564,35 @@ main(int argc, char * argv[])
 
     if (!win.search_field_attr.is_set)
     {
-      win.search_field_attr.fg     = 7;
-      win.search_field_attr.bg     = 4;
+      win.search_field_attr.bg     = 2;
       win.search_field_attr.is_set = SET;
     }
 
     if (!win.search_text_attr.is_set)
     {
-      win.search_text_attr.fg = 2;
-      win.search_text_attr.bg = 4;
+      if (term.has_reverse)
+        win.search_text_attr.reverse = 1;
 
-      if (term.has_bold)
-        win.search_text_attr.bold = 1;
+      win.search_text_attr.fg = 2;
 
       win.search_text_attr.is_set = SET;
     }
 
     if (!win.match_field_attr.is_set)
     {
-      if (term.has_bold)
-        win.match_field_attr.bold = 1;
-      else
-        win.match_field_attr.fg = 6;
-
       win.match_field_attr.is_set = SET;
     }
 
     if (!win.match_text_attr.is_set)
     {
-      win.match_text_attr.fg = 4;
-
-      if (term.has_bold)
-        win.match_text_attr.bold = 1;
+      win.match_text_attr.fg = 2;
 
       win.match_text_attr.is_set = SET;
     }
 
     if (!win.exclude_attr.is_set)
     {
-      win.exclude_attr.fg     = 3;
+      win.exclude_attr.fg     = 2;
       win.exclude_attr.is_set = SET;
     }
 
