@@ -2286,7 +2286,6 @@ update_bitmaps(search_mode_t mode, search_data_t * data)
     {
       n        = matching_words_a[i];
       str_orig = word_a[n].str + daccess.flength;
-      len      = word_a[n].len - daccess.flength;
       mb       = word_a[n].mb - 1 - daccess.flength;
       bm       = word_a[n].bitmap;
 
@@ -2365,10 +2364,9 @@ update_bitmaps(search_mode_t mode, search_data_t * data)
   {
     for (i = 0; i < matches_count; i++)
     {
-      n   = matching_words_a[i];
-      len = word_a[n].len - daccess.flength;
-      bm  = word_a[n].bitmap;
-      mb  = word_a[n].mb - 1 - daccess.flength;
+      n  = matching_words_a[i];
+      bm = word_a[n].bitmap;
+      mb = word_a[n].mb - 1 - daccess.flength;
 
       memset(bm, '\0', mb);
       for (j = 0; j <= last; j++)
@@ -5236,13 +5234,6 @@ disp_word(int pos, search_mode_t search_mode, search_data_t * search_data,
   {
     if (search_mode != NONE)
     {
-      size_t word_len;
-
-      /* Prevent buffer to become larger than the word */
-      /* to be displayed                               */
-      /* """"""""""""""""""""""""""""""""""""""""""""" */
-      word_len = strlen(word_a[pos].str);
-
       mb_strprefix(tmp_word, word_a[pos].str, (int)word_a[pos].mb - 1, &p);
       if (word_a[pos].is_numbered)
       {
@@ -11329,13 +11320,8 @@ main(int argc, char * argv[])
           {
             size_t      old_len    = search_data.len;
             size_t      old_mb_len = search_data.mb_len;
-            size_t      word_mb_len;
             int         i;
             ll_node_t * node;
-
-            /* store the length in multibytes of the current word */
-            /* """""""""""""""""""""""""""""""""""""""""""""""""" */
-            word_mb_len = word_a[current].mb - 1;
 
             /* Copy all the bytes included in the key press to buffer */
             /* """""""""""""""""""""""""""""""""""""""""""""""""""""" */
