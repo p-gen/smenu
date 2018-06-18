@@ -2386,7 +2386,7 @@ find_next_matching_word(int * array, int nb, int value, int * index)
 
   /* Use the cached value when possible */
   /* """""""""""""""""""""""""""""""""" */
-  if (*index < nb - 1 && array[*index] == value)
+  if (*index >= 0 && *index < nb - 1 && array[*index] == value)
     return (array[++(*index)]);
 
   if (nb > 0)
