@@ -9968,12 +9968,13 @@ main(int argc, char * argv[])
 
             /* Clean the potential matching words non empty list */
             /* """"""""""""""""""""""""""""""""""""""""""""""""" */
-            if (matches_count > 0)
+            if (search_mode != NONE)
             {
               search_mode     = NONE;
               old_search_mode = NONE;
 
-              clean_matches(&search_data, word_real_max_size);
+              if (matches_count > 0)
+                clean_matches(&search_data, word_real_max_size);
 
               nl = disp_lines(&win, &toggle, current, count, search_mode,
                               &search_data, &term, last_line, tmp_word,
