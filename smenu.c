@@ -2197,24 +2197,26 @@ beep(toggle_t * toggle)
   struct timespec ts, rem;
   int             rc;
 
-  tputs(TPARM1(cursor_visible), 1, outch);
-
   if (!toggle->visual_bell)
     fputc('\a', stdout);
-
-  ts.tv_sec  = 0;
-  ts.tv_nsec = 200000000;
-
-  errno = 0;
-  rc    = nanosleep(&ts, &rem);
-
-  while (rc < 0 && errno == EINTR)
+  else
   {
-    errno = 0;
-    rc    = nanosleep(&rem, &rem);
-  }
+    tputs(TPARM1(cursor_visible), 1, outch);
 
-  tputs(TPARM1(cursor_invisible), 1, outch);
+    ts.tv_sec  = 0;
+    ts.tv_nsec = 200000000;
+
+    errno = 0;
+    rc    = nanosleep(&ts, &rem);
+
+    while (rc < 0 && errno == EINTR)
+    {
+      errno = 0;
+      rc    = nanosleep(&rem, &rem);
+    }
+
+    tputs(TPARM1(cursor_invisible), 1, outch);
+  }
 }
 
 /* ========================================================= */
