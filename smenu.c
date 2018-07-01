@@ -30,6 +30,7 @@
 #include <stdarg.h>
 #include <signal.h>
 #include <ctype.h>
+#include <time.h>
 #include <string.h>
 #include <unistd.h>
 #include <locale.h>
@@ -201,6 +202,9 @@ isprint7(int i);
 
 static int
 isprint8(int i);
+
+void
+beep(toggle_t * toggle);
 
 static int
 get_cursor_position(int * const r, int * const c);
@@ -500,6 +504,7 @@ struct toggle_s
   int autotag;             /* 1 if tagging is selected and pinning is    *
                             * not and we do no want an automatic tagging *
                             * when the users presses <ENTER>             */
+  int visual_bell;         /* 1 to flash the window, 0 to make a sound   */
 };
 
 /* Structure to store the default or imposed smenu limits */
@@ -2184,6 +2189,32 @@ isprint8(int i)
   unsigned char c = i & (unsigned char)0xff;
 
   return (c >= 0x20 && c < 0x7f) || (c >= (unsigned char)0xa0);
+}
+
+void
+beep(toggle_t * toggle)
+{
+  struct timespec ts, rem;
+  int             rc;
+
+  tputs(TPARM1(cursor_visible), 1, outch);
+
+  if (!toggle->visual_bell)
+    fputc('\a', stdout);
+
+  ts.tv_sec  = 0;
+  ts.tv_nsec = 200000000;
+
+  errno = 0;
+  rc    = nanosleep(&ts, &rem);
+
+  while (rc < 0 && errno == EINTR)
+  {
+    errno = 0;
+    rc    = nanosleep(&rem, &rem);
+  }
+
+  tputs(TPARM1(cursor_invisible), 1, outch);
 }
 
 /* ========================================================= */
@@ -6453,6 +6484,7 @@ main(int argc, char * argv[])
   toggle.taggable            = 0;
   toggle.autotag             = 0;
   toggle.pinable             = 0;
+  toggle.visual_bell         = 0;
 
   /* misc default values */
   /* """"""""""""""""""" */
@@ -6566,7 +6598,7 @@ main(int argc, char * argv[])
   /* """"""""""""""""""""""""""""" */
   while ((opt = egetopt(argc, argv,
                         "Vf:h?X:x:qdMba:i:e:S:I:E:A:Z:1:2:3:4:5:C:R:"
-                        "kclwrg%n:t%m:s:W:L:T%P%pN%U%FD:/:"))
+                        "kvclwrg%n:t%m:s:W:L:T%P%pN%U%FD:/:"))
          != -1)
   {
     switch (opt)
@@ -6624,6 +6656,10 @@ main(int argc, char * argv[])
 
       case 'k':
         toggle.keep_spaces = 1;
+        break;
+
+      case 'v':
+        toggle.visual_bell = 1;
         break;
 
       case 'c':
@@ -11260,6 +11296,8 @@ main(int argc, char * argv[])
                                 &langinfo);
               }
             }
+            else
+              beep(&toggle);
 
             if (search_data.mb_len > 0)
               goto special_cmds_when_searching;
@@ -11311,6 +11349,7 @@ main(int argc, char * argv[])
             size_t      old_mb_len = search_data.mb_len;
             int         i;
             ll_node_t * node;
+            wchar_t *   ws;
 
             /* Copy all the bytes included in the key press to buffer */
             /* """""""""""""""""""""""""""""""""""""""""""""""""""""" */
@@ -11343,7 +11382,6 @@ main(int argc, char * argv[])
 
             if (search_mode == PREFIX)
             {
-              wchar_t * ws;
 
               ws = mb_strtowcs(search_data.buf);
 
@@ -11366,22 +11404,30 @@ main(int argc, char * argv[])
               /* """"""""""""""""""""""""""""""""""""" */
               if (matches_count > 0)
               {
-                update_bitmaps(search_mode, &search_data);
-                current = matching_words_a[0];
+                if (search_data.len == old_len && matches_count == 1
+                    && buffer[0] != 0x08 && buffer[0] != 0x7f)
+                  beep(&toggle);
+                else
+                {
+                  update_bitmaps(search_mode, &search_data);
+                  current = matching_words_a[0];
 
-                if (current < win.start || current > win.end)
-                  last_line = build_metadata(&term, count, &win);
+                  if (current < win.start || current > win.end)
+                    last_line = build_metadata(&term, count, &win);
 
-                /* Set new first column to display */
-                /* """"""""""""""""""""""""""""""" */
-                set_new_first_column(&win, &term);
+                  /* Set new first column to display */
+                  /* """"""""""""""""""""""""""""""" */
+                  set_new_first_column(&win, &term);
 
-                nl = disp_lines(&win, &toggle, current, count, search_mode,
-                                &search_data, &term, last_line, tmp_word,
-                                &langinfo);
+                  nl = disp_lines(&win, &toggle, current, count, search_mode,
+                                  &search_data, &term, last_line, tmp_word,
+                                  &langinfo);
+                }
               }
               else
               {
+                beep(&toggle);
+
                 search_data.len                  = old_len;
                 search_data.mb_len               = old_mb_len;
                 search_data.buf[search_data.len] = '\0';
@@ -11415,8 +11461,6 @@ main(int argc, char * argv[])
 
                 if (tst_search_list->len > 0)
                   ll_delete(tst_search_list, tst_search_list->tail);
-                else
-                  matches_count = 0;
               }
               else
               {
@@ -11432,6 +11476,8 @@ main(int argc, char * argv[])
                   list = (ll_t *)(node->data);
                   if (list->len == 0)
                   {
+                    beep(&toggle);
+
                     search_data.len    = 0;
                     search_data.mb_len = 0;
                     search_data.buf[0] = '\0';
@@ -11477,11 +11523,15 @@ main(int argc, char * argv[])
 
                       ll_delete(tst_search_list, tst_search_list->tail);
 
+                      beep(&toggle);
+
                       search_data.len                  = old_len;
                       search_data.mb_len               = old_mb_len;
                       search_data.buf[search_data.len] = '\0';
                     }
                   }
+                  else
+                    beep(&toggle);
                 }
               }
               free(w);
@@ -11521,6 +11571,8 @@ main(int argc, char * argv[])
                                 &search_data, &term, last_line, tmp_word,
                                 &langinfo);
               }
+              else
+                beep(&toggle);
             }
             else /* SUBSTRING */
             {
@@ -11539,76 +11591,68 @@ main(int argc, char * argv[])
 
               matches_count = 0;
 
-              if (search_data.len == 0
-                  && (buffer[0] == 0x08 || buffer[0] == 0x7f)) /* Backspace */
+              if (search_data.mb_len == 1)
               {
+                /* Search all the sub-tst trees having the searched       */
+                /* character as children, the resulting sub-tst are put   */
+                /* in in the level list corresponding to the letter order */
+                /* """""""""""""""""""""""""""""""""""""""""""""""""""""" */
+                tst_substring_traverse(tst_word, NULL, 0, w[0]);
+
                 node = tst_search_list->tail;
-                list = (ll_t *)(node->data);
+                node = ((ll_t *)(node->data))->head;
 
-                while (node = list->head)
-                  ll_delete(list, node);
+                if (node)
+                {
+                  while (node)
+                  {
+                    tst_traverse((tst_node_t *)(node->data), set_matching_flag,
+                                 0);
 
-                ll_delete(tst_search_list, tst_search_list->tail);
-
-                if (tst_search_list->len == 0)
-                  ll_append(tst_search_list, ll_new());
+                    node = node->next;
+                  }
+                }
               }
               else
               {
-                if (search_data.mb_len == 1)
+                node = tst_search_list->tail;
+                node = ((ll_t *)(node->data))->head;
+
+                matches_count = 0;
+
+                while (node)
                 {
-                  /* Search all the sub-tst trees having the searched       */
-                  /* character as children, the resulting sub-tst are put   */
-                  /* in in the level list corresponding to the letter order */
-                  /* """""""""""""""""""""""""""""""""""""""""""""""""""""" */
-                  tst_substring_traverse(tst_word, NULL, 0, w[0]);
-
-                  node = tst_search_list->tail;
-                  node = ((ll_t *)(node->data))->head;
-
-                  if (node)
-                  {
-                    while (node)
-                    {
-                      tst_traverse((tst_node_t *)(node->data),
-                                   set_matching_flag, 0);
-
-                      node = node->next;
-                    }
-                  }
-                }
-                else
-                {
-                  node = tst_search_list->tail;
-                  node = ((ll_t *)(node->data))->head;
-
-                  while (node)
-                  {
-                    tst_prefix_search((tst_node_t *)(node->data), w + 1,
-                                      tst_cb);
-                    node = node->next;
-                  }
+                  tst_prefix_search((tst_node_t *)(node->data), w + 1, tst_cb);
+                  node = node->next;
                 }
               }
 
               if (matches_count > 0)
               {
-                update_bitmaps(search_mode, &search_data);
-                current = matching_words_a[0];
+                if (search_data.len == old_len && matches_count == 1
+                    && buffer[0] != 0x08 && buffer[0] != 0x7f)
+                  beep(&toggle);
+                else
+                {
+                  update_bitmaps(search_mode, &search_data);
+                  current = matching_words_a[0];
 
-                if (current < win.start || current > win.end)
-                  last_line = build_metadata(&term, count, &win);
+                  if (current < win.start || current > win.end)
+                    last_line = build_metadata(&term, count, &win);
 
-                /* Set new first column to display */
-                /* """"""""""""""""""""""""""""""" */
-                set_new_first_column(&win, &term);
+                  /* Set new first column to display */
+                  /* """"""""""""""""""""""""""""""" */
+                  set_new_first_column(&win, &term);
 
-                nl = disp_lines(&win, &toggle, current, count, search_mode,
-                                &search_data, &term, last_line, tmp_word,
-                                &langinfo);
+                  nl = disp_lines(&win, &toggle, current, count, search_mode,
+                                  &search_data, &term, last_line, tmp_word,
+                                  &langinfo);
+                }
               }
               else
               {
+                beep(&toggle);
+
                 search_data.len = old_len;
                 search_data.mb_len--;
                 search_data.buf[search_data.len] = '\0';
