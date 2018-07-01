@@ -328,7 +328,7 @@ static void
 get_message_lines(char * message, ll_t * message_lines_list,
                   int * message_max_width, int * message_max_len);
 
-static int
+static void
 disp_message(ll_t * message_lines_list, int width, int max_len, term_t * term,
              win_t * win);
 
@@ -627,6 +627,8 @@ struct win_s
   int real_max_width;  /* max line length. In column, tab or line *
                         * mode it can be greater than the         *
                         * terminal width                          */
+  int message_lines;   /* Number of lines taken by the messages   *
+                        * (updated by disp_message                */
   int max_width;       /* max line length or the terminal width   *
                         * minus 2 if less                         */
   int     offset;      /* window offset user when centered        */
@@ -4978,12 +4980,6 @@ build_metadata(term_t * term, int count, win_t * win)
   line_nb_of_word_a[0]    = 0;
   first_word_in_line_a[0] = 0;
 
-  /* Modify the max number of displayed lines if we do not have */
-  /* enough place                                               */
-  /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-  if (win->max_lines > term->nlines - 1)
-    win->max_lines = term->nlines - 1;
-
   /* In column mode we need to calculate win->max_width, first initialize */
   /* it to 0 and increment it later in the loop                           */
   /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
@@ -5174,13 +5170,13 @@ disp_matching_word(int pos, win_t * win, term_t * term, int is_matching)
         /* Set the buffer display attribute */
         /* """""""""""""""""""""""""""""""" */
         tputs(TPARM1(exit_attribute_mode), 1, outch);
+        if (word_a[pos].is_tagged)
+          apply_attr(term, win->tag_attr);
+
         if (is_matching)
           apply_attr(term, win->match_text_attr);
         else
           apply_attr(term, win->search_text_attr);
-
-        if (word_a[pos].is_tagged)
-          apply_attr(term, win->tag_attr);
       }
     }
     else
@@ -5192,13 +5188,13 @@ disp_matching_word(int pos, win_t * win, term_t * term, int is_matching)
         /* Set the search cursor attribute */
         /* """"""""""""""""""""""""""""""" */
         tputs(TPARM1(exit_attribute_mode), 1, outch);
+        if (word_a[pos].is_tagged)
+          apply_attr(term, win->tag_attr);
+
         if (is_matching)
           apply_attr(term, win->match_field_attr);
         else
           apply_attr(term, win->search_field_attr);
-
-        if (word_a[pos].is_tagged)
-          apply_attr(term, win->tag_attr);
       }
     }
     np = mb_next(p);
@@ -5392,7 +5388,7 @@ disp_word(int pos, search_mode_t search_mode, search_data_t * search_data,
 /* ======================================= */
 /* Display a message line above the window */
 /* ======================================= */
-static int
+static void
 disp_message(ll_t * message_lines_list, int message_max_width,
              int message_max_len, term_t * term, win_t * win)
 {
@@ -5401,9 +5397,10 @@ disp_message(ll_t * message_lines_list, int message_max_width,
   char *      buf;
   int         len;
   int         size;
-  int         message_lines = 0;
   int         offset;
   wchar_t *   w;
+
+  win->message_lines = 0;
 
   /* Disarm the periodic timer to prevent the interruptions to corrupt */
   /* screen by altering the timing of the decoding of the terminfo     */
@@ -5418,7 +5415,7 @@ disp_message(ll_t * message_lines_list, int message_max_width,
   /* Do nothing if there is no message to display */
   /* """""""""""""""""""""""""""""""""""""""""""" */
   if (message_lines_list == NULL)
-    return 0;
+    return;
 
   node = message_lines_list->head;
   buf  = xmalloc(message_max_len + 1);
@@ -5458,7 +5455,7 @@ disp_message(ll_t * message_lines_list, int message_max_width,
     puts(buf);
 
     node = node->next;
-    message_lines++;
+    win->message_lines++;
   }
 
   tputs(TPARM1(exit_attribute_mode), 1, outch);
@@ -5472,8 +5469,6 @@ disp_message(ll_t * message_lines_list, int message_max_width,
   periodic_itv.it_interval.tv_sec  = 0;
   periodic_itv.it_interval.tv_usec = TICK;
   setitimer(ITIMER_REAL, &periodic_itv, NULL);
-
-  return message_lines;
 }
 
 /* ============================ */
@@ -5508,6 +5503,12 @@ disp_lines(win_t * win, toggle_t * toggle, int current, int count,
   tputs(TPARM1(save_cursor), 1, outch);
 
   i = win->start;
+
+  /* Modify the max number of displayed lines if we do not have */
+  /* enough place                                               */
+  /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+  if (win->max_lines > term->nlines - win->message_lines)
+    win->max_lines = term->nlines - win->message_lines;
 
   if (last_line >= win->max_lines)
     display_bar = 1;
@@ -6389,6 +6390,7 @@ main(int argc, char * argv[])
   /* Win fields initialization */
   /* """"""""""""""""""""""""" */
   win.max_lines       = 5;
+  win.message_lines   = 0;
   win.asked_max_lines = -1;
   win.center          = 0;
   win.max_cols        = 0;
@@ -7564,7 +7566,7 @@ main(int argc, char * argv[])
 
     if (!win.search_field_attr.is_set)
     {
-      win.search_field_attr.bg     = 2;
+      win.search_field_attr.bg     = 4;
       win.search_field_attr.is_set = SET;
     }
 
@@ -7573,7 +7575,7 @@ main(int argc, char * argv[])
       if (term.has_reverse)
         win.search_text_attr.reverse = 1;
 
-      win.search_text_attr.fg = 2;
+      win.search_text_attr.fg = 4;
 
       win.search_text_attr.is_set = SET;
     }
@@ -7585,26 +7587,23 @@ main(int argc, char * argv[])
 
     if (!win.match_text_attr.is_set)
     {
-      win.match_text_attr.fg = 2;
+      win.match_text_attr.fg = 4;
 
       win.match_text_attr.is_set = SET;
     }
 
     if (!win.exclude_attr.is_set)
     {
-      win.exclude_attr.fg     = 2;
+      win.exclude_attr.fg     = 4;
       win.exclude_attr.is_set = SET;
     }
 
     if (!win.tag_attr.is_set)
     {
+      win.tag_attr.fg = 5;
       if (term.has_underline)
         win.tag_attr.underline = 1;
-      else
-      {
-        win.tag_attr.fg = 0;
-        win.tag_attr.bg = 3;
-      }
+
       win.tag_attr.is_set = SET;
     }
 
@@ -9474,8 +9473,8 @@ main(int argc, char * argv[])
 
   /* Display the words window and its title for the first time */
   /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-  message_lines = disp_message(message_lines_list, message_max_width,
-                               message_max_len, &term, &win);
+  disp_message(message_lines_list, message_max_width, message_max_len, &term,
+               &win);
 
   /* Before displaying the word windows for the first time when in column */
   /* or line mode, we need to ensure that the word under the cursor will  */
@@ -9605,14 +9604,14 @@ main(int argc, char * argv[])
 
       /* Reset the number of lines if the terminal has enough lines */
       /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-      if (win.max_lines < term.nlines - message_lines)
+      if (win.max_lines < term.nlines - win.message_lines)
         win.max_lines = win.asked_max_lines;
       else
-        win.max_lines = term.nlines - message_lines;
+        win.max_lines = term.nlines - win.message_lines;
 
       /* Erase the visible part of the displayed window */
       /* """""""""""""""""""""""""""""""""""""""""""""" */
-      for (i = 0; i < message_lines; i++)
+      for (i = 0; i < win.message_lines; i++)
       {
         tputs(TPARM1(clr_bol), 1, outch);
         tputs(TPARM1(clr_eol), 1, outch);
@@ -9625,7 +9624,7 @@ main(int argc, char * argv[])
 
       get_cursor_position(&line, &column);
 
-      for (i = 1; i < nl + message_lines; i++)
+      for (i = 1; i < nl + win.message_lines; i++)
       {
         if (line + i >= nlines)
           break; /* We have reached the last terminal line */
@@ -9661,8 +9660,8 @@ main(int argc, char * argv[])
         win.first_column = word_a[pos].start;
       }
 
-      message_lines = disp_message(message_lines_list, message_max_width,
-                                   message_max_len, &term, &win);
+      disp_message(message_lines_list, message_max_width, message_max_len,
+                   &term, &win);
 
       nl = disp_lines(&win, &toggle, current, count, search_mode, &search_data,
                       &term, last_line, tmp_word, &langinfo);
@@ -9670,8 +9669,8 @@ main(int argc, char * argv[])
       /* Determine the number of lines to move the cursor up if the window  */
       /* display needed a terminal scrolling                                */
       /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-      if (nl + message_lines + term.curs_line > term.nlines)
-        offset = term.curs_line + nl + message_lines - term.nlines;
+      if (nl + win.message_lines + term.curs_line > term.nlines)
+        offset = term.curs_line + nl + win.message_lines - term.nlines;
       else
         offset = 0;
 
@@ -9712,7 +9711,7 @@ main(int argc, char * argv[])
 
           /* Erase the current window */
           /* """""""""""""""""""""""" */
-          for (i = 0; i < message_lines; i++)
+          for (i = 0; i < win.message_lines; i++)
           {
             tputs(TPARM1(cursor_up), 1, outch);
             tputs(TPARM1(clr_bol), 1, outch);
@@ -9724,8 +9723,8 @@ main(int argc, char * argv[])
 
           /* Display the words window and its title for the first time */
           /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-          message_lines = disp_message(message_lines_list, message_max_width,
-                                       message_max_len, &term, &win);
+          disp_message(message_lines_list, message_max_width, message_max_len,
+                       &term, &win);
         }
         /* The timeout has expired */
         /* """"""""""""""""""""""" */
@@ -9771,7 +9770,7 @@ main(int argc, char * argv[])
 
           /* Clear the message */
           /* """"""""""""""""" */
-          for (i = 0; i < message_lines; i++)
+          for (i = 0; i < win.message_lines; i++)
           {
             tputs(TPARM1(cursor_up), 1, outch);
             tputs(TPARM1(clr_bol), 1, outch);
@@ -9783,8 +9782,8 @@ main(int argc, char * argv[])
 
           /* Display the words window and its title for the first time */
           /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-          message_lines = disp_message(message_lines_list, message_max_width,
-                                       message_max_len, &term, &win);
+          disp_message(message_lines_list, message_max_width, message_max_len,
+                       &term, &win);
         }
 
         setitimer(ITIMER_REAL, &periodic_itv, NULL);
@@ -9803,6 +9802,7 @@ main(int argc, char * argv[])
           /* An escape sequence or a multibyte character has been pressed */
           /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
           if (memcmp("\x1bOH", buffer, 3) == 0
+              || memcmp("\x1bk", buffer, 2) == 0
               || memcmp("\x1b[H", buffer, 3) == 0
               || memcmp("\x1b[1~", buffer, 4) == 0
               || memcmp("\x1b[7~", buffer, 4) == 0)
@@ -9840,6 +9840,7 @@ main(int argc, char * argv[])
             goto kschome;
 
           if (memcmp("\x1bOF", buffer, 3) == 0
+              || memcmp("\x1bj", buffer, 2) == 0
               || memcmp("\x1b[F", buffer, 3) == 0
               || memcmp("\x1b[4~", buffer, 4) == 0
               || memcmp("\x1b[8~", buffer, 4) == 0)
@@ -9996,7 +9997,7 @@ main(int argc, char * argv[])
           {
             int i; /* generic index in this block */
 
-            for (i = 0; i < message_lines; i++)
+            for (i = 0; i < win.message_lines; i++)
               tputs(TPARM1(cursor_up), 1, outch);
 
             if (toggle.del_line)
@@ -10005,7 +10006,7 @@ main(int argc, char * argv[])
               tputs(TPARM1(clr_bol), 1, outch);
               tputs(TPARM1(save_cursor), 1, outch);
 
-              for (i = 1; i < nl + message_lines; i++)
+              for (i = 1; i < nl + win.message_lines; i++)
               {
                 tputs(TPARM1(cursor_down), 1, outch);
                 tputs(TPARM1(clr_eol), 1, outch);
@@ -10015,7 +10016,7 @@ main(int argc, char * argv[])
             }
             else
             {
-              for (i = 1; i < nl + message_lines; i++)
+              for (i = 1; i < nl + win.message_lines; i++)
                 tputs(TPARM1(cursor_down), 1, outch);
               puts("");
             }
@@ -10126,14 +10127,14 @@ main(int argc, char * argv[])
           /* """""""""""""""""""""""""""""""""""""""""""""""""" */
           if (toggle.del_line)
           {
-            for (i = 0; i < message_lines; i++)
+            for (i = 0; i < win.message_lines; i++)
               tputs(TPARM1(cursor_up), 1, outch);
 
             tputs(TPARM1(clr_eol), 1, outch);
             tputs(TPARM1(clr_bol), 1, outch);
             tputs(TPARM1(save_cursor), 1, outch);
 
-            for (i = 1; i < nl + message_lines; i++)
+            for (i = 1; i < nl + win.message_lines; i++)
             {
               tputs(TPARM1(cursor_down), 1, outch);
               tputs(TPARM1(clr_eol), 1, outch);
