@@ -8,7 +8,7 @@ and outputs the selection to stdout.
       [\fB-n\fP \fIlines\fP] [\fB-t\fP [\fIcols\fP]] [\fB-k\fP] \\
       [\fB-s\fP \fIpattern\fP] [\fB-m\fP \fImessage\fP] [\fB-w\fP] \\
       [\fB-d\fP] [\fB-M\fP] [\fB-c\fP] [\fB-l\fP] [\fB-r\fP] [\fB-b\fP] \\
-      [\fB-a\fP (i|e|c|b|s|t|ct|sf|st|mf|mt|da):\fIATTR\fP]... \\
+      [\fB-a\fP (i|e|c|b|s|t|ct|sf|st|mf|mt|sfe|ste|mfe|mte|da):\fIATTR\fP]... \\
       [\fB-i\fP \fIregex\fP] [\fB-e\fP \fIregex\fP] \\
       [\fB-C\fP \
 [\fIi\fP|\fIe\fP]<col selectors>] \\
@@ -142,7 +142,24 @@ The sequence of characters entered must match a substring in a word.
 \fIfuzzy\fP (keys \fB~\fP or \fB*\fP):
 All the character in the entered sequence must appear in the same order
 in a word must not necessarily be consecutive.
+
 The case is also ignored.
+
+This method also tolerates intermediate symbols not appearing in the
+words to be ignored.
+If this is the case, the attributes of the approximatively matching
+words are changed into error versions of them to warn the user to this
+situation.
+
+The erroneous symbols will not be \fBput\fP in the search buffer.
+
+By example: if the word \fBabcdef\fP is present in the standard input,
+then entering \f(CBabxcdye\fP puts \fBabcdef\fP in the search buffer
+and the word is added to the matching list and displayed with an error
+attribute (in red by default).
+
+This special state will persist until all the symbols following the first
+erroneous one are deleted (using backspace) or \fBESC\fP is pressed.
 .PP
 During a search session, the cursor changes and each character entered is
 added in (or removed from) the search buffer.
@@ -291,6 +308,10 @@ allowed:
   search_text = 7,bu      ; search text attributes
   match_field = 1,b       ; matching words field attributes
   match_text = 7,bu       ; matching words text attributes
+  search_err_field = 1    ; approximate search field attributes
+  search_err_text = 1,r   ; approximate search text attributes
+  ; match_err_field = 3   ; approximate matching words field attributes
+  match_err_text = 1      ; approximate matching words text attributes
   ; include = b           ; selectable color attributes
   exclude = 4/0,u         ; non-selectable color attributes
   tag = 0/5               ; tagged (selected) attributes
@@ -382,7 +403,11 @@ In this mode each column has the same width.
 .IP \fB-k\fP
 By default, the spaces surrounding the output string will be deleted.
 This option forces them to be retained.
-Note that these spaces must have been protected to be selected.
+.IP \fB-v\fP
+By default, when searching, an alarm is produced by the terminal when
+the user enters a character or makes a move which lead to no result or
+to an error condition. This argument make this beep visual by briefly
+showing the cursor.
 .IP "\fB-s\fP \fIpattern\fP"
 Place the cursor on the first word corresponding to the specified pattern.
 
@@ -493,10 +518,18 @@ cursor on tagged words.
 search field.
 .IP \fIst\fP
 search text.
+.IP \fIsfe\fP
+approximate search field with error.
+.IP \fIste\fP
+approximate search text with error.
 .IP \fImf\fP
 matched words field.
 .IP \fImt\fP
 matched words text.
+.IP \fImfe\fP
+matched words field with error.
+.IP \fImte\fP
+matched words text with error.
 .IP \fIda\fP
 direct access tag.
 .RE
@@ -944,12 +977,10 @@ the timer to its initial value.
 The \fB-X\fP version works like \fB-x\fP but no periodic remaining
 messages is displayed above the selection window.
 .RE
-.IP "\fB-/\fP \fIprefix|\fIsubstring\fP|\fIfuzzy\fP"
-Associates one of the search algorithm to the \fB/\fP key. By default
-the \fIfuzzy\fP algorithm is selected.
-
-Again, each algorithm name can be be shortened as a prefix of its
-full name ("pre" for "prefix" of "s" for "substring" per example).
+.IP "\fB-/\fP \fIsearch_method\fP"
+Affects the '\fB/\fP' key to a search method. By default '\fB/\fP'
+is affected to '\fIfuzzy\fP' but the argument can be any prefix
+of '\fIprefix\fP', '\fIsubstring\fP' or '\fIfuzzy\fP'.
 .SH NOTES
 If tabulators (\fI\\t\fP) are embedded in the input, there is no way
 to replace them with the original number of spaces.
