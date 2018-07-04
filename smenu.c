@@ -291,7 +291,7 @@ tst_fuzzy_traverse(tst_node_t * p, int (*callback)(void *), int first_call,
                    wchar_t w);
 
 void
-mb_strtolower(char * dst, const unsigned char * src);
+mb_strtolower(char * dst, char * src);
 
 void
 insert_sorted(int ** array, int * size, int * filled, int value);
@@ -340,10 +340,11 @@ static void
 update_bitmaps(search_mode_t search_mode, search_data_t * search_data);
 
 void
-disp_cursor_word(int pos, win_t * win, term_t * term);
+disp_cursor_word(int pos, win_t * win, term_t * term, int err);
 
 void
-disp_matching_word(int pos, win_t * win, term_t * term, int is_matching);
+disp_matching_word(int pos, win_t * win, term_t * term, int is_matching,
+                   int err);
 
 static void
 disp_word(int pos, search_mode_t search_mode, search_data_t * search_data,
@@ -648,19 +649,23 @@ struct win_s
   unsigned char wide;      /* -w */
   unsigned char center;    /* -M */
 
-  attr_t cursor_attr;        /* current cursor attributes         */
-  attr_t cursor_on_tag_attr; /* current cursor on tag attributes  */
-  attr_t bar_attr;           /* scrollbar attributes              */
-  attr_t shift_attr;         /* shift indicator attributes        */
-  attr_t search_field_attr;  /* search mode field attributes      */
-  attr_t search_text_attr;   /* search mode text attributes       */
-  attr_t match_field_attr;   /* matching word field attributes    */
-  attr_t match_text_attr;    /* matching word text attributes     */
-  attr_t include_attr;       /* selectable words attributes       */
-  attr_t exclude_attr;       /* non-selectable words attributes   */
-  attr_t tag_attr;           /* non-selectable words attributes   */
-  attr_t daccess_attr;       /* direct access tag attributes      */
-  attr_t special_attr[5];    /* special (-1,...) words attributes */
+  attr_t cursor_attr;           /* current cursor attributes          */
+  attr_t cursor_on_tag_attr;    /* current cursor on tag attributes   */
+  attr_t bar_attr;              /* scrollbar attributes               */
+  attr_t shift_attr;            /* shift indicator attributes         */
+  attr_t search_field_attr;     /* search mode field attributes       */
+  attr_t search_text_attr;      /* search mode text attributes        */
+  attr_t search_err_field_attr; /* bad search mode field attributes   */
+  attr_t search_err_text_attr;  /* bad search mode text attributes    */
+  attr_t match_field_attr;      /* matching word field attributes     */
+  attr_t match_text_attr;       /* matching word text attributes      */
+  attr_t match_err_field_attr;  /* bad matching word field attributes */
+  attr_t match_err_text_attr;   /* bad matching word text attributes  */
+  attr_t include_attr;          /* selectable words attributes        */
+  attr_t exclude_attr;          /* non-selectable words attributes    */
+  attr_t tag_attr;              /* non-selectable words attributes    */
+  attr_t daccess_attr;          /* direct access tag attributes       */
+  attr_t special_attr[5];       /* special (-1,...) words attributes  */
 };
 
 /* Sed like node structure */
@@ -733,19 +738,21 @@ struct daccess_s
 
 struct search_data_s
 {
-  char * buf;        /* Search buffer                            */
-  size_t len;        /* Current position in the search buffer    */
-  size_t mb_len;     /* Current position in the search buffer in *
-                      * multibyte units                          */
-  size_t * mb_off_a; /* Array of mb offsets in buf               */
-  size_t * mb_len_a; /* Array of mb lengths in buf               */
+  char * buf;             /* Search buffer                            */
+  size_t len;             /* Current position in the search buffer    */
+  size_t mb_len;          /* Current position in the search buffer in *
+                           * multibyte units                          */
+  size_t * mb_off_a;      /* Array of mb offsets in buf               */
+  size_t * mb_len_a;      /* Array of mb lengths in buf               */
+  int      fuzzy_err;     /* furry match error indicator              */
+  int      fuzzy_err_pos; /* last good position in search buffer      */
 };
 
 /* **************** */
 /* Global variables */
 /* **************** */
 
-word_t * word_a;       /* Array containing words data (size: count) */
+word_t * word_a;       /* Array containing words data (size: count)         */
 int      dummy_rc;     /* temporary variable to silence the compiler        */
 int      count = 0;    /* number of words read from stdin                   */
 int      current;      /* index the current selection under the cursor)     */
@@ -887,7 +894,7 @@ static void
 short_usage(void)
 {
   fprintf(stderr, "Usage: smenu [-h|-?] [-f config_file] [-n lines] ");
-  fprintf(stderr, "[-t [cols]] [-k]              \\\n");
+  fprintf(stderr, "[-t [cols]] [-k] [-v]         \\\n");
   fprintf(stderr, "       [-s pattern] [-m message] [-w] [-d] [-M] [-c] [-l] ");
   fprintf(stderr, "[-r] [-b]            \\\n");
   fprintf(stderr, "       [-a prefix:attr [prefix:attr]...] ");
@@ -909,7 +916,8 @@ short_usage(void)
   fprintf(stderr, "       [-/ prefix|substring|fuzzy] [--] [input_file]\n\n");
   fprintf(stderr, "       <col selectors> ::= col1[-col2]...|<RE>...\n");
   fprintf(stderr, "       <row selectors> ::= row1[-row2]...|<RE>...\n");
-  fprintf(stderr, "       <prefix>        ::= i|e|c|b|s|t|ct|sf|st|mf|mt|da\n");
+  fprintf(stderr, "       <prefix>        ::= i|e|c|b|s|t|ct|sf|st|mf|mt|");
+  fprintf(stderr, "sfe|ste|mfe|mte|da\n");
   fprintf(stderr, "       <arg>           ::= [l|r:<char>]|[a:l|r]|[p:i|a]|");
   fprintf(stderr, "[w:<size>]|\n");
   fprintf(stderr, "                           [f:y|n]|[o:<num>]|[n:<num>]|");
@@ -948,7 +956,8 @@ usage(void)
           "with\n");
   fprintf(stderr, "   an optional number.\n");
   fprintf(stderr,
-          "-k do not trim the space surrounding the output string if any.\n");
+          "-k does not trim spaces surrounding the output string if any.\n");
+  fprintf(stderr, "-v makes the bell visual (fuzzy search with error).\n");
   fprintf(stderr,
           "-s sets the initial cursor position (read the manual for "
           "more details).\n");
@@ -1016,6 +1025,8 @@ usage(void)
   fprintf(stderr, "-V displays the current version and quits.\n");
   fprintf(stderr,
           "-x|-X sets a timeout and specifies what to do when it expires.\n");
+  fprintf(stderr,
+          "-/ changes the affectation of the / key (default fuzzy search).\n");
   fprintf(stderr, "\nNavigation keys are:\n");
   fprintf(stderr, "  - Left/Down/Up/Right arrows or h/j/k/l, J/K.\n");
   fprintf(stderr, "  - Home/End, SHIFT|CTRL+Home/End.\n");
@@ -1545,6 +1556,8 @@ ini_cb(win_t * win, term_t * term, limits_t * limits, timers_t * timers,
       CHECK_ATTR(search_text)
       CHECK_ATTR(match_field)
       CHECK_ATTR(match_text)
+      CHECK_ATTR(match_err_field)
+      CHECK_ATTR(match_err_text)
       CHECK_ATTR(include)
       CHECK_ATTR(exclude)
       CHECK_ATTR(tag)
@@ -2266,11 +2279,11 @@ insert_sorted(int ** array, int * size, int * nb, int value)
 /* ascci one. dsk must be preallocated before the call.           */
 /* ============================================================== */
 void
-mb_strtolower(char * dst, const unsigned char * src)
+mb_strtolower(char * dst, char * src)
 {
   unsigned char c;
 
-  while (c = *src)
+  while ((c = *src))
   {
     if (c >= 0x80)
       *dst = c;
@@ -2532,15 +2545,15 @@ clean_matches(search_data_t * search_data, size_t size)
   ll_node_t *fuzzy_node, *node;
   int        i;
 
-  /* Clean the list of lists datastrucutre containing the search levels */
+  /* Clean the list of lists data-structure containing the search levels */
   /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
   if (tst_search_list)
   {
-    while (fuzzy_node = tst_search_list->tail)
+    while ((fuzzy_node = tst_search_list->tail))
     {
       list = (ll_t *)(fuzzy_node->data);
 
-      while (node = list->head)
+      while ((node = list->head))
         ll_delete(list, node);
 
       ll_delete(tst_search_list, tst_search_list->tail);
@@ -2549,8 +2562,10 @@ clean_matches(search_data_t * search_data, size_t size)
       ll_append(tst_search_list, ll_new());
   }
 
-  /* Clean the searchj buffer */
-  /* """""""""""""""""""""""" */
+  search_data->fuzzy_err = 0;
+
+  /* Clean the search buffer */
+  /* """"""""""""""""""""""" */
   memset(search_data->buf, '\0', size - daccess.flength);
   search_data->len    = 0;
   search_data->mb_len = 0;
@@ -3528,7 +3543,7 @@ strip_ansi_color(char * s, toggle_t * toggle)
 }
 
 /* ======================================================================== */
-/* unicode (UTF-8) ascii representation interprer.                          */
+/* unicode (UTF-8) ascii representation interpreter.                        */
 /* The string passed will be altered but will not move in memory            */
 /* All sequence of \uxx, \uxxxx, \uxxxxxx and \uxxxxxxxx will be replace by */
 /* the corresponding UTF-8 character.                                       */
@@ -3729,10 +3744,10 @@ mb_next(char * p)
   return (*p == '\0' ? NULL : p);
 }
 
-/* =========================================================== */
-/* Replace any multibyte present in s by a dot inplace         */
-/* s will be modified but its address in meory will not change */
-/* =========================================================== */
+/* ============================================================ */
+/* Replace any multibyte present in s by a dot in-place         */
+/* s will be modified but its address in memory will not change */
+/* ============================================================ */
 static void
 mb_sanitize(char * s)
 {
@@ -5110,7 +5125,7 @@ build_metadata(term_t * term, int count, win_t * win)
 /* cursor withe the matching characters of the word highlighted.        */
 /* ==================================================================== */
 void
-disp_cursor_word(int pos, win_t * win, term_t * term)
+disp_cursor_word(int pos, win_t * win, term_t * term, int err)
 {
   int    i;
   int    att_set = 0;
@@ -5140,9 +5155,14 @@ disp_cursor_word(int pos, win_t * win, term_t * term)
         if (word_a[pos].is_tagged)
           apply_attr(term, win->cursor_on_tag_attr);
         else
+        {
           apply_attr(term, win->cursor_attr);
 
-        apply_attr(term, win->match_text_attr);
+          if (err)
+            apply_attr(term, win->match_err_text_attr);
+          else
+            apply_attr(term, win->match_text_attr);
+        }
       }
     }
     else
@@ -5164,7 +5184,7 @@ disp_cursor_word(int pos, win_t * win, term_t * term)
     if (np == NULL)
       fputs(p, stdout);
     else
-      printf("%.*s", np - p, p);
+      printf("%.*s", (int)(np - p), p);
     p = np;
   }
 }
@@ -5174,7 +5194,8 @@ disp_cursor_word(int pos, win_t * win, term_t * term)
 /* the cursor withe the matching characters of the word highlighted.    */
 /* ==================================================================== */
 void
-disp_matching_word(int pos, win_t * win, term_t * term, int is_matching)
+disp_matching_word(int pos, win_t * win, term_t * term, int is_matching,
+                   int err)
 {
   int    i;
   int    att_set = 0;
@@ -5185,9 +5206,19 @@ disp_matching_word(int pos, win_t * win, term_t * term, int is_matching)
   /* """"""""""""""""""""""""""""""" */
   tputs(TPARM1(exit_attribute_mode), 1, outch);
   if (is_matching)
-    apply_attr(term, win->match_field_attr);
+  {
+    if (err)
+      apply_attr(term, win->match_err_field_attr);
+    else
+      apply_attr(term, win->match_field_attr);
+  }
   else
-    apply_attr(term, win->search_field_attr);
+  {
+    if (err)
+      apply_attr(term, win->search_err_field_attr);
+    else
+      apply_attr(term, win->search_field_attr);
+  }
 
   if (word_a[pos].is_tagged)
     apply_attr(term, win->tag_attr);
@@ -5207,7 +5238,12 @@ disp_matching_word(int pos, win_t * win, term_t * term, int is_matching)
           apply_attr(term, win->tag_attr);
 
         if (is_matching)
-          apply_attr(term, win->match_text_attr);
+        {
+          if (err)
+            apply_attr(term, win->match_err_text_attr);
+          else
+            apply_attr(term, win->match_text_attr);
+        }
         else
           apply_attr(term, win->search_text_attr);
       }
@@ -5225,16 +5261,26 @@ disp_matching_word(int pos, win_t * win, term_t * term, int is_matching)
           apply_attr(term, win->tag_attr);
 
         if (is_matching)
-          apply_attr(term, win->match_field_attr);
+        {
+          if (err)
+            apply_attr(term, win->match_err_field_attr);
+          else
+            apply_attr(term, win->match_field_attr);
+        }
         else
-          apply_attr(term, win->search_field_attr);
+        {
+          if (err)
+            apply_attr(term, win->search_err_field_attr);
+          else
+            apply_attr(term, win->search_field_attr);
+        }
       }
     }
     np = mb_next(p);
     if (np == NULL)
       fputs(p, stdout);
     else
-      printf("%.*s", np - p, p);
+      printf("%.*s", (int)(np - p), p);
     p = np;
   }
 }
@@ -5285,7 +5331,10 @@ disp_word(int pos, search_mode_t search_mode, search_data_t * search_data,
 
       /* Set the search cursor attribute */
       /* """"""""""""""""""""""""""""""" */
-      apply_attr(term, win->search_field_attr);
+      if (search_data->fuzzy_err)
+        apply_attr(term, win->search_err_field_attr);
+      else
+        apply_attr(term, win->search_field_attr);
 
       /* Print and overwrite the beginning of the word with the search */
       /* buffer content if it is not empty                             */
@@ -5306,9 +5355,12 @@ disp_word(int pos, search_mode_t search_mode, search_data_t * search_data,
 
           /* Set the search cursor attribute */
           /* """"""""""""""""""""""""""""""" */
-          apply_attr(term, win->search_field_attr);
+          if (search_data->fuzzy_err)
+            apply_attr(term, win->search_err_field_attr);
+          else
+            apply_attr(term, win->search_field_attr);
 
-          disp_matching_word(pos, win, term, 0);
+          disp_matching_word(pos, win, term, 0, search_data->fuzzy_err);
         }
       }
     }
@@ -5351,7 +5403,7 @@ disp_word(int pos, search_mode_t search_mode, search_data_t * search_data,
 
       mb_strprefix(tmp_word, word_a[pos].str, (int)word_a[pos].mb - 1, &p);
       if (word_a[pos].is_matching)
-        disp_cursor_word(pos, win, term);
+        disp_cursor_word(pos, win, term, search_data->fuzzy_err);
       else
         fputs(tmp_word + daccess.flength, stdout);
     }
@@ -5401,7 +5453,7 @@ disp_word(int pos, search_mode_t search_mode, search_data_t * search_data,
       apply_attr(term, win->include_attr);
 
     if (word_a[pos].is_matching)
-      disp_matching_word(pos, win, term, 1);
+      disp_matching_word(pos, win, term, 1, search_data->fuzzy_err);
     else
     {
       if (word_a[pos].is_tagged)
@@ -6381,6 +6433,8 @@ main(int argc, char * argv[])
   search_data.len    = 0;    /* Current position in the search buffer        */
   search_data.mb_len = 0;    /* Current position in the search buffer in     *
                               * multibyte units                              */
+  search_data.fuzzy_err     = 0;  /* reset the error indicator */
+  search_data.fuzzy_err_pos = -1; /* no last error position in search buffer */
 
   int matching_word_cur_index = -1; /* cache for the next/previous moves     *
                                      * in the matching words array           */
@@ -6445,18 +6499,22 @@ main(int argc, char * argv[])
   init_attr.underline = -1;
   init_attr.italic    = -1;
 
-  win.cursor_attr        = init_attr;
-  win.cursor_on_tag_attr = init_attr;
-  win.bar_attr           = init_attr;
-  win.shift_attr         = init_attr;
-  win.search_field_attr  = init_attr;
-  win.search_text_attr   = init_attr;
-  win.match_field_attr   = init_attr;
-  win.match_text_attr    = init_attr;
-  win.include_attr       = init_attr;
-  win.exclude_attr       = init_attr;
-  win.tag_attr           = init_attr;
-  win.daccess_attr       = init_attr;
+  win.cursor_attr           = init_attr;
+  win.cursor_on_tag_attr    = init_attr;
+  win.bar_attr              = init_attr;
+  win.shift_attr            = init_attr;
+  win.search_field_attr     = init_attr;
+  win.search_text_attr      = init_attr;
+  win.search_err_field_attr = init_attr;
+  win.search_err_text_attr  = init_attr;
+  win.match_field_attr      = init_attr;
+  win.match_text_attr       = init_attr;
+  win.match_err_field_attr  = init_attr;
+  win.match_err_text_attr   = init_attr;
+  win.include_attr          = init_attr;
+  win.exclude_attr          = init_attr;
+  win.tag_attr              = init_attr;
+  win.daccess_attr          = init_attr;
 
   win.sel_sep = NULL;
 
@@ -6959,38 +7017,51 @@ main(int argc, char * argv[])
             int *    flag;
             char *   prefix;
             int      prefix_len;
-          } attr_infos[] =
-            { { &win.exclude_attr, "The exclude attribute is already set -- ",
-                &exc_attr_set, "e:", 2 },
-              { &win.include_attr, "The include attribute is already set -- ",
-                &inc_attr_set, "i:", 2 },
-              { &win.cursor_attr, "The cursor attribute is already set -- ",
-                &cur_attr_set, "c:", 2 },
-              { &win.bar_attr, "The scroll bar attribute is already set -- ",
-                &bar_attr_set, "b:", 2 },
-              { &win.shift_attr, "The shift attribute is already set -- ",
-                &shift_attr_set, "s:", 2 },
-              { &win.tag_attr, "The tag attribute is already set -- ",
-                &tag_attr_set, "t:", 2 },
-              { &win.cursor_on_tag_attr,
-                "The cursor on tagged word attribute is already set -- ",
-                &cursor_on_tag_attr_set, "ct:", 3 },
-              { &win.search_field_attr,
-                "The search field attribute is already set -- ", &sf_attr_set,
-                "sf:", 3 },
-              { &win.search_text_attr,
-                "The search text attribute is already set -- ", &st_attr_set,
-                "st:", 3 },
-              { &win.match_field_attr,
-                "The matching word field attribute is already set -- ",
-                &mf_attr_set, "mf:", 3 },
-              { &win.match_text_attr,
-                "The matching word text attribute is already set -- ",
-                &mt_attr_set, "mt:", 3 },
-              { &win.daccess_attr,
-                "The direct access tag attribute is already set -- ",
-                &daccess_attr_set, "da:", 3 },
-              { NULL, NULL, NULL, NULL, 0 } };
+          } attr_infos[] = {
+            { &win.exclude_attr, "The exclude attribute is already set -- ",
+              &exc_attr_set, "e:", 2 },
+            { &win.include_attr, "The include attribute is already set -- ",
+              &inc_attr_set, "i:", 2 },
+            { &win.cursor_attr, "The cursor attribute is already set -- ",
+              &cur_attr_set, "c:", 2 },
+            { &win.bar_attr, "The scroll bar attribute is already set -- ",
+              &bar_attr_set, "b:", 2 },
+            { &win.shift_attr, "The shift attribute is already set -- ",
+              &shift_attr_set, "s:", 2 },
+            { &win.tag_attr, "The tag attribute is already set -- ",
+              &tag_attr_set, "t:", 2 },
+            { &win.cursor_on_tag_attr,
+              "The cursor on tagged word attribute is already set -- ",
+              &cursor_on_tag_attr_set, "ct:", 3 },
+            { &win.search_field_attr,
+              "The search field attribute is already set -- ", &sf_attr_set,
+              "sf:", 3 },
+            { &win.search_text_attr,
+              "The search text attribute is already set -- ", &st_attr_set,
+              "st:", 3 },
+            { &win.search_err_field_attr,
+              "The search with error field attribute is already set -- ",
+              &sf_attr_set, "sfe:", 4 },
+            { &win.search_err_text_attr,
+              "The search text with error attribute is already set -- ",
+              &st_attr_set, "ste:", 4 },
+            { &win.match_field_attr,
+              "The matching word field attribute is already set -- ",
+              &mf_attr_set, "mf:", 3 },
+            { &win.match_text_attr,
+              "The matching word text attribute is already set -- ",
+              &mt_attr_set, "mt:", 3 },
+            { &win.match_err_field_attr,
+              "The matching word with error field attribute is already set -- ",
+              &mf_attr_set, "mfe:", 4 },
+            { &win.match_err_text_attr,
+              "The matching word with error text attribute is already set -- ",
+              &mt_attr_set, "mte:", 4 },
+            { &win.daccess_attr,
+              "The direct access tag attribute is already set -- ",
+              &daccess_attr_set, "da:", 3 },
+            { NULL, NULL, NULL, NULL, 0 }
+          };
 
           optind--;
 
@@ -7618,6 +7689,22 @@ main(int argc, char * argv[])
       win.search_text_attr.is_set = SET;
     }
 
+    if (!win.search_err_field_attr.is_set)
+    {
+      win.search_err_field_attr.bg     = 1;
+      win.search_err_field_attr.is_set = SET;
+    }
+
+    if (!win.search_err_text_attr.is_set)
+    {
+      if (term.has_reverse)
+        win.search_err_text_attr.reverse = 1;
+
+      win.search_err_text_attr.fg = 1;
+
+      win.search_err_text_attr.is_set = SET;
+    }
+
     if (!win.match_field_attr.is_set)
     {
       win.match_field_attr.is_set = SET;
@@ -7628,6 +7715,18 @@ main(int argc, char * argv[])
       win.match_text_attr.fg = 4;
 
       win.match_text_attr.is_set = SET;
+    }
+
+    if (!win.match_err_field_attr.is_set)
+    {
+      win.match_err_field_attr.is_set = SET;
+    }
+
+    if (!win.match_err_text_attr.is_set)
+    {
+      win.match_err_text_attr.fg = 1;
+
+      win.match_err_text_attr.is_set = SET;
     }
 
     if (!win.exclude_attr.is_set)
@@ -7715,6 +7814,22 @@ main(int argc, char * argv[])
         win.search_text_attr.bold = 1;
 
       win.search_text_attr.is_set = SET;
+    }
+
+    if (!win.search_err_field_attr.is_set)
+    {
+      if (term.has_bold)
+        win.search_err_field_attr.bold = 1;
+
+      win.search_err_field_attr.is_set = SET;
+    }
+
+    if (!win.search_err_text_attr.is_set)
+    {
+      if (term.has_reverse)
+        win.search_err_text_attr.reverse = 1;
+
+      win.search_err_text_attr.is_set = SET;
     }
 
     if (!win.match_field_attr.is_set)
@@ -9992,6 +10107,8 @@ main(int argc, char * argv[])
           {
             /* ESC key has been pressed */
             /* """""""""""""""""""""""" */
+            search_data.fuzzy_err = 0;
+
             if (help_mode)
               nl = disp_lines(&win, &toggle, current, count, search_mode,
                               &search_data, &term, last_line, tmp_word,
@@ -10001,18 +10118,16 @@ main(int argc, char * argv[])
             /* """""""""""""""""""""""""""""""""""""" */
             memset(daccess_stack, '\0', 6);
             daccess_stack_head = 0;
-
-            daccess_timer = timers.direct_access;
+            daccess_timer      = timers.direct_access;
 
             /* Clean the potential matching words non empty list */
             /* """"""""""""""""""""""""""""""""""""""""""""""""" */
-            if (search_mode != NONE)
-            {
-              search_mode     = NONE;
-              old_search_mode = NONE;
+            search_mode     = NONE;
+            old_search_mode = NONE;
 
-              if (matches_count > 0)
-                clean_matches(&search_data, word_real_max_size);
+            if (matches_count > 0)
+            {
+              clean_matches(&search_data, word_real_max_size);
 
               nl = disp_lines(&win, &toggle, current, count, search_mode,
                               &search_data, &term, last_line, tmp_word,
@@ -11276,6 +11391,11 @@ main(int argc, char * argv[])
               prev = mb_prev(search_data.buf,
                              search_data.buf + search_data.len - 1);
 
+              if (search_data.mb_len == search_data.fuzzy_err_pos - 1)
+              {
+                search_data.fuzzy_err     = 0;
+                search_data.fuzzy_err_pos = -1;
+              }
               search_data.mb_len--;
 
               if (prev)
@@ -11316,7 +11436,9 @@ main(int argc, char * argv[])
               node = tst_search_list->tail;
               list = (ll_t *)(node->data);
 
-              while (node = list->head)
+              search_data.fuzzy_err = 0;
+
+              while ((node = list->head))
                 ll_delete(list, node);
             }
           }
@@ -11458,11 +11580,17 @@ main(int argc, char * argv[])
                 node = tst_search_list->tail;
                 list = (ll_t *)(node->data);
 
-                while (node = list->head)
+                while ((node = list->head))
                   ll_delete(list, node);
 
                 if (tst_search_list->len > 0)
                   ll_delete(tst_search_list, tst_search_list->tail);
+
+                if (search_data.mb_len == search_data.fuzzy_err_pos - 1)
+                {
+                  search_data.fuzzy_err     = 0;
+                  search_data.fuzzy_err_pos = -1;
+                }
               }
               else
               {
@@ -11524,6 +11652,10 @@ main(int argc, char * argv[])
                                   tst_fuzzy_partial_list->head);
 
                       ll_delete(tst_search_list, tst_search_list->tail);
+
+                      search_data.fuzzy_err = 1;
+                      if (search_data.fuzzy_err_pos == -1)
+                        search_data.fuzzy_err_pos = search_data.mb_len;
 
                       beep(&toggle);
 
