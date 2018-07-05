@@ -339,6 +339,15 @@ disp_message(ll_t * message_lines_list, int width, int max_len, term_t * term,
 static void
 update_bitmaps(search_mode_t search_mode, search_data_t * search_data);
 
+int
+find_next_matching_word(int * array, int nb, int value, int * index);
+
+int
+find_prev_matching_word(int * array, int nb, int value, int * index);
+
+void
+clean_matches(search_data_t * search_data, size_t size);
+
 void
 disp_cursor_word(int pos, win_t * win, term_t * term, int err);
 
