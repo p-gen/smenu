@@ -2315,7 +2315,7 @@ static void
 update_bitmaps(search_mode_t mode, search_data_t * data)
 {
   size_t i, j, n;
-  size_t len, fc, bc;
+  size_t fc, bc;
   size_t mb;
   char * start;
   char * p;
@@ -6319,8 +6319,7 @@ main(int argc, char * argv[])
 
   int index; /* generic counter                                              */
 
-  int    daccess_index        = 1;
-  char * daccess_locator_type = NULL;
+  int daccess_index = 1;
 
   char *  daccess_np = NULL;
   regex_t daccess_np_re; /* variable to store the compiled direct access     *
@@ -6375,8 +6374,6 @@ main(int argc, char * argv[])
 
   ll_t * rows_selector_list = NULL;
   char * rows_selector      = NULL;
-
-  int message_lines;
 
   int wi; /* word index                                                      */
 
@@ -10131,8 +10128,7 @@ main(int argc, char * argv[])
 
             /* Clean the potential matching words non empty list */
             /* """"""""""""""""""""""""""""""""""""""""""""""""" */
-            search_mode     = NONE;
-            old_search_mode = NONE;
+            search_mode = NONE;
 
             if (matches_count > 0)
             {
@@ -10274,8 +10270,7 @@ main(int argc, char * argv[])
 
           if (search_mode != NONE)
           {
-            old_search_mode = search_mode;
-            search_mode     = NONE;
+            search_mode = NONE;
 
             nl = disp_lines(&win, &toggle, current, count, search_mode,
                             &search_data, &term, last_line, tmp_word,
@@ -11395,8 +11390,6 @@ main(int argc, char * argv[])
             {
               char * prev;
 
-              int pos;
-
               prev = mb_prev(search_data.buf,
                              search_data.buf + search_data.len - 1);
 
@@ -11488,9 +11481,6 @@ main(int argc, char * argv[])
             /* """""""""""""""""""""""""""""""""""""""""""""""""""""" */
             if (buffer[0] != 0x08 && buffer[0] != 0x7f) /* Backspace */
             {
-              int   i;
-              char *p1, *p2;
-
               /* The only case where we have to manage backspace hits */
               /* here is if the user has entered them in fuzzy search */
               /* mode. As the search buffer has already been amended, */
@@ -11720,7 +11710,6 @@ main(int argc, char * argv[])
             else /* SUBSTRING */
             {
               wchar_t * w = mb_strtowcs(search_data.buf);
-              ll_t *    list;
 
               /* Trivial but fast */
               for (i = 0; i < matches_count; i++)
