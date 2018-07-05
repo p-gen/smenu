@@ -11139,7 +11139,10 @@ main(int argc, char * argv[])
             search_mode = FUZZY;
 
             if (old_search_mode != FUZZY)
+            {
+              old_search_mode = FUZZY;
               clean_matches(&search_data, word_real_max_size);
+            }
 
             nl = disp_lines(&win, &toggle, current, count, search_mode,
                             &search_data, &term, last_line, tmp_word,
@@ -11162,7 +11165,10 @@ main(int argc, char * argv[])
             search_mode = SUBSTRING;
 
             if (old_search_mode != SUBSTRING)
+            {
+              old_search_mode = SUBSTRING;
               clean_matches(&search_data, word_real_max_size);
+            }
 
             nl = disp_lines(&win, &toggle, current, count, search_mode,
                             &search_data, &term, last_line, tmp_word,
@@ -11185,7 +11191,10 @@ main(int argc, char * argv[])
             search_mode = PREFIX;
 
             if (old_search_mode != PREFIX)
+            {
+              old_search_mode = PREFIX;
               clean_matches(&search_data, word_real_max_size);
+            }
 
             /* Clear the search buffer when the cursor is on a word which */
             /* doesn't match the current prefix                           */
