@@ -97,7 +97,7 @@ typedef enum search_modes       search_mode_t;
 /* ********** */
 
 static void
-help(win_t * win, term_t * term, int last_line, toggle_t * toggle);
+help(win_t * win, term_t * term, long last_line, toggle_t * toggle);
 
 static void
 short_usage(void);
@@ -215,13 +215,13 @@ get_terminal_size(int * const r, int * const c);
 static int
 mb_get_length(unsigned char c);
 
-static int
-mb_offset(char *, int);
+static size_t
+mb_offset(char *, size_t);
 
 static char *
-mb_strprefix(char * d, char * s, int n, int * pos);
+mb_strprefix(char * d, char * s, long n, long * pos);
 
-static int
+static size_t
 mb_strlen(char * str);
 
 static wchar_t *
@@ -234,7 +234,7 @@ static void
 mb_interpret(char * s, langinfo_t * langinfo);
 
 static int
-mb_validate(const char * str, int length);
+mb_validate(const char * str, size_t length);
 
 char *
 mb_prev(const char * str, const char * p);
@@ -294,7 +294,7 @@ void
 mb_strtolower(char * dst, char * src);
 
 void
-insert_sorted(int ** array, int * size, int * filled, int value);
+insert_sorted(long ** array, long * size, long * filled, long value);
 
 static int
 ini_load(const char * filename, win_t * win, term_t * term, limits_t * limits,
@@ -311,65 +311,65 @@ static char *
 make_ini_path(char * name, char * base);
 
 static void
-set_foreground_color(term_t * term, int color);
+set_foreground_color(term_t * term, short color);
 
 static void
-set_background_color(term_t * term, int color);
+set_background_color(term_t * term, short color);
 
 static void
-set_win_start_end(win_t * win, int current, int last);
+set_win_start_end(win_t * win, long current, long last);
 
-static int
-build_metadata(term_t * term, int count, win_t * win);
+static long
+build_metadata(term_t * term, long count, win_t * win);
 
-static int
-disp_lines(win_t * win, toggle_t * toggle, int current, int count,
+static long
+disp_lines(win_t * win, toggle_t * toggle, long current, long count,
            search_mode_t search_mode, search_data_t * search_data,
-           term_t * term, int last_line, char * tmp_word,
+           term_t * term, long last_line, char * tmp_word,
            langinfo_t * langinfo);
 
 static void
 get_message_lines(char * message, ll_t * message_lines_list,
-                  int * message_max_width, int * message_max_len);
+                  long * message_max_width, long * message_max_len);
 
 static void
-disp_message(ll_t * message_lines_list, int width, int max_len, term_t * term,
+disp_message(ll_t * message_lines_list, long width, long max_len, term_t * term,
              win_t * win);
 
 static void
 update_bitmaps(search_mode_t search_mode, search_data_t * search_data);
 
-int
-find_next_matching_word(int * array, int nb, int value, int * index);
+long
+find_next_matching_word(long * array, long nb, long value, long * index);
 
-int
-find_prev_matching_word(int * array, int nb, int value, int * index);
-
-void
-clean_matches(search_data_t * search_data, size_t size);
+long
+find_prev_matching_word(long * array, long nb, long value, long * index);
 
 void
-disp_cursor_word(int pos, win_t * win, term_t * term, int err);
+clean_matches(search_data_t * search_data, long size);
 
 void
-disp_matching_word(int pos, win_t * win, term_t * term, int is_matching,
+disp_cursor_word(long pos, win_t * win, term_t * term, int err);
+
+void
+disp_matching_word(long pos, win_t * win, term_t * term, int is_matching,
                    int err);
 
 static void
-disp_word(int pos, search_mode_t search_mode, search_data_t * search_data,
+disp_word(long pos, search_mode_t search_mode, search_data_t * search_data,
           term_t * term, win_t * win, char * tmp_word);
 
 static int
 egetopt(int nargc, char ** nargv, char * ostr);
 
-static int
+static size_t
 expand(char * src, char * dest, langinfo_t * langinfo, toggle_t * toggle);
 
 static int
-get_bytes(FILE * input, char * mb_buffer, ll_t * word_delims_list,
-          toggle_t * toggle, langinfo_t * langinfo);
+get_bytes(FILE * input, char * mb_buffer, langinfo_t * langinfo);
+
 static int
-get_scancode(unsigned char * s, int max);
+get_scancode(unsigned char * s, size_t max);
 
 static char *
 get_word(FILE * input, ll_t * word_delims_list, ll_t * record_delims_list,
@@ -381,7 +381,7 @@ left_margin_putp(char * s, term_t * term, win_t * win);
 
 static void
 right_margin_putp(char * s1, char * s2, langinfo_t * langinfo, term_t * term,
-                  win_t * win, int line, int offset);
+                  win_t * win, long line, long offset);
 
 static void
 sig_handler(int s);
@@ -488,14 +488,14 @@ enum search_modes
 /* """"""""""""""""""" */
 struct langinfo_s
 {
-  int    utf8; /* charset is UTF-8              */
-  size_t bits; /* number of bits in the charset */
+  int utf8; /* charset is UTF-8              */
+  int bits; /* number of bits in the charset */
 };
 
 struct charsetinfo_s
 {
   char * name; /* canonical name of the allowed charset */
-  size_t bits; /* number of bits in this charset        */
+  int    bits; /* number of bits in this charset        */
 };
 
 /* Various toggles which can be set with command line options */
@@ -521,9 +521,9 @@ struct toggle_s
 /* """""""""""""""""""""""""""""""""""""""""""""""""""""" */
 struct limits_s
 {
-  int word_length; /* maximum number of bytes in a word */
-  int words;       /* maximum number of words           */
-  int cols;        /* maximum number of columns         */
+  long word_length; /* maximum number of bytes in a word */
+  long words;       /* maximum number of words           */
+  long cols;        /* maximum number of columns         */
 };
 
 /* Structure to store the default or imposed timers */
@@ -607,12 +607,12 @@ struct term_s
 /* """"""""""""""""""""""""""" */
 struct word_s
 {
-  int start, end;       /* start/end absolute horiz. word positions *
+  long start, end;      /* start/end absolute horiz. word positions *
                          * on the screen                            */
   size_t mb;            /* number of multibytes to display          */
-  size_t tag_order;     /* each time a word is tagged, this value   *
+  long   tag_order;     /* each time a word is tagged, this value   *
                          * is increased                             */
-  int    special_level; /* can vary from 0 to 5; 0 meaning normal   */
+  size_t special_level; /* can vary from 0 to 5; 0 meaning normal   */
   char * str;           /* display string associated with this word */
   size_t len;           /* number of bytes of str (for trimming)    */
   char * orig;          /* NULL or original string if is had been   *
@@ -633,23 +633,22 @@ struct word_s
 /* """"""""""""""""""""""""""""""""""""""""""""""""" */
 struct win_s
 {
-  int start, end;      /* index of the first and last word        */
-  int first_column;    /* number of the first character displayed */
-  int cur_line;        /* relative number of the cursor line (1+) */
-  int asked_max_lines; /* requested number of lines in the window */
-  int max_lines;       /* effective number of lines in the window */
-  int max_cols;        /* max number of words in a single line    */
-  int real_max_width;  /* max line length. In column, tab or line *
-                        * mode it can be greater than the         *
-                        * terminal width                          */
-  int message_lines;   /* Number of lines taken by the messages   *
-                        * (updated by disp_message                */
-  int max_width;       /* max line length or the terminal width   *
-                        * minus 2 if less                         */
-  int     offset;      /* window offset user when centered        */
-  char *  sel_sep;     /* output separator when tags are enabled  */
-  char ** gutter_a;    /* Array of multibyte gutter characters    */
-  int     gutter_nb;   /* Number of multibyte gutter characters   */
+  long start, end;      /* index of the first and last word        */
+  long first_column;    /* number of the first character displayed */
+  long cur_line;        /* relative number of the cursor line (1+) */
+  long asked_max_lines; /* requested number of lines in the window */
+  long max_lines;       /* effective number of lines in the window */
+  long max_cols;        /* max number of words in a single line    */
+  long real_max_width;  /* max line length. In column, tab or line *
+                         * mode it can be greater than the         *
+                         * terminal width                          */
+  long message_lines;   /* number of lines taken by the messages   *
+                         * (updated by disp_message                */
+  long    max_width;    /* max usable line width or the terminal   */
+  long    offset;       /* window offset user when centered        */
+  char *  sel_sep;      /* output separator when tags are enabled  */
+  char ** gutter_a;     /* array of multibyte gutter characters    */
+  long    gutter_nb;    /* number of multibyte gutter characters   */
 
   unsigned char tab_mode;  /* -t */
   unsigned char col_mode;  /* -c */
@@ -696,8 +695,8 @@ struct sed_s
 /* """"""""""""""""""""""""""""""""""""""""""""""""""""""" */
 struct interval_s
 {
-  int low;
-  int high;
+  long low;
+  long high;
 };
 
 /* Structure used by the replace function to delimit matches */
@@ -722,7 +721,7 @@ struct timeout_s
 /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
 struct output_s
 {
-  size_t order;
+  long   order;
   char * output_str;
 };
 
@@ -737,24 +736,24 @@ struct daccess_s
   char      padding;    /* a: all; i: only included words are padded          */
   int       length;     /* selector size (5 max)                              */
   int       flength;    /* 0 or length + 3 (full prefix lengh                 */
-  int       offset;     /* offset to the start of the selector                */
+  size_t    offset;     /* offset to the start of the selector                */
   int       size;       /* size in bytes of the selector to extract           */
-  int       ignore;     /* number of multibytes to ignore after the number    */
-  int       follow;     /* y: the numbering follows the last nuber set        */
+  size_t    ignore;     /* number of multibytes to ignore after the number    */
+  char      follow;     /* y: the numbering follows the last nuber set        */
   char *    num_sep;    /* character to separate de number and the selection  */
   int       def_number; /* 1: the numbering is on by default 0: it is not     */
 };
 
 struct search_data_s
 {
-  char * buf;             /* Search buffer                            */
-  size_t len;             /* Current position in the search buffer    */
-  size_t mb_len;          /* Current position in the search buffer in *
-                           * multibyte units                          */
-  size_t * mb_off_a;      /* Array of mb offsets in buf               */
-  size_t * mb_len_a;      /* Array of mb lengths in buf               */
-  int      fuzzy_err;     /* furry match error indicator              */
-  int      fuzzy_err_pos; /* last good position in search buffer      */
+  char * buf;           /* Search buffer                            */
+  long   len;           /* Current position in the search buffer    */
+  long   mb_len;        /* Current position in the search buffer in *
+                         * multibyte units                          */
+  long * mb_off_a;      /* Array of mb offsets in buf               */
+  long * mb_len_a;      /* Array of mb lengths in buf               */
+  int    fuzzy_err;     /* furry match error indicator              */
+  long   fuzzy_err_pos; /* last good position in search buffer      */
 };
 
 /* **************** */
@@ -762,16 +761,16 @@ struct search_data_s
 /* **************** */
 
 word_t * word_a;       /* Array containing words data (size: count)         */
-int      dummy_rc;     /* temporary variable to silence the compiler        */
-int      count = 0;    /* number of words read from stdin                   */
-int      current;      /* index the current selection under the cursor)     */
-int      new_current;  /* final current position, (used in search function) */
-int      prev_current; /* previous position stored when using direct access */
+long     dummy_rc;     /* temporary variable to silence the compiler        */
+long     count = 0;    /* number of words read from stdin                   */
+long     current;      /* index the current selection under the cursor)     */
+long     new_current;  /* final current position, (used in search function) */
+long     prev_current; /* previous position stored when using direct access */
 
-int * line_nb_of_word_a;    /* array containing the line number *
-                             * (from 0) of each word read       */
-int * first_word_in_line_a; /* array containing the index of    *
-                             * the first word of each lines     */
+long * line_nb_of_word_a;    /* array containing the line number *
+                              * (from 0) of each word read       */
+long * first_word_in_line_a; /* array containing the index of    *
+                              * the first word of each lines     */
 search_mode_t search_mode     = NONE;
 search_mode_t old_search_mode = NONE;
 
@@ -801,9 +800,9 @@ int    daccess_stack_head;
 /* Variables used for fuzzy and substring searching */
 /* """""""""""""""""""""""""""""""""""""""""""""""" */
 ll_t * tst_search_list = NULL;
-int *  matching_words_a;
-int    matching_words_a_size;
-int    matches_count;
+long * matching_words_a;
+long   matching_words_a_size;
+long   matches_count;
 
 /* Variables used in signal handlers */
 /* """"""""""""""""""""""""""""""""" */
@@ -832,7 +831,7 @@ enum
 
 static char getc_buffer[GETC_BUFF_SIZE] = { '\0' };
 
-static size_t next_buffer_pos = 0; /* next free position in the getc buffer */
+static long next_buffer_pos = 0; /* next free position in the getc buffer */
 
 /* ====================================== */
 /* Get a (possibly pushed-back) character */
@@ -889,7 +888,7 @@ struct ll_s
 {
   ll_node_t * head;
   ll_node_t * tail;
-  size_t      len;
+  long        len;
 };
 
 /* ************** */
@@ -1079,9 +1078,9 @@ usage(void)
 /* Help message display */
 /* ==================== */
 static void
-help(win_t * win, term_t * term, int last_line, toggle_t * toggle)
+help(win_t * win, term_t * term, long last_line, toggle_t * toggle)
 {
-  int index;      /* used to identify the objects int the help line */
+  int index;      /* used to identify the objects long the help line */
   int line   = 0; /* number of windows lines used by the help line  */
   int len    = 0; /* length of the help line                        */
   int offset = 0; /* offset from the first column of the terminal   *
@@ -1133,7 +1132,8 @@ help(win_t * win, term_t * term, int last_line, toggle_t * toggle)
   if (win->offset > 0)
     if ((offset = win->offset + win->max_width / 2 - help_len / 2) > 0)
     {
-      size_t i;
+      int i;
+
       for (i = 0; i < offset; i++)
         fputc(' ', stdout);
     }
@@ -1851,7 +1851,7 @@ interval_swap(void * a, void * b)
 {
   interval_t * ia = (interval_t *)a;
   interval_t * ib = (interval_t *)b;
-  int          tmp;
+  long         tmp;
 
   tmp     = ia->low;
   ia->low = ib->low;
@@ -1886,7 +1886,7 @@ tag_swap(void * a, void * b)
   output_t * oa = (output_t *)a;
   output_t * ob = (output_t *)b;
   char *     tmp_str;
-  size_t     tmp_order;
+  long       tmp_order;
 
   tmp_str        = oa->output_str;
   oa->output_str = ob->output_str;
@@ -2246,10 +2246,10 @@ beep(toggle_t * toggle)
 /* without duplications.                                     */
 /* ========================================================= */
 void
-insert_sorted(int ** array, int * size, int * nb, int value)
+insert_sorted(long ** array, long * size, long * nb, long value)
 {
-  int pos  = *nb;
-  int left = 0, right = *nb, middle;
+  long pos  = *nb;
+  long left = 0, right = *nb, middle;
 
   if (*nb > 0)
   {
@@ -2272,11 +2272,11 @@ insert_sorted(int ** array, int * size, int * nb, int value)
   if (*nb == *size)
   {
     *size += 64;
-    *array = xrealloc(*array, *size * sizeof(int));
+    *array = xrealloc(*array, *size * sizeof(long));
   }
 
   if (*nb > pos)
-    memmove((*array) + pos + 1, (*array) + pos, sizeof(int) * (*nb - pos));
+    memmove((*array) + pos + 1, (*array) + pos, sizeof(long) * (*nb - pos));
 
   (*nb)++;
 
@@ -2314,20 +2314,20 @@ mb_strtolower(char * dst, char * src)
 static void
 update_bitmaps(search_mode_t mode, search_data_t * data)
 {
-  size_t i, j, n;
-  size_t fc, bc;
-  size_t mb;
+  long   i, j, n;
+  long   fc, bc;
+  long   mb;
   char * start;
   char * p;
   char * bm;
   char * str;
   char * str_orig;
 
-  char *   sb_orig = data->buf;
-  char *   sb;
-  size_t * o    = data->mb_off_a;
-  size_t * l    = data->mb_len_a;
-  size_t   last = data->mb_len - 1;
+  char * sb_orig = data->buf;
+  char * sb;
+  long * o    = data->mb_off_a;
+  long * l    = data->mb_len_a;
+  long   last = data->mb_len - 1;
 
   if (mode == FUZZY || mode == SUBSTRING)
   {
@@ -2436,10 +2436,10 @@ update_bitmaps(search_mode_t mode, search_data_t * data)
 /* Find the next word index in the list of matching words */
 /* returns -1 of not found.                               */
 /* ====================================================== */
-int
-find_next_matching_word(int * array, int nb, int value, int * index)
+long
+find_next_matching_word(long * array, long nb, long value, long * index)
 {
-  int left = 0, right = nb, middle;
+  long left = 0, right = nb, middle;
 
   /* Use the cached value when possible */
   /* """""""""""""""""""""""""""""""""" */
@@ -2489,10 +2489,10 @@ find_next_matching_word(int * array, int nb, int value, int * index)
 /* Find the previous word index in the list of matching words */
 /* returns -1 of not found.                                   */
 /* ========================================================== */
-int
-find_prev_matching_word(int * array, int nb, int value, int * index)
+long
+find_prev_matching_word(long * array, long nb, long value, long * index)
 {
-  int left = 0, right = nb, middle;
+  long left = 0, right = nb, middle;
 
   /* Use the cached value when possible */
   /* """""""""""""""""""""""""""""""""" */
@@ -2548,11 +2548,11 @@ find_prev_matching_word(int * array, int nb, int value, int * index)
 /* Remove all traces of the matched words and redisplay the windows */
 /* ================================================================ */
 void
-clean_matches(search_data_t * search_data, size_t size)
+clean_matches(search_data_t * search_data, long size)
 {
   ll_t *     list;
   ll_node_t *fuzzy_node, *node;
-  int        i;
+  long       i;
 
   /* Clean the list of lists data-structure containing the search levels */
   /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
@@ -2583,7 +2583,7 @@ clean_matches(search_data_t * search_data, size_t size)
   /* """"""""""""""""""""""""""""""""" */
   for (i = 0; i < matches_count; i++)
   {
-    int n                 = matching_words_a[i];
+    long n                = matching_words_a[i];
     word_a[n].is_matching = 0;
     memset(word_a[n].bitmap, '\0', word_a[n].mb - 1 - daccess.flength);
   }
@@ -2676,8 +2676,8 @@ get_terminal_size(int * const r, int * const c)
 static int
 get_cursor_position(int * const r, int * const c)
 {
-  char buf[32];
-  int  i = 0;
+  char   buf[32];
+  size_t i = 0;
 
   /* Report cursor location */
   /* """""""""""""""""""""" */
@@ -2686,7 +2686,7 @@ get_cursor_position(int * const r, int * const c)
 
   /* Read the response: ESC [ rows ; cols R */
   /* """""""""""""""""""""""""""""""""""""" */
-  while ((size_t)i < sizeof(buf) - 1)
+  while (i < sizeof(buf) - 1)
   {
     if (read(0, buf + i, 1) != 1)
       break;
@@ -2796,7 +2796,7 @@ my_memmem(const void * buf, size_t buflen, const void * pattern, size_t patlen)
 
   while (patlen <= (buflen - (p - bf)))
   {
-    if ((p = memchr(p, (int)(*pt), buflen - (p - bf))) != NULL)
+    if ((p = memchr(p, (size_t)(*pt), buflen - (p - bf))) != NULL)
     {
       static if (memcmp(p, pattern, patlen) == 0) return p;
       else ++p;
@@ -2910,8 +2910,8 @@ parse_selectors(char * str, filters_t * filter, char * unparsed,
 {
   char         mark; /* Value to set */
   char         c;
-  int          start = 1;     /* column string offset in the parsed string */
-  int          first, second; /* range starting and ending values          */
+  size_t       start = 1;     /* column string offset in the parsed string */
+  size_t       first, second; /* range starting and ending values          */
   char *       ptr;           /* pointer to the remaining string to parse  */
   interval_t * interval;
 
@@ -2974,7 +2974,7 @@ parse_selectors(char * str, filters_t * filter, char * unparsed,
   /* """"""""""""""""""""""""""""""" */
   while (*ptr)
   {
-    int    swap;
+    size_t swap;
     int    is_range = 0;
     char   delim1, delim2 = '\0';
     char * oldptr;
@@ -3018,12 +3018,12 @@ parse_selectors(char * str, filters_t * filter, char * unparsed,
     delim1 = *(str + start);
     if (*ptr == '\0')
       delim2 = *(ptr - 1);
-    else if (ptr - str > start + 2)
+    else if (ptr > str + start + 2)
       delim2 = *(ptr - 2);
 
     /* Check is we have found a well describes regular expression */
     /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-    if (ptr - str > start + 2 && delim1 == delim2 && isgraph(delim1)
+    if (ptr > str + start + 2 && delim1 == delim2 && isgraph(delim1)
         && isgraph(delim2) && !isdigit(delim1) && !isdigit(delim2))
     {
       /* Process the regex */
@@ -3050,7 +3050,7 @@ parse_selectors(char * str, filters_t * filter, char * unparsed,
       int rc;
       int pos;
 
-      rc = sscanf(str + start, "%d-%d%n", &first, &second, &pos);
+      rc = sscanf(str + start, "%zd-%zd%n", &first, &second, &pos);
       if (rc != 2 || *(str + start + pos) != '\0')
       {
         strcpy(unparsed, str + start);
@@ -3084,7 +3084,7 @@ parse_selectors(char * str, filters_t * filter, char * unparsed,
     {
       /* Read the number given */
       /* """"""""""""""""""""" */
-      if (sscanf(str + start, "%d", &first) != 1)
+      if (sscanf(str + start, "%zd", &first) != 1)
       {
         strcpy(unparsed, str + start);
         return;
@@ -3181,7 +3181,7 @@ parse_sed_like_string(sed_t * sed)
   char * first_sep_pos;
   char * last_sep_pos;
   char * buf;
-  int    index;
+  long   index;
   int    icase;
   char   c;
 
@@ -3276,15 +3276,15 @@ err:
 /* The modified string according to the content of repl                  */
 /* ===================================================================== */
 static char *
-build_repl_string(char * to_match, char * repl, size_t match_start,
-                  size_t match_end, struct range_s * subs_a, size_t subs_nb,
-                  size_t match)
+build_repl_string(char * to_match, char * repl, long match_start,
+                  long match_end, struct range_s * subs_a, long subs_nb,
+                  long match)
 {
   size_t rsize     = 0;
   size_t allocated = 16;
   char * str       = xmalloc(allocated);
   int    special   = 0;
-  size_t offset    = match * subs_nb; /* offset of the 1st sub      *
+  long   offset    = match * subs_nb; /* offset of the 1st sub      *
                                        * corresponding to the match */
 
   if (*repl == '\0')
@@ -3321,8 +3321,8 @@ build_repl_string(char * to_match, char * repl, size_t match_start,
           {
             if ((*repl) - '0' <= subs_nb)
             {
-              size_t index = (*repl) - '0' - 1 + offset;
-              size_t delta = subs_a[index].end - subs_a[index].start;
+              long index = (*repl) - '0' - 1 + offset;
+              long delta = subs_a[index].end - subs_a[index].start;
 
               if (allocated <= rsize + delta)
                 str = xrealloc(str, allocated += (delta + 16));
@@ -3348,7 +3348,7 @@ build_repl_string(char * to_match, char * repl, size_t match_start,
         case '&':
           if (!special)
           {
-            size_t delta = match_end - match_start;
+            long delta = match_end - match_start;
 
             if (allocated <= rsize + delta)
               str = xrealloc(str, allocated += (delta + 16));
@@ -3398,7 +3398,7 @@ static int
 replace(char * to_match, sed_t * sed)
 {
   size_t match_nb = 0;   /* number of matches in the original string */
-  size_t sub_nb   = 0;   /* number of remembered matches in the      *
+  int    sub_nb   = 0;   /* number of remembered matches in the      *
                           * original sting                           */
   size_t target_len = 0; /* length of the resulting string           */
   size_t subs_max   = 0;
@@ -3417,7 +3417,7 @@ replace(char * to_match, sed_t * sed)
 
   while (1)
   {
-    int    i = 0;
+    size_t i = 0;
     size_t match;       /* current match index                        */
     size_t index   = 0; /* current char index in the original string  */
     int    nomatch = 0; /* equals to 1 when there is no more matching */
@@ -3476,8 +3476,8 @@ replace(char * to_match, sed_t * sed)
     subs_max = 0;
     for (i = 0; i < 10; i++)
     {
-      int start;
-      int finish;
+      size_t start;
+      size_t finish;
 
       if (m[i].rm_so == -1)
         break;
@@ -3704,10 +3704,10 @@ mb_get_length(unsigned char c)
 /* ========================================================== */
 /* Return the byte offset of the nth multibyte character in s */
 /* ========================================================== */
-static int
-mb_offset(char * s, int n)
+static size_t
+mb_offset(char * s, size_t n)
 {
-  int i = 0;
+  size_t i = 0;
 
   while (n > 0)
   {
@@ -3799,11 +3799,11 @@ static const char trailing_bytes_for_utf8[256] = {
 /* Returns 1 if str contains a valid UTF8 byte sequence, 0 otherwise */
 /* ================================================================= */
 static int
-mb_validate(const char * str, int length)
+mb_validate(const char * str, size_t length)
 {
   const unsigned char *p, *pend = (unsigned char *)str + length;
   unsigned char        c;
-  int                  ab;
+  size_t               ab;
 
   for (p = (unsigned char *)str; p < pend; p++)
   {
@@ -3943,10 +3943,10 @@ strprefix(char * str1, char * str2)
 /* ====================== */
 /* Multibyte UTF-8 strlen */
 /* ====================== */
-static int
+static size_t
 mb_strlen(char * str)
 {
-  int i = 0, j = 0;
+  size_t i = 0, j = 0;
 
   while (str[i])
   {
@@ -3963,10 +3963,10 @@ mb_strlen(char * str)
 /* pos is updated to reflect the position AFTER the prefix.               */
 /* ====================================================================== */
 static char *
-mb_strprefix(char * d, char * s, int n, int * pos)
+mb_strprefix(char * d, char * s, long n, long * pos)
 {
-  int i = 0;
-  int j = 0;
+  long i = 0;
+  long j = 0;
 
   *pos = 0;
 
@@ -3998,9 +3998,9 @@ mb_strtowcs(char * s)
   int             converted = 0;
   unsigned char * ch;
   wchar_t *       wptr, *w;
-  int             size;
+  size_t          size;
 
-  size = (int)strlen(s);
+  size = (long)strlen(s);
   w    = xmalloc((size + 1) * sizeof(wchar_t));
   w[0] = L'\0';
 
@@ -4117,9 +4117,9 @@ set_matching_flag(void * elem)
 
   while (node)
   {
-    int pos;
+    size_t pos;
 
-    pos = *(int *)(node->data);
+    pos = *(size_t *)(node->data);
     if (word_a[pos].is_selectable)
       word_a[pos].is_matching = 1;
 
@@ -4257,7 +4257,7 @@ tst_prefix_search(tst_node_t * root, wchar_t * w, int (*callback)(void *))
 {
   tst_node_t * p   = root;
   size_t       len = wcslen(w);
-  int          rc;
+  size_t       rc;
 
   while (p)
   {
@@ -4301,9 +4301,9 @@ tst_cb(void * elem)
 
   while (node)
   {
-    int pos;
+    size_t pos;
 
-    pos = *(int *)(node->data);
+    pos = *(long *)(node->data);
 
     word_a[pos].is_matching = 1;
     insert_sorted(&matching_words_a, &matching_words_a_size, &matches_count,
@@ -4328,8 +4328,8 @@ tst_cb(void * elem)
 static int
 tst_cb_cli(void * elem)
 {
-  size_t n  = 0;
-  int    rc = 0;
+  long n  = 0;
+  int  rc = 0;
 
   /* The data attached to the string in the tst is a linked list of position */
   /* of the string in the input flow, This list is naturally sorted          */
@@ -4340,9 +4340,9 @@ tst_cb_cli(void * elem)
 
   while (n++ < list->len)
   {
-    int pos;
+    long pos;
 
-    pos = *(int *)(node->data);
+    pos = *(long *)(node->data);
 
     word_a[pos].is_matching = 1;
     insert_sorted(&matching_words_a, &matching_words_a_size, &matches_count,
@@ -4383,10 +4383,10 @@ tst_cb_cli(void * elem)
 /* in bytes.                                       */
 /* =============================================== */
 static int
-get_scancode(unsigned char * s, int max)
+get_scancode(unsigned char * s, size_t max)
 {
   int            c;
-  int            i = 1;
+  size_t         i = 1;
   struct termios original_ts, nowait_ts;
 
   if ((c = my_fgetc(stdin)) == EOF)
@@ -4447,8 +4447,7 @@ get_scancode(unsigned char * s, int max)
 /* character.                                                            */
 /* ===================================================================== */
 static int
-get_bytes(FILE * input, char * mb_buffer, ll_t * word_delims_list,
-          toggle_t * toggle, langinfo_t * langinfo)
+get_bytes(FILE * input, char * mb_buffer, langinfo_t * langinfo)
 {
   int byte;
   int last = 0;
@@ -4495,14 +4494,14 @@ get_bytes(FILE * input, char * mb_buffer, ll_t * word_delims_list,
 /* their corresponding escape sequence                                       */
 /* dest must be long enough to contain the expanded string                   */
 /* ========================================================================= */
-static int
+static size_t
 expand(char * src, char * dest, langinfo_t * langinfo, toggle_t * toggle)
 {
   char   c;
   int    n;
   int    all_spaces = 1;
   char * ptr        = dest;
-  int    len        = 0;
+  size_t len        = 0;
 
   while ((c = *(src++)))
   {
@@ -4632,15 +4631,16 @@ get_word(FILE * input, ll_t * word_delims_list, ll_t * record_delims_list,
          langinfo_t * langinfo, win_t * win, limits_t * limits)
 {
   char * temp = NULL;
-  int    byte, count = 0; /* count chars used in current allocation */
-  int    wordsize;        /* size of current allocation in chars    */
-  int    is_dquote;       /* double quote presence indicator        */
-  int    is_squote;       /* single quote presence indicator        */
-  int    is_special;      /* a character is special after a \       */
+  int    byte;
+  long   count = 0;  /* count chars used in current allocation */
+  long   wordsize;   /* size of current allocation in chars    */
+  int    is_dquote;  /* double quote presence indicator        */
+  int    is_squote;  /* single quote presence indicator        */
+  int    is_special; /* a character is special after a \       */
 
   /* Skip leading delimiters */
   /* """"""""""""""""""""""" */
-  byte = get_bytes(input, mb_buffer, word_delims_list, toggle, langinfo);
+  byte = get_bytes(input, mb_buffer, langinfo);
 
   while (byte == EOF
          || ll_find(word_delims_list, mb_buffer, delims_cmp) != NULL)
@@ -4648,7 +4648,7 @@ get_word(FILE * input, ll_t * word_delims_list, ll_t * record_delims_list,
     if (byte == EOF)
       return NULL;
 
-    byte = get_bytes(input, mb_buffer, word_delims_list, toggle, langinfo);
+    byte = get_bytes(input, mb_buffer, langinfo);
   }
 
   /* Allocate initial word storage space */
@@ -4664,13 +4664,13 @@ get_word(FILE * input, ll_t * word_delims_list, ll_t * record_delims_list,
 
   while (byte != EOF)
   {
-    int i = 0;
+    size_t i = 0;
 
     if (count >= limits->word_length)
     {
       fprintf(stderr,
               "A word's length has reached the limit "
-              "(%d), exiting.\n",
+              "(%zd), exiting.\n",
               limits->word_length);
 
       exit(EXIT_FAILURE);
@@ -4776,7 +4776,7 @@ get_word(FILE * input, ll_t * word_delims_list, ll_t * record_delims_list,
     is_special = 0;
 
   next:
-    byte = get_bytes(input, mb_buffer, word_delims_list, toggle, langinfo);
+    byte = get_bytes(input, mb_buffer, langinfo);
   }
 
   /* Nul-terminate the word to make it a string */
@@ -4792,11 +4792,11 @@ get_word(FILE * input, ll_t * word_delims_list, ll_t * record_delims_list,
   /* """"""""""""""""""""""""""""""""""""""""""""""""""" */
   if (ll_find(record_delims_list, mb_buffer, delims_cmp) == NULL)
   {
-    byte = get_bytes(input, mb_buffer, word_delims_list, toggle, langinfo);
+    byte = get_bytes(input, mb_buffer, langinfo);
     while (byte != EOF
            && ll_find(word_delims_list, mb_buffer, delims_cmp) != NULL
            && ll_find(record_delims_list, mb_buffer, delims_cmp) == NULL)
-      byte = get_bytes(input, mb_buffer, word_delims_list, toggle, langinfo);
+      byte = get_bytes(input, mb_buffer, langinfo);
 
     if (langinfo->utf8 && mb_get_length(mb_buffer[0]) > 1)
     {
@@ -4831,7 +4831,7 @@ get_word(FILE * input, ll_t * word_delims_list, ll_t * record_delims_list,
 /* Set a foreground color according to terminal capabilities */
 /* ========================================================= */
 static void
-set_foreground_color(term_t * term, int color)
+set_foreground_color(term_t * term, short color)
 {
   if (term->color_method == 0 && term->has_setf)
     tputs(TPARM2(set_foreground, color), 1, outch);
@@ -4843,7 +4843,7 @@ set_foreground_color(term_t * term, int color)
 /* Set a background color according to terminal capabilities */
 /* ========================================================= */
 static void
-set_background_color(term_t * term, int color)
+set_background_color(term_t * term, short color)
 {
   if (term->color_method == 0 && term->has_setb)
     tputs(TPARM2(set_background, color), 1, outch);
@@ -4872,7 +4872,7 @@ left_margin_putp(char * s, term_t * term, win_t * win)
 /* ===================================================== */
 static void
 right_margin_putp(char * s1, char * s2, langinfo_t * langinfo, term_t * term,
-                  win_t * win, int line, int offset)
+                  win_t * win, long line, long offset)
 {
   apply_attr(term, win->bar_attr);
 
@@ -4889,7 +4889,7 @@ right_margin_putp(char * s1, char * s2, langinfo_t * langinfo, term_t * term,
   }
   else
   {
-    size_t i;
+    long i;
 
     fputc('\r', stdout);
     for (i = 0; i < offset + win->max_width + 1; i++)
@@ -4916,12 +4916,12 @@ right_margin_putp(char * s1, char * s2, langinfo_t * langinfo, term_t * term,
 /* ============================================================== */
 static void
 get_message_lines(char * message, ll_t * message_lines_list,
-                  int * message_max_width, int * message_max_len)
+                  long * message_max_width, long * message_max_len)
 {
   char *    str;
   char *    ptr;
   char *    cr_ptr;
-  int       n;
+  long      n;
   wchar_t * w = NULL;
 
   *message_max_width = 0;
@@ -4954,7 +4954,7 @@ get_message_lines(char * message, ll_t * message_lines_list,
     /* If needed, update the message maximum number */
     /* of bytes used by the longest line            */
     /* """""""""""""""""""""""""""""""""""""""""""" */
-    if ((n = (int)strlen(str)) > *message_max_len)
+    if ((n = (long)strlen(str)) > *message_max_len)
       *message_max_len = n;
 
     ptr = cr_ptr + 1;
@@ -4975,7 +4975,7 @@ get_message_lines(char * message, ll_t * message_lines_list,
     /* If needed, update the message maximum number */
     /* of bytes used by the longest line            */
     /* """""""""""""""""""""""""""""""""""""""""""" */
-    if ((n = (int)strlen(ptr)) > *message_max_len)
+    if ((n = (long)strlen(ptr)) > *message_max_len)
       *message_max_len = n;
   }
   else
@@ -4987,9 +4987,9 @@ get_message_lines(char * message, ll_t * message_lines_list,
 /* to the current cursor position.                                     */
 /* =================================================================== */
 static void
-set_win_start_end(win_t * win, int current, int last)
+set_win_start_end(win_t * win, long current, long last)
 {
-  int cur_line, end_line;
+  long cur_line, end_line;
 
   cur_line = line_nb_of_word_a[current];
   if (cur_line == last)
@@ -5022,16 +5022,16 @@ set_win_start_end(win_t * win, int current, int last)
 /* This function is only called initially, when resizing the terminal and    */
 /* potentially when the search function is used.                             */
 /* ========================================================================= */
-static int
-build_metadata(term_t * term, int count, win_t * win)
+static long
+build_metadata(term_t * term, long count, win_t * win)
 {
-  int    i = 0;
-  size_t word_len;
-  int    len  = 0;
-  int    last = 0;
-  int    word_width;
-  int    tab_count; /* Current number of words in the line, *
-                     * used in tab_mode                     */
+  long i = 0;
+  long word_len;
+  long len  = 0;
+  long last = 0;
+  long word_width;
+  long tab_count; /* Current number of words in the line, *
+                   * used in tab_mode                     */
   wchar_t * w;
 
   line_nb_of_word_a[0]    = 0;
@@ -5134,9 +5134,9 @@ build_metadata(term_t * term, int count, win_t * win)
 /* cursor withe the matching characters of the word highlighted.        */
 /* ==================================================================== */
 void
-disp_cursor_word(int pos, win_t * win, term_t * term, int err)
+disp_cursor_word(long pos, win_t * win, term_t * term, int err)
 {
-  int    i;
+  size_t i;
   int    att_set = 0;
   char * p       = word_a[pos].str + daccess.flength;
   char * np;
@@ -5203,10 +5203,10 @@ disp_cursor_word(int pos, win_t * win, term_t * term, int err)
 /* the cursor withe the matching characters of the word highlighted.    */
 /* ==================================================================== */
 void
-disp_matching_word(int pos, win_t * win, term_t * term, int is_matching,
+disp_matching_word(long pos, win_t * win, term_t * term, int is_matching,
                    int err)
 {
-  int    i;
+  size_t i;
   int    att_set = 0;
   char * p       = word_a[pos].str + daccess.flength;
   char * np;
@@ -5302,12 +5302,12 @@ disp_matching_word(int pos, win_t * win, term_t * term, int is_matching,
 /* - Color or mono display                                                */
 /* ====================================================================== */
 static void
-disp_word(int pos, search_mode_t search_mode, search_data_t * search_data,
+disp_word(long pos, search_mode_t search_mode, search_data_t * search_data,
           term_t * term, win_t * win, char * tmp_word)
 {
-  int s = word_a[pos].start;
-  int e = word_a[pos].end;
-  int p;
+  long s = word_a[pos].start;
+  long e = word_a[pos].end;
+  long p;
 
   char * buffer = search_data->buf;
 
@@ -5315,7 +5315,7 @@ disp_word(int pos, search_mode_t search_mode, search_data_t * search_data,
   {
     if (search_mode != NONE)
     {
-      mb_strprefix(tmp_word, word_a[pos].str, (int)word_a[pos].mb - 1, &p);
+      mb_strprefix(tmp_word, word_a[pos].str, (long)word_a[pos].mb - 1, &p);
       if (word_a[pos].is_numbered)
       {
         /* Set the direct access number attribute */
@@ -5352,7 +5352,7 @@ disp_word(int pos, search_mode_t search_mode, search_data_t * search_data,
 
       if (buffer[0] != '\0')
       {
-        int i = 0;
+        long i = 0;
 
         /* Put the cursor at the beginning of the word */
         /* """"""""""""""""""""""""""""""""""""""""""" */
@@ -5410,7 +5410,7 @@ disp_word(int pos, search_mode_t search_mode, search_data_t * search_data,
       else
         apply_attr(term, win->cursor_attr);
 
-      mb_strprefix(tmp_word, word_a[pos].str, (int)word_a[pos].mb - 1, &p);
+      mb_strprefix(tmp_word, word_a[pos].str, (long)word_a[pos].mb - 1, &p);
       if (word_a[pos].is_matching)
         disp_cursor_word(pos, win, term, search_data->fuzzy_err);
       else
@@ -5422,7 +5422,7 @@ disp_word(int pos, search_mode_t search_mode, search_data_t * search_data,
   {
     /* Display a normal word without any attribute */
     /* """"""""""""""""""""""""""""""""""""""""""" */
-    mb_strprefix(tmp_word, word_a[pos].str, (int)word_a[pos].mb - 1, &p);
+    mb_strprefix(tmp_word, word_a[pos].str, (long)word_a[pos].mb - 1, &p);
 
     /* If words are numbered, emphasis their numbers */
     /* """"""""""""""""""""""""""""""""""""""""""""" */
@@ -5439,7 +5439,7 @@ disp_word(int pos, search_mode_t search_mode, search_data_t * search_data,
     }
     else if (daccess.length > 0)
     {
-      size_t i;
+      long i;
 
       /* Insert leading spaces if the word is non numbered and */
       /* padding for all words is set                          */
@@ -5454,7 +5454,7 @@ disp_word(int pos, search_mode_t search_mode, search_data_t * search_data,
       apply_attr(term, win->exclude_attr);
     else if (word_a[pos].special_level > 0)
     {
-      int level = word_a[pos].special_level - 1;
+      long level = word_a[pos].special_level - 1;
 
       apply_attr(term, win->special_attr[level]);
     }
@@ -5483,15 +5483,15 @@ disp_word(int pos, search_mode_t search_mode, search_data_t * search_data,
 /* Display a message line above the window */
 /* ======================================= */
 static void
-disp_message(ll_t * message_lines_list, int message_max_width,
-             int message_max_len, term_t * term, win_t * win)
+disp_message(ll_t * message_lines_list, long message_max_width,
+             long message_max_len, term_t * term, win_t * win)
 {
   ll_node_t * node;
   char *      line;
   char *      buf;
-  int         len;
-  int         size;
-  int         offset;
+  size_t      len;
+  long        size;
+  long        offset;
   wchar_t *   w;
 
   win->message_lines = 0;
@@ -5537,7 +5537,7 @@ disp_message(ll_t * message_lines_list, int message_max_width,
 
     if (win->center && offset > 0)
     {
-      size_t i;
+      long i;
 
       for (i = 0; i < offset; i++)
         putc(' ', stdout);
@@ -5568,16 +5568,17 @@ disp_message(ll_t * message_lines_list, int message_max_width,
 /* ============================ */
 /* Display the selection window */
 /* ============================ */
-static int
-disp_lines(win_t * win, toggle_t * toggle, int current, int count,
+static long
+disp_lines(win_t * win, toggle_t * toggle, long current, long count,
            search_mode_t search_mode, search_data_t * search_data,
-           term_t * term, int last_line, char * tmp_word, langinfo_t * langinfo)
+           term_t * term, long last_line, char * tmp_word,
+           langinfo_t * langinfo)
 {
-  int  lines_disp;
-  int  i;
+  long lines_disp;
+  long i;
   char scroll_symbol[5];
-  int  len;
-  int  display_bar;
+  long len;
+  long display_bar;
 
   /* Disarm the periodic timer to prevent the interruptions to corrupt */
   /* screen by altering the timing of the decoding of the terminfo     */
@@ -5638,7 +5639,7 @@ disp_lines(win_t * win, toggle_t * toggle, int current, int count,
   /* """""""""""""""""""" */
   if (win->offset > 0)
   {
-    size_t i;
+    long i;
     for (i = 0; i < win->offset; i++)
       fputc(' ', stdout);
   }
@@ -5673,7 +5674,7 @@ disp_lines(win_t * win, toggle_t * toggle, int current, int count,
       else if (!word_a[i].is_last && win->col_sep
                && (win->tab_mode || win->col_mode))
       {
-        int pos;
+        long pos;
 
         /* Make sure that we are using the rigt gutter character even */
         /* if the first displayed word is * not the fisr of its line  */
@@ -5732,9 +5733,9 @@ disp_lines(win_t * win, toggle_t * toggle, int current, int count,
                                 lines_disp, win->offset);
           }
           else if (last_line + 1 > win->max_lines
-                   && (int)((float)(line_nb_of_word_a[current])
-                              / (last_line + 1) * (win->max_lines - 2)
-                            + 2)
+                   && (long)((float)(line_nb_of_word_a[current])
+                               / (last_line + 1) * (win->max_lines - 2)
+                             + 2)
                         == lines_disp)
             right_margin_putp(sbar_curs, "+", langinfo, term, win, lines_disp,
                               win->offset);
@@ -5752,7 +5753,7 @@ disp_lines(win_t * win, toggle_t * toggle, int current, int count,
 
           if (win->offset > 0)
           {
-            size_t i;
+            long i;
             for (i = 0; i < win->offset; i++)
               fputc(' ', stdout);
           }
@@ -6132,7 +6133,7 @@ delims_cmp(const void * a, const void * b)
 static void
 set_new_first_column(win_t * win, term_t * term)
 {
-  int pos;
+  long pos;
 
   if (word_a[current].start < win->first_column)
   {
@@ -6311,15 +6312,15 @@ main(int argc, char * argv[])
                           * window                                           */
   ll_t * message_lines_list = NULL; /* list of the lines in the message to   *
                                      * be displayed                          */
-  int message_max_width = 0; /* total width of the message (longest line)    */
-  int message_max_len   = 0; /* max number of bytes taken by a message       *
-                              * line                                         */
+  long message_max_width = 0; /* total width of the message (longest line)    */
+  long message_max_len   = 0; /* max number of bytes taken by a message       *
+                               * line */
 
   FILE * input_file; /* The name of the file passed as argument if any       */
 
-  int index; /* generic counter                                              */
+  long index; /* generic counter */
 
-  int daccess_index = 1;
+  long daccess_index = 1;
 
   char *  daccess_np = NULL;
   regex_t daccess_np_re; /* variable to store the compiled direct access     *
@@ -6375,20 +6376,20 @@ main(int argc, char * argv[])
   ll_t * rows_selector_list = NULL;
   char * rows_selector      = NULL;
 
-  int wi; /* word index                                                      */
+  long wi; /* word index */
 
   term_t term; /* Terminal structure                                         */
 
   tst_node_t * tst_word    = NULL; /* TST used by the search function        */
   tst_node_t * tst_daccess = NULL; /* TST used by the direct access system   */
 
-  int    page;     /* Step for the vertical cursor moves                     */
+  long   page;     /* Step for the vertical cursor moves                     */
   char * word;     /* Temporary variable to work on words                    */
   char * tmp_word; /* Temporary variable able to contain  the beginning of   *
                     * the word to be displayed                               */
 
-  int      last_line = 0; /* last logical line number (from 0)               */
-  int      opt;
+  long     last_line = 0; /* last logical line number (from 0)               */
+  long     opt;
   win_t    win;
   limits_t limits; /* set of various limitations                             */
   timers_t timers; /* timers contents                                        */
@@ -6398,37 +6399,37 @@ main(int argc, char * argv[])
   int    old_fd1;    /* backups of the old stdout file descriptor            */
   FILE * old_stdout; /* The selected word will go there                      */
 
-  int nl;     /* Number of lines displayed in the window                     */
-  int offset; /* Used to correctly put the cursor at the start of the        *
-               * selection window, even after a terminal vertical scroll     */
+  long nl;     /* Number of lines displayed in the window                     */
+  long offset; /* Used to correctly put the cursor at the start of the *
+                * selection window, even after a terminal vertical scroll */
 
-  int first_selectable; /* Index of the first selectable word in the input   *
-                         * stream                                            */
-  int last_selectable;  /* Index of the last selectable word in the input    *
-                         * stream                                            */
+  long first_selectable; /* Index of the first selectable word in the input *
+                          * stream */
+  long last_selectable;  /* Index of the last selectable word in the input  *
+                          * stream  */
 
-  int s, e;     /* word variable to contain the starting and ending          *
-                 * terminal position of a word                               */
-  int min_size; /* Minimum screen width of a column in tabular mode          */
+  long s, e;     /* word variable to contain the starting and ending          *
+                  * terminal position of a word                               */
+  long min_size; /* Minimum screen width of a column in tabular mode */
 
-  int tab_max_size;      /* Maximum screen width of a column in tabular      *
-                          * mode                                             */
-  int tab_real_max_size; /* Maximum size in bytes of a column in tabular     *
-                          * mode                                             */
+  long tab_max_size;      /* Maximum screen width of a column in tabular      *
+                           * mode                                             */
+  long tab_real_max_size; /* Maximum size in bytes of a column in tabular *
+                           * mode */
 
-  int * col_real_max_size = NULL; /* Array of maximum sizes (bytes) of each  */
-                                  /* column in column mode                   */
-  int * col_max_size = NULL;      /* Array of maximum sizes of each column   */
-                                  /* in column mode                          */
+  long * col_real_max_size = NULL; /* Array of maximum sizes (bytes) of each  */
+                                   /* column in column mode                   */
+  long * col_max_size = NULL;      /* Array of maximum sizes of each column   */
+                                   /* in column mode                          */
 
-  size_t word_real_max_size = 0; /* size of the longer word after expansion  */
-  int    cols_real_max_size = 0; /* Max real width of all columns used when  *
-                                  * -w and -c are both set                   */
-  int cols_max_size = 0;         /* Same as above for the columns widths     */
+  long word_real_max_size = 0; /* size of the longer word after expansion  */
+  long cols_real_max_size = 0; /* Max real width of all columns used when  *
+                                * -w and -c are both set                   */
+  long cols_max_size = 0;      /* Same as above for the columns widths     */
 
-  int col_index;   /* Index of the current column when reading words, used   *
-                    * in column mode                                         */
-  int cols_number; /* Number of columns in column mode                       */
+  long col_index;   /* Index of the current column when reading words, used   *
+                     * in column mode */
+  long cols_number; /* Number of columns in column mode */
 
   char * pre_selection_index = NULL;    /* pattern used to set the initial   *
                                          * cursor position                   */
@@ -6442,8 +6443,8 @@ main(int argc, char * argv[])
   search_data.fuzzy_err     = 0;  /* reset the error indicator */
   search_data.fuzzy_err_pos = -1; /* no last error position in search buffer */
 
-  int matching_word_cur_index = -1; /* cache for the next/previous moves     *
-                                     * in the matching words array           */
+  long matching_word_cur_index = -1; /* cache for the next/previous moves *
+                                      * in the matching words array */
 
   struct sigaction sa; /* Signal structure                                   */
 
@@ -6464,7 +6465,7 @@ main(int argc, char * argv[])
   langinfo_t      langinfo;
   int             is_supported_charset;
 
-  int line_count = 0; /* Only used when -R is selected                       */
+  long line_count = 0; /* Only used when -R is selected */
 
   attr_t init_attr;
 
@@ -6567,13 +6568,13 @@ main(int argc, char * argv[])
   ll_append(tst_search_list, ll_new());
 
   matching_words_a_size = 64;
-  matching_words_a      = xmalloc(matching_words_a_size * sizeof(int));
+  matching_words_a      = xmalloc(matching_words_a_size * sizeof(long));
   matches_count         = 0;
 
   /* Initialize the tag hit number which will permit to sort the */
   /* pinned words when displayed.                                */
   /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-  size_t next_tag_nb = 0;
+  long next_tag_nb = 0;
 
   /* Columns selection variables */
   /* """"""""""""""""""""""""""" */
@@ -6591,7 +6592,7 @@ main(int argc, char * argv[])
 
   /* Count of the words currently tagged */
   /* """"""""""""""""""""""""""""""""""" */
-  int tagged_words = 0;
+  long tagged_words = 0;
 
   while (charset_ptr->name != NULL)
   {
@@ -6708,7 +6709,7 @@ main(int argc, char * argv[])
       case 't':
         if (optarg != NULL)
         {
-          if (sscanf(optarg, "%d", &(win.max_cols)) != 1)
+          if (sscanf(optarg, "%zd", &(win.max_cols)) != 1)
             TELL("Argument must be numeric -- ");
 
           if (win.max_cols < 1)
@@ -6759,9 +6760,10 @@ main(int argc, char * argv[])
         }
         else
         {
-          int       n;
+          long      n;
           wchar_t * w;
-          size_t    i, mblen, offset;
+          long      i, offset;
+          int       mblen;
           char *    gutter;
 
           gutter = xstrdup(optarg);
@@ -6785,7 +6787,7 @@ main(int argc, char * argv[])
 
             if (n > 1)
             {
-              size_t j;
+              long j;
 
               for (j = 0; j <= i; j++)
                 free(win.gutter_a[j]);
@@ -6949,7 +6951,7 @@ main(int argc, char * argv[])
       case '5':
         if (optarg && *optarg != '-')
         {
-          int    count = 1;
+          long   count = 1;
           attr_t attr  = init_attr;
 
           special_pattern[opt - '1'] = xstrdup(optarg);
@@ -6990,9 +6992,9 @@ main(int argc, char * argv[])
       case 'a':
         if (optarg && *optarg != '-')
         {
-          int i;      /* loop index                                */
-          int offset; /* nb of chars to ship to find the attribute *
-                       * representation (prefix size)              */
+          long i;      /* loop index                                */
+          long offset; /* nb of chars to ship to find the attribute *
+                        * representation (prefix size)              */
 
           attr_t   attr;
           attr_t * attr_to_set;
@@ -7315,7 +7317,7 @@ main(int argc, char * argv[])
                 break;
 
               case 'o': /* start offset */
-                if (sscanf(argv[optind] + 2, "%d%n", &daccess.offset, &pos)
+                if (sscanf(argv[optind] + 2, "%zd%n", &daccess.offset, &pos)
                     != 1)
                   TELL("Bad format -- ");
                 if (argv[optind][pos + 2] != '\0')
@@ -7333,7 +7335,7 @@ main(int argc, char * argv[])
 
               case 'i': /* Number of multibytes to ignore after the
                          * selector * to extract */
-                if (sscanf(argv[optind] + 2, "%d%n", &daccess.ignore, &pos)
+                if (sscanf(argv[optind] + 2, "%zd%n", &daccess.ignore, &pos)
                     != 1)
                   TELL("Bad format -- ");
                 if (argv[optind][pos + 2] != '\0')
@@ -7935,7 +7937,7 @@ main(int argc, char * argv[])
 
     if (message)
     {
-      size_t len;
+      long len;
 
       get_message_lines(message, message_lines_list, &message_max_width,
                         &message_max_len);
@@ -8044,10 +8046,10 @@ main(int argc, char * argv[])
   /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
   if (win.col_mode)
   {
-    int ci; /* column index */
+    long ci; /* column index */
 
-    col_real_max_size = xmalloc(COLSCHUNK * sizeof(int));
-    col_max_size      = xmalloc(COLSCHUNK * sizeof(int));
+    col_real_max_size = xmalloc(COLSCHUNK * sizeof(long));
+    col_max_size      = xmalloc(COLSCHUNK * sizeof(long));
 
     for (ci = 0; ci < COLSCHUNK; ci++)
       col_real_max_size[ci] = col_max_size[ci] = 0;
@@ -8372,11 +8374,11 @@ main(int argc, char * argv[])
     if (win.col_mode || win.line_mode || win.tab_mode)
     {
       if (first_word_pattern
-          && regexec(&first_word_re, word, (size_t)0, NULL, 0) == 0)
+          && regexec(&first_word_re, word, (int)0, NULL, 0) == 0)
         is_first = 1;
 
       if (last_word_pattern && !is_last
-          && regexec(&last_word_re, word, (size_t)0, NULL, 0) == 0)
+          && regexec(&last_word_re, word, (int)0, NULL, 0) == 0)
         is_last = 1;
     }
 
@@ -8386,9 +8388,9 @@ main(int argc, char * argv[])
     for (index = 0; index < 5; index++)
     {
       if (special_pattern[index] != NULL
-          && regexec(&special_re[index], word, (size_t)0, NULL, 0) == 0)
+          && regexec(&special_re[index], word, (int)0, NULL, 0) == 0)
       {
-        special_level = index + 1;
+        special_level = (int)index + 1;
         break;
       }
     }
@@ -8477,9 +8479,9 @@ main(int argc, char * argv[])
         while (row_regex_node != NULL)
         {
           row_re = row_regex_node->data;
-          if (regexec(row_re, word, (size_t)0, NULL, 0) == 0)
+          if (regexec(row_re, word, (int)0, NULL, 0) == 0)
           {
-            int c = count - 1;
+            long c = count - 1;
 
             /* Mark all the next words of the line as excluded */
             /* ''''''''''''''''''''''''''''''''''''''''''''''' */
@@ -8519,9 +8521,9 @@ main(int argc, char * argv[])
         while (row_regex_node != NULL)
         {
           row_re = row_regex_node->data;
-          if (regexec(row_re, word, (size_t)0, NULL, 0) == 0)
+          if (regexec(row_re, word, (int)0, NULL, 0) == 0)
           {
-            int c = count - 1;
+            long c = count - 1;
 
             while (c >= 0 && !word_a[c].is_last)
             {
@@ -8572,7 +8574,7 @@ main(int argc, char * argv[])
         /* '''''''''''''''''''''''''''''''''''''''''''''''''''''''''''' */
         if (exclude_pattern)
         {
-          if (regexec(&exclude_re, word, (size_t)0, NULL, 0) == 0)
+          if (regexec(&exclude_re, word, (int)0, NULL, 0) == 0)
             selectable = EXCLUDE_MARK;
         }
 
@@ -8583,7 +8585,7 @@ main(int argc, char * argv[])
           /* '''''''''''''''''''''''''''''''''''''''''''''''''''''''''''' */
           if (include_pattern)
           {
-            if (regexec(&include_re, word, (size_t)0, NULL, 0) == 0)
+            if (regexec(&include_re, word, (int)0, NULL, 0) == 0)
               selectable = INCLUDE_MARK;
             else if (!row_inc_matched)
               selectable = row_def_selectable;
@@ -8615,7 +8617,7 @@ main(int argc, char * argv[])
           {
             fprintf(stderr,
                     "The number of columns has reached the limit "
-                    "(%d), exiting.\n",
+                    "(%zd), exiting.\n",
                     limits.cols);
 
             exit(EXIT_FAILURE);
@@ -8628,14 +8630,14 @@ main(int argc, char * argv[])
           /* '''''''''''''''''''''''''''''''''''''''''''''''''''' */
           if (cols_number % COLSCHUNK == 0)
           {
-            int ci; /* column index */
+            long ci; /* column index */
 
             col_real_max_size = xrealloc(col_real_max_size,
                                          (cols_number + COLSCHUNK)
-                                           * sizeof(int));
+                                           * sizeof(long));
 
             col_max_size = xrealloc(col_max_size,
-                                    (cols_number + COLSCHUNK) * sizeof(int));
+                                    (cols_number + COLSCHUNK) * sizeof(long));
 
             /* Initialize the max size for the new columns */
             /* ''''''''''''''''''''''''''''''''''''''''''' */
@@ -8653,7 +8655,7 @@ main(int argc, char * argv[])
       /* """"""""""""""""""""""""""""""""""""""""""""""" */
       if (cols_selector != NULL)
       {
-        int ci; /* column index */
+        long ci; /* column index */
 
         regex_t * col_re;
 
@@ -8671,7 +8673,7 @@ main(int argc, char * argv[])
             {
               col_re = col_regex_node->data;
 
-              if (regexec(col_re, word, (size_t)0, NULL, 0) == 0)
+              if (regexec(col_re, word, (int)0, NULL, 0) == 0)
               {
                 cols_filter[col_index - 1] = EXCLUDE_MARK;
                 selectable                 = EXCLUDE_MARK;
@@ -8706,7 +8708,7 @@ main(int argc, char * argv[])
             {
               col_re = col_regex_node->data;
 
-              if (regexec(col_re, word, (size_t)0, NULL, 0) == 0)
+              if (regexec(col_re, word, (int)0, NULL, 0) == 0)
               {
                 cols_filter[col_index - 1] = INCLUDE_MARK;
                 break;
@@ -8751,7 +8753,7 @@ main(int argc, char * argv[])
     {
       fprintf(stderr,
               "The number of read words has reached the limit "
-              "(%d), exiting.\n",
+              "(%zd), exiting.\n",
               limits.words);
 
       exit(EXIT_FAILURE);
@@ -8789,14 +8791,14 @@ main(int argc, char * argv[])
   for (wi = 0; wi < count; wi++)
   {
     char *    unaltered_word;
-    int       size;
-    size_t    word_len;
+    long      size;
+    long      word_len;
     wchar_t * tmpw;
     word_t *  word;
-    int       s;
-    size_t    len;
+    long      s;
+    long      len;
     char *    expanded_word;
-    size_t    i;
+    long      i;
 
     /* If the column section argument is set, then adjust the final        */
     /* selectable attribute  according to the already set words and column */
@@ -8851,7 +8853,7 @@ main(int argc, char * argv[])
       /* """""""""""""""""""""""""""""""""""""""""""""""" */
       if ((daccess.mode & DA_TYPE_AUTO) && daccess.length == -2)
       {
-        int n = count;
+        long n = count;
 
         daccess.length = 0;
 
@@ -8872,7 +8874,7 @@ main(int argc, char * argv[])
       {
         char * selector;
         char * tmp      = xmalloc(strlen(word->str) + 4 + daccess.length);
-        int *  word_pos = xmalloc(sizeof(int));
+        long * word_pos = xmalloc(sizeof(long));
         int    may_number;
 
         if (!isempty(word->str))
@@ -8893,14 +8895,12 @@ main(int argc, char * argv[])
           else
           {
             if (daccess_up != NULL
-                && !!regexec(&daccess_up_re, word->str, (size_t)0, NULL, 0)
-                     == 0)
+                && !!regexec(&daccess_up_re, word->str, (int)0, NULL, 0) == 0)
               may_number = 0;
             else
             {
               if (daccess_np != NULL
-                  && !!regexec(&daccess_np_re, word->str, (size_t)0, NULL, 0)
-                       == 0)
+                  && !!regexec(&daccess_np_re, word->str, (int)0, NULL, 0) == 0)
                 may_number = 1;
               else
                 may_number = daccess.def_number;
@@ -8921,7 +8921,7 @@ main(int argc, char * argv[])
                 {
                   unsigned selector_value; /* numerical value of the         *
                                             * extracted selector             */
-                  int selector_offset;     /* offset in byte to the selector *
+                  long selector_offset;    /* offset in byte to the selector *
                                             * to extract                     */
                   char * ptr; /* points just after the selector to extract   */
 
@@ -8963,7 +8963,7 @@ main(int argc, char * argv[])
 
             if (!word->is_numbered && (daccess.mode & DA_TYPE_AUTO))
             {
-              sprintf(tmp + 1, "%*d",
+              sprintf(tmp + 1, "%*zd",
                       daccess.alignment == 'l' ? -daccess.length
                                                : daccess.length,
                       daccess_index);
@@ -9142,7 +9142,7 @@ main(int argc, char * argv[])
       /* Update the max values of col_real_max_size[col_index] */
       /* and col_max_size[col_index]                           */
       /* """"""""""""""""""""""""""""""""""""""""""""""""""""" */
-      if ((s = (int)word_len) > col_real_max_size[col_index])
+      if ((s = (long)word_len) > col_real_max_size[col_index])
       {
         col_real_max_size[col_index] = s;
 
@@ -9152,7 +9152,7 @@ main(int argc, char * argv[])
           cols_real_max_size = s;
       }
 
-      s = (int)mbstowcs(NULL, word->str, 0);
+      s = (long)mbstowcs(NULL, word->str, 0);
       s = wcswidth((tmpw = mb_strtowcs(word->str)), s);
       free(tmpw);
 
@@ -9174,12 +9174,12 @@ main(int argc, char * argv[])
       /* Store the new max number of bytes in a word      */
       /* and update the size of the longest expanded word */
       /* """""""""""""""""""""""""""""""""""""""""""""""" */
-      if ((size = (int)word_len) > tab_real_max_size)
-        word_real_max_size = tab_real_max_size = (int)word_len;
+      if ((size = (long)word_len) > tab_real_max_size)
+        word_real_max_size = tab_real_max_size = (long)word_len;
 
       /* Store the new max word width */
       /* """""""""""""""""""""""""""" */
-      size = (int)mbstowcs(NULL, word->str, 0);
+      size = (long)mbstowcs(NULL, word->str, 0);
 
       if ((size = wcswidth((tmpw = mb_strtowcs(word->str)), size))
           > tab_max_size)
@@ -9254,7 +9254,7 @@ main(int argc, char * argv[])
   /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
   if (!win.col_mode)
   {
-    int offset;
+    long offset;
 
     offset = 0;
     for (wi = 0; wi < count; wi++)
@@ -9282,8 +9282,8 @@ main(int argc, char * argv[])
 
   /* Allocate the space for the satellites arrays */
   /* """""""""""""""""""""""""""""""""""""""""""" */
-  line_nb_of_word_a    = xmalloc(count * sizeof(int));
-  first_word_in_line_a = xmalloc(count * sizeof(int));
+  line_nb_of_word_a    = xmalloc(count * sizeof(long));
+  first_word_in_line_a = xmalloc(count * sizeof(long));
 
   /* Fourth pass:                                                         */
   /* When in column or tabulating mode, we need to adjust the length of   */
@@ -9319,11 +9319,11 @@ main(int argc, char * argv[])
     col_index = 0;
     for (wi = 0; wi < count; wi++)
     {
-      int       s1, s2;
-      size_t    word_width;
+      long      s1, s2;
+      long      word_width;
       wchar_t * w;
 
-      s1         = (int)strlen(word_a[wi].str);
+      s1         = (long)strlen(word_a[wi].str);
       word_width = mbstowcs(NULL, word_a[wi].str, 0);
       s2         = wcswidth((w = mb_strtowcs(word_a[wi].str)), word_width);
       free(w);
@@ -9353,11 +9353,11 @@ main(int argc, char * argv[])
 
     for (wi = 0; wi < count; wi++)
     {
-      int       s1, s2;
-      size_t    word_width;
+      long      s1, s2;
+      long      word_width;
       wchar_t * w;
 
-      s1         = (int)strlen(word_a[wi].str);
+      s1         = (long)strlen(word_a[wi].str);
       word_width = mbstowcs(NULL, word_a[wi].str, 0);
       s2         = wcswidth((w = mb_strtowcs(word_a[wi].str)), word_width);
       free(w);
@@ -9375,7 +9375,7 @@ main(int argc, char * argv[])
   /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
   for (wi = 0; wi < count; wi++)
   {
-    int *     data;
+    long *    data;
     wchar_t * w;
     ll_t *    list;
 
@@ -9387,7 +9387,7 @@ main(int argc, char * argv[])
     /* """"""""""""""""""""""""""""""""""""""""""""""""""" */
     if (word_a[wi].is_selectable)
     {
-      data  = xmalloc(sizeof(int));
+      data  = xmalloc(sizeof(long));
       *data = wi;
 
       /* Create a wide characters string from the word screen representation */
@@ -9423,8 +9423,8 @@ main(int argc, char * argv[])
   /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
   tmp_word = xmalloc(word_real_max_size + 1);
 
-  search_data.mb_off_a = xmalloc(word_real_max_size * sizeof(size_t));
-  search_data.mb_len_a = xmalloc(word_real_max_size * sizeof(size_t));
+  search_data.mb_off_a = xmalloc(word_real_max_size * sizeof(long));
+  search_data.mb_len_a = xmalloc(word_real_max_size * sizeof(long));
 
   win.start = 0; /* index of the first element in the    *
                   * words array to be  displayed         */
@@ -9475,7 +9475,7 @@ main(int argc, char * argv[])
     /* A regular expression is expected */
     /* """""""""""""""""""""""""""""""" */
     regex_t re;
-    int     index;
+    long    index;
 
     if (regcomp(&re, pre_selection_index + 1, REG_EXTENDED | REG_NOSUB) != 0)
     {
@@ -9498,7 +9498,7 @@ main(int argc, char * argv[])
         else
           word = word_a[index].str;
 
-        if (regexec(&re, word, (size_t)0, NULL, 0) == 0)
+        if (regexec(&re, word, (int)0, NULL, 0) == 0)
         {
           current = index;
           found   = 1;
@@ -9523,7 +9523,7 @@ main(int argc, char * argv[])
     if (list != NULL)
     {
       node    = list->head;
-      current = *(int *)(node->data);
+      current = *(long *)(node->data);
     }
     else
       current = first_selectable;
@@ -9543,7 +9543,7 @@ main(int argc, char * argv[])
       /* """""""""""""""""""" */
       ptr++;
 
-      if (sscanf(ptr, "%d%n", &current, &len) == 1 && len == (int)strlen(ptr))
+      if (sscanf(ptr, "%zd%n", &current, &len) == 1 && len == (int)strlen(ptr))
       {
         /* We got an index (numeric value) */
         /* """"""""""""""""""""""""""""""" */
@@ -9641,8 +9641,8 @@ main(int argc, char * argv[])
   /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
   if (win.col_mode || win.line_mode)
   {
-    int pos;
-    int len;
+    long pos;
+    long len;
 
     len = term.ncolumns - 3;
 
@@ -9676,7 +9676,7 @@ main(int argc, char * argv[])
   /* Set the cursor to the first line of the window */
   /* """""""""""""""""""""""""""""""""""""""""""""" */
   {
-    int i; /* generic index in this block */
+    long i; /* generic index in this block */
 
     for (i = 1; i < offset; i++)
       tputs(TPARM1(cursor_up), 1, outch);
@@ -9740,9 +9740,9 @@ main(int argc, char * argv[])
     /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
     if (got_winch_alrm)
     {
-      int i; /* generic index in this block */
-      int nlines, ncolumns;
-      int line, column;
+      long i; /* generic index in this block */
+      int  nlines, ncolumns;
+      int  line, column;
 
       /* Re-arm the timer */
       /* """""""""""""""" */
@@ -9804,8 +9804,8 @@ main(int argc, char * argv[])
 
       if (win.col_mode || win.line_mode)
       {
-        int pos;
-        int len;
+        long pos;
+        long len;
 
         len = term.ncolumns - 3;
 
@@ -9854,7 +9854,7 @@ main(int argc, char * argv[])
     {
       if (got_timeout_tick)
       {
-        int    i;
+        long   i;
         char * timeout_string;
 
         got_timeout_tick = 0;
@@ -9912,7 +9912,7 @@ main(int argc, char * argv[])
       if (timeout.initial_value && buffer[0] != 0x0d && buffer[0] != 'q'
           && buffer[0] != 'Q' && buffer[0] != 3)
       {
-        int i;
+        long i;
 
         char * timeout_string;
 
@@ -10021,8 +10021,8 @@ main(int argc, char * argv[])
             /* """""""""""""""""""""""""""""""""""""""""" */
             if (win.col_mode || win.line_mode)
             {
-              int pos;
-              int len;
+              long pos;
+              long len;
 
               len = term.ncolumns - 3;
 
@@ -10154,7 +10154,7 @@ main(int argc, char * argv[])
             goto special_cmds_when_searching;
 
           {
-            int i; /* generic index in this block */
+            long i; /* generic index in this block */
 
             for (i = 0; i < win.message_lines; i++)
               tputs(TPARM1(cursor_up), 1, outch);
@@ -10203,9 +10203,9 @@ main(int argc, char * argv[])
 
           if (matches_count > 0)
           {
-            int pos = find_next_matching_word(matching_words_a, matches_count,
-                                              current,
-                                              &matching_word_cur_index);
+            long pos = find_next_matching_word(matching_words_a, matches_count,
+                                               current,
+                                               &matching_word_cur_index);
             if (pos >= 0)
               current = pos;
 
@@ -10230,9 +10230,9 @@ main(int argc, char * argv[])
 
           if (matches_count > 0)
           {
-            int pos = find_prev_matching_word(matching_words_a, matches_count,
-                                              current,
-                                              &matching_word_cur_index);
+            long pos = find_prev_matching_word(matching_words_a, matches_count,
+                                               current,
+                                               &matching_word_cur_index);
             if (pos >= 0)
               current = pos;
           }
@@ -10261,7 +10261,7 @@ main(int argc, char * argv[])
           int width = 0;
 
           wchar_t * w;
-          int       i; /* generic index in this block */
+          long      i; /* generic index in this block */
 
           if (help_mode)
             nl = disp_lines(&win, &toggle, current, count, search_mode,
@@ -10524,9 +10524,9 @@ main(int argc, char * argv[])
         case 'h':
           if (search_mode == NONE)
           {
-            int old_current      = current;
-            int old_start        = win.start;
-            int old_first_column = win.first_column;
+            long old_current      = current;
+            long old_start        = win.start;
+            long old_first_column = win.first_column;
 
             do
             {
@@ -10560,11 +10560,11 @@ main(int argc, char * argv[])
                 /* """""""""""""""""""""""""""""""""""""""""" */
                 if (win.col_mode || win.line_mode)
                 {
-                  int pos;
+                  long pos;
 
                   if (word_a[current].start == 0)
                   {
-                    int len;
+                    long len;
 
                     len = term.ncolumns - 3;
                     pos = first_word_in_line_a[line_nb_of_word_a[current - 1]];
@@ -10614,9 +10614,9 @@ main(int argc, char * argv[])
         case 'l':
           if (search_mode == NONE)
           {
-            int old_current      = current;
-            int old_start        = win.start;
-            int old_first_column = win.first_column;
+            long old_current      = current;
+            long old_start        = win.start;
+            long old_first_column = win.first_column;
 
             do
             {
@@ -10653,8 +10653,8 @@ main(int argc, char * argv[])
                     win.first_column = 0;
                   else
                   {
-                    int pos;
-                    int len;
+                    long pos;
+                    long len;
 
                     len = term.ncolumns - 3;
 
@@ -10728,13 +10728,13 @@ main(int argc, char * argv[])
         case 'k':
           if (search_mode == NONE)
           {
-            int cur_line;
-            int start_line;
-            int last_word;
-            int cursor;
-            int old_current = current;
-            int old_start   = win.start;
-            int index;
+            long cur_line;
+            long start_line;
+            long last_word;
+            long cursor;
+            long old_current = current;
+            long old_start   = win.start;
+            long index;
 
             /* Store the initial starting and ending positions of */
             /* the word under the cursor                          */
@@ -10887,7 +10887,7 @@ main(int argc, char * argv[])
           /* """""""""""""""""""""""""""""""""""""""""" */
           if (win.col_mode || win.line_mode)
           {
-            int pos;
+            long pos;
 
             /* Adjust win.first_column if the cursor is no more visible */
             /* """""""""""""""""""""""""""""""""""""""""""""""""""""""" */
@@ -10926,13 +10926,13 @@ main(int argc, char * argv[])
         case 'j':
           if (search_mode == NONE)
           {
-            int cur_line;
-            int start_line;
-            int last_word;
-            int cursor;
-            int old_current = current;
-            int old_start   = win.start;
-            int index;
+            long cur_line;
+            long start_line;
+            long last_word;
+            long cursor;
+            long old_current = current;
+            long old_start   = win.start;
+            long index;
 
             /* Store the initial starting and ending positions of */
             /* the word under the cursor                          */
@@ -11099,7 +11099,7 @@ main(int argc, char * argv[])
           /* """""""""""""""""""""""""""""""""""""""""" */
           if (win.col_mode || win.line_mode)
           {
-            int pos;
+            long pos;
 
             /* Adjust win.first_column if the cursor is no more visible */
             /* """""""""""""""""""""""""""""""""""""""""""""""""""""""" */
@@ -11282,7 +11282,7 @@ main(int argc, char * argv[])
           {
             if (toggle.taggable)
             {
-              int i, n;
+              long i, n;
 
               for (i = 0; i < matches_count; i++)
               {
@@ -11325,7 +11325,7 @@ main(int argc, char * argv[])
           if (search_mode == NONE && daccess.mode != DA_TYPE_NONE)
           {
             wchar_t * w;
-            int *     pos;
+            long *    pos;
 
             /* Set prev_current to the initial current word to be    */
             /* able to return here if the first direct access fails. */
@@ -11386,7 +11386,7 @@ main(int argc, char * argv[])
         case 0x08: /* ^H */
         case 0x7f: /* BS */
         {
-          int i;
+          long i;
 
           /* Backspace or CTRL-H */
           /* """"""""""""""""""" */
@@ -11480,9 +11480,9 @@ main(int argc, char * argv[])
 
           if (search_mode != NONE)
           {
-            size_t      old_len    = search_data.len;
-            size_t      old_mb_len = search_data.mb_len;
-            int         i;
+            long        old_len    = search_data.len;
+            long        old_mb_len = search_data.mb_len;
+            long        i;
             ll_node_t * node;
             wchar_t *   ws;
 
@@ -11520,7 +11520,7 @@ main(int argc, char * argv[])
               /* Trivial but fast */
               for (i = 0; i < matches_count; i++)
               {
-                int n = matching_words_a[i];
+                long n = matching_words_a[i];
 
                 word_a[n].is_matching = 0;
 
@@ -11723,7 +11723,7 @@ main(int argc, char * argv[])
               /* Trivial but fast */
               for (i = 0; i < matches_count; i++)
               {
-                int n = matching_words_a[i];
+                long n = matching_words_a[i];
 
                 word_a[n].is_matching = 0;
                 memset(word_a[n].bitmap, '\0',
