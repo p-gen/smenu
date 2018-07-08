@@ -5161,17 +5161,15 @@ disp_cursor_word(long pos, win_t * win, term_t * term, int err)
         /* Set the buffer display attribute */
         /* """""""""""""""""""""""""""""""" */
         tputs(TPARM1(exit_attribute_mode), 1, outch);
+        if (err)
+          apply_attr(term, win->match_err_text_attr);
+        else
+          apply_attr(term, win->match_text_attr);
+
         if (word_a[pos].is_tagged)
           apply_attr(term, win->cursor_on_tag_attr);
         else
-        {
           apply_attr(term, win->cursor_attr);
-
-          if (err)
-            apply_attr(term, win->match_err_text_attr);
-          else
-            apply_attr(term, win->match_text_attr);
-        }
       }
     }
     else
@@ -5243,9 +5241,6 @@ disp_matching_word(long pos, win_t * win, term_t * term, int is_matching,
         /* Set the buffer display attribute */
         /* """""""""""""""""""""""""""""""" */
         tputs(TPARM1(exit_attribute_mode), 1, outch);
-        if (word_a[pos].is_tagged)
-          apply_attr(term, win->tag_attr);
-
         if (is_matching)
         {
           if (err)
@@ -5255,6 +5250,9 @@ disp_matching_word(long pos, win_t * win, term_t * term, int is_matching,
         }
         else
           apply_attr(term, win->search_text_attr);
+
+        if (word_a[pos].is_tagged)
+          apply_attr(term, win->tag_attr);
       }
     }
     else
@@ -7660,7 +7658,7 @@ main(int argc, char * argv[])
       if (term.has_underline)
         win.cursor_on_tag_attr.underline = 1;
       else
-        win.cursor_on_tag_attr.fg = 4;
+        win.cursor_on_tag_attr.fg = 2;
 
       win.cursor_on_tag_attr.is_set = SET;
     }
@@ -7683,16 +7681,14 @@ main(int argc, char * argv[])
 
     if (!win.search_field_attr.is_set)
     {
-      win.search_field_attr.bg     = 4;
+      win.search_field_attr.bg     = 5;
       win.search_field_attr.is_set = SET;
     }
 
     if (!win.search_text_attr.is_set)
     {
-      if (term.has_reverse)
-        win.search_text_attr.reverse = 1;
-
-      win.search_text_attr.fg = 4;
+      win.search_text_attr.fg = 7;
+      win.search_text_attr.fg = 5;
 
       win.search_text_attr.is_set = SET;
     }
@@ -7708,8 +7704,7 @@ main(int argc, char * argv[])
       if (term.has_reverse)
         win.search_err_text_attr.reverse = 1;
 
-      win.search_err_text_attr.fg = 1;
-
+      win.search_err_text_attr.fg     = 1;
       win.search_err_text_attr.is_set = SET;
     }
 
@@ -7720,8 +7715,7 @@ main(int argc, char * argv[])
 
     if (!win.match_text_attr.is_set)
     {
-      win.match_text_attr.fg = 4;
-
+      win.match_text_attr.fg     = 5;
       win.match_text_attr.is_set = SET;
     }
 
@@ -7732,22 +7726,25 @@ main(int argc, char * argv[])
 
     if (!win.match_err_text_attr.is_set)
     {
-      win.match_err_text_attr.fg = 1;
-
+      win.match_err_text_attr.fg     = 1;
       win.match_err_text_attr.is_set = SET;
     }
 
     if (!win.exclude_attr.is_set)
     {
-      win.exclude_attr.fg     = 4;
+      win.exclude_attr.fg     = 6;
+
       win.exclude_attr.is_set = SET;
     }
 
     if (!win.tag_attr.is_set)
     {
-      win.tag_attr.fg = 5;
       if (term.has_underline)
         win.tag_attr.underline = 1;
+      else if (term.has_bold)
+        win.tag_attr.bold = 1;
+      else
+        win.tag_attr.fg = 2;
 
       win.tag_attr.is_set = SET;
     }

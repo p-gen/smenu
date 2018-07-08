@@ -5,7 +5,7 @@ a b c d
 e f g h 
 
 u j k l 
-0:0423 2:0423 
+0:04 2:04 
 $ 
 
 $ echo ":$OUT:"

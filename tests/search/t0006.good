@@ -1,7 +1,7 @@
 $ OUT=$(smenu t0006.in)
 
 abc ab ab abcabc bca ba bac 
-0:07 1:07 2:0722 12:22 18:22 26:22 
+0:07 1:07 2:071f 12:1f 18:1f 26:1f 
 $ 
 
 $ echo ":$OUT:"
