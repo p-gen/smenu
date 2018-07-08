@@ -6364,9 +6364,9 @@ main(int argc, char * argv[])
   regex_t special_re[5];
 
   int include_visual_only = 0; /* If set to 1, the original word which is    *
-                                * read from stdin will be output even if     */
-  int exclude_visual_only = 0; /* its visual representation was modified     *
-                                * via -S/-I/-E */
+                                * read from stdin will be output even if its */
+  int exclude_visual_only = 0; /* visual representation was modified via     *
+                                * -S/-I/-E                                   */
 
   ll_t * cols_selector_list = NULL;
   char * cols_selector      = NULL;
