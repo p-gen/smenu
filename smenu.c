@@ -10242,6 +10242,9 @@ main(int argc, char * argv[])
           {
             /* ESC key has been pressed */
             /* """""""""""""""""""""""" */
+
+            search_mode_t old_mode = search_mode;
+
             search_data.fuzzy_err = 0;
 
             if (help_mode)
@@ -10260,13 +10263,13 @@ main(int argc, char * argv[])
             search_mode = NONE;
 
             if (matches_count > 0)
-            {
               clean_matches(&search_data, word_real_max_size);
 
+            if (old_mode != NONE)
               nl = disp_lines(&win, &toggle, current, count, search_mode,
                               &search_data, &term, last_line, tmp_word,
                               &langinfo);
-            }
+
             break;
           }
 
