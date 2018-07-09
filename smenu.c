@@ -11857,6 +11857,7 @@ main(int argc, char * argv[])
                 long j;
                 long nb;
 
+                word_a[n].is_matching = 0;
                 memset(word_a[n].bitmap, '\0',
                        (word_a[n].mb - 1 - daccess.flength) / CHAR_BIT + 1);
               }
