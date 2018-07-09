@@ -187,8 +187,52 @@ session but do not clear the list of the matching words.
 The user can then use the \fBn\fP/\fBSPACE\fP keys (forward) and the
 \fBN\fP key (backward) to navigate in the mathing words list.
 .PP
+If the user hits the \fBHome\fP or \fBEnd\fP key during a search session
+then the matched word list is reduced to the words starting (respectively)
+ending with the curent search pattern and the window is actialized.
+
+by example, if the search pattern is \f(CBsh\fP and the user hits
+\fBEnd\fP, then only the words \fIending\fP with \f(CBsh\fP will be
+added in the searched word list and enhanced.
+
 When not in a search session \fBESC\fP can be used to clear this list
 and reset the search buffer.
+.PP
+In summary, here is the meaning of the special keys in search mode:
+.TS
+tab(@);
+lb s s
+l l c
+l lw(9c) c .
+Keys which clear the matched words list.
+Key@Meaning@Closes the search session
+_
+Esc@Cancel search@Yes
+
+.T&
+lb s s
+l l c
+l lw(9c) c .
+Keys which keep or update the matched words list.
+Key@Meaning@Closes the search session
+_
+\(<-@Previous word@Yes
+\(ua@Previous line@Yes
+PgUp@Previous page@Yes
+CTRL+Home, SHIFT+Home, CTRL+k@First word@Yes
+\(->@Next word@Yes
+\(da@Next line@Yes
+PgDn@Next pages@Yes
+CTRL+End, SHIFT+End, CTRL+j@Last word@Yes
+Home@T{
+Only keep the words starting with the search pattern
+T}@No
+End@T{
+Only keep the words ending with the search pattern
+T}@No
+Ins@Tag word@No
+Del@Untag word@No
+.TE
 .PP
 Note that the search buffer is persistent as long as the same search
 algorithm is used and \fBESC\fP has not been pressed.

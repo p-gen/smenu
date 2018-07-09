@@ -803,6 +803,8 @@ ll_t * tst_search_list = NULL;
 long * matching_words_a;
 long   matching_words_a_size;
 long   matches_count;
+long * alt_matching_words_a = NULL;
+long   alt_matches_count;
 
 /* Variables used in signal handlers */
 /* """"""""""""""""""""""""""""""""" */
@@ -2343,7 +2345,7 @@ update_bitmaps(search_mode_t mode, search_data_t * data)
     {
       n        = matching_words_a[i];
       str_orig = word_a[n].str + daccess.flength;
-      mb       = word_a[n].mb - 1 - daccess.flength;
+      mb       = (word_a[n].mb - 1 - daccess.flength) / CHAR_BIT + 1;
       bm       = word_a[n].bitmap;
 
       if (mode == FUZZY)
@@ -2423,9 +2425,10 @@ update_bitmaps(search_mode_t mode, search_data_t * data)
     {
       n  = matching_words_a[i];
       bm = word_a[n].bitmap;
-      mb = word_a[n].mb - 1 - daccess.flength;
+      mb = (word_a[n].mb - 1 - daccess.flength) / CHAR_BIT + 1;
 
       memset(bm, '\0', mb);
+
       for (j = 0; j <= last; j++)
         BIT_ON(bm, j);
     }
@@ -2585,7 +2588,9 @@ clean_matches(search_data_t * search_data, long size)
   {
     long n                = matching_words_a[i];
     word_a[n].is_matching = 0;
-    memset(word_a[n].bitmap, '\0', word_a[n].mb - 1 - daccess.flength);
+
+    memset(word_a[n].bitmap, '\0',
+           (word_a[n].mb - 1 - daccess.flength) / CHAR_BIT + 1);
   }
 
   matches_count = 0;
@@ -7732,7 +7737,7 @@ main(int argc, char * argv[])
 
     if (!win.exclude_attr.is_set)
     {
-      win.exclude_attr.fg     = 6;
+      win.exclude_attr.fg = 6;
 
       win.exclude_attr.is_set = SET;
     }
@@ -9439,7 +9444,9 @@ main(int argc, char * argv[])
   /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
 
   for (wi = 0; wi < count; wi++)
-    word_a[wi].bitmap = xcalloc(1, word_a[wi].mb - 1 - daccess.flength);
+    word_a[wi].bitmap = xcalloc(1,
+                                (word_a[wi].mb - 1 - daccess.flength) / CHAR_BIT
+                                  + 1);
 
   /* Find the first selectable word (if any) in the input stream */
   /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
@@ -9965,22 +9972,70 @@ main(int argc, char * argv[])
           {
             /* HOME key has been pressed */
             /* """"""""""""""""""""""""" */
-            current = win.start;
-
             if (search_mode != NONE)
-              search_mode = NONE;
+            {
+              if (matches_count > 0)
+              {
+                long   i;
+                long   j = 0;
+                long   index;
+                long   nb;
+                long * tmp;
 
-            /* Find the first selectable word */
-            /* """""""""""""""""""""""""""""" */
-            while (current < win.end && !word_a[current].is_selectable)
-              current++;
+                alt_matching_words_a = xrealloc(alt_matching_words_a,
+                                                matches_count * (sizeof(long)));
 
-            /* In column mode we need to take care of the */
-            /* horizontal scrolling                       */
-            /* """""""""""""""""""""""""""""""""""""""""" */
-            if (win.col_mode || win.line_mode)
-              if (word_a[current].end < win.first_column)
-                win.first_column = word_a[current].start;
+                for (i = 0; i < matches_count; i++)
+                {
+                  index = matching_words_a[i];
+                  if (BIT_ISSET(word_a[index].bitmap, 0))
+                    alt_matching_words_a[j++] = index;
+                  else
+                  {
+                    memset(word_a[index].bitmap, '\0',
+                           (word_a[index].mb - 1 - daccess.flength) / CHAR_BIT
+                             + 1);
+                  }
+                }
+
+                if (j > 0)
+                {
+                  matches_count         = j;
+                  matching_words_a_size = j;
+
+                  tmp                  = matching_words_a;
+                  matching_words_a     = alt_matching_words_a;
+                  alt_matching_words_a = tmp;
+
+                  current = matching_words_a[0];
+
+                  if (current < win.start || current > win.end)
+                    last_line = build_metadata(&term, count, &win);
+
+                  /* Set new first column to display */
+                  /* """"""""""""""""""""""""""""""" */
+                  set_new_first_column(&win, &term);
+                }
+                else
+                  update_bitmaps(search_mode, &search_data);
+              }
+            }
+            else
+            {
+              /* Find the first selectable word */
+              /* """""""""""""""""""""""""""""" */
+              current = win.start;
+
+              while (current < win.end && !word_a[current].is_selectable)
+                current++;
+
+              /* In column mode we need to take care of the */
+              /* horizontal scrolling                       */
+              /* """""""""""""""""""""""""""""""""""""""""" */
+              if (win.col_mode || win.line_mode)
+                if (word_a[current].end < win.first_column)
+                  win.first_column = word_a[current].start;
+            }
 
             nl = disp_lines(&win, &toggle, current, count, search_mode,
                             &search_data, &term, last_line, tmp_word,
@@ -10003,46 +10058,115 @@ main(int argc, char * argv[])
           {
             /* END key has been pressed */
             /* """""""""""""""""""""""" */
-            current = win.end;
-
             if (search_mode != NONE)
-              search_mode = NONE;
-
-            /* Find the last selectable word */
-            /* """"""""""""""""""""""""""""" */
-            while (current > win.start && !word_a[current].is_selectable)
-              current--;
-
-            /* In column mode we need to take care of the */
-            /* horizontal scrolling                       */
-            /* """""""""""""""""""""""""""""""""""""""""" */
-            if (win.col_mode || win.line_mode)
             {
-              long pos;
-              long len;
-
-              len = term.ncolumns - 3;
-
-              if (word_a[current].end >= len + win.first_column)
+              if (matches_count > 0)
               {
-                /* Find the first word to be displayed in this line */
-                /* """""""""""""""""""""""""""""""""""""""""""""""" */
-                pos = first_word_in_line_a[line_nb_of_word_a[current]];
+                long   i;
+                long   j = 0;
+                long   index;
+                long   nb;
+                long * tmp;
+                char * ptr;
 
-                while (word_a[pos].start <= win.first_column)
-                  pos++;
+                alt_matching_words_a = xrealloc(alt_matching_words_a,
+                                                matches_count * (sizeof(long)));
 
-                /* If the new current word cannot be displayed, search */
-                /* the first word in the line that can be displayed by */
-                /* iterating on pos.                                   */
-                /* """"""""""""""""""""""""""""""""""""""""""""""""""" */
-                pos--;
+                for (i = 0; i < matches_count; i++)
+                {
+                  index = matching_words_a[i];
 
-                while (word_a[current].end - word_a[pos].start >= len)
-                  pos++;
+                  /* count the trailing blanks non counted in the bitmap */
+                  /* """"""""""""""""""""""""""""""""""""""""""""""""""" */
+                  ptr = word_a[index].str + strlen(word_a[index].str);
 
-                if (word_a[pos].start > 0)
-                  win.first_column = word_a[pos].start;
+                  nb = 0;
+                  while ((ptr = mb_prev(word_a[index].str, ptr)) != NULL
+                         && isblank(*ptr))
+                    nb++;
+
+                  /* Check the bit corresponding to the last non blank glyph  */
+                  /* If set we add the index to an alternate array, if not we */
+                  /* clear the bitmap of the corresponding word               */
+                  /* """""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+                  if (BIT_ISSET(word_a[index].bitmap, word_a[index].mb - nb - 1
+                                                        - daccess.flength - 1))
+                    alt_matching_words_a[j++] = index;
+                  else
+                  {
+                    memset(word_a[index].bitmap, '\0',
+                           (word_a[index].mb - 1 - daccess.flength) / CHAR_BIT
+                             + 1);
+                  }
+                }
+
+                if (j > 0)
+                {
+                  /* We have some candidates       */
+                  /* swap the normal and alt array */
+                  /* """"""""""""""""""""""""""""" */
+                  matches_count         = j;
+                  matching_words_a_size = j;
+
+                  tmp                  = matching_words_a;
+                  matching_words_a     = alt_matching_words_a;
+                  alt_matching_words_a = tmp;
+
+                  current = matching_words_a[0];
+
+                  if (current < win.start || current > win.end)
+                    last_line = build_metadata(&term, count, &win);
+
+                  /* Set new first column to display */
+                  /* """"""""""""""""""""""""""""""" */
+                  set_new_first_column(&win, &term);
+                }
+                else
+                  /* we restore the old bitmaps in this case */
+                  /* """"""""""""""""""""""""""""""""""""""" */
+                  update_bitmaps(search_mode, &search_data);
+              }
+            }
+            else
+            {
+              /* Find the last selectable word */
+              /* """"""""""""""""""""""""""""" */
+              current = win.end;
+
+              while (current > win.start && !word_a[current].is_selectable)
+                current--;
+
+              /* In column mode we need to take care of the */
+              /* horizontal scrolling                       */
+              /* """""""""""""""""""""""""""""""""""""""""" */
+              if (win.col_mode || win.line_mode)
+              {
+                long pos;
+                long len;
+
+                len = term.ncolumns - 3;
+
+                if (word_a[current].end >= len + win.first_column)
+                {
+                  /* Find the first word to be displayed in this line */
+                  /* """""""""""""""""""""""""""""""""""""""""""""""" */
+                  pos = first_word_in_line_a[line_nb_of_word_a[current]];
+
+                  while (word_a[pos].start <= win.first_column)
+                    pos++;
+
+                  /* If the new current word cannot be displayed, search */
+                  /* the first word in the line that can be displayed by */
+                  /* iterating on pos.                                   */
+                  /* """"""""""""""""""""""""""""""""""""""""""""""""""" */
+                  pos--;
+
+                  while (word_a[current].end - word_a[pos].start >= len)
+                    pos++;
+
+                  if (word_a[pos].start > 0)
+                    win.first_column = word_a[pos].start;
+                }
               }
             }
 
@@ -11518,11 +11642,13 @@ main(int argc, char * argv[])
               for (i = 0; i < matches_count; i++)
               {
                 long n = matching_words_a[i];
+                long j;
+                long nb;
 
                 word_a[n].is_matching = 0;
 
                 memset(word_a[n].bitmap, '\0',
-                       word_a[n].mb - 1 - daccess.flength);
+                       (word_a[n].mb - 1 - daccess.flength) / CHAR_BIT + 1);
               }
 
               matches_count = 0;
@@ -11721,10 +11847,11 @@ main(int argc, char * argv[])
               for (i = 0; i < matches_count; i++)
               {
                 long n = matching_words_a[i];
+                long j;
+                long nb;
 
-                word_a[n].is_matching = 0;
                 memset(word_a[n].bitmap, '\0',
-                       word_a[n].mb - 1 - daccess.flength);
+                       (word_a[n].mb - 1 - daccess.flength) / CHAR_BIT + 1);
               }
 
               matches_count = 0;
