@@ -5150,11 +5150,6 @@ disp_cursor_word(long pos, win_t * win, term_t * term, int err)
   /* """"""""""""""""""""""""""""""" */
   tputs(TPARM1(exit_attribute_mode), 1, outch);
 
-  if (word_a[pos].is_tagged)
-    apply_attr(term, win->cursor_on_tag_attr);
-  else
-    apply_attr(term, win->cursor_attr);
-
   for (i = 0; i < word_a[pos].mb - 1 - daccess.flength; i++)
   {
     if (BIT_ISSET(word_a[pos].bitmap, i))
@@ -5199,6 +5194,11 @@ disp_cursor_word(long pos, win_t * win, term_t * term, int err)
       printf("%.*s", (int)(np - p), p);
     p = np;
   }
+
+  if (word_a[pos].is_tagged)
+    apply_attr(term, win->cursor_on_tag_attr);
+  else
+    apply_attr(term, win->cursor_attr);
 }
 
 /* ==================================================================== */
@@ -5348,9 +5348,13 @@ disp_word(long pos, search_mode_t search_mode, search_data_t * search_data,
       else
         apply_attr(term, win->search_field_attr);
 
-      /* Print and overwrite the beginning of the word with the search */
-      /* buffer content if it is not empty                             */
-      /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+      /* The tab attribute must complete the attributes already set */
+      /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+      if (word_a[pos].is_tagged)
+        apply_attr(term, win->tag_attr);
+
+      /* Print the word part */
+      /* """"""""""""""""""" */
       fputs(tmp_word + daccess.flength, stdout);
 
       if (buffer[0] != '\0')
@@ -5408,16 +5412,18 @@ disp_word(long pos, search_mode_t search_mode, search_data_t * search_data,
 
       /* If we are not in search mode, display a normal cursor */
       /* """"""""""""""""""""""""""""""""""""""""""""""""""""" */
-      if (word_a[pos].is_tagged)
-        apply_attr(term, win->cursor_on_tag_attr);
-      else
-        apply_attr(term, win->cursor_attr);
-
       mb_strprefix(tmp_word, word_a[pos].str, (long)word_a[pos].mb - 1, &p);
       if (word_a[pos].is_matching)
         disp_cursor_word(pos, win, term, search_data->fuzzy_err);
       else
+      {
+        if (word_a[pos].is_tagged)
+          apply_attr(term, win->cursor_on_tag_attr);
+        else
+          apply_attr(term, win->cursor_attr);
+
         fputs(tmp_word + daccess.flength, stdout);
+      }
     }
     tputs(TPARM1(exit_attribute_mode), 1, outch);
   }
@@ -7742,6 +7748,8 @@ main(int argc, char * argv[])
       win.exclude_attr.is_set = SET;
     }
 
+    /* This attribute should complete the attributes already set */
+    /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""" */
     if (!win.tag_attr.is_set)
     {
       if (term.has_underline)
@@ -11635,7 +11643,6 @@ main(int argc, char * argv[])
 
             if (search_mode == PREFIX)
             {
-
               ws = mb_strtowcs(search_data.buf);
 
               /* Trivial but fast */
