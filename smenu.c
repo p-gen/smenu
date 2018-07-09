@@ -11814,15 +11814,11 @@ main(int argc, char * argv[])
               node = tst_search_list->tail;
               node = ((ll_t *)(node->data))->head;
 
-              if (node)
+              while (node)
               {
-                while (node)
-                {
-                  tst_traverse((tst_node_t *)(node->data), set_matching_flag,
-                               0);
+                tst_traverse((tst_node_t *)(node->data), set_matching_flag, 0);
 
-                  node = node->next;
-                }
+                node = node->next;
               }
 
               /* Update the bitmap and re-display the window */
@@ -11875,15 +11871,12 @@ main(int argc, char * argv[])
                 node = tst_search_list->tail;
                 node = ((ll_t *)(node->data))->head;
 
-                if (node)
+                while (node)
                 {
-                  while (node)
-                  {
-                    tst_traverse((tst_node_t *)(node->data), set_matching_flag,
-                                 0);
+                  tst_traverse((tst_node_t *)(node->data), set_matching_flag,
+                               0);
 
-                    node = node->next;
-                  }
+                  node = node->next;
                 }
               }
               else
