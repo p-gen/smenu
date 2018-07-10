@@ -5136,7 +5136,8 @@ build_metadata(term_t * term, long count, win_t * win)
 
 /* ==================================================================== */
 /* Helper function used by disp_word to print a matching word under the */
-/* cursor withe the matching characters of the word highlighted.        */
+/* cursor when not in search mode with the matching characters of the   */
+/* word highlighted.                                                    */
 /* ==================================================================== */
 void
 disp_cursor_word(long pos, win_t * win, term_t * term, int err)
@@ -5146,9 +5147,15 @@ disp_cursor_word(long pos, win_t * win, term_t * term, int err)
   char * p       = word_a[pos].str + daccess.flength;
   char * np;
 
-  /* Set the search cursor attribute */
-  /* """"""""""""""""""""""""""""""" */
+  /* Set the cursor attribute */
+  /* """""""""""""""""""""""" */
   tputs(TPARM1(exit_attribute_mode), 1, outch);
+
+  tputs(TPARM1(exit_attribute_mode), 1, outch);
+  if (word_a[pos].is_tagged)
+    apply_attr(term, win->cursor_on_tag_attr);
+  else
+    apply_attr(term, win->cursor_attr);
 
   for (i = 0; i < word_a[pos].mb - 1 - daccess.flength; i++)
   {
@@ -5194,11 +5201,6 @@ disp_cursor_word(long pos, win_t * win, term_t * term, int err)
       printf("%.*s", (int)(np - p), p);
     p = np;
   }
-
-  if (word_a[pos].is_tagged)
-    apply_attr(term, win->cursor_on_tag_attr);
-  else
-    apply_attr(term, win->cursor_attr);
 }
 
 /* ==================================================================== */
@@ -5206,8 +5208,7 @@ disp_cursor_word(long pos, win_t * win, term_t * term, int err)
 /* the cursor withe the matching characters of the word highlighted.    */
 /* ==================================================================== */
 void
-disp_matching_word(long pos, win_t * win, term_t * term, int is_matching,
-                   int err)
+disp_matching_word(long pos, win_t * win, term_t * term, int is_cursor, int err)
 {
   size_t i;
   int    att_set = 0;
@@ -5217,7 +5218,8 @@ disp_matching_word(long pos, win_t * win, term_t * term, int is_matching,
   /* Set the search cursor attribute */
   /* """"""""""""""""""""""""""""""" */
   tputs(TPARM1(exit_attribute_mode), 1, outch);
-  if (is_matching)
+
+  if (is_cursor)
   {
     if (err)
       apply_attr(term, win->match_err_field_attr);
@@ -5246,7 +5248,7 @@ disp_matching_word(long pos, win_t * win, term_t * term, int is_matching,
         /* Set the buffer display attribute */
         /* """""""""""""""""""""""""""""""" */
         tputs(TPARM1(exit_attribute_mode), 1, outch);
-        if (is_matching)
+        if (is_cursor)
         {
           if (err)
             apply_attr(term, win->match_err_text_attr);
@@ -5269,10 +5271,7 @@ disp_matching_word(long pos, win_t * win, term_t * term, int is_matching,
         /* Set the search cursor attribute */
         /* """"""""""""""""""""""""""""""" */
         tputs(TPARM1(exit_attribute_mode), 1, outch);
-        if (word_a[pos].is_tagged)
-          apply_attr(term, win->tag_attr);
-
-        if (is_matching)
+        if (is_cursor)
         {
           if (err)
             apply_attr(term, win->match_err_field_attr);
@@ -5286,8 +5285,12 @@ disp_matching_word(long pos, win_t * win, term_t * term, int is_matching,
           else
             apply_attr(term, win->search_field_attr);
         }
+
+        if (word_a[pos].is_tagged)
+          apply_attr(term, win->tag_attr);
       }
     }
+
     np = mb_next(p);
     if (np == NULL)
       fputs(p, stdout);
@@ -5366,18 +5369,16 @@ disp_word(long pos, search_mode_t search_mode, search_data_t * search_data,
         for (i = 0; i < e - s + 1 - daccess.flength; i++)
           tputs(TPARM1(cursor_left), 1, outch);
 
-        {
-          tputs(TPARM1(exit_attribute_mode), 1, outch);
+        tputs(TPARM1(exit_attribute_mode), 1, outch);
 
-          /* Set the search cursor attribute */
-          /* """"""""""""""""""""""""""""""" */
-          if (search_data->fuzzy_err)
-            apply_attr(term, win->search_err_field_attr);
-          else
-            apply_attr(term, win->search_field_attr);
+        /* Set the search cursor attribute */
+        /* """"""""""""""""""""""""""""""" */
+        if (search_data->fuzzy_err)
+          apply_attr(term, win->search_err_field_attr);
+        else
+          apply_attr(term, win->search_field_attr);
 
-          disp_matching_word(pos, win, term, 0, search_data->fuzzy_err);
-        }
+        disp_matching_word(pos, win, term, 0, search_data->fuzzy_err);
       }
     }
     else
@@ -7698,8 +7699,8 @@ main(int argc, char * argv[])
 
     if (!win.search_text_attr.is_set)
     {
-      win.search_text_attr.fg = 7;
-      win.search_text_attr.fg = 5;
+      win.search_text_attr.fg = 0;
+      win.search_text_attr.bg = 6;
 
       win.search_text_attr.is_set = SET;
     }
@@ -10242,8 +10243,7 @@ main(int argc, char * argv[])
           {
             /* ESC key has been pressed */
             /* """""""""""""""""""""""" */
-
-            search_mode_t old_mode = search_mode;
+            search_mode_t old_search_mode = search_mode;
 
             search_data.fuzzy_err = 0;
 
@@ -10262,13 +10262,14 @@ main(int argc, char * argv[])
             /* """"""""""""""""""""""""""""""""""""""""""""""""" */
             search_mode = NONE;
 
-            if (matches_count > 0)
+            if (matches_count > 0 || old_search_mode != search_mode)
+            {
               clean_matches(&search_data, word_real_max_size);
 
-            if (old_mode != NONE)
               nl = disp_lines(&win, &toggle, current, count, search_mode,
                               &search_data, &term, last_line, tmp_word,
                               &langinfo);
+            }
 
             break;
           }
