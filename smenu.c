@@ -11421,18 +11421,39 @@ main(int argc, char * argv[])
               {
                 n = matching_words_a[i];
 
-                if (word_a[n].is_tagged)
-                {
-                  word_a[n].is_tagged = 0;
-                  tagged_words--;
-                }
-                else
+                if (! word_a[n].is_tagged)
                 {
                   word_a[n].is_tagged = 1;
                   tagged_words++;
 
                   if (toggle.pinable)
                     word_a[n].tag_order = next_tag_nb++;
+                }
+              }
+              nl = disp_lines(&win, &toggle, current, count, search_mode,
+                              &search_data, &term, last_line, tmp_word,
+                              &langinfo);
+            }
+          }
+          else
+            goto special_cmds_when_searching;
+          break;
+
+        case 'U':
+          if (search_mode == NONE)
+          {
+            if (toggle.taggable)
+            {
+              long i, n;
+
+              for (i = 0; i < matches_count; i++)
+              {
+                n = matching_words_a[i];
+
+                if (word_a[n].is_tagged)
+                {
+                  word_a[n].is_tagged = 0;
+                  tagged_words--;
                 }
               }
               nl = disp_lines(&win, &toggle, current, count, search_mode,
