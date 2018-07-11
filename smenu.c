@@ -191,11 +191,10 @@ static int
 my_strcasecmp(const char * str1, const char * str2);
 
 static void *
-my_memmem(const void * buf, size_t buflen, const void * pattern, size_t patlen);
+my_memmem(void * buf, size_t buflen, void * pattern, size_t patlen);
 
 static void *
-my_memrmem(const void * buf, size_t buflen, const void * pattern,
-           size_t patlen);
+my_memrmem(void * buf, size_t buflen, void * pattern, size_t patlen);
 
 static int
 isprint7(int i);
@@ -2790,7 +2789,7 @@ my_strcasecmp(const char * str1, const char * str2)
 }
 
 static void *
-my_memmem(const void * buf, size_t buflen, const void * pattern, size_t patlen)
+my_memmem(void * buf, size_t buflen, void * pattern, size_t patlen)
 {
 #ifdef HAVE_MEMMEM
   return memmem(buf, buflen, pattern, patlen);
@@ -2814,7 +2813,7 @@ my_memmem(const void * buf, size_t buflen, const void * pattern, size_t patlen)
 }
 
 static void *
-my_memrmem(const void * buf, size_t buflen, const void * pattern, size_t patlen)
+my_memrmem(void * buf, size_t buflen, void * pattern, size_t patlen)
 {
 #ifdef HAVE_MEMRMEM
   return memrmem(buf, buflen, pattern, patlen);
@@ -3806,11 +3805,11 @@ static const char trailing_bytes_for_utf8[256] = {
 static int
 mb_validate(const char * str, size_t length)
 {
-  const unsigned char *p, *pend = (unsigned char *)str + length;
+  const unsigned char *p, *pend = (const unsigned char *)str + length;
   unsigned char        c;
   size_t               ab;
 
-  for (p = (unsigned char *)str; p < pend; p++)
+  for (p = (const unsigned char *)str; p < pend; p++)
   {
     c = *p;
     if (c < 128)
@@ -6133,7 +6132,7 @@ egetopt(int nargc, char ** nargv, char * ostr)
 static int
 delims_cmp(const void * a, const void * b)
 {
-  return strcmp((char *)a, (char *)b);
+  return strcmp((const char *)a, (const char *)b);
 }
 
 /* ========================================================= */
@@ -9988,7 +9987,6 @@ main(int argc, char * argv[])
                 long   i;
                 long   j = 0;
                 long   index;
-                long   nb;
                 long * tmp;
 
                 alt_matching_words_a = xrealloc(alt_matching_words_a,
@@ -11421,7 +11419,7 @@ main(int argc, char * argv[])
               {
                 n = matching_words_a[i];
 
-                if (! word_a[n].is_tagged)
+                if (!word_a[n].is_tagged)
                 {
                   word_a[n].is_tagged = 1;
                   tagged_words++;
@@ -11674,8 +11672,6 @@ main(int argc, char * argv[])
               for (i = 0; i < matches_count; i++)
               {
                 long n = matching_words_a[i];
-                long j;
-                long nb;
 
                 word_a[n].is_matching = 0;
 
@@ -11875,8 +11871,6 @@ main(int argc, char * argv[])
               for (i = 0; i < matches_count; i++)
               {
                 long n = matching_words_a[i];
-                long j;
-                long nb;
 
                 word_a[n].is_matching = 0;
                 memset(word_a[n].bitmap, '\0',
