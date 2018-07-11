@@ -1112,7 +1112,7 @@ help(win_t * win, term_t * term, long last_line, toggle_t * toggle)
 
   entries_nb = sizeof(entries) / sizeof(struct entry_s);
 
-  /* Remove the last three entries is tagging is not enables */
+  /* Remove the last three entries if tagging is not enabled */
   /* """"""""""""""""""""""""""""""""""""""""""""""""""""""" */
   if (!toggle->taggable)
     entries_nb -= 3;
@@ -5821,7 +5821,6 @@ disp_lines(win_t * win, toggle_t * toggle, long current, long count,
     win->end = i - 1;
   else
     win->end = i;
-
   /* We restore the cursor position saved before the display of the window */
   /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
   tputs(TPARM1(restore_cursor), 1, outch);
@@ -6408,37 +6407,37 @@ main(int argc, char * argv[])
   int    old_fd1;    /* backups of the old stdout file descriptor            */
   FILE * old_stdout; /* The selected word will go there                      */
 
-  long nl;     /* Number of lines displayed in the window                     */
-  long offset; /* Used to correctly put the cursor at the start of the *
-                * selection window, even after a terminal vertical scroll */
+  long nl;     /* Number of lines displayed in the window                    */
+  long offset; /* Used to correctly put the cursor at the start of the       *
+                * selection window, even after a terminal vertical scroll    */
 
-  long first_selectable; /* Index of the first selectable word in the input *
+  long first_selectable; /* Index of the first selectable word in the input  *
                           * stream */
-  long last_selectable;  /* Index of the last selectable word in the input  *
+  long last_selectable;  /* Index of the last selectable word in the input   *
                           * stream  */
 
-  long s, e;     /* word variable to contain the starting and ending          *
-                  * terminal position of a word                               */
-  long min_size; /* Minimum screen width of a column in tabular mode */
+  long s, e;     /* word variable to contain the starting and ending         *
+                  * terminal position of a word                              */
+  long min_size; /* Minimum screen width of a column in tabular mode         */
 
-  long tab_max_size;      /* Maximum screen width of a column in tabular      *
-                           * mode                                             */
-  long tab_real_max_size; /* Maximum size in bytes of a column in tabular *
+  long tab_max_size;      /* Maximum screen width of a column in tabular     *
+                           * mode                                            */
+  long tab_real_max_size; /* Maximum size in bytes of a column in tabular    *
                            * mode */
 
-  long * col_real_max_size = NULL; /* Array of maximum sizes (bytes) of each  */
-                                   /* column in column mode                   */
-  long * col_max_size = NULL;      /* Array of maximum sizes of each column   */
-                                   /* in column mode                          */
+  long * col_real_max_size = NULL; /* Array of maximum sizes (bytes) of each */
+                                   /* column in column mode                  */
+  long * col_max_size = NULL;      /* Array of maximum sizes of each column  */
+                                   /* in column mode                         */
 
-  long word_real_max_size = 0; /* size of the longer word after expansion  */
-  long cols_real_max_size = 0; /* Max real width of all columns used when  *
-                                * -w and -c are both set                   */
-  long cols_max_size = 0;      /* Same as above for the columns widths     */
+  long word_real_max_size = 0; /* size of the longer word after expansion    */
+  long cols_real_max_size = 0; /* Max real width of all columns used when    *
+                                * -w and -c are both set                     */
+  long cols_max_size = 0;      /* Same as above for the columns widths       */
 
-  long col_index;   /* Index of the current column when reading words, used   *
-                     * in column mode */
-  long cols_number; /* Number of columns in column mode */
+  long col_index = 0;   /* Index of the current column when reading words,i    *
+                         * used  in column mode                                */
+  long cols_number = 0; /* Number of columns in column mode                  */
 
   char * pre_selection_index = NULL;    /* pattern used to set the initial   *
                                          * cursor position                   */
@@ -6587,7 +6586,7 @@ main(int argc, char * argv[])
 
   /* Columns selection variables */
   /* """"""""""""""""""""""""""" */
-  char * cols_filter;
+  char * cols_filter = NULL;
 
   /* Get the current locale */
   /* """""""""""""""""""""" */
@@ -7001,12 +7000,12 @@ main(int argc, char * argv[])
       case 'a':
         if (optarg && *optarg != '-')
         {
-          long i;      /* loop index                                */
-          long offset; /* nb of chars to ship to find the attribute *
-                        * representation (prefix size)              */
+          long i;          /* loop index                                */
+          long offset = 0; /* nb of chars to ship to find the attribute *
+                            * representation (prefix size)              */
 
           attr_t   attr;
-          attr_t * attr_to_set;
+          attr_t * attr_to_set = NULL;
 
           /* Flags to check if an attribute is already set */
           /* """"""""""""""""""""""""""""""""""""""""""""" */
@@ -9711,7 +9710,7 @@ main(int argc, char * argv[])
   /* """"""""" */
   while (1)
   {
-    int sc; /* scancode */
+    int sc = 0; /* scancode */
 
     /* If this alarm is triggered, then redisplay the window */
     /* to remove the help message and disable this timer.    */
@@ -11668,7 +11667,8 @@ main(int argc, char * argv[])
             {
               ws = mb_strtowcs(search_data.buf);
 
-              /* Trivial but fast */
+              /* Purge the matching words list */
+              /* """"""""""""""""""""""""""""" */
               for (i = 0; i < matches_count; i++)
               {
                 long n = matching_words_a[i];
@@ -11755,10 +11755,10 @@ main(int argc, char * argv[])
               {
                 if (search_data.mb_len == 1)
                 {
-                  /* Search all the sub-tst trees having the searched       */
-                  /* character as children, the resulting sub-tst are put   */
-                  /* in in the level list corresponding to the letter order */
-                  /* """""""""""""""""""""""""""""""""""""""""""""""""""""" */
+                  /* Search all the sub-tst trees having the searched     */
+                  /* character as children, the resulting sub-tst are put */
+                  /* in the level list corresponding to the letter order  */
+                  /* """""""""""""""""""""""""""""""""""""""""""""""""""" */
                   tst_fuzzy_traverse(tst_word, NULL, 0, w[0]);
 
                   node = tst_search_list->tail;
@@ -11867,7 +11867,8 @@ main(int argc, char * argv[])
             {
               wchar_t * w = mb_strtowcs(search_data.buf);
 
-              /* Trivial but fast */
+              /* Purge the matching words list */
+              /* """"""""""""""""""""""""""""" */
               for (i = 0; i < matches_count; i++)
               {
                 long n = matching_words_a[i];
@@ -11881,10 +11882,10 @@ main(int argc, char * argv[])
 
               if (search_data.mb_len == 1)
               {
-                /* Search all the sub-tst trees having the searched       */
-                /* character as children, the resulting sub-tst are put   */
-                /* in in the level list corresponding to the letter order */
-                /* """""""""""""""""""""""""""""""""""""""""""""""""""""" */
+                /* Search all the sub-tst trees having the searched     */
+                /* character as children, the resulting sub-tst are put */
+                /* in the level list corresponding to the letter order. */
+                /* """""""""""""""""""""""""""""""""""""""""""""""""""" */
                 tst_substring_traverse(tst_word, NULL, 0, w[0]);
 
                 node = tst_search_list->tail;
@@ -11900,6 +11901,9 @@ main(int argc, char * argv[])
               }
               else
               {
+                /* Search for the rest of the word in all the sub-tst */
+                /* trees previously found.                            */
+                /* """""""""""""""""""""""""""""""""""""""""""""""""" */
                 node = tst_search_list->tail;
                 node = ((ll_t *)(node->data))->head;
 
