@@ -203,35 +203,48 @@ In summary, here is the meaning of the special keys in search mode:
 tab(@);
 lb s s
 l l c
-l lw(9c) c .
+^ ^ l
+l lw(6c) c .
 Keys which clear the matched words list.
-Key@Meaning@Closes the search session
+Key@Meaning@Closes
+@@the
+@@search
+@@session
 _
 Esc@Cancel search@Yes
+_
 
 .T&
 lb s s
-l l c
-l lw(9c) c .
+l l l
+^ ^ l
+l lw(6c) c .
 Keys which keep or update the matched words list.
-Key@Meaning@Closes the search session
+Key@Meaning@Closes
+@@the
+@@search
+@@session
 _
 \(<-@Previous word@Yes
 \(ua@Previous line@Yes
 PgUp@Previous page@Yes
 CTRL+Home, SHIFT+Home, CTRL+k@First word@Yes
+
 \(->@Next word@Yes
 \(da@Next line@Yes
 PgDn@Next pages@Yes
 CTRL+End, SHIFT+End, CTRL+j@Last word@Yes
+
 Home@T{
 Only keep the words starting with the search pattern
 T}@No
 End@T{
 Only keep the words ending with the search pattern
 T}@No
+
 Ins@Tag word@No
 Del@Untag word@No
+_
 .TE
 .PP
 Note that the search buffer is persistent as long as the same search

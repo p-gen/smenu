@@ -14,6 +14,9 @@ decided to try to write my own.
 I have tried hard to made its usage as simple as possible. It should
 work, even when using an old ``vt100`` terminal and is ``UTF-8`` aware.
 
+The wiki (https://github.com/p-gen/smenu/wiki) contains screenshots and
+animations that detail some of the concepts and features of smenu.
+
 How to build it?
 ================
 **smenu** can be built on every system where a working ``terminfo``
