@@ -779,6 +779,10 @@ char * word_buffer;
 
 /* UTF-8 useful symbols */
 /* """"""""""""""""""""" */
+char * left_arrow      = "\xe2\x86\x90";
+char * up_arrow        = "\xe2\x86\x91";
+char * right_arrow     = "\xe2\x86\x92";
+char * down_arrow      = "\xe2\x86\x93";
 char * vertical_bar    = "\xe2\x94\x82"; /* box drawings light vertical      */
 char * shift_left_sym  = "\xe2\x86\x90"; /* leftwards_arrow                  */
 char * shift_right_sym = "\xe2\x86\x92"; /* rightwards_arrow                 */
@@ -1096,26 +1100,27 @@ help(win_t * win, term_t * term, long last_line, toggle_t * toggle)
     int    len;  /* length of one of these objects                        */
   };
 
+  char * arrows = concat(left_arrow, up_arrow, right_arrow, down_arrow, NULL);
   struct entry_s entries[] =
-    { { 'r', "HLP", 3 },     { 'n', " ", 1 },    { 'n', "Move:", 5 },
-      { 'b', "Arrows", 6 },  { 'n', "|", 1 },    { 'b', "h", 1 },
-      { 'b', "j", 1 },       { 'b', "k", 1 },    { 'b', "l", 1 },
-      { 'n', ",", 1 },       { 'b', "PgUp", 4 }, { 'n', "/", 1 },
-      { 'b', "PgDn", 4 },    { 'n', "/", 1 },    { 'b', "Home", 4 },
-      { 'n', "/", 1 },       { 'b', "End", 3 },  { 'n', " ", 1 },
-      { 'n', "Abort:", 6 },  { 'b', "q", 1 },    { 'n', " ", 1 },
-      { 'n', "Select:", 7 }, { 'b', "CR", 2 },   { 'n', " ", 1 },
-      { 'n', "Find:", 5 },   { 'b', "/", 1 },    { 'n', "|", 1 },
-      { 'b', "^F", 2 },      { 'n', "|", 1 },    { 'b', "SP", 2 },
-      { 'n', "|", 1 },       { 'b', "n", 1 },    { 'n', " ", 1 },
-      { 'n', "Tag:", 4 },    { 'b', "t", 1 } };
+    { { 'n', "Move:", 5 }, { 'b', arrows, 4 },   { 'n', "|", 1 },
+      { 'b', "h", 1 },     { 'b', "j", 1 },      { 'b', "k", 1 },
+      { 'b', "l", 1 },     { 'n', ",", 1 },      { 'b', "PgUp", 4 },
+      { 'n', "/", 1 },     { 'b', "PgDn", 4 },   { 'n', "/", 1 },
+      { 'b', "Home", 4 },  { 'n', "/", 1 },      { 'b', "End", 3 },
+      { 'n', " ", 1 },     { 'n', "Abort:", 6 }, { 'b', "q", 1 },
+      { 'n', " ", 1 },     { 'n', "Find:", 5 },  { 'b', "/", 1 },
+      { 'n', "|", 1 },     { 'b', "\"\'", 2 },   { 'n', "|", 1 },
+      { 'b', "~*", 2 },    { 'n', "|", 1 },      { 'b', "=^", 2 },
+      { 'n', ",", 1 },     { 'b', "SP", 2 },     { 'n', "|", 1 },
+      { 'b', "nN", 2 },    { 'n', " ", 1 },      { 'n', "Select:", 7 },
+      { 'b', "CR", 2 },    { 'n', "|", 1 },      { 'b', "tTU", 3 } };
 
   entries_nb = sizeof(entries) / sizeof(struct entry_s);
 
-  /* Remove the last three entries if tagging is not enabled */
-  /* """"""""""""""""""""""""""""""""""""""""""""""""""""""" */
+  /* Remove the last two entries if tagging is not enabled */
+  /* """"""""""""""""""""""""""""""""""""""""""""""""""""" */
   if (!toggle->taggable)
-    entries_nb -= 3;
+    entries_nb -= 2;
 
   /* Get the total length of the help line */
   /* """"""""""""""""""""""""""""""""""""" */
