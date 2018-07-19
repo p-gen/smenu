@@ -811,6 +811,7 @@ long   alt_matches_count;
 
 /* Variables used in signal handlers */
 /* """"""""""""""""""""""""""""""""" */
+volatile sig_atomic_t got_usr1         = 0;
 volatile sig_atomic_t got_winch        = 0;
 volatile sig_atomic_t got_winch_alrm   = 0;
 volatile sig_atomic_t got_help_alrm    = 0;
@@ -4190,9 +4191,10 @@ static int
 tst_fuzzy_traverse(tst_node_t * p, int (*callback)(void *), int first_call,
                    wchar_t w)
 {
-  static int rc;
-  wchar_t    w1s[2];
-  wchar_t    w2s[2];
+  static int          rc;
+  wchar_t             w1s[2];
+  wchar_t             w2s[2];
+  static tst_node_t * old_eqkid = NULL;
 
   w1s[1] = w2s[1] = L'\0';
 
@@ -4213,8 +4215,12 @@ tst_fuzzy_traverse(tst_node_t * p, int (*callback)(void *), int first_call,
     node = tst_search_list->tail;
     list = (ll_t *)(node->data);
 
-    if (p->eqkid)
-      ll_append(list, p->eqkid);
+    if (p->eqkid != NULL)
+      if (p->eqkid != old_eqkid)
+      {
+        ll_append(list, p->eqkid);
+        old_eqkid = p->eqkid;
+      }
 
     rc += 1;
   }
@@ -5849,6 +5855,10 @@ sig_handler(int s)
 {
   switch (s)
   {
+    case SIGUSR1:
+      got_usr1 = 1;
+      break;
+
     /* Standard termination signals */
     /* """""""""""""""""""""""""""" */
     case SIGTERM:
@@ -7550,6 +7560,7 @@ main(int argc, char * argv[])
   sigaction(SIGALRM, &sa, NULL);
   sigaction(SIGTERM, &sa, NULL);
   sigaction(SIGHUP, &sa, NULL);
+  sigaction(SIGUSR1, &sa, NULL);
 
   term.color_method = 1; /* we default to setaf/setbf to set colors */
   term.curs_line = term.curs_column = 0;
@@ -9742,6 +9753,37 @@ main(int argc, char * argv[])
       daccess_stack_head = 0;
 
       daccess_timer = timers.direct_access;
+    }
+
+    if (got_usr1) /* fuzzy debug */
+    {
+      ll_t *     list;
+      ll_node_t *fuzzy_node, *node;
+      int        level = 1;
+
+      if (tst_search_list)
+      {
+        printf("tst_search_list length: %d\n ( levels: ", tst_search_list->len);
+
+        fuzzy_node = tst_search_list->head;
+        while (fuzzy_node)
+        {
+          list = (ll_t *)(fuzzy_node->data);
+
+          printf("%d:%d ", level, list->len);
+          node = list->head;
+          while (node)
+          {
+            printf("[%p] ", node->data);
+            node = node->next;
+          }
+
+          fuzzy_node = fuzzy_node->next;
+          level++;
+        }
+        puts(")");
+      }
+      got_usr1 = 0;
     }
 
     if (got_winch)
