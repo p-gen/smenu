@@ -5856,9 +5856,19 @@ sig_handler(int s)
   {
     /* Standard termination signals */
     /* """""""""""""""""""""""""""" */
+    case SIGSEGV:
+      fputs("SIGSEGV received!\n", stderr);
+      tputs(TPARM1(carriage_return), 1, outch);
+      tputs(TPARM1(cursor_visible), 1, outch);
+      restore_term(fileno(stdin));
+
+      exit(EXIT_FAILURE);
+
     case SIGTERM:
     case SIGHUP:
       fputs("Interrupted!\n", stderr);
+      tputs(TPARM1(carriage_return), 1, outch);
+      tputs(TPARM1(cursor_visible), 1, outch);
       restore_term(fileno(stdin));
 
       exit(EXIT_FAILURE);
@@ -7555,6 +7565,7 @@ main(int argc, char * argv[])
   sigaction(SIGALRM, &sa, NULL);
   sigaction(SIGTERM, &sa, NULL);
   sigaction(SIGHUP, &sa, NULL);
+  sigaction(SIGSEGV, &sa, NULL);
 
   term.color_method = 1; /* we default to setaf/setbf to set colors */
   term.curs_line = term.curs_column = 0;
