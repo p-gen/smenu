@@ -85,6 +85,7 @@ typedef struct timeout_s     timeout_t;
 typedef struct output_s      output_t;
 typedef struct daccess_s     daccess_t;
 typedef struct search_data_s search_data_t;
+typedef struct sub_tst_s     sub_tst_t;
 
 typedef enum filter_types       filters_t;
 typedef enum daccess_modes      da_mode_t;
@@ -196,6 +197,9 @@ my_memmem(void * buf, size_t buflen, void * pattern, size_t patlen);
 static void *
 my_memrmem(void * buf, size_t buflen, void * pattern, size_t patlen);
 
+static sub_tst_t *
+sub_tst_new(void);
+
 static int
 isprint7(int i);
 
@@ -295,6 +299,9 @@ mb_strtolower(char * dst, char * src);
 void
 insert_sorted_index(long ** array, long * size, long * filled, long value);
 
+void
+insert_sorted_ptr(tst_node_t *** array, unsigned long long * size,
+                  unsigned long long * filled, tst_node_t * ptr);
 
 static int
 ini_load(const char * filename, win_t * win, term_t * term, limits_t * limits,
@@ -754,6 +761,16 @@ struct search_data_s
   long * mb_len_a;      /* Array of mb lengths in buf               */
   int    fuzzy_err;     /* furry match error indicator              */
   long   fuzzy_err_pos; /* last good position in search buffer      */
+};
+
+/* Structure to contain data and metadata attached to a fuzzy/substring. */
+/* search step.                                                          */
+/* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+struct sub_tst_s
+{
+  tst_node_t **      array;
+  unsigned long long size;
+  unsigned long long count;
 };
 
 /* **************** */
@@ -2200,6 +2217,22 @@ ll_find(ll_t * const list, void * const data,
 /* Utility functions */
 /* ***************** */
 
+/* =================================================================== */
+/* Create a new element to be added to the tst_search_list used by the */
+/* search mechanism.                                                   */
+/* =================================================================== */
+sub_tst_t *
+sub_tst_new(void)
+{
+  sub_tst_t * elem = xmalloc(sizeof(sub_tst_t));
+
+  elem->size  = 64;
+  elem->count = 0;
+  elem->array = xmalloc(elem->size * sizeof(tst_node_t));
+
+  return elem;
+}
+
 /* =============================== */
 /* 7 bits aware version of isprint */
 /* =============================== */
@@ -2283,11 +2316,54 @@ insert_sorted_index(long ** array, long * size, long * nb, long value)
   }
 
   if (*nb > pos)
-    memmove((*array) + pos + 1, (*array) + pos, sizeof(long) * (*nb - pos));
+    memmove((*array) + pos + 1, (*array) + pos, sizeof(value) * (*nb - pos));
 
   (*nb)++;
 
   (*array)[pos] = value;
+}
+
+/* ========================================================= */
+/* Insertion of an pointer in a already sorted pointer array */
+/* without duplications.                                     */
+/* ========================================================= */
+void
+insert_sorted_ptr(tst_node_t *** array, unsigned long long * size,
+                  unsigned long long * nb, tst_node_t * ptr)
+{
+  unsigned long long pos  = *nb;
+  unsigned long long left = 0, right = *nb, middle;
+
+  if (*nb > 0)
+  {
+    /* bisection search */
+    /* """""""""""""""" */
+    while (left < right)
+    {
+      middle = (left + right) / 2;
+      if ((unsigned long long)((*array)[middle]) == (unsigned long long)ptr)
+        return; /* Value already in array */
+
+      if ((unsigned long long)ptr < (unsigned long long)((*array)[middle]))
+        right = middle;
+      else
+        left = middle + 1;
+    }
+    pos = left;
+  }
+
+  if (*nb == *size)
+  {
+    *size += 64;
+    *array = xrealloc(*array, *size * sizeof(long));
+  }
+
+  if (*nb > pos)
+    memmove((*array) + pos + 1, (*array) + pos, sizeof(ptr) * (*nb - pos));
+
+  (*nb)++;
+
+  (*array)[pos] = ptr;
 }
 
 /* ============================================================== */
@@ -2558,25 +2634,28 @@ find_prev_matching_word(long * array, long nb, long value, long * index)
 void
 clean_matches(search_data_t * search_data, long size)
 {
-  ll_t *     list;
-  ll_node_t *fuzzy_node, *node;
-  long       i;
+  sub_tst_t * sub_tst_data;
+  ll_node_t * fuzzy_node;
+  long        i;
 
   /* Clean the list of lists data-structure containing the search levels */
+  /* Note that the first element of the list is never deleted.           */
   /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
   if (tst_search_list)
   {
-    while ((fuzzy_node = tst_search_list->tail))
+    fuzzy_node = tst_search_list->tail;
+    while (tst_search_list->len > 1)
     {
-      list = (ll_t *)(fuzzy_node->data);
+      sub_tst_data = (sub_tst_t *)(fuzzy_node->data);
 
-      while ((node = list->head))
-        ll_delete(list, node);
+      free(sub_tst_data->array);
+      free(sub_tst_data);
 
       ll_delete(tst_search_list, tst_search_list->tail);
+      fuzzy_node = tst_search_list->tail;
     }
-    if (tst_search_list->len == 0)
-      ll_append(tst_search_list, ll_new());
+    sub_tst_data        = (sub_tst_t *)(fuzzy_node->data);
+    sub_tst_data->count = 0;
   }
 
   search_data->fuzzy_err = 0;
@@ -2591,7 +2670,8 @@ clean_matches(search_data_t * search_data, long size)
   /* """"""""""""""""""""""""""""""""" */
   for (i = 0; i < matches_count; i++)
   {
-    long n                = matching_words_a[i];
+    long n = matching_words_a[i];
+
     word_a[n].is_matching = 0;
 
     memset(word_a[n].bitmap, '\0',
@@ -4161,13 +4241,14 @@ tst_substring_traverse(tst_node_t * p, int (*callback)(void *), int first_call,
   if (p->splitchar == w)
   {
     ll_node_t * node;
-    ll_t *      list;
+    sub_tst_t * sub_tst_data;
 
-    node = tst_search_list->tail;
-    list = (ll_t *)(node->data);
+    node         = tst_search_list->tail;
+    sub_tst_data = (sub_tst_t *)(node->data);
 
     if (p->eqkid)
-      ll_append(list, p->eqkid);
+      insert_sorted_ptr(&(sub_tst_data->array), &(sub_tst_data->size),
+                        &(sub_tst_data->count), p->eqkid);
 
     rc = 1;
   }
@@ -4191,10 +4272,9 @@ static int
 tst_fuzzy_traverse(tst_node_t * p, int (*callback)(void *), int first_call,
                    wchar_t w)
 {
-  static int          rc;
-  wchar_t             w1s[2];
-  wchar_t             w2s[2];
-  static tst_node_t * old_eqkid = NULL;
+  static int rc;
+  wchar_t    w1s[2];
+  wchar_t    w2s[2];
 
   w1s[1] = w2s[1] = L'\0';
 
@@ -4210,17 +4290,14 @@ tst_fuzzy_traverse(tst_node_t * p, int (*callback)(void *), int first_call,
   if (wcscasecmp(w1s, w2s) == 0)
   {
     ll_node_t * node;
-    ll_t *      list;
+    sub_tst_t * sub_tst_data;
 
-    node = tst_search_list->tail;
-    list = (ll_t *)(node->data);
+    node         = tst_search_list->tail;
+    sub_tst_data = (sub_tst_t *)(node->data);
 
     if (p->eqkid != NULL)
-      if (p->eqkid != old_eqkid)
-      {
-        ll_append(list, p->eqkid);
-        old_eqkid = p->eqkid;
-      }
+      insert_sorted_ptr(&(sub_tst_data->array), &(sub_tst_data->size),
+                        &(sub_tst_data->count), p->eqkid);
 
     rc += 1;
   }
@@ -6594,7 +6671,7 @@ main(int argc, char * argv[])
   /* fuzzy variables initialization */
   /* """""""""""""""""""""""""""""" */
   tst_search_list = ll_new();
-  ll_append(tst_search_list, ll_new());
+  ll_append(tst_search_list, sub_tst_new());
 
   matching_words_a_size = 64;
   matching_words_a      = xmalloc(matching_words_a_size * sizeof(long));
@@ -11610,16 +11687,15 @@ main(int argc, char * argv[])
               /* """""""""""""""""""""""""""""""""""""""""""""""""""""""" */
               if (search_mode != PREFIX)
             {
-              ll_t *      list;
+              sub_tst_t * sub_tst_data;
               ll_node_t * node;
 
-              node = tst_search_list->tail;
-              list = (ll_t *)(node->data);
+              node         = tst_search_list->tail;
+              sub_tst_data = (sub_tst_t *)(node->data);
 
               search_data.fuzzy_err = 0;
 
-              while ((node = list->head))
-                ll_delete(list, node);
+              sub_tst_data->count = 0;
             }
           }
         }
@@ -11645,13 +11721,15 @@ main(int argc, char * argv[])
         special_cmds_when_searching:
         default:
         {
-          int c; /* byte index in the scancode string */
+          int                c; /* byte index in the scancode string */
+          sub_tst_t *        sub_tst_data;
+          unsigned long long index;
+          long               i;
 
           if (search_mode != NONE)
           {
             long        old_len    = search_data.len;
             long        old_mb_len = search_data.mb_len;
-            long        i;
             ll_node_t * node;
             wchar_t *   ws;
 
@@ -11736,14 +11814,15 @@ main(int argc, char * argv[])
             }
             else if (search_mode == FUZZY)
             {
-              /* tst_search_list: [ll_t *] -> [ll_t *] ->  [ll_t *] ...  */
-              /*                    ^           ^            ^          */
-              /*                    |           |            |          */
-              /*                  level 1     level_2      level 3      */
-              /* each ll_t * is a pinter to a list of nodes in tst_word */
+              /* tst_search_list: [sub_tst_t *] -> [sub_tst_t *]...     */
+              /*                    ^               ^                   */
+              /*                    |               |                   */
+              /*                  level 1         level_2               */
+              /*                                                        */
+              /* Each sub_tst_t * points to a data structure including  */
+              /* a sorted array to starting nodes in the words tst.     */
               /* """""""""""""""""""""""""""""""""""""""""""""""""""""" */
               wchar_t * w = mb_strtowcs(search_data.buf + old_len);
-              ll_t *    list;
 
               /* zero previous matching indicators */
               /* """"""""""""""""""""""""""""""""" */
@@ -11761,14 +11840,18 @@ main(int argc, char * argv[])
 
               if (buffer[0] == 0x08 || buffer[0] == 0x7f) /* Backspace */
               {
-                node = tst_search_list->tail;
-                list = (ll_t *)(node->data);
+                node         = tst_search_list->tail;
+                sub_tst_data = (sub_tst_t *)(node->data);
 
-                while ((node = list->head))
-                  ll_delete(list, node);
+                sub_tst_data->count = 0;
 
                 if (tst_search_list->len > 0)
+                {
+                  free(sub_tst_data->array);
+                  free(sub_tst_data);
+
                   ll_delete(tst_search_list, tst_search_list->tail);
+                }
 
                 if (search_data.mb_len == search_data.fuzzy_err_pos - 1)
                 {
@@ -11780,15 +11863,16 @@ main(int argc, char * argv[])
               {
                 if (search_data.mb_len == 1)
                 {
-                  /* Search all the sub-tst trees having the searched     */
-                  /* character as children, the resulting sub-tst are put */
-                  /* in the level list corresponding to the letter order  */
-                  /* """""""""""""""""""""""""""""""""""""""""""""""""""" */
+                  /* Search all the sub-tst trees having the searched        */
+                  /* character as children, the resulting sub-tst are put    */
+                  /* in the sub tst array attached to the surrently searched */
+                  /* symbol.                                                 */
+                  /* """"""""""""""""""""""""""""""""""""""""""""""""""""""" */
                   tst_fuzzy_traverse(tst_word, NULL, 0, w[0]);
 
-                  node = tst_search_list->tail;
-                  list = (ll_t *)(node->data);
-                  if (list->len == 0)
+                  node         = tst_search_list->tail;
+                  sub_tst_data = (sub_tst_t *)(node->data);
+                  if (sub_tst_data->count == 0)
                   {
                     beep(&toggle);
 
@@ -11812,28 +11896,24 @@ main(int argc, char * argv[])
                     /* """""""""""""""""""""""""""""""""""""""""""""""""" */
                     int rc;
 
-                    ll_t * tst_fuzzy_partial_list;
+                    sub_tst_t * tst_fuzzy_level_data;
 
-                    tst_fuzzy_partial_list = ll_new();
-                    ll_append(tst_search_list, tst_fuzzy_partial_list);
+                    tst_fuzzy_level_data = sub_tst_new();
 
-                    node = tst_search_list->tail->prev;
-                    node = ((ll_t *)(node->data))->head;
+                    ll_append(tst_search_list, tst_fuzzy_level_data);
+
+                    node         = tst_search_list->tail->prev;
+                    sub_tst_data = (sub_tst_t *)(node->data);
 
                     rc = 0;
-                    while (node)
-                    {
-                      rc += tst_fuzzy_traverse((tst_node_t *)(node->data), NULL,
+                    for (index = 0; index < sub_tst_data->count; index++)
+                      rc += tst_fuzzy_traverse(sub_tst_data->array[index], NULL,
                                                1, w[0]);
-
-                      node = node->next;
-                    }
 
                     if (rc == 0)
                     {
-                      while (tst_fuzzy_partial_list->len > 0)
-                        ll_delete(tst_fuzzy_partial_list,
-                                  tst_fuzzy_partial_list->head);
+                      free(tst_fuzzy_level_data->array);
+                      free(tst_fuzzy_level_data);
 
                       ll_delete(tst_search_list, tst_search_list->tail);
 
@@ -11857,15 +11937,11 @@ main(int argc, char * argv[])
               /* Process this level to mark the word found as a matching word */
               /* if any.                                                      */
               /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-              node = tst_search_list->tail;
-              node = ((ll_t *)(node->data))->head;
+              node         = tst_search_list->tail;
+              sub_tst_data = (sub_tst_t *)(node->data);
 
-              while (node)
-              {
-                tst_traverse((tst_node_t *)(node->data), set_matching_flag, 0);
-
-                node = node->next;
-              }
+              for (index = 0; index < sub_tst_data->count; index++)
+                tst_traverse(sub_tst_data->array[index], set_matching_flag, 0);
 
               /* Update the bitmap and re-display the window */
               /* """"""""""""""""""""""""""""""""""""""""""" */
@@ -11914,32 +11990,25 @@ main(int argc, char * argv[])
                 /* """""""""""""""""""""""""""""""""""""""""""""""""""" */
                 tst_substring_traverse(tst_word, NULL, 0, w[0]);
 
-                node = tst_search_list->tail;
-                node = ((ll_t *)(node->data))->head;
+                node         = tst_search_list->tail;
+                sub_tst_data = (sub_tst_t *)(node->data);
 
-                while (node)
-                {
-                  tst_traverse((tst_node_t *)(node->data), set_matching_flag,
+                for (index = 0; index < sub_tst_data->count; index++)
+                  tst_traverse(sub_tst_data->array[index], set_matching_flag,
                                0);
-
-                  node = node->next;
-                }
               }
               else
               {
                 /* Search for the rest of the word in all the sub-tst */
                 /* trees previously found.                            */
                 /* """""""""""""""""""""""""""""""""""""""""""""""""" */
-                node = tst_search_list->tail;
-                node = ((ll_t *)(node->data))->head;
+                node         = tst_search_list->tail;
+                sub_tst_data = (sub_tst_t *)(node->data);
 
                 matches_count = 0;
 
-                while (node)
-                {
-                  tst_prefix_search((tst_node_t *)(node->data), w + 1, tst_cb);
-                  node = node->next;
-                }
+                for (index = 0; index < sub_tst_data->count; index++)
+                  tst_prefix_search(sub_tst_data->array[index], w + 1, tst_cb);
               }
 
               if (matches_count > 0)
