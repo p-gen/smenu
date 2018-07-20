@@ -11348,17 +11348,6 @@ main(int argc, char * argv[])
               clean_matches(&search_data, word_real_max_size);
             }
 
-            /* Clear the search buffer when the cursor is on a word which */
-            /* doesn't match the current prefix                           */
-            /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-            if (search_data.len > 0
-                && !strprefix(word_a[current].str, search_data.buf))
-            {
-              memset(search_data.buf, '\0', word_real_max_size);
-              search_data.len    = 0;
-              search_data.mb_len = 0;
-            }
-
             nl = disp_lines(&win, &toggle, current, count, search_mode,
                             &search_data, &term, last_line, tmp_word,
                             &langinfo);
