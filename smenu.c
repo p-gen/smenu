@@ -293,7 +293,8 @@ void
 mb_strtolower(char * dst, char * src);
 
 void
-insert_sorted(long ** array, long * size, long * filled, long value);
+insert_sorted_index(long ** array, long * size, long * filled, long value);
+
 
 static int
 ini_load(const char * filename, win_t * win, term_t * term, limits_t * limits,
@@ -2252,7 +2253,7 @@ beep(toggle_t * toggle)
 /* without duplications.                                     */
 /* ========================================================= */
 void
-insert_sorted(long ** array, long * size, long * nb, long value)
+insert_sorted_index(long ** array, long * size, long * nb, long value)
 {
   long pos  = *nb;
   long left = 0, right = *nb, middle;
@@ -4132,8 +4133,8 @@ set_matching_flag(void * elem)
     if (word_a[pos].is_selectable)
       word_a[pos].is_matching = 1;
 
-    insert_sorted(&matching_words_a, &matching_words_a_size, &matches_count,
-                  pos);
+    insert_sorted_index(&matching_words_a, &matching_words_a_size,
+                        &matches_count, pos);
 
     node = node->next;
   }
@@ -4320,8 +4321,8 @@ tst_cb(void * elem)
     pos = *(long *)(node->data);
 
     word_a[pos].is_matching = 1;
-    insert_sorted(&matching_words_a, &matching_words_a_size, &matches_count,
-                  pos);
+    insert_sorted_index(&matching_words_a, &matching_words_a_size,
+                        &matches_count, pos);
 
     node = node->next;
   }
@@ -4359,8 +4360,8 @@ tst_cb_cli(void * elem)
     pos = *(long *)(node->data);
 
     word_a[pos].is_matching = 1;
-    insert_sorted(&matching_words_a, &matching_words_a_size, &matches_count,
-                  pos);
+    insert_sorted_index(&matching_words_a, &matching_words_a_size,
+                        &matches_count, pos);
 
     /* We already are at the last word, report the finding */
     /* """"""""""""""""""""""""""""""""""""""""""""""""""" */
