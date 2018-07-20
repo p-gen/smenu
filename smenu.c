@@ -3060,7 +3060,7 @@ parse_selectors(char * str, filters_t * filter, char * unparsed,
       int rc;
       int pos;
 
-      rc = sscanf(str + start, "%zd-%zd%n", &first, &second, &pos);
+      rc = sscanf(str + start, "%zu-%zu%n", &first, &second, &pos);
       if (rc != 2 || *(str + start + pos) != '\0')
       {
         strcpy(unparsed, str + start);
@@ -3094,7 +3094,7 @@ parse_selectors(char * str, filters_t * filter, char * unparsed,
     {
       /* Read the number given */
       /* """"""""""""""""""""" */
-      if (sscanf(str + start, "%zd", &first) != 1)
+      if (sscanf(str + start, "%zu", &first) != 1)
       {
         strcpy(unparsed, str + start);
         return;
@@ -4685,7 +4685,7 @@ get_word(FILE * input, ll_t * word_delims_list, ll_t * record_delims_list,
     {
       fprintf(stderr,
               "A word's length has reached the limit "
-              "(%zd), exiting.\n",
+              "(%ld), exiting.\n",
               limits->word_length);
 
       exit(EXIT_FAILURE);
@@ -6732,7 +6732,7 @@ main(int argc, char * argv[])
       case 't':
         if (optarg != NULL)
         {
-          if (sscanf(optarg, "%zd", &(win.max_cols)) != 1)
+          if (sscanf(optarg, "%ld", &(win.max_cols)) != 1)
             TELL("Argument must be numeric -- ");
 
           if (win.max_cols < 1)
@@ -7340,7 +7340,7 @@ main(int argc, char * argv[])
                 break;
 
               case 'o': /* start offset */
-                if (sscanf(argv[optind] + 2, "%zd%n", &daccess.offset, &pos)
+                if (sscanf(argv[optind] + 2, "%zu%n", &daccess.offset, &pos)
                     != 1)
                   TELL("Bad format -- ");
                 if (argv[optind][pos + 2] != '\0')
@@ -7358,7 +7358,7 @@ main(int argc, char * argv[])
 
               case 'i': /* Number of multibytes to ignore after the
                          * selector * to extract */
-                if (sscanf(argv[optind] + 2, "%zd%n", &daccess.ignore, &pos)
+                if (sscanf(argv[optind] + 2, "%zu%n", &daccess.ignore, &pos)
                     != 1)
                   TELL("Bad format -- ");
                 if (argv[optind][pos + 2] != '\0')
@@ -8642,7 +8642,7 @@ main(int argc, char * argv[])
           {
             fprintf(stderr,
                     "The number of columns has reached the limit "
-                    "(%zd), exiting.\n",
+                    "(%ld), exiting.\n",
                     limits.cols);
 
             exit(EXIT_FAILURE);
@@ -8778,7 +8778,7 @@ main(int argc, char * argv[])
     {
       fprintf(stderr,
               "The number of read words has reached the limit "
-              "(%zd), exiting.\n",
+              "(%ld), exiting.\n",
               limits.words);
 
       exit(EXIT_FAILURE);
@@ -8988,7 +8988,7 @@ main(int argc, char * argv[])
 
             if (!word->is_numbered && (daccess.mode & DA_TYPE_AUTO))
             {
-              sprintf(tmp + 1, "%*zd",
+              sprintf(tmp + 1, "%*ld",
                       daccess.alignment == 'l' ? -daccess.length
                                                : daccess.length,
                       daccess_index);
@@ -9570,7 +9570,7 @@ main(int argc, char * argv[])
       /* """""""""""""""""""" */
       ptr++;
 
-      if (sscanf(ptr, "%zd%n", &current, &len) == 1 && len == (int)strlen(ptr))
+      if (sscanf(ptr, "%ld%n", &current, &len) == 1 && len == (int)strlen(ptr))
       {
         /* We got an index (numeric value) */
         /* """"""""""""""""""""""""""""""" */
