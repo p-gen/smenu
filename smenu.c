@@ -11582,7 +11582,14 @@ main(int argc, char * argv[])
                 search_data.len  = 0;
 
                 for (i = 0; i < matches_count; i++)
-                  word_a[matching_words_a[i]].is_matching = 0;
+                {
+                  long n = matching_words_a[i];
+
+                  word_a[n].is_matching = 0;
+
+                  memset(word_a[n].bitmap, '\0',
+                         (word_a[n].mb - 1 - daccess.flength) / CHAR_BIT + 1);
+                }
 
                 matches_count = 0;
 
@@ -11741,7 +11748,14 @@ main(int argc, char * argv[])
               /* zero previous matching indicators */
               /* """"""""""""""""""""""""""""""""" */
               for (i = 0; i < matches_count; i++)
-                word_a[matching_words_a[i]].is_matching = 0;
+              {
+                long n = matching_words_a[i];
+
+                word_a[n].is_matching = 0;
+
+                memset(word_a[n].bitmap, '\0',
+                       (word_a[n].mb - 1 - daccess.flength) / CHAR_BIT + 1);
+              }
 
               matches_count = 0;
 
@@ -11885,6 +11899,7 @@ main(int argc, char * argv[])
                 long n = matching_words_a[i];
 
                 word_a[n].is_matching = 0;
+
                 memset(word_a[n].bitmap, '\0',
                        (word_a[n].mb - 1 - daccess.flength) / CHAR_BIT + 1);
               }
