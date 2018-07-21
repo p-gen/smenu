@@ -22,14 +22,8 @@
 /* Define to 1 if you have the `mblen' function. */
 #undef HAVE_MBLEN
 
-/* Define to 1 if you have the `memmem' function. */
-#undef HAVE_MEMMEM
-
 /* Define to 1 if you have the <memory.h> header file. */
 #undef HAVE_MEMORY_H
-
-/* Define to 1 if you have the `memrmem' function. */
-#undef HAVE_MEMRMEM
 
 /* Define to 1 if you have the `memset' function. */
 #undef HAVE_MEMSET
