@@ -189,14 +189,24 @@ The user can then use the \fBn\fP/\fBSPACE\fP keys (forward) and the
 .PP
 If the user hits the \fBHome\fP or \fBEnd\fP key during a search session
 then the matched word list is reduced to the words starting (respectively)
-ending with the curent search pattern and the window is actialized.
+ending with the current search pattern and the window is refreshed.
 
-by example, if the search pattern is \f(CBsh\fP and the user hits
+By example, if the search pattern is \f(CBsh\fP and the user hits
 \fBEnd\fP, then only the words \fIending\fP with \f(CBsh\fP will be
 added in the searched word list and enhanced.
 
-When not in a search session \fBESC\fP can be used to clear this list
-and reset the search buffer.
+Note that all the words matching the pattern will be selected, the
+enhanced characters in the selected word only show one of the multiple
+possible matches.
+
+By example, the ending pattern \f(CBab\fP will add the word \f(CBcabcb\fP
+in the matching list when fuzzy searching, while the word \f(CBabcab\fP
+will also be considered when substring searching even if only the first
+\f(CBab\fP is enhanced because of the second (non enhanced) \f(CBab\fP
+ending the word.
+
+When not in a search session \fBESC\fP can be also used to clear this
+list and reset the search buffer.
 .PP
 In summary, here is the meaning of the special keys in search mode:
 .TS
