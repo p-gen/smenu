@@ -170,9 +170,9 @@ is is programmed to do a \fIfuzzy\fP search but this can be altered by
 using the command line option (\fB-/\fP) or by tuning a configuration
 file, see below.
 .PP
-All the words matching the current search are highlighted.
-The characters present in current search buffer are highlighted in one way
-and the other characters in another way.
+All the words matching the current search buffer are enhanced:
+The characters present in the current search buffer are highlighted in
+one way and the other characters in another way.
 Both of these highlighting methods are configurable.
 .PP
 Typically, if the user has entered the search sequence: \fBo\fP, \fBs\fP,
@@ -185,28 +185,24 @@ depending of the display attributes configured.
 session but do not clear the list of the matching words.
 .PP
 The user can then use the \fBn\fP/\fBSPACE\fP keys (forward) and the
-\fBN\fP key (backward) to navigate in the mathing words list.
+\fBN\fP key (backward) to navigate in the matching words list.
 .PP
 If the user hits the \fBHome\fP or \fBEnd\fP key during a search session
 then the matched word list is reduced to the words starting (respectively)
 ending with the current search pattern and the window is refreshed.
 
+This behaviour is persistent until the user hit the \fBESC\fP or
+\fBENTER\fP key.
+
 By example, if the search pattern is \f(CBsh\fP and the user hits
 \fBEnd\fP, then only the words \fIending\fP with \f(CBsh\fP will be
 added in the searched word list and enhanced.
 
-Note that all the words matching the pattern will be selected, the
-enhanced characters in the selected word only show one of the multiple
-possible matches.
+Note that when a matching word is selected, its enhanced characters only
+show one of the multiple matching possibilities.
 
-By example, the ending pattern \f(CBab\fP will add the word \f(CBcabcb\fP
-in the matching list when fuzzy searching, while the word \f(CBabcab\fP
-will also be considered when substring searching even if only the first
-\f(CBab\fP is enhanced because of the second (non enhanced) \f(CBab\fP
-ending the word.
-
-When not in a search session \fBESC\fP can be also used to clear this
-list and reset the search buffer.
+When not in a search session \fBESC\fP can be also used to clear the
+matched words list and to reset the search buffer.
 .PP
 In summary, here is the meaning of the special keys in search mode:
 .TS

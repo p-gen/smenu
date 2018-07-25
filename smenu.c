@@ -92,6 +92,7 @@ typedef enum daccess_modes      da_mode_t;
 typedef enum timeout_modes      to_mode_t;
 typedef enum attribute_settings attr_set_t;
 typedef enum search_modes       search_mode_t;
+typedef enum bitmap_affinities  bitmap_affinity_t;
 
 /* ********** */
 /* Prototypes */
@@ -339,7 +340,7 @@ disp_message(ll_t * message_lines_list, long width, long max_len, term_t * term,
 
 static void
 update_bitmaps(search_mode_t search_mode, search_data_t * search_data,
-               int ending_pattern);
+               bitmap_affinity_t ending_pattern);
 
 long
 find_next_matching_word(long * array, long nb, long value, long * index);
@@ -484,6 +485,13 @@ enum search_modes
   PREFIX,
   FUZZY,
   SUBSTRING
+};
+
+enum bitmap_affinities
+{
+  NO_AFFINITY,
+  END_AFFINITY,
+  START_AFFINITY
 };
 
 /* Locale informations */
@@ -2397,7 +2405,7 @@ mb_strtolower(char * dst, char * src)
 /* ======================================================================== */
 static void
 update_bitmaps(search_mode_t mode, search_data_t * data,
-               int starting_ending_pattern)
+               bitmap_affinity_t affinity)
 {
   long   i, j, n;
   long   fc, bc;
@@ -2429,10 +2437,18 @@ update_bitmaps(search_mode_t mode, search_data_t * data,
 
     for (i = 0; i < matches_count; i++)
     {
-      n        = matching_words_a[i];
-      str_orig = word_a[n].str + daccess.flength;
-      mb       = (word_a[n].mb - 1 - daccess.flength) / CHAR_BIT + 1;
-      bm       = word_a[n].bitmap;
+      n = matching_words_a[i];
+
+      str_orig = xstrdup(word_a[n].str + daccess.flength);
+
+      /* We need to remove the trailing spaces to use the     */
+      /* following algorithm                                  */
+      /* .len holds the original length in bytes of the word  */
+      /* """""""""""""""""""""""""""""""""""""""""""""""""""" */
+      str_orig[word_a[n].len] = '\0';
+
+      mb = (word_a[n].mb - 1 - daccess.flength) / CHAR_BIT + 1;
+      bm = word_a[n].bitmap;
 
       if (mode == FUZZY)
       {
@@ -2458,7 +2474,7 @@ update_bitmaps(search_mode_t mode, search_data_t * data,
           if (last == 0)
           {
             BIT_ON(bm, fc);
-            if (starting_ending_pattern != 1)
+            if (affinity != END_AFFINITY)
               break;
           }
 
@@ -2493,7 +2509,7 @@ update_bitmaps(search_mode_t mode, search_data_t * data,
           if (j == 0)
           {
             BIT_ON(bm, fc);
-            if (starting_ending_pattern != 1)
+            if (affinity != END_AFFINITY)
               break;
           }
         }
@@ -2510,7 +2526,7 @@ update_bitmaps(search_mode_t mode, search_data_t * data,
         /* that must be here because this word has already been fitereda  */
         /* by select_staring_pattern()                                    */
         /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-        if (starting_ending_pattern == 2) /* TODO use enum */
+        if (affinity == START_AFFINITY)
         {
           char *ptr1, *ptr2;
           long  i = 1;
@@ -2518,27 +2534,31 @@ update_bitmaps(search_mode_t mode, search_data_t * data,
 
           first_mb = mb_strprefix(first_mb, word_a[n].str, 1, &mb_len);
 
-          BIT_ON(word_a[n].bitmap, 0);
-          ptr1 = word_a[n].str;
-          while ((ptr2 = mb_next(ptr1)) != NULL)
+          if (!BIT_ISSET(word_a[n].bitmap, 0))
           {
-            if (memcmp(ptr2, first_mb, mb_len) == 0)
+            BIT_ON(word_a[n].bitmap, 0);
+            ptr1 = word_a[n].str;
+            while ((ptr2 = mb_next(ptr1)) != NULL)
             {
-              if (BIT_ISSET(word_a[n].bitmap, i))
+              if (memcmp(ptr2, first_mb, mb_len) == 0)
               {
-                BIT_OFF(word_a[n].bitmap, i);
-                break;
+                if (BIT_ISSET(word_a[n].bitmap, i))
+                {
+                  BIT_OFF(word_a[n].bitmap, i);
+                  break;
+                }
+                else
+                  ptr1 = ptr2;
               }
               else
                 ptr1 = ptr2;
-            }
-            else
-              ptr1 = ptr2;
 
-            i++;
+              i++;
+            }
           }
         }
       }
+      free(str_orig);
     }
     if (mode == FUZZY)
       free(sb);
@@ -6265,79 +6285,84 @@ void
 select_ending_matches(win_t * win, term_t * term, search_data_t * search_data,
                       long * last_line)
 {
-  long   i;
-  long   j = 0;
-  long   index;
-  long   nb;
-  long * tmp;
-  char * ptr;
-  char * last_mb;
-  int    mb_len;
-
-  /* Creation of an alternate array which will      */
-  /* contain only the candidate having potentially  */
-  /* an ending pattern, if this array become non    */
-  /* empty then it will replace the original array. */
-  /* """""""""""""""""""""""""""""""""""""""""""""" */
-  alt_matching_words_a = xrealloc(alt_matching_words_a,
-                                  matches_count * (sizeof(long)));
-
-  for (i = 0; i < matches_count; i++)
+  if (matches_count > 0)
   {
-    index = matching_words_a[i];
+    long   i;
+    long   j = 0;
+    long   index;
+    long   nb;
+    long * tmp;
+    char * ptr;
+    char * last_mb;
+    int    mb_len;
 
-    /* count the trailing blanks non counted in the bitmap */
-    /* """"""""""""""""""""""""""""""""""""""""""""""""""" */
-    ptr = word_a[index].str + strlen(word_a[index].str);
+    /* Creation of an alternate array which will      */
+    /* contain only the candidate having potentially  */
+    /* an ending pattern, if this array become non    */
+    /* empty then it will replace the original array. */
+    /* """""""""""""""""""""""""""""""""""""""""""""" */
+    alt_matching_words_a = xrealloc(alt_matching_words_a,
+                                    matches_count * (sizeof(long)));
 
-    nb = 0;
-    while ((ptr = mb_prev(word_a[index].str, ptr)) != NULL && isblank(*ptr))
-      nb++;
-
-    /* Check the bit corresponding to the last non blank glyph  */
-    /* If set we add the index to an alternate array, if not we */
-    /* clear the bitmap of the corresponding word               */
-    /* """""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-    if (BIT_ISSET(word_a[index].bitmap,
-                  word_a[index].mb - nb - 1 - daccess.flength - 1))
-      alt_matching_words_a[j++] = index;
-    else
+    for (i = 0; i < matches_count; i++)
     {
-      /* Look if the end of the word potentially contain an */
-      /* ending pattern.                                    */
-      /* """""""""""""""""""""""""""""""""""""""""""""""""" */
-      if (search_mode == FUZZY)
-      {
-        mb_len  = mblen(ptr, 4);
-        last_mb = search_data->buf + search_data->len - mb_len;
+      index      = matching_words_a[i];
+      long   len = word_a[index].len;
+      char * str = word_a[index].str;
+      char * mb;
 
-        /* in fuzzy search mode we only look the last glyph */
-        /* """""""""""""""""""""""""""""""""""""""""""""""" */
-        if (memcmp(ptr, last_mb, mb_len) == 0)
-          alt_matching_words_a[j++] = index;
+      /* count the trailing blanks non counted in the bitmap */
+      /* """"""""""""""""""""""""""""""""""""""""""""""""""" */
+      ptr = str + strlen(str);
+
+      nb = 0;
+      while ((ptr = mb_prev(str, ptr)) != NULL && isblank(*ptr))
+        if (ptr - str + 1 > len)
+          nb++;
         else
-          memset(word_a[index].bitmap, '\0',
-                 (word_a[index].mb - 1 - daccess.flength) / CHAR_BIT + 1);
-      }
+          break;
+
+      /* Check the bit corresponding to the last non blank glyph  */
+      /* If set we add the index to an alternate array, if not we */
+      /* clear the bitmap of the corresponding word               */
+      /* """""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+      if (BIT_ISSET(word_a[index].bitmap,
+                    word_a[index].mb - nb - 1 - daccess.flength - 1))
+        alt_matching_words_a[j++] = index;
       else
       {
-        /* in not fuzzy search mode use all the pattern */
-        /* """""""""""""""""""""""""""""""""""""""""""" */
-        for (nb = 0; nb < search_data->mb_len - 1; nb++)
-          ptr = mb_prev(word_a[index].str, ptr);
-        if (memcmp(ptr, search_data->buf, search_data->len) == 0)
-          alt_matching_words_a[j++] = index;
+        /* Look if the end of the word potentially contain an */
+        /* ending pattern.                                    */
+        /* """""""""""""""""""""""""""""""""""""""""""""""""" */
+        if (search_mode == FUZZY)
+        {
+          mb_len  = mblen(ptr, 4);
+          last_mb = search_data->buf + search_data->len - mb_len;
+
+          /* in fuzzy search mode we only look the last glyph */
+          /* """""""""""""""""""""""""""""""""""""""""""""""" */
+          if (memcmp(ptr, last_mb, mb_len) == 0)
+            alt_matching_words_a[j++] = index;
+          else
+            memset(word_a[index].bitmap, '\0',
+                   (word_a[index].mb - 1 - daccess.flength) / CHAR_BIT + 1);
+        }
         else
-          memset(word_a[index].bitmap, '\0',
-                 (word_a[index].mb - 1 - daccess.flength) / CHAR_BIT + 1);
+        {
+          /* in not fuzzy search mode use all the pattern */
+          /* """""""""""""""""""""""""""""""""""""""""""" */
+          for (nb = 0; nb < search_data->mb_len - 1; nb++)
+            ptr = mb_prev(str, ptr);
+          if (memcmp(ptr, search_data->buf, search_data->len) == 0)
+            alt_matching_words_a[j++] = index;
+          else
+            memset(word_a[index].bitmap, '\0',
+                   (word_a[index].mb - 1 - daccess.flength) / CHAR_BIT + 1);
+        }
       }
     }
-  }
 
-  if (j > 0)
-  {
-    /* We have some candidates       */
-    /* swap the normal and alt array */
+    /* Swap the normal and alt array */
     /* """"""""""""""""""""""""""""" */
     matches_count         = j;
     matching_words_a_size = j;
@@ -6346,21 +6371,22 @@ select_ending_matches(win_t * win, term_t * term, search_data_t * search_data,
     matching_words_a     = alt_matching_words_a;
     alt_matching_words_a = tmp;
 
-    current = matching_words_a[0];
+    if (j > 0)
+    {
+      current = matching_words_a[0];
 
-    update_bitmaps(search_mode, search_data, 1);
+      /* Adjust the bitmap to the ending version */
+      /* """"""""""""""""""""""""""""""""""""""" */
+      update_bitmaps(search_mode, search_data, END_AFFINITY);
 
-    if (current < win->start || current > win->end)
-      *last_line = build_metadata(term, count, win);
+      if (current < win->start || current > win->end)
+        *last_line = build_metadata(term, count, win);
 
-    /* Set new first column to display */
-    /* """"""""""""""""""""""""""""""" */
-    set_new_first_column(win, term);
+      /* Set new first column to display */
+      /* """"""""""""""""""""""""""""""" */
+      set_new_first_column(win, term);
+    }
   }
-  else
-    /* we restore the old bitmaps in this case */
-    /* """"""""""""""""""""""""""""""""""""""" */
-    update_bitmaps(search_mode, search_data, 0);
 }
 
 /* ===================================================== */
@@ -6421,15 +6447,15 @@ select_starting_matches(win_t * win, term_t * term, search_data_t * search_data,
 
     free(first_mb);
 
+    matches_count         = j;
+    matching_words_a_size = j;
+
+    tmp                  = matching_words_a;
+    matching_words_a     = alt_matching_words_a;
+    alt_matching_words_a = tmp;
+
     if (j > 0)
     {
-      matches_count         = j;
-      matching_words_a_size = j;
-
-      tmp                  = matching_words_a;
-      matching_words_a     = alt_matching_words_a;
-      alt_matching_words_a = tmp;
-
       current = matching_words_a[0];
 
       if (current < win->start || current > win->end)
@@ -6438,8 +6464,9 @@ select_starting_matches(win_t * win, term_t * term, search_data_t * search_data,
       /* Set new first column to display */
       /* """"""""""""""""""""""""""""""" */
       set_new_first_column(win, term);
+
+      update_bitmaps(search_mode, search_data, START_AFFINITY);
     }
-    update_bitmaps(search_mode, search_data, 2);
   }
 }
 
@@ -10579,7 +10606,9 @@ main(int argc, char * argv[])
 
           if (search_mode != NONE)
           {
-            search_mode = NONE;
+            search_mode               = NONE;
+            search_data.only_starting = 0;
+            search_data.only_ending   = 0;
 
             nl = disp_lines(&win, &toggle, current, count, search_mode,
                             &search_data, &term, last_line, tmp_word,
@@ -11868,7 +11897,7 @@ main(int argc, char * argv[])
                   beep(&toggle);
                 else
                 {
-                  update_bitmaps(search_mode, &search_data, 0);
+                  update_bitmaps(search_mode, &search_data, NO_AFFINITY);
                   current = matching_words_a[0];
 
                   if (current < win.start || current > win.end)
@@ -12033,7 +12062,7 @@ main(int argc, char * argv[])
                 else if (search_data.only_ending)
                   select_ending_matches(&win, &term, &search_data, &last_line);
                 else
-                  update_bitmaps(search_mode, &search_data, 0);
+                  update_bitmaps(search_mode, &search_data, NO_AFFINITY);
 
                 current = matching_words_a[0];
 
@@ -12112,7 +12141,7 @@ main(int argc, char * argv[])
                     select_ending_matches(&win, &term, &search_data,
                                           &last_line);
                   else
-                    update_bitmaps(search_mode, &search_data, 0);
+                    update_bitmaps(search_mode, &search_data, NO_AFFINITY);
 
                   current = matching_words_a[0];
 
