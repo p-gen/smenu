@@ -6278,9 +6278,9 @@ set_new_first_column(win_t * win, term_t * term)
   }
 }
 
-/* =================================================== */
-/* Resting the matches to word ending with the pattern */
-/* =================================================== */
+/* ==================================================== */
+/* Restrict the matches to word ending with the pattern */
+/* ==================================================== */
 void
 select_ending_matches(win_t * win, term_t * term, search_data_t * search_data,
                       long * last_line)
@@ -6297,8 +6297,8 @@ select_ending_matches(win_t * win, term_t * term, search_data_t * search_data,
     int    mb_len;
 
     /* Creation of an alternate array which will      */
-    /* contain only the candidate having potentially  */
-    /* an ending pattern, if this array become non    */
+    /* contain only the candidates having potentially */
+    /* an ending pattern, if this array becomes non   */
     /* empty then it will replace the original array. */
     /* """""""""""""""""""""""""""""""""""""""""""""" */
     alt_matching_words_a = xrealloc(alt_matching_words_a,
@@ -6389,9 +6389,9 @@ select_ending_matches(win_t * win, term_t * term, search_data_t * search_data,
   }
 }
 
-/* ===================================================== */
-/* Resting the matches to word starting with the pattern */
-/* ===================================================== */
+/* ====================================================== */
+/* Restrict the matches to word starting with the pattern */
+/* ====================================================== */
 void
 select_starting_matches(win_t * win, term_t * term, search_data_t * search_data,
                         long * last_line)
