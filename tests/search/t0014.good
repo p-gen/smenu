@@ -1,0 +1,25 @@
+$ OUT=$(smenu -n 20 -T, t0014.in)
+
+abccb aaacc cbaba acbaa baabc cabac ccaac abaca cabac acbac bacbc cacbb acaca 
+42:040723 43:040723 44:040723 45:040723 46:0407 54:0423 55:04 56:0423 57:0423 58:0423 
+bbaaa aabcc acccb abacc cacac bccbc cccaa abcbc bcccc babab cacba bacbb cbcba 
+18:0423 19:0423 20:0423 21:0423 22:04 
+aaabc bcbba cabbb caaac acacb abbaa acaab ccaab caabc bcacc baabb abaca abaac 
+66:0423 67:0423 68:0423 69:0423 70:04 72:0423 73:0423 74:04 75:0423 76:0423 
+cccba bccac bbcca bccac caccb cbbab cbacc cccac abaac bbbcb cbbba bcbcb acbac 
+48:0423 49:0423 50:04 51:0423 52:0423 72:0423 73:04 74:0423 75:0423 76:0423 
+bcbbb caaca accbc bbccc aacca bbcbc cbbcc ccaaa aaacb caacc accaa cabab accca 
+
+bcbbb babcc ccabb cacba abbaa cbcab caccc ababc babba ccbca abcba aabca acaac 
+42:0423 43:0423 44:0423 45:04 46:0423 
+accab abacc aabaa aaaca aabaa babcc acbac caacb ccbcc bbacc aabaa aabcb ccaab 
+6:0423 7:0423 8:0423 9:0423 10:04 36:0423 37:04 38:0423 39:0423 40:0423 
+cbbbb abcab bcaab babbc babab ccbcc accbc aabac cbaab 
+42:0423 43:04 44:0423 45:0423 46:0423 
+$ 
+
+$ echo ":$OUT:"
+
+:abaca,acbac,abacc,abaca,abaac,abaac,acbac,ababc,abacc,acbac,aabac:
+
+$ exit 0

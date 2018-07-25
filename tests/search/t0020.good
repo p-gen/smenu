@@ -1,0 +1,25 @@
+$ OUT=$(smenu -n 20 t0020.in)
+
+abccb aaacc cbaba acbaa baabc cabac ccaac abaca cabac acbac bacbc cacbb acaca 
+0:0723 1:0723 2:07 3:07 4:07 42:23 43:23 
+bbaaa aabcc acccb abacc cacac bccbc cccaa abcbc bcccc babab cacba bacbb cbcba 
+18:23 19:23 42:23 43:23 
+aaabc bcbba cabbb caaac acacb abbaa acaab ccaab caabc bcacc baabb abaca abaac 
+30:23 31:23 66:23 67:23 72:23 73:23 
+cccba bccac bbcca bccac caccb cbbab cbacc cccac abaac bbbcb cbbba bcbcb acbac 
+48:23 49:23 
+bcbbb caaca accbc bbccc aacca bbcbc cbbcc ccaaa aaacb caacc accaa cabab accca 
+
+bcbbb babcc ccabb cacba abbaa cbcab caccc ababc babba ccbca abcba aabca acaac 
+24:23 25:23 42:23 43:23 60:23 61:23 
+accab abacc aabaa aaaca aabaa babcc acbac caacb ccbcc bbacc aabaa aabcb ccaab 
+6:23 7:23 
+cbbbb abcab bcaab babbc babab ccbcc accbc aabac cbaab 
+6:23 7:23 
+$ 
+
+$ echo ":$OUT:"
+
+:abccb:
+
+$ exit 0

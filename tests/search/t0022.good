@@ -1,0 +1,29 @@
+$ OUT=$(smenu -n 18 t0022.in)
+
+c b  bcac cabab  baac c aaa ab  a ab    bcaa   a  bb b b ba  c aa   cb 
+24:0723 25:07 26:07 27:07 28:07 29:0723 63:23 69:23 
+ aaaab aa ba b ab     aaab cbbcaca babb cabbcaaca b cba   babbbbbc aababc b a 
+15:23 16:23 67:23 69:23 
+bcabcccc ca  ba aca a  a ab    b aac bb c  c a a b  a a ba  acb cabaabcca  b 
+23:23 26:23 33:23 37:23 54:23 56:23 60:23 62:23 
+ca a b aa cbccca a a  cb a bb bbbac bbc c  cc c   bacb bcacabaa ac 
+19:23 23:23 
+b babaa  a  a  cbacac a   a  aac  c  a aaaca bb a caa cba  b   b  abcbb  c 
+66:23 67:23 
+babc c a c   b b  b ccca b ab ab ba cacc ba bcc cacbb  cbba ca 
+27:23 28:23 30:23 31:23 
+ca        c  aaa c  cca  a bb   b ac  c  b c ca b  babbc   cc a cbab 
+
+baaa cc a baabbcac a b bbc  bc bcbcac bba bc   b  a b    cbb  cbbc b acba  a 
+69:23 71:23 
+a a  caabbbbb c ba bcb   ca cbccac  abb aba  cc bbb ba cbc cab b cbaab  
+40:23 41:23 
+c b cbb 
+
+$ 
+
+$ echo ":$OUT:"
+
+:aaa ab:
+
+$ exit 0
