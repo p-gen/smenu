@@ -3572,7 +3572,10 @@ replace(char * to_match, sed_t * sed)
         }
       }
       else
+      {
         strcpy(word_buffer, to_match);
+        return 0;
+      }
 
       return nomatch;
     }
