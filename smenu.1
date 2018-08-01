@@ -34,7 +34,7 @@ and outputs the selection to stdout.
       <row selectors> ::= \fIcol1\fP[-\fIcol2\fP],...|\fI<RE>\fP,...
       <sub-option>    ::= [l|r:<char>]|[a:left|right]|[p:included|all|
                           [w:<num>]|[f:yes|no]|[o:<num>]|[n:<num>]|
-                          [i:<num>][d:<char>]
+                          [i:<num>]|[d:<char>]|[s:<num>]
       <ATTR>          ::= [fg][/bg][,style]
       <RE>            ::= \fB<char>\fIregex\fB<char>\fR
 
@@ -875,6 +875,12 @@ Only the numbered word(s) will be prefixed.
 
 This directive can be useful when you want to post-process the output
 according to its direct access number.
+.
+.TP
+\f(CBs\fP (\fB-F\fP, \fB-N\fP and \fB-U\fP options)
+Here \fBy\fP is the direct access number that will be set for the first
+numbered word. Its value is \fB1\fP by default, a value of \fB0\fP
+is possible.
 .P
 Example: \f(CWr:\\> l:\\< a:l d:_ \fP
 

@@ -961,7 +961,8 @@ short_usage(void)
   fprintf(stderr, "       <arg>           ::= [l|r:<char>]|[a:l|r]|[p:i|a]|");
   fprintf(stderr, "[w:<size>]|\n");
   fprintf(stderr, "                           [f:y|n]|[o:<num>]|[n:<num>]|");
-  fprintf(stderr, "[i:<num>][d:<char>]\n");
+  fprintf(stderr, "[i:<num>]|[d:<char>]|\n");
+  fprintf(stderr, "                           [s:<num>]\n");
   fprintf(stderr, "         Ex: l:'(' a:l\n");
   fprintf(stderr, "       <attr>          ::= [fg][/bg][,style] \n");
   fprintf(stderr, "         Ex: 7/4,bu\n");
@@ -6635,7 +6636,7 @@ main(int argc, char * argv[])
 
   long index; /* generic counter */
 
-  long daccess_index = 1;
+  long daccess_index = 1; /* First index of the numbered words               */
 
   char *  daccess_np = NULL;
   regex_t daccess_np_re; /* variable to store the compiled direct access     *
@@ -7683,6 +7684,21 @@ main(int argc, char * argv[])
                     "A multi columns separator is not allowed "
                     "after d: -- ");
                 break;
+
+              case 's': /* start index */
+              {
+                long pos;
+
+                if (sscanf(argv[optind] + 2, "%ld%n", &daccess_index, &pos)
+                    == 1)
+                {
+                  if (daccess_index < 0 || *(argv[optind] + 2 + pos) != '\0')
+                    daccess_index = 1;
+                }
+                else
+                  TELL("Invalid first index after s: -- ");
+              }
+              break;
 
               default:
                 TELL("Bad format -- ");
