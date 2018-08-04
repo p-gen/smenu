@@ -9280,7 +9280,7 @@ main(int argc, char * argv[])
               {
                 if (daccess.size > 0
                     && daccess.offset + daccess.size + daccess.ignore
-                         < mb_strlen(word->str))
+                         <= mb_strlen(word->str))
                 {
                   unsigned selector_value; /* numerical value of the         *
                                             * extracted selector             */
