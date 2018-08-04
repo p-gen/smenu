@@ -744,6 +744,7 @@ struct daccess_s
   char *    right;      /* character to put after the direct access selector  */
   char      alignment;  /* l: left; r: right                                  */
   char      padding;    /* a: all; i: only included words are padded          */
+  char      head;       /* What to do with chars before the embedded number   */
   int       length;     /* selector size (5 max)                              */
   int       flength;    /* 0 or length + 3 (full prefix lengh                 */
   size_t    offset;     /* offset to the start of the selector                */
@@ -962,7 +963,7 @@ short_usage(void)
   fprintf(stderr, "[w:<size>]|\n");
   fprintf(stderr, "                           [f:y|n]|[o:<num>]|[n:<num>]|");
   fprintf(stderr, "[i:<num>]|[d:<char>]|\n");
-  fprintf(stderr, "                           [s:<num>]\n");
+  fprintf(stderr, "                           [s:<num>]|[h:t|c|k]\n");
   fprintf(stderr, "         Ex: l:'(' a:l\n");
   fprintf(stderr, "       <attr>          ::= [fg][/bg][,style] \n");
   fprintf(stderr, "         Ex: 7/4,bu\n");
@@ -6968,6 +6969,7 @@ main(int argc, char * argv[])
   daccess.right      = xstrdup(")");
   daccess.alignment  = 'r';
   daccess.padding    = 'a';
+  daccess.head       = 'c'; /* cut by default */
   daccess.length     = -2;
   daccess.flength    = 0;
   daccess.offset     = 0;
@@ -7699,6 +7701,17 @@ main(int argc, char * argv[])
                   TELL("Invalid first index after s: -- ");
               }
               break;
+
+              case 'h': /* head */
+                if (strprefix("trim", argv[optind] + 2))
+                  daccess.head = 't';
+                else if (strprefix("cut", argv[optind] + 2))
+                  daccess.head = 'c';
+                else if (strprefix("keep", argv[optind] + 2))
+                  daccess.head = 'k';
+                else
+                  TELL("Bad format -- ");
+                break;
 
               default:
                 TELL("Bad format -- ");
@@ -9277,6 +9290,27 @@ main(int argc, char * argv[])
                     strcpy(ptr,
                            ptr + daccess.size
                              + mb_offset(ptr + daccess.size, daccess.ignore));
+
+                    /* Modify the word according to the 'h' directive of -D */
+                    /* """""""""""""""""""""""""""""""""""""""""""""""""""" */
+                    if (daccess.head == 'c')
+                      /* h:c is present cut the leading characters */
+                      /* before the selector                       */
+                      /* ''''''''''''''''''''''''''''''''''''''''' */
+                      memmove(word->str, ptr, strlen(ptr) + 1);
+                    else if (daccess.head == 't')
+                    {
+                      /* h:t is present trim the leading characters  */
+                      /* before the selector if they are ' ' or '\t' */
+                      /* ''''''''''''''''''''''''''''''''''''''''''' */
+                      char * p = word->str;
+
+                      while (p != ptr && (*p == ' ' || *p == '\t'))
+                        p++;
+
+                      if (p == ptr)
+                        memmove(word->str, ptr, strlen(ptr) + 1);
+                    }
 
                     ltrim(selector, " ");
                     rtrim(selector, " ", 0);

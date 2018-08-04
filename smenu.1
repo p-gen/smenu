@@ -34,7 +34,7 @@ and outputs the selection to stdout.
       <row selectors> ::= \fIcol1\fP[-\fIcol2\fP],...|\fI<RE>\fP,...
       <sub-option>    ::= [l|r:<char>]|[a:left|right]|[p:included|all|
                           [w:<num>]|[f:yes|no]|[o:<num>]|[n:<num>]|
-                          [i:<num>]|[d:<char>]|[s:<num>]
+                          [i:<num>]|[d:<char>]|[s:<num>]|[h:trim|cut|keep]
       <ATTR>          ::= [fg][/bg][,style]
       <RE>            ::= \fB<char>\fIregex\fB<char>\fR
 
@@ -846,6 +846,18 @@ Here \fBy\fP is the \fIw\fPidth of the number between 1 and 5 included.
 Here \fBy\fP controls if the numbering must \fIf\fPollow the last
 extracted number (defaults to \f(CByes\fP) or if it must remain
 independent.
+.
+.TP
+\f(CBh\fP (\fB-F\fP option)
+Tells what to do with the characters present before the embedded number if
+any.
+
+The allowed directives are: '\f(CBtrim\fP' which discads them if they
+form an empty word (only made of spaces and tabulations), '\f(CBcut\fP'
+which unconditionnaly discards them and '\f(CBkeep\fP' which places them
+at the beginning of the resulting word.
+
+The default value for this directive is '\f(CBkeep\fP'.
 .
 .TP
 \f(CBo\fP (\fB-F\fP option)
