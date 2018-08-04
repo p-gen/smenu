@@ -192,6 +192,9 @@ isempty(const char * str);
 static int
 my_strcasecmp(const char * str1, const char * str2);
 
+static char *
+my_strcpy(char * dst, char * src);
+
 static sub_tst_t *
 sub_tst_new(void);
 
@@ -2943,6 +2946,20 @@ my_strcasecmp(const char * str1, const char * str2)
 #endif
 }
 
+/* =========================================== */
+/* memmove based my_strcpy (tolerates overlaping) */
+/* =========================================== */
+char *
+my_strcpy(char * str1, char * str2)
+{
+  if (str1 == NULL || str2 == NULL)
+    return NULL;
+
+  memmove(str1, str2, strlen(str2) + 1);
+
+  return str1;
+}
+
 /* ======================================================================== */
 /* Parse a regular expression based selector.                               */
 /* The string to parse is bounded by a delimiter so we must parse something */
@@ -3097,7 +3114,7 @@ parse_selectors(char * str, filters_t * filter, char * unparsed,
     /* """""""""""""""""""""""""""""""""""" */
     if (*ptr == ',' && (*(ptr + 1) == '\0' || *(ptr + 1) == '-'))
     {
-      strcpy(unparsed, ptr);
+      my_strcpy(unparsed, ptr);
       return;
     }
 
@@ -3105,7 +3122,7 @@ parse_selectors(char * str, filters_t * filter, char * unparsed,
     /* """""""""""""""""""""""""""""""""""""""" */
     if (oldptr == ptr)
     {
-      strcpy(unparsed, ptr);
+      my_strcpy(unparsed, ptr);
       return;
     }
 
@@ -3147,7 +3164,7 @@ parse_selectors(char * str, filters_t * filter, char * unparsed,
     {
       /* Both delimiter must be numeric if delim2 exist */
       /* """""""""""""""""""""""""""""""""""""""""""""" */
-      strcpy(unparsed, str + start);
+      my_strcpy(unparsed, str + start);
       return;
     }
 
@@ -3159,7 +3176,7 @@ parse_selectors(char * str, filters_t * filter, char * unparsed,
       rc = sscanf(str + start, "%zu-%zu%n", &first, &second, &pos);
       if (rc != 2 || *(str + start + pos) != '\0')
       {
-        strcpy(unparsed, str + start);
+        my_strcpy(unparsed, str + start);
         return;
       }
 
@@ -3167,7 +3184,7 @@ parse_selectors(char * str, filters_t * filter, char * unparsed,
       {
         /* Both interval boundaries must be strictly positive */
         /* """""""""""""""""""""""""""""""""""""""""""""""""" */
-        strcpy(unparsed, str + start);
+        my_strcpy(unparsed, str + start);
         return;
       }
 
@@ -3192,7 +3209,7 @@ parse_selectors(char * str, filters_t * filter, char * unparsed,
       /* """"""""""""""""""""" */
       if (sscanf(str + start, "%zu", &first) != 1)
       {
-        strcpy(unparsed, str + start);
+        my_strcpy(unparsed, str + start);
         return;
       }
 
@@ -3553,7 +3570,7 @@ replace(char * to_match, sed_t * sed)
 
           len = strlen(exp_repl);
 
-          strcpy(word_buffer + target_len, exp_repl);
+          my_strcpy(word_buffer + target_len, exp_repl);
           target_len += len;
           free(exp_repl);
 
@@ -3575,7 +3592,7 @@ replace(char * to_match, sed_t * sed)
       }
       else
       {
-        strcpy(word_buffer, to_match);
+        my_strcpy(word_buffer, to_match);
         return 0;
       }
 
@@ -9287,9 +9304,9 @@ main(int argc, char * argv[])
 
                     /* Overwrite the end of the word to erase the selector */
                     /* """"""""""""""""""""""""""""""""""""""""""""""""""" */
-                    strcpy(ptr,
-                           ptr + daccess.size
-                             + mb_offset(ptr + daccess.size, daccess.ignore));
+                    my_strcpy(ptr, ptr + daccess.size
+                                     + mb_offset(ptr + daccess.size,
+                                                 daccess.ignore));
 
                     /* Modify the word according to the 'h' directive of -D */
                     /* """""""""""""""""""""""""""""""""""""""""""""""""""" */
@@ -9371,7 +9388,7 @@ main(int argc, char * argv[])
 
         if (daccess.length > 0)
         {
-          strcpy(tmp + daccess.flength, word->str);
+          my_strcpy(tmp + daccess.flength, word->str);
           free(word->str);
           word->str = tmp;
         }
@@ -9387,7 +9404,7 @@ main(int argc, char * argv[])
           char * tmp = xmalloc(strlen(word->str) + 4 + daccess.length);
           for (i = 0; i < daccess.flength; i++)
             tmp[i] = ' ';
-          strcpy(tmp + daccess.flength, word->str);
+          my_strcpy(tmp + daccess.flength, word->str);
           free(word->str);
           word->str = tmp;
         }
