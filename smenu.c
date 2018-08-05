@@ -6656,11 +6656,11 @@ main(int argc, char * argv[])
 
   long daccess_index = 1; /* First index of the numbered words               */
 
-  char *  daccess_np = NULL;
+  char *  daccess_np = NULL; /* direct access numbered pattern               */
   regex_t daccess_np_re; /* variable to store the compiled direct access     *
                           * pattern (-N) RE                                  */
 
-  char *  daccess_up = NULL;
+  char *  daccess_up = NULL; /* direct access un-numbered pattern            */
   regex_t daccess_up_re; /* variable to store the compiled direct access     *
                           * pattern (-U) RE                                  */
 
@@ -9292,9 +9292,11 @@ main(int argc, char * argv[])
                   ptr             = word->str + selector_offset;
                   selector        = xstrndup(ptr, daccess.size);
 
+                  /* read the embedded number and, if correct, format */
+                  /* it according to daccess.alignment                */
+                  /* """""""""""""""""""""""""""""""""""""""""""""""" */
                   if (sscanf(selector, "%u", &selector_value) == 1)
                   {
-
                     sprintf(selector, "%u", selector_value);
 
                     sprintf(tmp + 1, "%*u",
@@ -9345,6 +9347,9 @@ main(int argc, char * argv[])
               }
             }
 
+            /* Try to number this word if it is still non numbered and */
+            /* the -N/-U option is given.                              */
+            /* """"""""""""""""""""""""""""""""""""""""""""""""""""""" */
             if (!word->is_numbered && (daccess.mode & DA_TYPE_AUTO))
             {
               sprintf(tmp + 1, "%*ld",
@@ -9356,21 +9361,30 @@ main(int argc, char * argv[])
               ltrim(selector, " ");
               rtrim(selector, " ", 0);
 
+              /* Insert it in the tst tree containing the selector's */
+              /* digits.                                             */
+              /* ''''''''''''''''''''''''''''''''''''''''''''''''''' */
               tst_daccess = tst_insert(tst_daccess, mb_strtowcs(selector),
                                        word_pos);
               daccess_index++;
 
               free(selector);
+
               word->is_numbered = 1;
             }
           }
 
+          /* Fill the space taken by the numbering by space if the word */
+          /* is not numbered.                                           */
           if (daccess.length > 0 && !word->is_numbered)
           {
             for (i = 0; i < daccess.flength; i++)
               tmp[i] = ' ';
           }
 
+          /* Make sure that the 2 character after this placeholder */
+          /* are initialized.                                      */
+          /* """"""""""""""""""""""""""""""""""""""""""""""""""""" */
           if (daccess.length > 0)
           {
             tmp[1 + daccess.length] = ' ';
