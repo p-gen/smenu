@@ -6986,7 +6986,7 @@ main(int argc, char * argv[])
   daccess.right      = xstrdup(")");
   daccess.alignment  = 'r';
   daccess.padding    = 'a';
-  daccess.head       = 'c'; /* cut by default */
+  daccess.head       = 'k'; /* keep by default */
   daccess.length     = -2;
   daccess.flength    = 0;
   daccess.offset     = 0;
