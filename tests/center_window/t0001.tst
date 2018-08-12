@@ -1,4 +1,4 @@
 \S[10]OUT=$(smenu -M t0001.in)
-\S[100]\s[120]lll\r
-\s[0]echo ":$OUT:"
+\S[10]\s[0]lll\r
+\s[10]echo ":$OUT:"
 exit 0

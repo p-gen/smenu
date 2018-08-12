@@ -9,7 +9,7 @@ upsearch () {
   while [ $n -gt 0 ]; do
     test -e "$directory/$1" && echo "$directory" && return 
     directory="$directory/.."
-    ((n--))
+    n = $(expr n - 1)
   done
 }
 
