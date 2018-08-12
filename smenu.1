@@ -190,6 +190,9 @@ The user can then use the \fBn\fP/\fBSPACE\fP keys (forward) and the
 If the user hits the \fBHome\fP or \fBEnd\fP key during a search session
 then the matched word list is reduced to the words starting (respectively)
 ending with the current search pattern and the window is refreshed.
+For those who consider \fBHome\fP and \fBEnd\fP as non-intuitive,
+the \fBCTRL-A\fP and \fBCtrl-Z\fP keys are also available in search mode
+as an alternative.
 
 This behaviour is persistent until the user hit the \fBESC\fP or
 \fBENTER\fP key.
@@ -241,10 +244,10 @@ CTRL+Home, SHIFT+Home, CTRL+k@First word@Yes
 PgDn@Next pages@Yes
 CTRL+End, SHIFT+End, CTRL+j@Last word@Yes
 
-Home@T{
+Home,CTRL-A@T{
 Only keep the words starting with the search pattern
 T}@No
-End@T{
+End,CTRL-Z@T{
 Only keep the words ending with the search pattern
 T}@No
 

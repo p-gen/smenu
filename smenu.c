@@ -10357,6 +10357,18 @@ main(int argc, char * argv[])
 
       switch (buffer[0])
       {
+        case 0x01: /* ^A */
+          if (search_mode != NONE)
+            goto khome;
+
+          break;
+
+        case 0x1a: /* ^Z */
+          if (search_mode != NONE)
+            goto kend;
+
+          break;
+
         case 0x1b: /* ESC */
           /* An escape sequence or a multibyte character has been pressed */
           /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
@@ -10370,6 +10382,8 @@ main(int argc, char * argv[])
             /* """"""""""""""""""""""""" */
             if (search_mode != NONE)
             {
+            khome:
+
               search_data.only_starting = 1;
               search_data.only_ending   = 0;
               select_starting_matches(&win, &term, &search_data, &last_line);
@@ -10414,6 +10428,8 @@ main(int argc, char * argv[])
             /* """""""""""""""""""""""" */
             if (search_mode != NONE)
             {
+            kend:
+
               if (matches_count > 0 && search_mode != PREFIX)
               {
                 search_data.only_starting = 0;
