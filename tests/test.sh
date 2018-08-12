@@ -9,7 +9,7 @@ upsearch () {
   while [ $n -gt 0 ]; do
     test -e "$directory/$1" && echo "$directory" && return 
     directory="$directory/.."
-    n = $(expr n - 1)
+    n=$(expr $n - 1)
   done
 }
 
@@ -28,6 +28,7 @@ fi
 LOG=${PWD}.log
 PTYLIE=${PTYLIE_PATH:+${PTYLIE_PATH}/}ptylie
 HVLT=${HLVT_PATH:+${HLVT_PATH}/}hlvt
+BL=$(uname -s).bl
 
 # Check for the presence of required programs
 # """""""""""""""""""""""""""""""""""""""""""
@@ -42,6 +43,13 @@ for PROG in $PTYLIE $HLVT; do
     exit 1
   fi
 done
+
+# Ignore blacklisted tests for this OS.
+# These tests probably need a fixed version of ptylie to work
+# """""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+if [ -f "$BL" ]; then
+  grep $1 $BL >/dev/null 2>&1 && exit 0
+fi
 
 # Launch the test
 # """""""""""""""

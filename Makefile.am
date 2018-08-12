@@ -10,6 +10,7 @@ dist-hook:
 	find * -name 'data*' -o                    \
 	       -name '*.in'  -o                    \
 	       -name '*.tst' -o                    \
+	       -name '*.bl'  -o                    \
 	       -name '*.good'                      \
 	| cpio -o > tests.cpio 2>/dev/null
 	@gzip -f9 $(distdir)/tests/tests.cpio

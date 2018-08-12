@@ -28,6 +28,8 @@ The files present in this directory are:
 - ``t????.in`` contains the words to feed smenu.
 - ``t????.good`` is the screen content of the test after a successful run.
 - ``t????.tst`` contains the keystrokes to pass to smenu.
+- ``*.bl`` contains the blacklisted tests to ignore for an given OS
+  (one per line).
 - ``test.sh`` runs a single test.
 - ``tests.sh`` runs selected or all tests.
 
