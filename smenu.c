@@ -22,7 +22,7 @@
 #define TPARM2(p, q, ...) tparm(p, q, 0, 0, 0, 0, 0, 0, 0, 0)
 #define TPARM3(p, q, r, ...) tparm(p, q, r, 0, 0, 0, 0, 0, 0, 0)
 
-#define _XOPEN_SOURCE 600
+#define _XOPEN_SOURCE 700
 #include "config.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -42,9 +42,10 @@
 #include <termios.h>
 #include <regex.h>
 #include <errno.h>
-#include <wchar.h>
 #include <sys/ioctl.h>
 #include <sys/time.h>
+#include <sys/param.h>
+#include <wchar.h>
 
 /* Used for timers management */
 /* """""""""""""""""""""""""" */
