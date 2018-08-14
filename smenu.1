@@ -456,6 +456,10 @@ directory, if present, will be ignored when this option is used.
 Gives the maximum number of lines in the scrolling selection window.
 By default five lines at most are displayed and the other ones, if
 any, need you to scroll the window.
+
+The special value \fI0\fP sets this number to match the number of lines
+in the terminal (minus the lines taken by the message if any).
+This remains true even if the terminal is resized.
 .IP "\fB-t\fP [\fIcolumns\fP]"
 This option sets the tabulation mode and, if a number is specified,
 attents to set the number of displayed columns to that number.

@@ -1627,7 +1627,7 @@ ini_cb(win_t * win, term_t * term, limits_t * limits, timers_t * timers,
     /* """""""""""""""" */
     if (strcmp(name, "lines") == 0)
     {
-      if ((error = !(sscanf(value, "%d", &v) == 1 && v > 0)))
+      if ((error = !(sscanf(value, "%d", &v) == 1 && v >= 0)))
         goto out;
       else
         win->asked_max_lines = v;
@@ -7019,7 +7019,7 @@ main(int argc, char * argv[])
 
       case 'n':
         if (optarg && *optarg != '-')
-          win.asked_max_lines = atoi(optarg);
+          win.asked_max_lines = abs(atoi(optarg));
         else
           TELL("Option requires an argument -- ");
         break;
@@ -8325,8 +8325,20 @@ main(int argc, char * argv[])
 
   /* Force the maximum number of window's line if -n is used */
   /* """"""""""""""""""""""""""""""""""""""""""""""""""""""" */
-  if (win.asked_max_lines > 0)
-    win.max_lines = win.asked_max_lines;
+  if (term.nlines <= win.message_lines)
+    win.max_lines = 0;
+  else if (win.asked_max_lines >= 0)
+  {
+    if (win.asked_max_lines == 0)
+      win.max_lines = term.nlines - win.message_lines;
+    else
+    {
+      if (win.asked_max_lines > term.nlines - win.message_lines)
+        win.max_lines = term.nlines - win.message_lines;
+      else
+        win.max_lines = win.asked_max_lines;
+    }
+  }
   else
     win.asked_max_lines = win.max_lines;
 
@@ -10164,8 +10176,20 @@ main(int argc, char * argv[])
 
       /* Reset the number of lines if the terminal has enough lines */
       /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-      if (win.max_lines < term.nlines - win.message_lines)
-        win.max_lines = win.asked_max_lines;
+      if (term.nlines <= win.message_lines)
+        win.max_lines = 0;
+      else if (win.max_lines < term.nlines - win.message_lines)
+      {
+        if (win.asked_max_lines == 0)
+          win.max_lines = term.nlines - win.message_lines;
+        else
+        {
+          if (win.asked_max_lines > term.nlines - win.message_lines)
+            win.max_lines = term.nlines - win.message_lines;
+          else
+            win.max_lines = win.asked_max_lines;
+        }
+      }
       else
         win.max_lines = term.nlines - win.message_lines;
 
