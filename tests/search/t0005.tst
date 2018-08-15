@@ -1,4 +1,4 @@
 \S[10]OUT=$(smenu -/ pre t0005.in)
-\S[10]\s[0]/bc\r\r
+\S[10]\s[120]/bc\r\r
 \s[10]echo ":$OUT:"
 exit 0

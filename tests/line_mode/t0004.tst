@@ -1,4 +1,4 @@
 \S[10]OUT=$(smenu -U 3 -n 10 -l t0004.in)
-\S[10]\s[0]lljjlljjkk\r
+\S[10]\s[120]lljjlljjkk\r
 \s[10]echo ":$OUT:"
 exit 0
