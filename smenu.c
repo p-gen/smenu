@@ -838,6 +838,7 @@ ll_t * tst_search_list = NULL;
 long * matching_words_a;
 long   matching_words_a_size;
 long   matches_count;
+long   fuzzy_best_index; /* Index of the word with the smallest badness */
 long * alt_matching_words_a = NULL;
 long   alt_matches_count;
 
@@ -2429,6 +2430,11 @@ update_bitmaps(search_mode_t mode, search_data_t * data,
   long * l    = data->mb_len_a;
   long   last = data->mb_len - 1;
 
+  long badness;
+  long best_badness = LONG_MAX;
+
+  fuzzy_best_index = matching_words_a[0];
+
   if (mode == FUZZY || mode == SUBSTRING)
   {
     first_mb = xmalloc(5);
@@ -2525,6 +2531,8 @@ update_bitmaps(search_mode_t mode, search_data_t * data,
       }
       if (mode == FUZZY)
       {
+        long mb_index;
+
         free(str);
 
         /* We know that the first glyph is part of the pattern, so        */
@@ -2563,8 +2571,43 @@ update_bitmaps(search_mode_t mode, search_data_t * data,
             }
           }
         }
+
+        /* Compute the number of 'holes' in the bitmap to determine the  */
+        /* badness of a match. Th goal is to put the cursor on the word  */
+        /* with the smallest badness.                                    */
+        /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+        mb_index = 0;
+        j        = 0;
+        badness  = 0;
+
+        while (mb_index < word_a[n].mb - 1
+               && !BIT_ISSET(word_a[n].bitmap, mb_index))
+          mb_index++;
+
+        while (mb_index < word_a[n].mb - 1)
+        {
+          if (!BIT_ISSET(word_a[n].bitmap, mb_index))
+            badness++;
+          else
+            j++;
+
+          /* Stop here if all the possible bits has been checked as they */
+          /* cannot be more numerous than the number of multibytes in    */
+          /* the search buffer.                                          */
+          /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+          if (j == data->mb_len)
+            break;
+
+          mb_index++;
+        }
       }
       free(str_orig);
+
+      if (badness < best_badness)
+      {
+        best_badness     = badness;
+        fuzzy_best_index = matching_words_a[i];
+      }
     }
     if (mode == FUZZY)
       free(sb);
@@ -6396,11 +6439,14 @@ select_ending_matches(win_t * win, term_t * term, search_data_t * search_data,
 
     if (j > 0)
     {
-      current = matching_words_a[0];
-
       /* Adjust the bitmap to the ending version */
       /* """"""""""""""""""""""""""""""""""""""" */
       update_bitmaps(search_mode, search_data, END_AFFINITY);
+
+      if (search_mode == FUZZY)
+        current = fuzzy_best_index;
+      else
+        current = matching_words_a[0];
 
       if (current < win->start || current > win->end)
         *last_line = build_metadata(term, count, win);
@@ -6479,7 +6525,14 @@ select_starting_matches(win_t * win, term_t * term, search_data_t * search_data,
 
     if (j > 0)
     {
-      current = matching_words_a[0];
+      /* Adjust the bitmap to the ending version */
+      /* """"""""""""""""""""""""""""""""""""""" */
+      update_bitmaps(search_mode, search_data, START_AFFINITY);
+
+      if (search_mode == FUZZY)
+        current = fuzzy_best_index;
+      else
+        current = matching_words_a[0];
 
       if (current < win->start || current > win->end)
         *last_line = build_metadata(term, count, win);
@@ -6487,8 +6540,6 @@ select_starting_matches(win_t * win, term_t * term, search_data_t * search_data,
       /* Set new first column to display */
       /* """"""""""""""""""""""""""""""" */
       set_new_first_column(win, term);
-
-      update_bitmaps(search_mode, search_data, START_AFFINITY);
     }
   }
 }
@@ -12022,8 +12073,14 @@ main(int argc, char * argv[])
                   beep(&toggle);
                 else
                 {
+                  /* Adjust the bitmap to the ending version */
+                  /* """"""""""""""""""""""""""""""""""""""" */
                   update_bitmaps(search_mode, &search_data, NO_AFFINITY);
-                  current = matching_words_a[0];
+
+                  if (search_mode == FUZZY)
+                    current = fuzzy_best_index;
+                  else
+                    current = matching_words_a[0];
 
                   if (current < win.start || current > win.end)
                     last_line = build_metadata(&term, count, &win);
@@ -12187,9 +12244,14 @@ main(int argc, char * argv[])
                 else if (search_data.only_ending)
                   select_ending_matches(&win, &term, &search_data, &last_line);
                 else
+                  /* Adjust the bitmap to the ending version */
+                  /* """"""""""""""""""""""""""""""""""""""" */
                   update_bitmaps(search_mode, &search_data, NO_AFFINITY);
 
-                current = matching_words_a[0];
+                if (search_mode == FUZZY)
+                  current = fuzzy_best_index;
+                else
+                  current = matching_words_a[0];
 
                 if (current < win.start || current > win.end)
                   last_line = build_metadata(&term, count, &win);
@@ -12268,7 +12330,10 @@ main(int argc, char * argv[])
                   else
                     update_bitmaps(search_mode, &search_data, NO_AFFINITY);
 
-                  current = matching_words_a[0];
+                  if (search_mode == FUZZY)
+                    current = fuzzy_best_index;
+                  else
+                    current = matching_words_a[0];
 
                   if (current < win.start || current > win.end)
                     last_line = build_metadata(&term, count, &win);

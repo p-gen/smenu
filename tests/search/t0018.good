@@ -1,9 +1,9 @@
 $ OUT=$(smenu -n 20 t0018.in)
 
 abccb aaacc cbaba acbaa baabc cabac ccaac abaca cabac acbac bacbc cacbb acaca 
-0:0723 1:07 2:07 3:07 4:0723 67:23 70:23 
+0:23 4:23 67:23 70:23 
 bbaaa aabcc acccb abacc cacac bccbc cccaa abcbc bcccc babab cacba bacbb cbcba 
-12:23 16:23 57:23 58:23 67:23 70:23 
+12:23 16:23 54:07 55:07 56:07 57:0723 58:0723 67:23 70:23 
 aaabc bcbba cabbb caaac acacb abbaa acaab ccaab caabc bcacc baabb abaca abaac 
 13:23 16:23 26:23 28:23 39:23 40:23 45:23 46:23 62:23 64:23 
 cccba bccac bbcca bccac caccb cbbab cbacc cccac abaac bbbcb cbbba bcbcb acbac 
@@ -20,6 +20,6 @@ $
 
 $ echo ":$OUT:"
 
-:abccb:
+:babab:
 
 $ exit 0

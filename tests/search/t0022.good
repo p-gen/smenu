@@ -1,9 +1,9 @@
 $ OUT=$(smenu -n 18 t0022.in)
 
 c b  bcac cabab  baac c aaa ab  a ab    bcaa   a  bb b b ba  c aa   cb 
-24:0723 25:07 26:07 27:07 28:07 29:0723 63:23 69:23 
+24:23 29:23 63:23 69:23 
  aaaab aa ba b ab     aaab cbbcaca babb cabbcaaca b cba   babbbbbc aababc b a 
-15:23 16:23 67:23 69:23 
+15:0723 16:0723 17:07 18:07 19:07 67:23 69:23 
 bcabcccc ca  ba aca a  a ab    b aac bb c  c a a b  a a ba  acb cabaabcca  b 
 23:23 26:23 33:23 37:23 54:23 56:23 60:23 62:23 
 ca a b aa cbccca a a  cb a bb bbbac bbc c  cc c   bacb bcacabaa ac 
@@ -24,6 +24,6 @@ $
 
 $ echo ":$OUT:"
 
-:aaa ab:
+:ab:
 
 $ exit 0
