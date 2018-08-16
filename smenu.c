@@ -768,7 +768,7 @@ struct search_data_s
   long * mb_off_a; /* Array of mb offsets in buf               */
   long * mb_len_a; /* Array of mb lengths in buf               */
 
-  int  fuzzy_err;     /* furry match error indicator           */
+  int  fuzzy_err;     /* fuzzy match error indicator           */
   long fuzzy_err_pos; /* last good position in search buffer   */
 
   int only_ending;   /* only searches giving a result with the *
@@ -2536,8 +2536,8 @@ update_bitmaps(search_mode_t mode, search_data_t * data,
         free(str);
 
         /* We know that the first glyph is part of the pattern, so        */
-        /* highight it iif it is not and un-highlight the next occurrence */
-        /* that must be here because this word has already been fitereda  */
+        /* highlight it if it is not and un-highlight the next occurrence */
+        /* that must be here because this word has already been filtered  */
         /* by select_staring_pattern()                                    */
         /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
         if (affinity == START_AFFINITY)
@@ -2991,7 +2991,7 @@ my_strcasecmp(const char * str1, const char * str2)
 }
 
 /* =========================================== */
-/* memmove based my_strcpy (tolerates overlaping) */
+/* memmove based strcpy (tolerates overlaping) */
 /* =========================================== */
 char *
 my_strcpy(char * str1, char * str2)
@@ -3722,7 +3722,7 @@ strip_ansi_color(char * s, toggle_t * toggle)
 }
 
 /* ======================================================================== */
-/* unicode (UTF-8) ascii representation interpreter.                        */
+/* Unicode (UTF-8) ascii representation interpreter.                        */
 /* The string passed will be altered but will not move in memory            */
 /* All sequence of \uxx, \uxxxx, \uxxxxxx and \uxxxxxxxx will be replace by */
 /* the corresponding UTF-8 character.                                       */
@@ -4955,7 +4955,7 @@ get_word(FILE * input, ll_t * word_delims_list, ll_t * record_delims_list,
   /* """""""""""""""""""""""""""""""""""""""""" */
   *(temp + count) = '\0';
 
-  /* Replace the UTF-8 ascii representations in the word just */
+  /* Replace the UTF-8 ASCII representations in the word just */
   /* read by their binary values.                             */
   /* """""""""""""""""""""""""""""""""""""""""""""""""""""""" */
   mb_interpret(temp, langinfo);
@@ -5853,9 +5853,9 @@ disp_lines(win_t * win, toggle_t * toggle, long current, long count,
       {
         long pos;
 
-        /* Make sure that we are using the rigt gutter character even */
-        /* if the first displayed word is * not the fisr of its line  */
-        /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+        /* Make sure that we are using the right gutter character even */
+        /* if the first displayed word is * not the first of its line  */
+        /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
         pos = i - first_word_in_line_a[line_nb_of_word_a[i]];
 
         if (pos >= win->gutter_nb) /* Use the last gutter character */
@@ -7891,7 +7891,7 @@ main(int argc, char * argv[])
   else
     input_file = stdin;
 
-  /* Replace the UTF-8 ascii representations by their binary values in */
+  /* Replace the UTF-8 ASCII representations by their binary values in */
   /* the inclusion and exclusion patterns.                             */
   /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
   if (include_pattern != NULL)
@@ -12156,7 +12156,7 @@ main(int argc, char * argv[])
                 {
                   /* Search all the sub-tst trees having the searched        */
                   /* character as children, the resulting sub-tst are put    */
-                  /* in the sub tst array attached to the surrently searched */
+                  /* in the sub tst array attached to the currently searched */
                   /* symbol.                                                 */
                   /* """"""""""""""""""""""""""""""""""""""""""""""""""""""" */
                   tst_fuzzy_traverse(tst_word, NULL, 0, w[0]);
