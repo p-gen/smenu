@@ -838,7 +838,9 @@ ll_t * tst_search_list = NULL;
 long * matching_words_a;
 long   matching_words_a_size;
 long   matches_count;
-long   fuzzy_best_index; /* Index of the word with the smallest badness */
+long * best_matching_words_a;
+long   best_matching_words_a_size;
+long   best_matches_count;
 long * alt_matching_words_a = NULL;
 long   alt_matches_count;
 
@@ -2431,9 +2433,8 @@ update_bitmaps(search_mode_t mode, search_data_t * data,
   long   last = data->mb_len - 1;
 
   long badness;
-  long best_badness = LONG_MAX;
 
-  fuzzy_best_index = matching_words_a[0];
+  best_matches_count = 0;
 
   if (mode == FUZZY || mode == SUBSTRING)
   {
@@ -2603,10 +2604,26 @@ update_bitmaps(search_mode_t mode, search_data_t * data,
       }
       free(str_orig);
 
-      if (badness < best_badness)
+      if (search_mode == FUZZY)
       {
-        best_badness     = badness;
-        fuzzy_best_index = matching_words_a[i];
+        /* When the badness is zero (best match), add the word position. */
+        /* at the end of a special array which will be used to move the. */
+        /* cursor among this category of words.                          */
+        /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+        if (badness == 0)
+        {
+          if (best_matches_count == best_matching_words_a_size)
+          {
+            best_matching_words_a = xrealloc(best_matching_words_a,
+                                             (best_matching_words_a_size + 16)
+                                               * sizeof(long));
+            best_matching_words_a_size += 16;
+          }
+
+          best_matching_words_a[best_matches_count] = n;
+
+          best_matches_count++;
+        }
       }
     }
     if (mode == FUZZY)
@@ -6443,9 +6460,6 @@ select_ending_matches(win_t * win, term_t * term, search_data_t * search_data,
       /* """"""""""""""""""""""""""""""""""""""" */
       update_bitmaps(search_mode, search_data, END_AFFINITY);
 
-      if (search_mode == FUZZY)
-        current = fuzzy_best_index;
-      else
         current = matching_words_a[0];
 
       if (current < win->start || current > win->end)
@@ -6529,9 +6543,6 @@ select_starting_matches(win_t * win, term_t * term, search_data_t * search_data,
       /* """"""""""""""""""""""""""""""""""""""" */
       update_bitmaps(search_mode, search_data, START_AFFINITY);
 
-      if (search_mode == FUZZY)
-        current = fuzzy_best_index;
-      else
         current = matching_words_a[0];
 
       if (current < win->start || current > win->end)
@@ -6956,6 +6967,10 @@ main(int argc, char * argv[])
   matching_words_a_size = 64;
   matching_words_a      = xmalloc(matching_words_a_size * sizeof(long));
   matches_count         = 0;
+
+  best_matching_words_a_size = 16;
+  best_matching_words_a = xmalloc(best_matching_words_a_size * sizeof(long));
+  best_matches_count    = 0;
 
   /* Initialize the tag hit number which will permit to sort the */
   /* pinned words when displayed.                                */
@@ -10708,8 +10723,8 @@ main(int argc, char * argv[])
 
         case 'n':
         case ' ':
-          /* n or <Space Bar> has been pressed */
-          /* """"""""""""""""""""""""""""""""" */
+          /* n or the sspace bar has been pressed */
+          /* """""""""""""""""""""""""""""""""""" */
           if (search_mode != NONE)
             goto special_cmds_when_searching;
 
@@ -10735,8 +10750,8 @@ main(int argc, char * argv[])
           break;
 
         case 'N':
-          /* N or has been pressed */
-          /* """"""""""""""""""""" */
+          /* N has been pressed */
+          /* """""""""""""""""" */
           if (search_mode != NONE)
             goto special_cmds_when_searching;
 
@@ -10745,6 +10760,73 @@ main(int argc, char * argv[])
             long pos = find_prev_matching_word(matching_words_a, matches_count,
                                                current,
                                                &matching_word_cur_index);
+            if (pos >= 0)
+              current = pos;
+          }
+
+          if (current < win.start || current > win.end)
+            last_line = build_metadata(&term, count, &win);
+
+          /* Set new first column to display */
+          /* """"""""""""""""""""""""""""""" */
+          set_new_first_column(&win, &term);
+
+          nl = disp_lines(&win, &toggle, current, count, search_mode,
+                          &search_data, &term, last_line, tmp_word, &langinfo);
+          break;
+
+        case 's':
+          /* s has been pressed */
+          /* """""""""""""""""" */
+          if (search_mode != NONE)
+            goto special_cmds_when_searching;
+
+          if (matches_count > 0)
+          {
+            long pos;
+
+            if (best_matches_count > 0)
+              pos = find_next_matching_word(best_matching_words_a,
+                                            best_matches_count, current,
+                                            &matching_word_cur_index);
+            else
+              pos = find_next_matching_word(matching_words_a, matches_count,
+                                            current, &matching_word_cur_index);
+
+            if (pos >= 0)
+              current = pos;
+
+            if (current < win.start || current > win.end)
+              last_line = build_metadata(&term, count, &win);
+
+            /* Set new first column to display */
+            /* """"""""""""""""""""""""""""""" */
+            set_new_first_column(&win, &term);
+
+            nl = disp_lines(&win, &toggle, current, count, search_mode,
+                            &search_data, &term, last_line, tmp_word,
+                            &langinfo);
+          }
+          break;
+
+        case 'S':
+          /* S has been pressed */
+          /* """""""""""""""""" */
+          if (search_mode != NONE)
+            goto special_cmds_when_searching;
+
+          if (matches_count > 0)
+          {
+            long pos;
+
+            if (best_matches_count > 0)
+              pos = find_prev_matching_word(best_matching_words_a,
+                                            best_matches_count, current,
+                                            &matching_word_cur_index);
+            else
+              pos = find_prev_matching_word(matching_words_a, matches_count,
+                                            current, &matching_word_cur_index);
+
             if (pos >= 0)
               current = pos;
           }
@@ -12077,9 +12159,6 @@ main(int argc, char * argv[])
                   /* """"""""""""""""""""""""""""""""""""""" */
                   update_bitmaps(search_mode, &search_data, NO_AFFINITY);
 
-                  if (search_mode == FUZZY)
-                    current = fuzzy_best_index;
-                  else
                     current = matching_words_a[0];
 
                   if (current < win.start || current > win.end)
@@ -12248,9 +12327,6 @@ main(int argc, char * argv[])
                   /* """"""""""""""""""""""""""""""""""""""" */
                   update_bitmaps(search_mode, &search_data, NO_AFFINITY);
 
-                if (search_mode == FUZZY)
-                  current = fuzzy_best_index;
-                else
                   current = matching_words_a[0];
 
                 if (current < win.start || current > win.end)
@@ -12330,9 +12406,6 @@ main(int argc, char * argv[])
                   else
                     update_bitmaps(search_mode, &search_data, NO_AFFINITY);
 
-                  if (search_mode == FUZZY)
-                    current = fuzzy_best_index;
-                  else
                     current = matching_words_a[0];
 
                   if (current < win.start || current > win.end)

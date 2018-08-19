@@ -145,21 +145,26 @@ in a word must not necessarily be consecutive.
 
 The case is also ignored.
 
-This method also tolerates intermediate symbols not appearing in the
-words to be ignored.
-If this is the case, the attributes of the approximatively matching
-words are changed into error versions of them to warn the user to this
-situation.
+The cursor is placed, if possible, on the first matching word having the
+minimum number of gaps between the first and last matching character,
+see the difference between the actions of the \fBs\fP/\fBS\fP and
+\fBn\fP/\fBN\fP keys below.
 
-The erroneous symbols will not be \fBput\fP in the search buffer.
+This method also tolerates intermediate symbols not appearing in the
+words which will be ignored.
+If this is the case, the attributes of the approximatively matching
+words are changed into an error versions of them to warn the user to
+this situation.
+
+The erroneous symbols will \fInot\fP be inserted in the search buffer.
 
 By example: if the word \fBabcdef\fP is present in the standard input,
 then entering \f(CBabxcdye\fP puts \fBabcdef\fP in the search buffer
-and the word is added to the matching list and displayed with an error
-attribute (in red by default).
+and the word is added to the list of matching words and displayed with
+an error attribute (in red by default).
 
 This special state will persist until all the symbols following the first
-erroneous one are deleted (using backspace) or \fBESC\fP is pressed.
+erroneous one are deleted (using backspace) or if \fBESC\fP is pressed.
 .PP
 During a search session, the cursor changes and each character entered is
 added in (or removed from) the search buffer.
@@ -182,14 +187,26 @@ depending of the display attributes configured.
 .PP
 \fBESC\fP can be used anytime to abort the current search session.
 \fBENTER\fP and all cursor moves also terminate the search
-session but do not clear the list of the matching words.
+session but do not clear the list of the matchng words.
 .PP
-The user can then use the \fBn\fP/\fBSPACE\fP keys (forward) and the
-\fBN\fP key (backward) to navigate in the matching words list.
+The user can then use the \fBn\fP/\fBs\fP/\fBSPACE\fP keys (forward) and
+the \fBN\fP/\fBS\fP keys (backward) to navigate in the list of matching
+words,
+
+In \fIfuzzy\fP search mode, the \fBs\fP/\fBS\fP keys attempt to move the
+cursor to the next/previous word whose matching part forms a substring
+of this word.
+If no such matches exist, \fBs\fP/\fBS\fP and \fBn\fP/\fBN\fP do the
+same things.
+To move the cursor to the next/previous fuzzy match, use the
+\fBn\fP/\fBN\fP/\fBSPACE\fP keys.
+\fBs\fP means next \fPs\fPubstring match in this context while \fBn\fP
+just means \fBn\fPext match.
 .PP
 If the user hits the \fBHome\fP or \fBEnd\fP key during a search session
-then the matched word list is reduced to the words starting (respectively)
-ending with the current search pattern and the window is refreshed.
+then the list of matching words is reduced to the words starting
+(respectively) ending with the current search pattern and the window
+is refreshed.
 For those who consider \fBHome\fP and \fBEnd\fP as non-intuitive,
 the \fBCTRL-A\fP and \fBCtrl-Z\fP keys are also available in search mode
 as an alternative.
@@ -205,7 +222,7 @@ Note that when a matching word is selected, its enhanced characters only
 show one of the multiple matching possibilities.
 
 When not in a search session \fBESC\fP can be also used to clear the
-matched words list and to reset the search buffer.
+list of matching words and to reset the search buffer.
 .PP
 In summary, here is the meaning of the special keys in search mode:
 .TS
@@ -214,7 +231,7 @@ lb s s
 l l c
 ^ ^ l
 l lw(6c) c .
-Keys which clear the matched words list.
+Keys which clear the list of matching words.
 Key@Meaning@Closes
 @@the
 @@search
@@ -228,7 +245,7 @@ lb s s
 l l l
 ^ ^ l
 l lw(6c) c .
-Keys which keep or update the matched words list.
+Keys which keep or update the list of matching words.
 Key@Meaning@Closes
 @@the
 @@search
@@ -596,13 +613,13 @@ approximate search field with error.
 .IP \fIste\fP
 approximate search text with error.
 .IP \fImf\fP
-matched words field.
+matching words field.
 .IP \fImt\fP
-matched words text.
+matching words text.
 .IP \fImfe\fP
-matched words field with error.
+matching words field with error.
 .IP \fImte\fP
-matched words text with error.
+matching words text with error.
 .IP \fIda\fP
 direct access tag.
 .RE
@@ -690,7 +707,7 @@ This sequence can be stopped if a \fBstop\fP flag is encountered.
 .RS
 \fBflags:\fP
 .IP * 2
-The optional trailing \fBg\fP (for \fIg\fPlobal) means that all matched
+The optional trailing \fBg\fP (for \fIg\fPlobal) means that all matching
 occurrences shall be replaced and not only the first one.
 .IP * 2
 The optional trailing \fBv\fP (for \fIv\fPisual) means that the altered
