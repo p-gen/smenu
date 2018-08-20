@@ -1,4 +1,4 @@
-\S[10]OUT=$(smenu -b t0002.in)
-\S[10]\s[120]\r
-\s[120]env echo ":$OUT:"
+\S[150]\s[10]OUT=$(smenu -b t0002.in)
+\S[150]\s[150]\r
+\s[150]env echo ":$\s[10]OUT:"
 exit 0
