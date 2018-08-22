@@ -69,3 +69,9 @@ close it or reduce its size to less than 80x24.
 The resulting files (``.log``) should not contain any occurrence of the
 *BAD* word.
 The ``tests.sh`` script will show these occurrences, if any, anyway.
+
+Note
+----
+Before reporting a bug due to a failing test, please re-execute is again
+at least 3 times with ``test.sh`` as you may have found a i(timing)
+bug in **ptylie**/**hlvt** and not in **smenu**.
