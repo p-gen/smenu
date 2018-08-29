@@ -2359,10 +2359,10 @@ insert_sorted_ptr(tst_node_t *** array, unsigned long long * size,
     while (left < right)
     {
       middle = (left + right) / 2;
-      if ((unsigned long long)((*array)[middle]) == (unsigned long long)ptr)
+      if ((intptr_t)((*array)[middle]) == (intptr_t)ptr)
         return; /* Value already in array */
 
-      if ((unsigned long long)ptr < (unsigned long long)((*array)[middle]))
+      if ((intptr_t)ptr < (intptr_t)((*array)[middle]))
         right = middle;
       else
         left = middle + 1;
@@ -2532,7 +2532,7 @@ update_bitmaps(search_mode_t mode, search_data_t * data,
       }
       if (mode == FUZZY)
       {
-        long mb_index;
+        size_t mb_index;
 
         free(str);
 
@@ -6392,7 +6392,6 @@ select_ending_matches(win_t * win, term_t * term, search_data_t * search_data,
       index      = matching_words_a[i];
       long   len = word_a[index].len;
       char * str = word_a[index].str;
-      char * mb;
 
       /* count the trailing blanks non counted in the bitmap */
       /* """"""""""""""""""""""""""""""""""""""""""""""""""" */
@@ -6460,7 +6459,7 @@ select_ending_matches(win_t * win, term_t * term, search_data_t * search_data,
       /* """"""""""""""""""""""""""""""""""""""" */
       update_bitmaps(search_mode, search_data, END_AFFINITY);
 
-        current = matching_words_a[0];
+      current = matching_words_a[0];
 
       if (current < win->start || current > win->end)
         *last_line = build_metadata(term, count, win);
@@ -6543,7 +6542,7 @@ select_starting_matches(win_t * win, term_t * term, search_data_t * search_data,
       /* """"""""""""""""""""""""""""""""""""""" */
       update_bitmaps(search_mode, search_data, START_AFFINITY);
 
-        current = matching_words_a[0];
+      current = matching_words_a[0];
 
       if (current < win->start || current > win->end)
         *last_line = build_metadata(term, count, win);
@@ -7775,7 +7774,7 @@ main(int argc, char * argv[])
               {
                 long pos;
 
-                if (sscanf(argv[optind] + 2, "%ld%n", &daccess_index, &pos)
+                if (sscanf(argv[optind] + 2, "%ld%ln", &daccess_index, &pos)
                     == 1)
                 {
                   if (daccess_index < 0 || *(argv[optind] + 2 + pos) != '\0')
@@ -12159,7 +12158,7 @@ main(int argc, char * argv[])
                   /* """"""""""""""""""""""""""""""""""""""" */
                   update_bitmaps(search_mode, &search_data, NO_AFFINITY);
 
-                    current = matching_words_a[0];
+                  current = matching_words_a[0];
 
                   if (current < win.start || current > win.end)
                     last_line = build_metadata(&term, count, &win);
@@ -12327,7 +12326,7 @@ main(int argc, char * argv[])
                   /* """"""""""""""""""""""""""""""""""""""" */
                   update_bitmaps(search_mode, &search_data, NO_AFFINITY);
 
-                  current = matching_words_a[0];
+                current = matching_words_a[0];
 
                 if (current < win.start || current > win.end)
                   last_line = build_metadata(&term, count, &win);
@@ -12406,7 +12405,7 @@ main(int argc, char * argv[])
                   else
                     update_bitmaps(search_mode, &search_data, NO_AFFINITY);
 
-                    current = matching_words_a[0];
+                  current = matching_words_a[0];
 
                   if (current < win.start || current > win.end)
                     last_line = build_metadata(&term, count, &win);
