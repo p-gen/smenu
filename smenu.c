@@ -4821,11 +4821,11 @@ get_word(FILE * input, ll_t * word_delims_list, ll_t * record_delims_list,
 {
   char * temp = NULL;
   int    byte;
-  long   count = 0;  /* count chars used in current allocation */
-  long   wordsize;   /* size of current allocation in chars    */
-  int    is_dquote;  /* double quote presence indicator        */
-  int    is_squote;  /* single quote presence indicator        */
-  int    is_special; /* a character is special after a \       */
+  long   mb_count = 0; /* count chars used in current allocation */
+  long   wordsize;     /* size of current allocation in chars    */
+  int    is_dquote;    /* double quote presence indicator        */
+  int    is_squote;    /* single quote presence indicator        */
+  int    is_special;   /* a character is special after a \       */
 
   /* Skip leading delimiters */
   /* """"""""""""""""""""""" */
@@ -4846,7 +4846,7 @@ get_word(FILE * input, ll_t * word_delims_list, ll_t * record_delims_list,
 
   /* Start stashing bytes. Stop when we meet a non delimiter or EOF */
   /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-  count      = 0;
+  mb_count   = 0;
   is_dquote  = 0;
   is_squote  = 0;
   is_special = 0;
@@ -4855,7 +4855,7 @@ get_word(FILE * input, ll_t * word_delims_list, ll_t * record_delims_list,
   {
     size_t i = 0;
 
-    if (count >= limits->word_length)
+    if (mb_count >= limits->word_length)
     {
       fprintf(stderr,
               "A word's length has reached the limit "
@@ -4954,11 +4954,11 @@ get_word(FILE * input, ll_t * word_delims_list, ll_t * record_delims_list,
     /* """"""""""""""""""""""""""""""""""""""" */
     while (mb_buffer[i] != '\0')
     {
-      if (count >= wordsize - 1)
+      if (mb_count >= wordsize - 1)
         temp = xrealloc(temp,
-                        wordsize += (count / CHARSCHUNK + 1) * CHARSCHUNK);
+                        wordsize += (mb_count / CHARSCHUNK + 1) * CHARSCHUNK);
 
-      *(temp + count++) = mb_buffer[i];
+      *(temp + mb_count++) = mb_buffer[i];
       i++;
     }
 
@@ -4970,7 +4970,7 @@ get_word(FILE * input, ll_t * word_delims_list, ll_t * record_delims_list,
 
   /* Nul-terminate the word to make it a string */
   /* """""""""""""""""""""""""""""""""""""""""" */
-  *(temp + count) = '\0';
+  *(temp + mb_count) = '\0';
 
   /* Replace the UTF-8 ASCII representations in the word just */
   /* read by their binary values.                             */
