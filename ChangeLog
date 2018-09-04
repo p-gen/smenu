@@ -1,5 +1,30 @@
 May 22 22:01 UTC 2018 - p.gen.progs@gmail.com
 
+- Version 0.9.14
+* Rework the search system (major change)
+  + Add a substring and a fuzzy (fzf inspired) search mode
+  + Enlighten the current search pattern in the matching words
+  + Remove the search mode timeout
+  + Introduce ENTER/ESC as a way to exit search mode
+  + Add the prefix/suffix affinity when searching
+  + Allow to tag/un-tag all the matching words
+  + add a -/ option to affect a search method to the / command
+  + Add 'T' and 'U' commands to tag/un-tag all the matching words
+* Improve the direct access mechanism
+  + [-D] Add a 's' (start) sub-option
+  + [-D] Add a 'h' (head) sub-option
+* Add a "full window" option value to -n
+* Improve the test system and add tests
+* Improve the documentation
+* Update the README.rst file and mention the wiki on GitHub
+* Fix an OpenBSD compatibility issue
+* Fix and improve the color mechanism
+* Fix the cursor display after an ESC hit
+* Fix the tag attribute display
+* Fix some compilation warnings
+* Fix a missing message when the terminal is too small
+* Fix a lot of other small and not-so-small bugs
+
 - Version 0.9.13
 * Add the first roll of an automated testing system
 * Fix a FreeBSD compatibility issue

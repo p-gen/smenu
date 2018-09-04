@@ -2,3 +2,4 @@
 # ========================================.
 I: Improve configure.ac
 I: Improve the checking of system/library calls returns
+I: Cleanup the code and split it into several files
