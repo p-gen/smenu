@@ -6928,7 +6928,7 @@ main(int argc, char * argv[])
   /* """"""""""""""""""""""""""""" */
   limits.words       = 32767;
   limits.cols        = 256;
-  limits.word_length = 256;
+  limits.word_length = 512;
 
   /* Default timers in 1/10 s */
   /* """""""""""""""""""""""" */
