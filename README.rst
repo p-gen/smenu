@@ -25,7 +25,7 @@ like systems I am aware of.
 
 Please use the provided ``build.sh`` to build the executable. This
 script accepts the same arguments as ``configure``, type ``build.sh
---help`` the see them.
+--help`` to see them.
 
 The script ``autogen.sh`` is also provided if you need to generate a
 new ``configure`` script from ``configure.ac`` and ``Makefile.am``. The
