@@ -102,7 +102,8 @@ CONFIG_CLEAN_FILES = smenu.spec
 CONFIG_CLEAN_VPATH_FILES =
 am__installdirs = "$(DESTDIR)$(bindir)" "$(DESTDIR)$(man1dir)"
 PROGRAMS = $(bin_PROGRAMS)
-am_smenu_OBJECTS = smenu.$(OBJEXT)
+am_smenu_OBJECTS = smenu.$(OBJEXT) ptrlist.$(OBJEXT) xmalloc.$(OBJEXT) \
+	index.$(OBJEXT)
 smenu_OBJECTS = $(am_smenu_OBJECTS)
 smenu_LDADD = $(LDADD)
 AM_V_P = $(am__v_P_@AM_V@)
@@ -305,7 +306,7 @@ target_alias = @target_alias@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-smenu_SOURCES = smenu.c
+smenu_SOURCES = smenu.c ptrlist.c ptrlist.h xmalloc.c xmalloc.h index.c index.h
 dist_man_MANS = smenu.1
 EXTRA_DIST = smenu.spec.in smenu.spec ChangeLog build.sh version \
 	COPYRIGHT LICENSE.rst README.rst examples build-aux tests
@@ -419,7 +420,10 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/index.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ptrlist.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/smenu.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/xmalloc.Po@am__quote@
 
 .c.o:
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(COMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<

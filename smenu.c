@@ -47,6 +47,10 @@
 #include <sys/param.h>
 #include <wchar.h>
 
+#include "xmalloc.h"
+#include "ptrlist.h"
+#include "index.h"
+
 /* Used for timers management */
 /* """""""""""""""""""""""""" */
 #define SECOND 1000000
@@ -69,10 +73,7 @@
 
 typedef struct charsetinfo_s charsetinfo_t;
 typedef struct langinfo_s    langinfo_t;
-typedef struct ll_node_s     ll_node_t;
-typedef struct ll_s          ll_t;
 typedef struct term_s        term_t;
-typedef struct tst_node_s    tst_node_t;
 typedef struct toggle_s      toggle_t;
 typedef struct win_s         win_t;
 typedef struct word_s        word_t;
@@ -86,7 +87,6 @@ typedef struct timeout_s     timeout_t;
 typedef struct output_s      output_t;
 typedef struct daccess_s     daccess_t;
 typedef struct search_data_s search_data_t;
-typedef struct sub_tst_s     sub_tst_t;
 
 typedef enum filter_types       filters_t;
 typedef enum daccess_modes      da_mode_t;
@@ -108,21 +108,6 @@ short_usage(void);
 static void
 usage(void);
 
-static void *
-xmalloc(size_t size);
-
-static void *
-xcalloc(size_t num, size_t size);
-
-static void *
-xrealloc(void * ptr, size_t size);
-
-static char *
-xstrdup(const char * p);
-
-static char *
-xstrndup(const char * str, size_t len);
-
 static char *
 concat(const char * s1, ...);
 
@@ -141,46 +126,6 @@ tag_comp(void * a, void * b);
 static void
 tag_swap(void * a, void * b);
 
-static int
-ll_append(ll_t * const list, void * const data);
-
-#if 0 /* here for coherency but not used. */
-static int ll_prepend(ll_t * const list, void *const data);
-
-static void
-ll_insert_before(ll_t * const list, ll_node_t * node, void *const data);
-
-static void
-ll_insert_after(ll_t * const list, ll_node_t * node, void *const data);
-#endif
-
-static ll_node_t *
-ll_partition(ll_node_t * l, ll_node_t * h, int (*comp)(void *, void *),
-             void (*swap)(void *, void *));
-
-static void
-ll_quicksort(ll_node_t * l, ll_node_t * h, int (*comp)(void *, void *),
-             void (*swap)(void * a, void *));
-
-static void
-ll_sort(ll_t * list, int (*comp)(void *, void *),
-        void (*swap)(void * a, void *));
-
-static int
-ll_delete(ll_t * const list, ll_node_t * node);
-
-static ll_node_t *
-ll_find(ll_t * const, void * const, int (*)(const void *, const void *));
-
-static void
-ll_init(ll_t * list);
-
-static ll_node_t *
-ll_new_node(void);
-
-static ll_t *
-ll_new(void);
-
 static void
 ltrim(char * str, const char * trim);
 
@@ -195,9 +140,6 @@ my_strcasecmp(const char * str1, const char * str2);
 
 static char *
 my_strcpy(char * dst, char * src);
-
-static sub_tst_t *
-sub_tst_new(void);
 
 static int
 isprint7(int i);
@@ -269,38 +211,8 @@ tst_cb(void * elem);
 static int
 tst_cb_cli(void * elem);
 
-#if 0 /* here for coherency but not used. */
-static void tst_cleanup(tst_node_t * p);
-#endif
-
-static tst_node_t *
-tst_insert(tst_node_t * p, wchar_t * w, void * data);
-
-static void *
-tst_prefix_search(tst_node_t * root, wchar_t * w, int (*callback)(void *));
-
-static void *
-tst_search(tst_node_t * root, wchar_t * w);
-
-static int
-tst_traverse(tst_node_t * p, int (*callback)(void *), int first_call);
-
-static int
-tst_substring_traverse(tst_node_t * p, int (*callback)(void *), int first_call,
-                       wchar_t w);
-static int
-tst_fuzzy_traverse(tst_node_t * p, int (*callback)(void *), int first_call,
-                   wchar_t w);
-
 void
 mb_strtolower(char * dst, char * src);
-
-void
-insert_sorted_index(long ** array, long * size, long * filled, long value);
-
-void
-insert_sorted_ptr(tst_node_t *** array, unsigned long long * size,
-                  unsigned long long * filled, tst_node_t * ptr);
 
 static int
 ini_load(const char * filename, win_t * win, term_t * term, limits_t * limits,
@@ -777,15 +689,11 @@ struct search_data_s
   int only_starting; /* Same with the pattern at the beginning */
 };
 
-/* Structure to contain data and metadata attached to a fuzzy/substring. */
-/* search step.                                                          */
-/* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-struct sub_tst_s
-{
-  tst_node_t **      array;
-  unsigned long long size;
-  unsigned long long count;
-};
+/* **************** */
+/* Extern variables */
+/* **************** */
+
+extern ll_t * tst_search_list;
 
 /* **************** */
 /* Global variables */
@@ -834,7 +742,6 @@ int    daccess_stack_head;
 
 /* Variables used for fuzzy and substring searching */
 /* """""""""""""""""""""""""""""""""""""""""""""""" */
-ll_t * tst_search_list = NULL;
 long * matching_words_a;
 long   matching_words_a_size;
 long   matches_count;
@@ -894,42 +801,6 @@ my_ungetc(int c)
   else
     getc_buffer[next_buffer_pos++] = c;
 }
-
-/* *************************************** */
-/* Ternary Search Tree specific structures */
-/* *************************************** */
-
-/* Ternary node structure */
-/* """""""""""""""""""""" */
-struct tst_node_s
-{
-  wchar_t splitchar;
-
-  tst_node_t *lokid, *eqkid, *hikid;
-  void *      data;
-};
-
-/* ******************************* */
-/* Linked list specific structures */
-/* ******************************* */
-
-/* Linked list node structure */
-/* """""""""""""""""""""""""" */
-struct ll_node_s
-{
-  void *             data;
-  struct ll_node_s * next;
-  struct ll_node_s * prev;
-};
-
-/* Linked List structure */
-/* """"""""""""""""""""" */
-struct ll_s
-{
-  ll_node_t * head;
-  ll_node_t * tail;
-  long        len;
-};
 
 /* ************** */
 /* Help functions */
@@ -1232,108 +1103,6 @@ help(win_t * win, term_t * term, long last_line, toggle_t * toggle)
 /* reproduced, distributed, used, modified, built upon, or otherwise */
 /* employed by anyone for any purpose without restriction.           */
 /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-
-/* ================= */
-/* Customized malloc */
-/* ================= */
-static void *
-xmalloc(size_t size)
-{
-  void * allocated;
-  size_t real_size;
-
-  real_size = (size > 0) ? size : 1;
-  allocated = malloc(real_size);
-  if (allocated == NULL)
-  {
-    fprintf(stderr,
-            "Error: Insufficient memory (attempt to malloc %lu bytes)\n",
-            (unsigned long int)size);
-
-    exit(EXIT_FAILURE);
-  }
-
-  return allocated;
-}
-
-/* ================= */
-/* Customized calloc */
-/* ================= */
-static void *
-xcalloc(size_t n, size_t size)
-{
-  void * allocated;
-
-  n         = (n > 0) ? n : 1;
-  size      = (size > 0) ? size : 1;
-  allocated = calloc(n, size);
-  if (allocated == NULL)
-  {
-    fprintf(stderr,
-            "Error: Insufficient memory (attempt to calloc %lu bytes)\n",
-            (unsigned long int)size);
-
-    exit(EXIT_FAILURE);
-  }
-
-  return allocated;
-}
-
-/* ================== */
-/* Customized realloc */
-/* ================== */
-static void *
-xrealloc(void * p, size_t size)
-{
-  void * allocated;
-
-  allocated = realloc(p, size);
-  if (allocated == NULL && size > 0)
-  {
-    fprintf(stderr,
-            "Error: Insufficient memory (attempt to xrealloc %lu bytes)\n",
-            (unsigned long int)size);
-
-    exit(EXIT_FAILURE);
-  }
-
-  return allocated;
-}
-
-/* =================================== */
-/* strdup implementation using xmalloc */
-/* =================================== */
-static char *
-xstrdup(const char * p)
-{
-  char * allocated;
-
-  allocated = xmalloc(strlen(p) + 1);
-  strcpy(allocated, p);
-
-  return allocated;
-}
-
-/* ================================================== */
-/* strndup implementation using xmalloc               */
-/* This version guarantees that there is a final '\0' */
-/* ================================================== */
-static char *
-xstrndup(const char * str, size_t len)
-{
-  char * p;
-
-  p = memchr(str, '\0', len);
-
-  if (p)
-    len = p - str;
-
-  p = xmalloc(len + 1);
-  memcpy(p, str, len);
-  p[len] = '\0';
-
-  return p;
-}
 
 /* ********************************** */
 /* Attributes string parsing function */
@@ -1939,298 +1708,6 @@ tag_swap(void * a, void * b)
   ob->order = tmp_order;
 }
 
-/* ********************* */
-/* Linked List functions */
-/* ********************* */
-
-/* ======================== */
-/* Create a new linked list */
-/* ======================== */
-static ll_t *
-ll_new(void)
-{
-  ll_t * ret = xmalloc(sizeof(ll_t));
-  ll_init(ret);
-
-  return ret;
-}
-
-/* ======================== */
-/* Initialize a linked list */
-/* ======================== */
-static void
-ll_init(ll_t * list)
-{
-  list->head = NULL;
-  list->tail = NULL;
-  list->len  = 0;
-}
-
-/* ==================================================== */
-/* Allocate the space for a new node in the linked list */
-/* ==================================================== */
-static ll_node_t *
-ll_new_node(void)
-{
-  ll_node_t * ret = xmalloc(sizeof(ll_node_t));
-
-  if (ret == NULL)
-    errno = ENOMEM;
-
-  return ret;
-}
-
-/* ==================================================================== */
-/* Append a new node filled with its data at the end of the linked list */
-/* The user is responsible for the memory management of the data        */
-/* ==================================================================== */
-static int
-ll_append(ll_t * const list, void * const data)
-{
-  int         ret = 1;
-  ll_node_t * node;
-
-  if (list)
-  {
-    node = ll_new_node();
-    if (node)
-    {
-      node->data = data;
-      node->next = NULL;
-
-      node->prev = list->tail;
-      if (list->tail)
-        list->tail->next = node;
-      else
-        list->head = node;
-
-      list->tail = node;
-
-      ++list->len;
-      ret = 0;
-    }
-  }
-
-  return ret;
-}
-
-#if 0 /* here for coherency but not used. */
-/* =================================================================== */
-/* Put a new node filled with its data at the beginning of the linked  */
-/* list. The user is responsible for the memory management of the data */
-/* =================================================================== */
-static int
-ll_prepend(ll_t * const list, void *const data)
-{
-  int ret = 1;
-  ll_node_t *node;
-
-  if (list)
-  {
-    node = ll_new_node();
-    if (node)
-    {
-      node->data = data;
-      node->prev = NULL;
-
-      node->next = list->head;
-      if (list->head)
-        list->head->prev = node;
-      else
-        list->tail = node;
-
-      list->head = node;
-
-      ++list->len;
-      ret = 0;
-    }
-  }
-
-  return ret;
-}
-
-/* ======================================================= */
-/* Insert a new node before the specified node in the list */
-/* TODO test it                                           */
-/* ======================================================= */
-static void
-ll_insert_before(ll_t * const list, ll_node_t * node, void *const data)
-{
-  ll_node_t *new_node;
-
-  if (list)
-  {
-    if (node->prev == NULL)
-      ll_prepend(list, data);
-    else
-    {
-      new_node = ll_new_node();
-      if (new_node)
-      {
-        new_node->data = data;
-        new_node->next = node;
-        new_node->prev = node->prev;
-        node->prev->next = new_node;
-
-        ++list->len;
-      }
-    }
-  }
-}
-
-/* ====================================================== */
-/* Insert a new node after the specified node in the list */
-/* TODO test it                                           */
-/* ====================================================== */
-static void
-ll_insert_after(ll_t * const list, ll_node_t * node, void *const data)
-{
-  ll_node_t *new_node;
-
-  if (list)
-  {
-    if (node->next == NULL)
-      ll_append(list, data);
-    else
-    {
-      new_node = ll_new_node();
-      if (new_node)
-      {
-        new_node->data = data;
-        new_node->prev = node;
-        new_node->next = node->next;
-        node->next->prev = new_node;
-
-        ++list->len;
-      }
-    }
-  }
-}
-#endif
-
-/* ====================================================== */
-/* Partition code for the quicksort function              */
-/* Based on code found here:                              */
-/* http://www.geeksforgeeks.org/quicksort-for-linked-list */
-/* ====================================================== */
-static ll_node_t *
-ll_partition(ll_node_t * l, ll_node_t * h, int (*comp)(void *, void *),
-             void (*swap)(void *, void *))
-{
-  /* Considers last element as pivot, places the pivot element at its       */
-  /* correct position in sorted array, and places all smaller (smaller than */
-  /* pivot) to left of pivot and all greater elements to right of pivot     */
-  /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-
-  /* Set pivot as h element */
-  /* """""""""""""""""""""" */
-  void * x = h->data;
-
-  ll_node_t * i = l->prev;
-  ll_node_t * j;
-
-  for (j = l; j != h; j = j->next)
-  {
-    if (comp(j->data, x) < 1)
-    {
-      i = (i == NULL) ? l : i->next;
-
-      swap(i->data, j->data);
-    }
-  }
-
-  i = (i == NULL) ? l : i->next;
-  swap(i->data, h->data);
-
-  return i;
-}
-
-/* ======================================================= */
-/* A recursive implementation of quicksort for linked list */
-/* ======================================================= */
-static void
-ll_quicksort(ll_node_t * l, ll_node_t * h, int (*comp)(void *, void *),
-             void (*swap)(void * a, void *))
-{
-  if (h != NULL && l != h && l != h->next)
-  {
-    ll_node_t * p = ll_partition(l, h, comp, swap);
-    ll_quicksort(l, p->prev, comp, swap);
-    ll_quicksort(p->next, h, comp, swap);
-  }
-}
-
-/* =========================== */
-/* A linked list sort function */
-/* =========================== */
-static void
-ll_sort(ll_t * list, int (*comp)(void *, void *),
-        void (*swap)(void * a, void *))
-{
-  /* Call the recursive ll_quicksort function */
-  /* """""""""""""""""""""""""""""""""""""""" */
-  ll_quicksort(list->head, list->tail, comp, swap);
-}
-
-/* ================================ */
-/* Remove a node from a linked list */
-/* ================================ */
-static int
-ll_delete(ll_t * const list, ll_node_t * node)
-{
-  if (list->head == list->tail)
-  {
-    if (list->head != NULL)
-      list->head = list->tail = NULL;
-    else
-      return 0;
-  }
-  else if (node->prev == NULL)
-  {
-    list->head       = node->next;
-    list->head->prev = NULL;
-  }
-  else if (node->next == NULL)
-  {
-    list->tail       = node->prev;
-    list->tail->next = NULL;
-  }
-  else
-  {
-    node->next->prev = node->prev;
-    node->prev->next = node->next;
-  }
-
-  free(node);
-
-  --list->len;
-
-  return 1;
-}
-
-/* =========================================================================*/
-/* Find a node in the list containing data. Return the node pointer or NULL */
-/* if not found.                                                            */
-/* A comparison function must be provided to compare a and b (strcmp like). */
-/* =========================================================================*/
-static ll_node_t *
-ll_find(ll_t * const list, void * const data,
-        int (*cmpfunc)(const void * a, const void * b))
-{
-  ll_node_t * node;
-
-  if (NULL == (node = list->head))
-    return NULL;
-
-  do
-  {
-    if (0 == cmpfunc(node->data, data))
-      return node;
-  } while (NULL != (node = node->next));
-
-  return NULL;
-}
-
 /* ***************** */
 /* Utility functions */
 /* ***************** */
@@ -2297,91 +1774,6 @@ beep(toggle_t * toggle)
 
     tputs(TPARM1(cursor_invisible), 1, outch);
   }
-}
-
-/* ========================================================= */
-/* Insertion of an integer in a already sorted integer array */
-/* without duplications.                                     */
-/* ========================================================= */
-void
-insert_sorted_index(long ** array, long * size, long * nb, long value)
-{
-  long pos  = *nb;
-  long left = 0, right = *nb, middle;
-
-  if (*nb > 0)
-  {
-    /* bisection search */
-    /* """""""""""""""" */
-    while (left < right)
-    {
-      middle = (left + right) / 2;
-      if ((*array)[middle] == value)
-        return; /* Value already in array */
-
-      if (value < (*array)[middle])
-        right = middle;
-      else
-        left = middle + 1;
-    }
-    pos = left;
-  }
-
-  if (*nb == *size)
-  {
-    *size += 64;
-    *array = xrealloc(*array, *size * sizeof(long));
-  }
-
-  if (*nb > pos)
-    memmove((*array) + pos + 1, (*array) + pos, sizeof(value) * (*nb - pos));
-
-  (*nb)++;
-
-  (*array)[pos] = value;
-}
-
-/* ========================================================= */
-/* Insertion of an pointer in a already sorted pointer array */
-/* without duplications.                                     */
-/* ========================================================= */
-void
-insert_sorted_ptr(tst_node_t *** array, unsigned long long * size,
-                  unsigned long long * nb, tst_node_t * ptr)
-{
-  unsigned long long pos  = *nb;
-  unsigned long long left = 0, right = *nb, middle;
-
-  if (*nb > 0)
-  {
-    /* bisection search */
-    /* """""""""""""""" */
-    while (left < right)
-    {
-      middle = (left + right) / 2;
-      if ((intptr_t)((*array)[middle]) == (intptr_t)ptr)
-        return; /* Value already in array */
-
-      if ((intptr_t)ptr < (intptr_t)((*array)[middle]))
-        right = middle;
-      else
-        left = middle + 1;
-    }
-    pos = left;
-  }
-
-  if (*nb == *size)
-  {
-    *size += 64;
-    *array = xrealloc(*array, *size * sizeof(long));
-  }
-
-  if (*nb > pos)
-    memmove((*array) + pos + 1, (*array) + pos, sizeof(ptr) * (*nb - pos));
-
-  (*nb)++;
-
-  (*array)[pos] = ptr;
 }
 
 /* ============================================================== */
@@ -4208,90 +3600,6 @@ mb_strtowcs(char * s)
   return w;
 }
 
-/* *************************************************************** */
-/* Ternary Search Tree functions                                   */
-/* Inspired by: https://www.cs.princeton.edu/~rs/strings/tstdemo.c */
-/* *************************************************************** */
-
-/* ====================================== */
-/* Ternary search tree insertion function */
-/* ====================================== */
-static tst_node_t *
-tst_insert(tst_node_t * p, wchar_t * w, void * data)
-{
-  if (p == NULL)
-  {
-    p            = (tst_node_t *)xmalloc(sizeof(tst_node_t));
-    p->splitchar = *w;
-    p->lokid = p->eqkid = p->hikid = NULL;
-    p->data                        = NULL;
-  }
-
-  if (*w < p->splitchar)
-    p->lokid = tst_insert(p->lokid, w, data);
-  else if (*w == p->splitchar)
-  {
-    if (*w == L'\0')
-    {
-      p->data  = data;
-      p->eqkid = NULL;
-    }
-    else
-      p->eqkid = tst_insert(p->eqkid, ++w, data);
-  }
-  else
-    p->hikid = tst_insert(p->hikid, w, data);
-
-  return (p);
-}
-
-#if 0 /* here for coherency but not used. */
-/* ===================================== */
-/* Ternary search tree deletion function */
-/* user data area not cleaned            */
-/* ===================================== */
-void
-tst_cleanup(tst_node_t * p)
-{
-  if (p)
-  {
-    tst_cleanup(p->lokid);
-    if (p->splitchar)
-      tst_cleanup(p->eqkid);
-    tst_cleanup(p->hikid);
-    free(p);
-  }
-}
-#endif
-
-/* ========================================================== */
-/* Recursive traversal of a ternary tree. A callback function */
-/* is also called when a complete string is found             */
-/* returns 1 if the callback function succeed (returned 1) at */
-/* least once                                                 */
-/* the first_call argument is for initializing the static     */
-/* variable                                                   */
-/* ========================================================== */
-static int
-tst_traverse(tst_node_t * p, int (*callback)(void *), int first_call)
-{
-  static int rc;
-
-  if (first_call)
-    rc = 0;
-
-  if (!p)
-    return 0;
-  tst_traverse(p->lokid, callback, 0);
-  if (p->splitchar != L'\0')
-    tst_traverse(p->eqkid, callback, 0);
-  else
-    rc += (*callback)(p->data);
-  tst_traverse(p->hikid, callback, 0);
-
-  return !!rc;
-}
-
 /* ================================================================ */
 /* Callback to add a word index in the sorted list of matched words */
 /* ================================================================ */
@@ -4316,159 +3624,6 @@ set_matching_flag(void * elem)
     node = node->next;
   }
   return 1;
-}
-
-/* ======================================================================= */
-/* Traverse the word tst looking for a wchar and build a list of pointers  */
-/* containing all the sub-tst * nodes after these node potentially leading */
-/* to words containing the next wchar os the search string                 */
-/* ======================================================================= */
-static int
-tst_substring_traverse(tst_node_t * p, int (*callback)(void *), int first_call,
-                       wchar_t w)
-{
-  static int rc;
-
-  if (first_call)
-    rc = 0;
-
-  if (!p)
-    return 0;
-
-  if (p->splitchar == w)
-  {
-    ll_node_t * node;
-    sub_tst_t * sub_tst_data;
-
-    node         = tst_search_list->tail;
-    sub_tst_data = (sub_tst_t *)(node->data);
-
-    if (p->eqkid)
-      insert_sorted_ptr(&(sub_tst_data->array), &(sub_tst_data->size),
-                        &(sub_tst_data->count), p->eqkid);
-
-    rc = 1;
-  }
-
-  tst_substring_traverse(p->lokid, callback, 0, w);
-  if (p->splitchar != L'\0')
-    tst_substring_traverse(p->eqkid, callback, 0, w);
-  else if (callback != NULL)
-    rc += (*callback)(p->data);
-  tst_substring_traverse(p->hikid, callback, 0, w);
-
-  return !!rc;
-}
-
-/* ======================================================================= */
-/* Traverse the word tst looking for a wchar and build a list of pointers  */
-/* containing all the sub-tst * nodes after these node potentially leading */
-/* to words containing the next wchar os the search string                 */
-/* ======================================================================= */
-static int
-tst_fuzzy_traverse(tst_node_t * p, int (*callback)(void *), int first_call,
-                   wchar_t w)
-{
-  static int rc;
-  wchar_t    w1s[2];
-  wchar_t    w2s[2];
-
-  w1s[1] = w2s[1] = L'\0';
-
-  if (first_call)
-    rc = 0;
-
-  if (!p)
-    return 0;
-
-  w1s[0] = p->splitchar;
-  w2s[0] = w;
-
-  if (wcscasecmp(w1s, w2s) == 0)
-  {
-    ll_node_t * node;
-    sub_tst_t * sub_tst_data;
-
-    node         = tst_search_list->tail;
-    sub_tst_data = (sub_tst_t *)(node->data);
-
-    if (p->eqkid != NULL)
-      insert_sorted_ptr(&(sub_tst_data->array), &(sub_tst_data->size),
-                        &(sub_tst_data->count), p->eqkid);
-
-    rc += 1;
-  }
-
-  tst_fuzzy_traverse(p->lokid, callback, 0, w);
-  if (p->splitchar != L'\0')
-    tst_fuzzy_traverse(p->eqkid, callback, 0, w);
-  else if (callback != NULL)
-    rc += (*callback)(p->data);
-  tst_fuzzy_traverse(p->hikid, callback, 0, w);
-
-  return !!rc;
-}
-
-/* =================================================================== */
-/* Search a complete string in a Ternary tree staring from a root node */
-/* =================================================================== */
-static void *
-tst_search(tst_node_t * root, wchar_t * w)
-{
-  tst_node_t * p;
-
-  p = root;
-
-  while (p)
-  {
-    if (*w < p->splitchar)
-      p = p->lokid;
-    else if (*w == p->splitchar)
-    {
-      if (*w++ == L'\0')
-        return p->data;
-      p = p->eqkid;
-    }
-    else
-      p = p->hikid;
-  }
-
-  return NULL;
-}
-
-/* =============================================================== */
-/* Search all strings beginning with the same prefix               */
-/* the callback function will be applied to each of theses strings */
-/* returns NULL if no string matched the prefix                    */
-/* =============================================================== */
-static void *
-tst_prefix_search(tst_node_t * root, wchar_t * w, int (*callback)(void *))
-{
-  tst_node_t * p   = root;
-  size_t       len = wcslen(w);
-  size_t       rc;
-
-  while (p)
-  {
-    if (*w < p->splitchar)
-      p = p->lokid;
-    else if (*w == p->splitchar)
-    {
-      len--;
-      if (*w++ == L'\0')
-        return p->data;
-      if (len == 0)
-      {
-        rc = tst_traverse(p->eqkid, callback, 1);
-        return (void *)(long)rc;
-      }
-      p = p->eqkid;
-    }
-    else
-      p = p->hikid;
-  }
-
-  return NULL;
 }
 
 /* ======================================================================= */

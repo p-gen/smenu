@@ -1,5 +1,5 @@
 bin_PROGRAMS = smenu
-smenu_SOURCES = smenu.c
+smenu_SOURCES = smenu.c ptrlist.c ptrlist.h xmalloc.c xmalloc.h index.c index.h
 dist_man_MANS = smenu.1
 EXTRA_DIST = smenu.spec.in smenu.spec ChangeLog build.sh version \
 	COPYRIGHT LICENSE.rst README.rst examples build-aux tests
