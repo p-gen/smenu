@@ -1,7 +1,7 @@
 #
 # spec file for package smenu
 #
-# Copyright (c) 2015 SUSE LINUX GmbH, Nuernberg, Germany.
+# Copyright (c) 2018 SUSE LINUX GmbH, Nuernberg, Germany.
 #
 # All modifications and additions to the file contributed by third parties
 # remain the property of their copyright owners, unless otherwise agreed
@@ -12,7 +12,7 @@
 # license that conforms to the Open Source Definition (Version 1.9)
 # published by the Open Source Initiative.
 
-# Please submit bugfixes or comments via http://bugs.opensuse.org/
+# Please submit bugfixes or comments via https://bugs.opensuse.org/
 #
 
 
@@ -20,25 +20,16 @@ Name:           smenu
 Version:        @VERSION@
 Release:        0
 Summary:        A standard input word picker
-License:        GPL-2.0
+License:        GPL-2.0-only
 Group:          Productivity/Text/Utilities
-Url:            https://github.com/p-gen/smenu
+URL:            https://github.com/p-gen/%{name}
 Source:         %{name}-%{version}.tar.bz2
 BuildRequires:  ncurses-devel
-BuildRoot:      %{_tmppath}/%{name}-%{version}-build
 
 %description
-This simple tool reads words from a file or the standard input, presents
-them in a cool interactive window after the current line on the terminal
-and writes the selected word, if any, on the standard output.
-
-After having unsuccessfully searched the NET for what I wanted, I
-decided to try to write my own.
-
-I have tried hard to made its usage as simple as possible. It should
-work, even when using an old "vt100" terminal and is "UTF-8" aware.
-
-Author: Pierre Gentile <p.gen.progs@gmail.com>
+This tool reads words from a file or standard input, presents them in an
+interactive window after the current line on the terminal, and writes the
+selected word, if any, to standard output.
 
 %prep
 %setup -q
@@ -48,35 +39,23 @@ Author: Pierre Gentile <p.gen.progs@gmail.com>
 make %{?_smp_mflags}
 
 %package tests
-Summary: %{name} testing system
-Group:   Productivity/Text/Utilities
+Summary:        Testing system for %{name}
+Group:          Productivity/Text/Utilities
 
 %description tests
-This packages contains some scripts and a bunch of test to check the
+This packages contains some scripts and a number of tests to check the
 %{name} tool.
 
 %install
-make DESTDIR=%{buildroot} install %{?_smp_mflags}
-install -d %{buildroot}%{_defaultdocdir}/%{name}
-for FILE in COPYRIGHT *.rst examples tests; do
-  mv ${FILE} %{buildroot}%{_defaultdocdir}/%{name}
-done
+%make_install
 
 %files tests
-%defattr(-,root,root,-)
-%dir %{_defaultdocdir}/%{name}/tests
-%doc %{_defaultdocdir}/%{name}/tests/README.rst
-%doc %{_defaultdocdir}/%{name}/tests/test.sh
-%doc %{_defaultdocdir}/%{name}/tests/tests.sh
-%doc %{_defaultdocdir}/%{name}/tests/tests.cpio.gz
+%doc tests
 
 %files
-%defattr(-,root,root,-)
 %attr(0755,root,root) %{_bindir}/*
-%dir %{_defaultdocdir}/%{name}
-%doc %{_defaultdocdir}/%{name}/examples
-%doc %{_defaultdocdir}/%{name}/COPYRIGHT
-%doc %{_defaultdocdir}/%{name}/*.rst
+%license COPYRIGHT
+%doc examples README.rst
 %{_mandir}/man1/*
 
 %changelog
