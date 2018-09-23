@@ -655,20 +655,24 @@ struct output_s
 /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
 struct daccess_s
 {
-  da_mode_t mode;       /* DA_TYPE_NONE (0), DA_TYPE_AUTO, DA_TYPE_POS        */
-  char *    left;       /* character to put before the direct access selector */
-  char *    right;      /* character to put after the direct access selector  */
-  char      alignment;  /* l: left; r: right                                  */
-  char      padding;    /* a: all; i: only included words are padded          */
-  char      head;       /* What to do with chars before the embedded number   */
-  int       length;     /* selector size (5 max)                              */
-  int       flength;    /* 0 or length + 3 (full prefix lengh                 */
-  size_t    offset;     /* offset to the start of the selector                */
-  int       size;       /* size in bytes of the selector to extract           */
-  size_t    ignore;     /* number of multibytes to ignore after the number    */
-  char      follow;     /* y: the numbering follows the last nuber set        */
-  char *    num_sep;    /* character to separate de number and the selection  */
-  int       def_number; /* 1: the numbering is on by default 0: it is not     */
+  da_mode_t mode; /* DA_TYPE_NONE (0), DA_TYPE_AUTO, DA_TYPE_POS          */
+
+  char * left;  /* character to put before the direct access selector     */
+  char * right; /* character to put after the direct access selector      */
+
+  char   alignment;  /* l: left; r: right                                 */
+  char   padding;    /* a: all; i: only included words are padded         */
+  char   head;       /* What to do with chars before the embedded number  */
+  int    length;     /* selector size (5 max)                             */
+  int    flength;    /* 0 or length + 3 (full prefix lengh                */
+  size_t offset;     /* offset to the start of the selector               */
+  int    plus;       /* 1 if we can look for the number to extract after  *
+                      * the offset, else 0. (a '+' follows the offset)    */
+  int    size;       /* size in bytes of the selector to extract          */
+  size_t ignore;     /* number of multibytes to ignore after the number   */
+  char   follow;     /* y: the numbering follows the last nuber set       */
+  char * num_sep;    /* character to separate de number and the selection */
+  int    def_number; /* 1: the numbering is on by default 0: it is not    */
 };
 
 struct search_data_s
@@ -6211,6 +6215,7 @@ main(int argc, char * argv[])
   daccess.length     = -2;
   daccess.flength    = 0;
   daccess.offset     = 0;
+  daccess.plus       = 0;
   daccess.size       = 0;
   daccess.ignore     = 0;
   daccess.follow     = 'y';
@@ -6873,11 +6878,22 @@ main(int argc, char * argv[])
                 break;
 
               case 'o': /* start offset */
-                if (sscanf(argv[optind] + 2, "%zu%n", &daccess.offset, &pos)
-                    != 1)
+                if (sscanf(argv[optind] + 2, "%zu%n+", &daccess.offset, &pos)
+                    == 1)
+                {
+                  if (argv[optind][pos + 2] == '+')
+                  {
+                    daccess.plus = 1;
+
+                    if (argv[optind][pos + 3] != '\0')
+                      TELL("Bad format -- ");
+                  }
+                  else if (argv[optind][pos + 2] != '\0')
+                    TELL("Bad format -- ");
+                }
+                else
                   TELL("Bad format -- ");
-                if (argv[optind][pos + 2] != '\0')
-                  TELL("Bad format -- ");
+
                 break;
 
               case 'n': /* numbor of digits to extract */
@@ -8519,11 +8535,26 @@ main(int argc, char * argv[])
                                             * extracted selector             */
                   long selector_offset;    /* offset in byte to the selector *
                                             * to extract                     */
-                  char * ptr; /* points just after the selector to extract   */
+                  char * ptr;              /* points just after the selector *
+                                            * to extract   */
+                  long plus_offset;        /* points to the first occurrence *
+                                            * of a number in word->str after *
+                                            * the offset given               */
 
                   selector_offset = mb_offset(word->str, daccess.offset);
-                  ptr             = word->str + selector_offset;
-                  selector        = xstrndup(ptr, daccess.size);
+
+                  if (daccess.plus)
+                  {
+                    plus_offset = strcspn(word->str + selector_offset,
+                                          "0123456789");
+
+                    if (plus_offset + daccess.size + daccess.ignore
+                        <= strlen(word->str))
+                      selector_offset += plus_offset;
+                  }
+
+                  ptr      = word->str + selector_offset;
+                  selector = xstrndup(ptr, daccess.size);
 
                   /* read the embedded number and, if correct, format */
                   /* it according to daccess.alignment                */

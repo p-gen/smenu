@@ -887,6 +887,16 @@ The default value for this directive is '\f(CBkeep\fP'.
 \f(CBo\fP (\fB-F\fP option)
 Here \fBy\fP is the \fIo\fPffset of the first multibyte character of
 the number to extract from the word (defaults to \f(CB0\fP).
+
+If this offset if immediately followed by the character '\f(CB+\fP',
+then the parser will look for the first number (if any) after the given
+offset instead of using its absolute value to extract the number.
+
+Note that when the '\f(CB+\fP' is used, it is necessary that the length
+of all the numbers to extract have the same size as the algorithm looks
+for a digit to identify the beginning of the number to extract.
+Hence, for example, \fB1\fP should appear as \fB01\fP in the input is
+\f(CBn\fP is set to \f(CB2\fP.
 .
 .TP
 \f(CBn\fP (\fB-F\fP option)
