@@ -1856,7 +1856,7 @@ update_bitmaps(search_mode_t mode, search_data_t * data,
       /* """""""""""""""""""""""""""""""""""""""""""""""""""" */
       str_orig[word_a[n].len] = '\0';
 
-      mb = (word_a[n].mb - 1 - daccess.flength) / CHAR_BIT + 1;
+      mb = (word_a[n].mb - daccess.flength) / CHAR_BIT + 1;
       bm = word_a[n].bitmap;
 
       if (mode == FUZZY)
@@ -1977,11 +1977,11 @@ update_bitmaps(search_mode_t mode, search_data_t * data,
         j        = 0;
         badness  = 0;
 
-        while (mb_index < word_a[n].mb - 1
+        while (mb_index < word_a[n].mb
                && !BIT_ISSET(word_a[n].bitmap, mb_index))
           mb_index++;
 
-        while (mb_index < word_a[n].mb - 1)
+        while (mb_index < word_a[n].mb)
         {
           if (!BIT_ISSET(word_a[n].bitmap, mb_index))
             badness++;
@@ -2033,7 +2033,7 @@ update_bitmaps(search_mode_t mode, search_data_t * data,
     {
       n  = matching_words_a[i];
       bm = word_a[n].bitmap;
-      mb = (word_a[n].mb - 1 - daccess.flength) / CHAR_BIT + 1;
+      mb = (word_a[n].mb - daccess.flength) / CHAR_BIT + 1;
 
       memset(bm, '\0', mb);
 
@@ -2204,7 +2204,7 @@ clean_matches(search_data_t * search_data, long size)
     word_a[n].is_matching = 0;
 
     memset(word_a[n].bitmap, '\0',
-           (word_a[n].mb - 1 - daccess.flength) / CHAR_BIT + 1);
+           (word_a[n].mb - daccess.flength) / CHAR_BIT + 1);
   }
 
   matches_count = 0;
@@ -4434,13 +4434,13 @@ build_metadata(term_t * term, long count, win_t * win)
       tab_count = 1;              /* Resets the current number of words *
                                    * in the line                        */
       word_a[i].end = word_width - 1;
-      word_a[i].mb  = word_len + 1;
+      word_a[i].mb  = word_len;
     }
     else
     {
       word_a[i].start      = len;
       word_a[i].end        = word_a[i].start + word_width - 1;
-      word_a[i].mb         = word_len + 1;
+      word_a[i].mb         = word_len;
       line_nb_of_word_a[i] = last;
 
       len += word_width + 1; /* Increase line length */
@@ -4500,7 +4500,7 @@ disp_cursor_word(long pos, win_t * win, term_t * term, int err)
   else
     apply_attr(term, win->cursor_attr);
 
-  for (i = 0; i < word_a[pos].mb - 1 - daccess.flength; i++)
+  for (i = 0; i < word_a[pos].mb - daccess.flength; i++)
   {
     if (BIT_ISSET(word_a[pos].bitmap, i))
     {
@@ -4580,7 +4580,7 @@ disp_matching_word(long pos, win_t * win, term_t * term, int is_cursor, int err)
   if (word_a[pos].is_tagged)
     apply_attr(term, win->tag_attr);
 
-  for (i = 0; i < word_a[pos].mb - 1 - daccess.flength; i++)
+  for (i = 0; i < word_a[pos].mb - daccess.flength; i++)
   {
     if (BIT_ISSET(word_a[pos].bitmap, i))
     {
@@ -4664,7 +4664,7 @@ disp_word(long pos, search_mode_t search_mode, search_data_t * search_data,
   {
     if (search_mode != NONE)
     {
-      mb_strprefix(tmp_word, word_a[pos].str, (long)word_a[pos].mb - 1, &p);
+      mb_strprefix(tmp_word, word_a[pos].str, (long)word_a[pos].mb, &p);
       if (word_a[pos].is_numbered)
       {
         /* Set the direct access number attribute */
@@ -4756,7 +4756,7 @@ disp_word(long pos, search_mode_t search_mode, search_data_t * search_data,
 
       /* If we are not in search mode, display a normal cursor */
       /* """"""""""""""""""""""""""""""""""""""""""""""""""""" */
-      mb_strprefix(tmp_word, word_a[pos].str, (long)word_a[pos].mb - 1, &p);
+      mb_strprefix(tmp_word, word_a[pos].str, (long)word_a[pos].mb, &p);
       if (word_a[pos].is_matching)
         disp_cursor_word(pos, win, term, search_data->fuzzy_err);
       else
@@ -4775,7 +4775,7 @@ disp_word(long pos, search_mode_t search_mode, search_data_t * search_data,
   {
     /* Display a normal word without any attribute */
     /* """"""""""""""""""""""""""""""""""""""""""" */
-    mb_strprefix(tmp_word, word_a[pos].str, (long)word_a[pos].mb - 1, &p);
+    mb_strprefix(tmp_word, word_a[pos].str, (long)word_a[pos].mb, &p);
 
     /* If words are numbered, emphasis their numbers */
     /* """"""""""""""""""""""""""""""""""""""""""""" */
@@ -5568,7 +5568,7 @@ select_ending_matches(win_t * win, term_t * term, search_data_t * search_data,
       /* clear the bitmap of the corresponding word               */
       /* """""""""""""""""""""""""""""""""""""""""""""""""""""""" */
       if (BIT_ISSET(word_a[index].bitmap,
-                    word_a[index].mb - nb - 1 - daccess.flength - 1))
+                    word_a[index].mb - nb - daccess.flength - 1))
         alt_matching_words_a[j++] = index;
       else
       {
@@ -5586,7 +5586,7 @@ select_ending_matches(win_t * win, term_t * term, search_data_t * search_data,
             alt_matching_words_a[j++] = index;
           else
             memset(word_a[index].bitmap, '\0',
-                   (word_a[index].mb - 1 - daccess.flength) / CHAR_BIT + 1);
+                   (word_a[index].mb - daccess.flength) / CHAR_BIT + 1);
         }
         else
         {
@@ -5598,7 +5598,7 @@ select_ending_matches(win_t * win, term_t * term, search_data_t * search_data,
             alt_matching_words_a[j++] = index;
           else
             memset(word_a[index].bitmap, '\0',
-                   (word_a[index].mb - 1 - daccess.flength) / CHAR_BIT + 1);
+                   (word_a[index].mb - daccess.flength) / CHAR_BIT + 1);
         }
       }
     }
@@ -5670,7 +5670,7 @@ select_starting_matches(win_t * win, term_t * term, search_data_t * search_data,
             alt_matching_words_a[j++] = index;
           else
             memset(word_a[index].bitmap, '\0',
-                   (word_a[index].mb - 1 - daccess.flength) / CHAR_BIT + 1);
+                   (word_a[index].mb - daccess.flength) / CHAR_BIT + 1);
         }
         else
         {
@@ -5681,7 +5681,7 @@ select_starting_matches(win_t * win, term_t * term, search_data_t * search_data,
             alt_matching_words_a[j++] = index;
           else
             memset(word_a[index].bitmap, '\0',
-                   (word_a[index].mb - 1 - daccess.flength) / CHAR_BIT + 1);
+                   (word_a[index].mb - daccess.flength) / CHAR_BIT + 1);
         }
       }
     }
@@ -9104,9 +9104,8 @@ main(int argc, char * argv[])
   /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
 
   for (wi = 0; wi < count; wi++)
-    word_a[wi].bitmap = xcalloc(1,
-                                (word_a[wi].mb - 1 - daccess.flength) / CHAR_BIT
-                                  + 1);
+    word_a[wi].bitmap = xcalloc(1, (word_a[wi].mb - daccess.flength) / CHAR_BIT
+                                     + 1);
 
   /* Find the first selectable word (if any) in the input stream */
   /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
@@ -11217,7 +11216,7 @@ main(int argc, char * argv[])
                   word_a[n].is_matching = 0;
 
                   memset(word_a[n].bitmap, '\0',
-                         (word_a[n].mb - 1 - daccess.flength) / CHAR_BIT + 1);
+                         (word_a[n].mb - daccess.flength) / CHAR_BIT + 1);
                 }
 
                 matches_count = 0;
@@ -11324,7 +11323,7 @@ main(int argc, char * argv[])
                 word_a[n].is_matching = 0;
 
                 memset(word_a[n].bitmap, '\0',
-                       (word_a[n].mb - 1 - daccess.flength) / CHAR_BIT + 1);
+                       (word_a[n].mb - daccess.flength) / CHAR_BIT + 1);
               }
 
               matches_count = 0;
@@ -11388,7 +11387,7 @@ main(int argc, char * argv[])
                 word_a[n].is_matching = 0;
 
                 memset(word_a[n].bitmap, '\0',
-                       (word_a[n].mb - 1 - daccess.flength) / CHAR_BIT + 1);
+                       (word_a[n].mb - daccess.flength) / CHAR_BIT + 1);
               }
 
               matches_count = 0;
@@ -11541,7 +11540,7 @@ main(int argc, char * argv[])
                 word_a[n].is_matching = 0;
 
                 memset(word_a[n].bitmap, '\0',
-                       (word_a[n].mb - 1 - daccess.flength) / CHAR_BIT + 1);
+                       (word_a[n].mb - daccess.flength) / CHAR_BIT + 1);
               }
 
               matches_count = 0;
