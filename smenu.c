@@ -5661,7 +5661,8 @@ select_starting_matches(win_t * win, term_t * term, search_data_t * search_data,
       {
         if (search_mode == FUZZY)
         {
-          first_mb = mb_strprefix(first_mb, word_a[index].str, 1, &pos);
+          first_mb = mb_strprefix(first_mb, word_a[index].str + daccess.flength,
+                                  1, &pos);
           mb_len   = pos;
 
           /* in fuzzy search mode we only look the first glyph */
