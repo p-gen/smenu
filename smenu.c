@@ -1869,7 +1869,8 @@ update_bitmaps(search_mode_t mode, search_data_t * data,
 
       start = str;
       fc    = 0;
-      while (start)
+
+      while (start - str < word_a[n].len - daccess.flength)
       {
         /* Reset the bitmap */
         /* """""""""""""""" */
