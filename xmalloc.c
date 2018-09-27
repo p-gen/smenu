@@ -118,4 +118,3 @@ xstrndup(const char * str, size_t len)
 
   return p;
 }
-

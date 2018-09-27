@@ -299,4 +299,3 @@ ll_find(ll_t * const list, void * const data,
 
   return NULL;
 }
-

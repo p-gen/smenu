@@ -5,8 +5,8 @@
 /* Ternary Search Tree specific structures */
 /* *************************************** */
 
-typedef struct tst_node_s    tst_node_t;
-typedef struct sub_tst_s     sub_tst_t;
+typedef struct tst_node_s tst_node_t;
+typedef struct sub_tst_s  sub_tst_t;
 
 #if 0 /* here for coherency but not used. */
 void tst_cleanup(tst_node_t * p);
