@@ -8801,15 +8801,17 @@ main(int argc, char * argv[])
   /* We've finished reading from stdin                               */
   /* we will now get the inputs from the controlling terminal if any */
   /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+  errno = 0;
   if (freopen("/dev/tty", "r", stdin) == NULL)
-    fprintf(stderr, "%s\n", "freopen");
+    fprintf(stderr, "/dev/tty: %s\n", strerror(errno));
 
   old_fd1    = dup(1);
   old_stdout = fdopen(old_fd1, "w");
   setbuf(old_stdout, NULL);
 
+  errno = 0;
   if (freopen("/dev/tty", "w", stdout) == NULL)
-    fprintf(stderr, "%s\n", "freopen");
+    fprintf(stderr, "/dev/tty: %s\n", strerror(errno));
 
   setvbuf(stdout, NULL, _IONBF, 0);
 
