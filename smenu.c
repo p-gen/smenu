@@ -5718,9 +5718,13 @@ main(int argc, char * argv[])
   else
     my_isprint = isprint7;
 
-  /* Set terminal in noncanonical, noecho mode */
-  /* """"""""""""""""""""""""""""""""""""""""" */
-  setupterm((char *)0, 1, (int *)0);
+  /* Set terminal in noncanonical, noecho mode and  */
+  /* if TERM is unset or unknown, vt100 is assumed. */
+  /* """""""""""""""""""""""""""""""""""""""""""""" */
+  if (getenv("TERM") == NULL)
+    setupterm("vt100", 1, (int *)0);
+  else
+    setupterm((char *)0, 1, (int *)0);
 
   /* Get some terminal capabilities */
   /* """""""""""""""""""""""""""""" */
