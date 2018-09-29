@@ -44,6 +44,7 @@
 #include "utf8.h"
 #include "fgetc.h"
 #include "utils.h"
+#include "getopt.h"
 #include "smenu.h"
 
 /* **************** */
@@ -51,13 +52,18 @@
 /* **************** */
 
 extern ll_t * tst_search_list;
+extern char * optarg;
+extern char * opterr;
+extern int    optind;
+extern int    optopt;
+extern int    optbad;
+extern int    opterrfd;
 
 /* **************** */
 /* Global variables */
 /* **************** */
 
 word_t * word_a;       /* Array containing words data (size: count)         */
-long     dummy_rc;     /* temporary variable to silence the compiler        */
 long     count = 0;    /* number of words read from stdin                   */
 long     current;      /* index the current selection under the cursor)     */
 long     new_current;  /* final current position, (used in search function) */
@@ -3868,236 +3874,6 @@ sig_handler(int s)
   }
 }
 
-/* egetopt.c -- Extended 'getopt'.
- *
- * A while back, a public-domain version of getopt() was posted to the
- * net.  A bit later, a gentleman by the name of Keith Bostic made some
- * enhancements and reposted it.
- *
- * In recent weeks (i.e., early-to-mid 1988) there's been some
- * heated discussion in comp.lang.c about the merits and drawbacks
- * of getopt(), especially with regard to its handling of '?'.
- *
- * In light of this, I have taken Mr. Bostic's public-domain getopt()
- * and have made some changes that I hope will be considered to be
- * improvements.  I call this routine 'egetopt' ("Extended getopt").
- * The default behavior of this routine is the same as that of getopt(),
- * but it has some optional features that make it more useful.  These
- * options are controlled by the settings of some global variables.
- * By not setting any of these extra global variables, you will have
- * the same functionality as getopt(), which should satisfy those
- * purists who believe getopt() is perfect and can never be improved.
- * If, on the other hand, you are someone who isn't satisfied with the
- * status quo, egetopt() may very well give you the added capabilities
- * you want.
- *
- * Look at the enclosed README file for a description of egetopt()'s
- * new features.
- *
- * The code was originally posted to the net as getopt.c by ...
- *
- * Keith Bostic
- * ARPA: keith@seismo
- * UUCP: seismo!keith
- *
- * Current version: added enhancements and comments, reformatted code.
- *
- * Lloyd Zusman
- * Master Byte Software
- * Los Gatos, California
- * Internet: ljz@fx.com
- * UUCP:     ...!ames!fxgrp!ljz
- *
- * May, 1988
- */
-
-/* None of these constants are referenced in the executable portion of */
-/* the code ... their sole purpose is to initialize global variables.  */
-/* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-#define BADCH (int)'@'
-#define NEEDSEP (int)':'
-#define MAYBESEP (int)'%'
-#define ERRFD 2
-#define EMSG ""
-#define START "-"
-
-/* Here are all the pertinent global variables. */
-/* """""""""""""""""""""""""""""""""""""""""""" */
-int    opterr = 1;          /* if true, output error message */
-int    optind = 1;          /* index into parent argv vector */
-int    optopt;              /* character checked for validity */
-int    optbad   = BADCH;    /* character returned on error */
-int    optchar  = 0;        /* character that begins returned option */
-int    optneed  = NEEDSEP;  /* flag for mandatory argument */
-int    optmaybe = MAYBESEP; /* flag for optional argument */
-int    opterrfd = ERRFD;    /* file descriptor for error text */
-char * optarg   = NULL;     /* argument associated with option */
-char * optstart = START;    /* list of characters that start options */
-
-/* Macros. */
-/* """"""" */
-
-/* Conditionally print out an error message and return (depends on the */
-/* setting of 'opterr' and 'opterrfd').  Note that this version of     */
-/* TELL() doesn't require the existence of stdio.h.                    */
-/* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-#define TELL(S)                                      \
-  {                                                  \
-    if (opterr && opterrfd >= 0)                     \
-    {                                                \
-      char option = (char)optopt;                    \
-      dummy_rc    = write(opterrfd, (S), strlen(S)); \
-      dummy_rc    = write(opterrfd, &option, 1);     \
-      dummy_rc    = write(opterrfd, "\n", 1);        \
-    }                                                \
-    short_usage();                                   \
-    return (optbad);                                 \
-  }
-
-/* Here it is: */
-/* """"""""""" */
-int
-egetopt(int nargc, char ** nargv, char * ostr)
-{
-  static char *   place = EMSG; /* option letter processing */
-  register char * oli;          /* option letter list index */
-  register char * osi = NULL;   /* option start list index  */
-
-  if (nargv == (char **)NULL)
-    return (EOF);
-
-  if (nargc <= optind || nargv[optind] == NULL)
-    return (EOF);
-
-  if (place == NULL)
-    place = EMSG;
-
-  /* Update scanning pointer. */
-  /* """""""""""""""""""""""" */
-  if (*place == '\0')
-  {
-    place = nargv[optind];
-    if (place == NULL)
-      return (EOF);
-    else if (*place == '\0')
-      return (EOF);
-
-    osi = strchr(optstart, *place);
-    if (osi != NULL)
-      optchar = (int)*osi;
-
-    if (optind >= nargc || osi == NULL || *++place == '\0')
-      return (EOF);
-
-    /* Two adjacent, identical flag characters were found. */
-    /* This takes care of "--", for example.               */
-    /* """"""""""""""""""""""""""""""""""""""""""""""""""" */
-    if (*place == place[-1])
-    {
-      ++optind;
-      return (EOF);
-    }
-  }
-
-  /* If the option is a separator or the option isn't in the list, */
-  /* we've got an error.                                           */
-  /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-  optopt = (int)*place++;
-  oli    = strchr(ostr, optopt);
-  if (optopt == optneed || optopt == (int)optmaybe || oli == NULL)
-  {
-    /* If we're at the end of the current argument, bump the */
-    /* argument index.                                       */
-    /* """"""""""""""""""""""""""""""""""""""""""""""""""""" */
-    if (*place == '\0')
-      ++optind;
-
-    TELL("Illegal option -- "); /* bye bye */
-  }
-
-  /* If there is no argument indicator, then we don't even try to */
-  /* return an argument.                                          */
-  /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-  ++oli;
-  if (*oli == '\0' || (*oli != (char)optneed && *oli != (char)optmaybe))
-  {
-    /* If we're at the end of the current argument, bump the */
-    /* argument index.                                       */
-    /* """"""""""""""""""""""""""""""""""""""""""""""""""""" */
-    if (*place == '\0')
-      ++optind;
-
-    optarg = NULL;
-  }
-  /* If we're here, there's an argument indicator.  It's handled */
-  /* differently depending on whether it's a mandatory or an     */
-  /* optional argument.                                          */
-  /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-  else
-  {
-    /* If there's no white space, use the rest of the    */
-    /* string as the argument.  In this case, it doesn't */
-    /* matter if the argument is mandatory or optional.  */
-    /* """"""""""""""""""""""""""""""""""""""""""""""""" */
-    if (*place != '\0')
-      optarg = place;
-
-    /* If we're here, there's whitespace after the option. */
-    /*                                                     */
-    /* Is it a mandatory argument?  If so, return the      */
-    /* next command-line argument if there is one.         */
-    /* """"""""""""""""""""""""""""""""""""""""""""""""""" */
-    else if (*oli == (char)optneed)
-    {
-      /* If we're at the end of the argument list, there */
-      /* isn't an argument and hence we have an error.   */
-      /* Otherwise, make 'optarg' point to the argument. */
-      /* """"""""""""""""""""""""""""""""""""""""""""""" */
-      if (nargc <= ++optind)
-      {
-        place = EMSG;
-        TELL("Option requires an argument -- ");
-      }
-      else
-        optarg = nargv[optind];
-    }
-    /* If we're here it must have been an optional argument. */
-    /* """"""""""""""""""""""""""""""""""""""""""""""""""""" */
-    else
-    {
-      if (nargc <= ++optind)
-      {
-        place  = EMSG;
-        optarg = NULL;
-      }
-      else
-      {
-        optarg = nargv[optind];
-        if (optarg == NULL)
-          place = EMSG;
-
-        /* If the next item begins with a flag */
-        /* character, we treat it like a new   */
-        /* argument.  This is accomplished by  */
-        /* decrementing 'optind' and returning */
-        /* a null argument.                    */
-        /* """"""""""""""""""""""""""""""""""" */
-        else if (strchr(optstart, *optarg) != NULL)
-        {
-          --optind;
-          optarg = NULL;
-        }
-      }
-    }
-    place = EMSG;
-    ++optind;
-  }
-
-  /* Return option letter. */
-  /* """"""""""""""""""""" */
-  return (optopt);
-}
-
 /* =========================================================== */
 /* Helper function to compare to delimiters for use by ll_find */
 /* =========================================================== */
@@ -4864,14 +4640,20 @@ main(int argc, char * argv[])
         if (optarg && *optarg != '-')
           custom_ini_file = xstrdup(optarg);
         else
+        {
           TELL("Option requires an argument -- ");
+          short_usage();
+        }
         break;
 
       case 'n':
         if (optarg && *optarg != '-')
           win.asked_max_lines = abs(atoi(optarg));
         else
+        {
           TELL("Option requires an argument -- ");
+          short_usage();
+        }
         break;
 
       case 'd':
@@ -4889,17 +4671,26 @@ main(int argc, char * argv[])
           utf8_interpret(pre_selection_index, &langinfo);
         }
         else
+        {
           TELL("Option requires an argument -- ");
+          short_usage();
+        }
         break;
 
       case 't':
         if (optarg != NULL)
         {
           if (sscanf(optarg, "%ld", &(win.max_cols)) != 1)
+          {
             TELL("Argument must be numeric -- ");
+            short_usage();
+          }
 
           if (win.max_cols < 1)
+          {
             TELL("Argument must be at least 1 -- ");
+            short_usage();
+          }
         }
 
         win.tab_mode  = 1;
@@ -4982,6 +4773,7 @@ main(int argc, char * argv[])
               free(gutter);
 
               TELL("A multi columns gutter is not allowed -- ");
+              short_usage();
             }
 
             offset += mblen;
@@ -5006,7 +4798,10 @@ main(int argc, char * argv[])
           utf8_interpret(message, &langinfo);
         }
         else
+        {
           TELL("Option requires an argument -- ");
+          short_usage();
+        }
         break;
 
       case 'r':
@@ -5031,7 +4826,10 @@ main(int argc, char * argv[])
             include_pattern = concat(include_pattern, "|(", optarg, ")", NULL);
         }
         else
+        {
           TELL("Option requires an argument -- ");
+          short_usage();
+        }
         break;
 
       case 'e':
@@ -5048,7 +4846,10 @@ main(int argc, char * argv[])
             exclude_pattern = concat(exclude_pattern, "|(", optarg, ")", NULL);
         }
         else
+        {
           TELL("Option requires an argument -- ");
+          short_usage();
+        }
         break;
 
       case 'C':
@@ -5060,7 +4861,10 @@ main(int argc, char * argv[])
           ll_append(cols_selector_list, xstrdup(optarg));
         }
         else
+        {
           TELL("Option requires an argument -- ");
+          short_usage();
+        }
         break;
 
       case 'R':
@@ -5073,7 +4877,10 @@ main(int argc, char * argv[])
           win.max_cols = 0;
         }
         else
+        {
           TELL("Option requires an argument -- ");
+          short_usage();
+        }
         break;
 
       case 'S':
@@ -5091,7 +4898,10 @@ main(int argc, char * argv[])
           ll_append(sed_list, sed_node);
         }
         else
+        {
           TELL("Option requires an argument -- ");
+          short_usage();
+        }
         break;
 
       case 'I':
@@ -5109,7 +4919,10 @@ main(int argc, char * argv[])
           ll_append(include_sed_list, sed_node);
         }
         else
+        {
           TELL("Option requires an argument -- ");
+          short_usage();
+        }
         break;
 
       case 'E':
@@ -5127,7 +4940,10 @@ main(int argc, char * argv[])
           ll_append(exclude_sed_list, sed_node);
         }
         else
+        {
           TELL("Option requires an argument -- ");
+          short_usage();
+        }
         break;
 
       case '1':
@@ -5148,7 +4964,10 @@ main(int argc, char * argv[])
           while (argv[optind] && *argv[optind] != '-')
           {
             if (count > 2)
+            {
               TELL("Too many arguments -- ");
+              short_usage();
+            }
 
             /* Colors must respect the format: <fg color>/<bg color> */
             /* """"""""""""""""""""""""""""""""""""""""""""""""""""" */
@@ -5165,14 +4984,20 @@ main(int argc, char * argv[])
               win.special_attr[opt - '1'].italic    = attr.italic;
             }
             else
+            {
               TELL("Bad optional color settings -- ");
+              short_usage();
+            }
 
             optind++;
             count++;
           }
         }
         else
+        {
           TELL("Option requires an argument -- ");
+          short_usage();
+        }
         break;
 
       case 'a':
@@ -5211,56 +5036,60 @@ main(int argc, char * argv[])
             int *    flag;
             char *   prefix;
             int      prefix_len;
-          } attr_infos[] = {
-            { &win.exclude_attr, "The exclude attribute is already set -- ",
-              &exc_attr_set, "e:", 2 },
-            { &win.include_attr, "The include attribute is already set -- ",
-              &inc_attr_set, "i:", 2 },
-            { &win.cursor_attr, "The cursor attribute is already set -- ",
-              &cur_attr_set, "c:", 2 },
-            { &win.bar_attr, "The scroll bar attribute is already set -- ",
-              &bar_attr_set, "b:", 2 },
-            { &win.shift_attr, "The shift attribute is already set -- ",
-              &shift_attr_set, "s:", 2 },
-            { &win.tag_attr, "The tag attribute is already set -- ",
-              &tag_attr_set, "t:", 2 },
-            { &win.cursor_on_tag_attr,
-              "The cursor on tagged word attribute is already set -- ",
-              &cursor_on_tag_attr_set, "ct:", 3 },
-            { &win.search_field_attr,
-              "The search field attribute is already set -- ", &sf_attr_set,
-              "sf:", 3 },
-            { &win.search_text_attr,
-              "The search text attribute is already set -- ", &st_attr_set,
-              "st:", 3 },
-            { &win.search_err_field_attr,
-              "The search with error field attribute is already set -- ",
-              &sf_attr_set, "sfe:", 4 },
-            { &win.search_err_text_attr,
-              "The search text with error attribute is already set -- ",
-              &st_attr_set, "ste:", 4 },
-            { &win.match_field_attr,
-              "The matching word field attribute is already set -- ",
-              &mf_attr_set, "mf:", 3 },
-            { &win.match_text_attr,
-              "The matching word text attribute is already set -- ",
-              &mt_attr_set, "mt:", 3 },
-            { &win.match_err_field_attr,
-              "The matching word with error field attribute is already set -- ",
-              &mf_attr_set, "mfe:", 4 },
-            { &win.match_err_text_attr,
-              "The matching word with error text attribute is already set -- ",
-              &mt_attr_set, "mte:", 4 },
-            { &win.daccess_attr,
-              "The direct access tag attribute is already set -- ",
-              &daccess_attr_set, "da:", 3 },
-            { NULL, NULL, NULL, NULL, 0 }
-          };
+          } attr_infos[] =
+            { { &win.exclude_attr, "The exclude attribute is already set -- ",
+                &exc_attr_set, "e:", 2 },
+              { &win.include_attr, "The include attribute is already set -- ",
+                &inc_attr_set, "i:", 2 },
+              { &win.cursor_attr, "The cursor attribute is already set -- ",
+                &cur_attr_set, "c:", 2 },
+              { &win.bar_attr, "The scroll bar attribute is already set -- ",
+                &bar_attr_set, "b:", 2 },
+              { &win.shift_attr, "The shift attribute is already set -- ",
+                &shift_attr_set, "s:", 2 },
+              { &win.tag_attr, "The tag attribute is already set -- ",
+                &tag_attr_set, "t:", 2 },
+              { &win.cursor_on_tag_attr,
+                "The cursor on tagged word attribute is already set -- ",
+                &cursor_on_tag_attr_set, "ct:", 3 },
+              { &win.search_field_attr,
+                "The search field attribute is already set -- ", &sf_attr_set,
+                "sf:", 3 },
+              { &win.search_text_attr,
+                "The search text attribute is already set -- ", &st_attr_set,
+                "st:", 3 },
+              { &win.search_err_field_attr,
+                "The search with error field attribute is already set -- ",
+                &sf_attr_set, "sfe:", 4 },
+              { &win.search_err_text_attr,
+                "The search text with error attribute is already set -- ",
+                &st_attr_set, "ste:", 4 },
+              { &win.match_field_attr,
+                "The matching word field attribute is already set -- ",
+                &mf_attr_set, "mf:", 3 },
+              { &win.match_text_attr,
+                "The matching word text attribute is already set -- ",
+                &mt_attr_set, "mt:", 3 },
+              { &win.match_err_field_attr,
+                "The matching word with error field attribute is already set "
+                "-- ",
+                &mf_attr_set, "mfe:", 4 },
+              { &win.match_err_text_attr,
+                "The matching word with error text attribute is already set "
+                "-- ",
+                &mt_attr_set, "mte:", 4 },
+              { &win.daccess_attr,
+                "The direct access tag attribute is already set -- ",
+                &daccess_attr_set, "da:", 3 },
+              { NULL, NULL, NULL, NULL, 0 } };
 
           optind--;
 
           if (*argv[optind] == '-')
+          {
             TELL("A blank is required before the first sub-option -- ");
+            short_usage();
+          }
 
           /* Parse the arguments arguments */
           /* """"""""""""""""""""""""""""" */
@@ -5269,7 +5098,10 @@ main(int argc, char * argv[])
             attr = init_attr;
 
             if (strlen(argv[optind]) < 3)
+            {
               TELL("Empty attribute value -- ");
+              short_usage();
+            }
 
             i = 0;
             while (attr_infos[i].flag != NULL)
@@ -5279,7 +5111,10 @@ main(int argc, char * argv[])
                   == 0)
               {
                 if (*attr_infos[i].flag)
+                {
                   TELL(attr_infos[i].msg);
+                  short_usage();
+                }
 
                 attr_to_set         = attr_infos[i].attr;
                 *attr_infos[i].flag = 1;
@@ -5290,7 +5125,10 @@ main(int argc, char * argv[])
               i++;
             }
             if (attr_infos[i].flag == NULL)
+            {
               TELL("Bad attribute prefix -- ");
+              short_usage();
+            }
 
             /* Attributes must respect the format: */
             /* <fg color>/<bg color>,<styles>      */
@@ -5308,13 +5146,19 @@ main(int argc, char * argv[])
               attr_to_set->italic    = attr.italic;
             }
             else
+            {
               TELL("Bad attribute settings -- ");
+              short_usage();
+            }
 
             optind++;
           }
         }
         else
+        {
           TELL("Option requires an argument -- ");
+          short_usage();
+        }
         break;
 
       case 'X':
@@ -5336,10 +5180,16 @@ main(int argc, char * argv[])
               optind++;
             }
             else
+            {
               TELL("Missing timeout word -- ");
+              short_usage();
+            }
           }
           else
+          {
             TELL("Invalid timeout type -- ");
+            short_usage();
+          }
 
           if (argv[optind] && *argv[optind] != '-')
           {
@@ -5349,10 +5199,16 @@ main(int argc, char * argv[])
               timeout.remain = timeout.initial_value;
             }
             else
+            {
               TELL("Invalid timeout delay -- ");
+              short_usage();
+            }
           }
           else
+          {
             TELL("Missing timeout delay -- ");
+            short_usage();
+          }
 
           optind++;
         }
@@ -5369,7 +5225,10 @@ main(int argc, char * argv[])
           utf8_interpret(first_word_pattern, &langinfo);
         }
         else
+        {
           TELL("Option requires an argument -- ");
+          short_usage();
+        }
         break;
 
       case 'Z':
@@ -5379,7 +5238,10 @@ main(int argc, char * argv[])
           utf8_interpret(last_word_pattern, &langinfo);
         }
         else
+        {
           TELL("Option requires an argument -- ");
+          short_usage();
+        }
         break;
 
       case 'W':
@@ -5389,7 +5251,10 @@ main(int argc, char * argv[])
           utf8_interpret(iws, &langinfo);
         }
         else
+        {
           TELL("Option requires an argument -- ");
+          short_usage();
+        }
         break;
 
       case 'L':
@@ -5399,7 +5264,10 @@ main(int argc, char * argv[])
           utf8_interpret(ils, &langinfo);
         }
         else
+        {
           TELL("Option requires an argument -- ");
+          short_usage();
+        }
         break;
 
       case 'P':
@@ -5429,12 +5297,18 @@ main(int argc, char * argv[])
           optind--;
 
           if (*argv[optind] == '-')
+          {
             TELL("A blank is required before the first sub-option -- ");
+            short_usage();
+          }
 
           while (argv[optind] && *argv[optind] != '-')
           {
             if (argv[optind][1] != ':')
+            {
               TELL("Bad format -- ");
+              short_usage();
+            }
 
             switch (*(argv[optind]))
             {
@@ -5445,15 +5319,21 @@ main(int argc, char * argv[])
                 utf8_interpret(daccess.left, &langinfo);
 
                 if (utf8_strlen(daccess.left) != 1)
+                {
                   TELL("Too many characters after l: -- ");
+                  short_usage();
+                }
 
                 n = wcswidth((w = utf8_strtowcs(daccess.left)), 1);
                 free(w);
 
                 if (n > 1)
+                {
                   TELL(
                     "A multi columns character is not allowed "
                     "after l: -- ");
+                  short_usage();
+                }
                 break;
 
               case 'r': /* right char */
@@ -5463,15 +5343,21 @@ main(int argc, char * argv[])
                 utf8_interpret(daccess.right, &langinfo);
 
                 if (utf8_strlen(daccess.right) != 1)
+                {
                   TELL("Too many characters after r: -- ");
+                  short_usage();
+                }
 
                 n = wcswidth((w = utf8_strtowcs(daccess.right)), 1);
                 free(w);
 
                 if (n > 1)
+                {
                   TELL(
                     "A multi columns character is not allowed "
                     "after r: -- ");
+                  short_usage();
+                }
                 break;
 
               case 'a': /* alignment */
@@ -5480,7 +5366,10 @@ main(int argc, char * argv[])
                 else if (strprefix("right", argv[optind] + 2))
                   daccess.alignment = 'r';
                 else
+                {
                   TELL("Bad format -- ");
+                  short_usage();
+                }
                 break;
 
               case 'p': /* padding */
@@ -5489,17 +5378,29 @@ main(int argc, char * argv[])
                 else if (strprefix("included", argv[optind] + 2))
                   daccess.padding = 'i';
                 else
+                {
                   TELL("Bad format -- ");
+                  short_usage();
+                }
                 break;
 
               case 'w': /* width */
                 if (sscanf(argv[optind] + 2, "%d%n", &daccess.length, &pos)
                     != 1)
+                {
                   TELL("Bad format -- ");
+                  short_usage();
+                }
                 if (argv[optind][pos + 2] != '\0')
+                {
                   TELL("Bad format -- ");
+                  short_usage();
+                }
                 if (daccess.length <= 0 || daccess.length > 5)
+                {
                   TELL("w suboption must be between 1 and 5 -- ");
+                  short_usage();
+                }
                 break;
 
               case 'o': /* start offset */
@@ -5511,32 +5412,56 @@ main(int argc, char * argv[])
                     daccess.plus = 1;
 
                     if (argv[optind][pos + 3] != '\0')
+                    {
                       TELL("Bad format -- ");
+                      short_usage();
+                    }
                   }
                   else if (argv[optind][pos + 2] != '\0')
+                  {
                     TELL("Bad format -- ");
+                    short_usage();
+                  }
                 }
                 else
+                {
                   TELL("Bad format -- ");
+                  short_usage();
+                }
 
                 break;
 
               case 'n': /* numbor of digits to extract */
                 if (sscanf(argv[optind] + 2, "%d%n", &daccess.size, &pos) != 1)
+                {
                   TELL("Bad format -- ");
+                  short_usage();
+                }
                 if (argv[optind][pos + 2] != '\0')
+                {
                   TELL("Bad format -- ");
+                  short_usage();
+                }
                 if (daccess.size <= 0 || daccess.size > 5)
+                {
                   TELL("n suboption must be between 1 and 5 -- ");
+                  short_usage();
+                }
                 break;
 
               case 'i': /* Number of UTF-8 glyphs to ignore after the *
                          * selector to extract                        */
                 if (sscanf(argv[optind] + 2, "%zu%n", &daccess.ignore, &pos)
                     != 1)
+                {
                   TELL("Bad format -- ");
+                  short_usage();
+                }
                 if (argv[optind][pos + 2] != '\0')
+                {
                   TELL("Bad format -- ");
+                  short_usage();
+                }
                 break;
 
               case 'f': /* follow */
@@ -5545,7 +5470,10 @@ main(int argc, char * argv[])
                 else if (strprefix("no", argv[optind] + 2))
                   daccess.follow = 'n';
                 else
+                {
                   TELL("Bad format -- ");
+                  short_usage();
+                }
                 break;
 
               case 'd': /* decorate */
@@ -5555,15 +5483,21 @@ main(int argc, char * argv[])
                 utf8_interpret(daccess.num_sep, &langinfo);
 
                 if (utf8_strlen(daccess.num_sep) != 1)
+                {
                   TELL("Too many characters after d: -- ");
+                  short_usage();
+                }
 
                 n = wcswidth((w = utf8_strtowcs(daccess.num_sep)), 1);
                 free(w);
 
                 if (n > 1)
+                {
                   TELL(
                     "A multi columns separator is not allowed "
                     "after d: -- ");
+                  short_usage();
+                }
                 break;
 
               case 's': /* start index */
@@ -5577,7 +5511,10 @@ main(int argc, char * argv[])
                     daccess_index = 1;
                 }
                 else
+                {
                   TELL("Invalid first index after s: -- ");
+                  short_usage();
+                }
               }
               break;
 
@@ -5589,11 +5526,17 @@ main(int argc, char * argv[])
                 else if (strprefix("keep", argv[optind] + 2))
                   daccess.head = 'k';
                 else
+                {
                   TELL("Bad format -- ");
+                  short_usage();
+                }
                 break;
 
               default:
+              {
                 TELL("Bad format -- ");
+                short_usage();
+              }
             }
 
             if (daccess.length <= 0 || daccess.length > 5)
@@ -5603,7 +5546,10 @@ main(int argc, char * argv[])
           }
         }
         else
+        {
           TELL("Option requires an argument -- ");
+          short_usage();
+        }
 
         break;
 
@@ -5658,7 +5604,10 @@ main(int argc, char * argv[])
         else if (strprefix("substring", optarg))
           misc.default_search_method = SUBSTRING;
         else
+        {
           TELL("Bad format -- ");
+          short_usage();
+        }
 
         break;
 
@@ -7157,7 +7106,7 @@ main(int argc, char * argv[])
                          <= utf8_strlen(word->str))
                 {
                   unsigned selector_value; /* numerical value of the         *
-                                            * extracted selector             */
+                                            * extracted selector */
                   long selector_offset;    /* offset in byte to the selector *
                                             * to extract                     */
                   char * ptr;              /* points just after the selector *
