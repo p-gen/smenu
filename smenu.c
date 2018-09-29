@@ -14,15 +14,6 @@
 /* General Public License for more details.                            */
 /* ################################################################### */
 
-#define CHARSCHUNK 8
-#define WORDSCHUNK 8
-#define COLSCHUNK 16
-
-#define TPARM1(p, ...) tparm(p, 0, 0, 0, 0, 0, 0, 0, 0, 0)
-#define TPARM2(p, q, ...) tparm(p, q, 0, 0, 0, 0, 0, 0, 0, 0)
-#define TPARM3(p, q, r, ...) tparm(p, q, r, 0, 0, 0, 0, 0, 0, 0)
-
-#define _XOPEN_SOURCE 700
 #include "config.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -51,606 +42,7 @@
 #include "ptrlist.h"
 #include "index.h"
 #include "utf8.h"
-
-/* Used for timers management */
-/* """""""""""""""""""""""""" */
-#define SECOND 1000000
-#define FREQ 10
-#define TICK (SECOND / FREQ)
-
-/* Bit array management */
-/* """""""""""""""""""" */
-#define MASK (CHAR_BIT - 1)
-#define SHIFT ((CHAR_BIT == 8) ? 3 : (CHAR_BIT == 16) ? 4 : 8)
-
-#define BIT_OFF(a, x) ((void)((a)[(x) >> SHIFT] &= ~(1 << ((x)&MASK))))
-#define BIT_ON(a, x) ((void)((a)[(x) >> SHIFT] |= (1 << ((x)&MASK))))
-#define BIT_FLIP(a, x) ((void)((a)[(x) >> SHIFT] ^= (1 << ((x)&MASK))))
-#define BIT_ISSET(a, x) ((a)[(x) >> SHIFT] & (1 << ((x)&MASK)))
-
-/* ******** */
-/* Typedefs */
-/* ******** */
-
-typedef struct charsetinfo_s charsetinfo_t;
-typedef struct term_s        term_t;
-typedef struct toggle_s      toggle_t;
-typedef struct win_s         win_t;
-typedef struct word_s        word_t;
-typedef struct attr_s        attr_t;
-typedef struct limits_s      limits_t;
-typedef struct timers_s      timers_t;
-typedef struct misc_s        misc_t;
-typedef struct sed_s         sed_t;
-typedef struct interval_s    interval_t;
-typedef struct timeout_s     timeout_t;
-typedef struct output_s      output_t;
-typedef struct daccess_s     daccess_t;
-typedef struct search_data_s search_data_t;
-
-typedef enum filter_types       filters_t;
-typedef enum daccess_modes      da_mode_t;
-typedef enum timeout_modes      to_mode_t;
-typedef enum attribute_settings attr_set_t;
-typedef enum search_modes       search_mode_t;
-typedef enum bitmap_affinities  bitmap_affinity_t;
-
-/* ********** */
-/* Prototypes */
-/* ********** */
-
-static void
-help(win_t * win, term_t * term, long last_line, toggle_t * toggle);
-
-static void
-short_usage(void);
-
-static void
-usage(void);
-
-static char *
-concat(const char * s1, ...);
-
-static interval_t *
-interval_new(void);
-
-static int
-interval_comp(void * a, void * b);
-
-static void
-interval_swap(void * a, void * b);
-
-static int
-tag_comp(void * a, void * b);
-
-static void
-tag_swap(void * a, void * b);
-
-static void
-ltrim(char * str, const char * trim);
-
-static void
-rtrim(char * str, const char * trim, size_t min_len);
-
-static int
-isempty(const char * str);
-
-static int
-my_strcasecmp(const char * str1, const char * str2);
-
-static char *
-my_strcpy(char * dst, char * src);
-
-static int
-isprint7(int i);
-
-static int
-isprint8(int i);
-
-void
-beep(toggle_t * toggle);
-
-static int
-get_cursor_position(int * const r, int * const c);
-
-static void
-get_terminal_size(int * const r, int * const c);
-
-static int
-#ifdef __sun
-outch(char c);
-#else
-outch(int c);
-#endif
-
-static void
-restore_term(int const fd);
-
-static void
-setup_term(int const fd);
-
-static void
-strip_ansi_color(char * s, toggle_t * toggle);
-
-static int
-strprefix(char * str1, char * str2);
-
-static int
-tst_cb(void * elem);
-
-static int
-tst_cb_cli(void * elem);
-
-static int
-ini_load(const char * filename, win_t * win, term_t * term, limits_t * limits,
-         timers_t * timers, misc_t * misc,
-         int (*report)(win_t * win, term_t * term, limits_t * limits,
-                       timers_t * timers, misc_t * misc, const char * section,
-                       const char * name, char * value));
-
-static int
-ini_cb(win_t * win, term_t * term, limits_t * limits, timers_t * timers,
-       misc_t * misc, const char * section, const char * name, char * value);
-
-static char *
-make_ini_path(char * name, char * base);
-
-static void
-set_foreground_color(term_t * term, short color);
-
-static void
-set_background_color(term_t * term, short color);
-
-static void
-set_win_start_end(win_t * win, long current, long last);
-
-static long
-build_metadata(term_t * term, long count, win_t * win);
-
-static long
-disp_lines(win_t * win, toggle_t * toggle, long current, long count,
-           search_mode_t search_mode, search_data_t * search_data,
-           term_t * term, long last_line, char * tmp_word,
-           langinfo_t * langinfo);
-
-static void
-get_message_lines(char * message, ll_t * message_lines_list,
-                  long * message_max_width, long * message_max_len);
-
-static void
-disp_message(ll_t * message_lines_list, long width, long max_len, term_t * term,
-             win_t * win);
-
-static void
-update_bitmaps(search_mode_t search_mode, search_data_t * search_data,
-               bitmap_affinity_t ending_pattern);
-
-long
-find_next_matching_word(long * array, long nb, long value, long * index);
-
-long
-find_prev_matching_word(long * array, long nb, long value, long * index);
-
-void
-clean_matches(search_data_t * search_data, long size);
-
-void
-disp_cursor_word(long pos, win_t * win, term_t * term, int err);
-
-void
-disp_matching_word(long pos, win_t * win, term_t * term, int is_matching,
-                   int err);
-
-static void
-disp_word(long pos, search_mode_t search_mode, search_data_t * search_data,
-          term_t * term, win_t * win, char * tmp_word);
-
-static int
-egetopt(int nargc, char ** nargv, char * ostr);
-
-static size_t
-expand(char * src, char * dest, langinfo_t * langinfo, toggle_t * toggle);
-
-static int
-get_bytes(FILE * input, char * utf8_buffer, langinfo_t * langinfo);
-
-static int
-get_scancode(unsigned char * s, size_t max);
-
-static char *
-get_word(FILE * input, ll_t * word_delims_list, ll_t * record_delims_list,
-         char * utf8_buffer, unsigned char * is_last, toggle_t * toggle,
-         langinfo_t * langinfo, win_t * win, limits_t * limits);
-
-static void
-left_margin_putp(char * s, term_t * term, win_t * win);
-
-static void
-right_margin_putp(char * s1, char * s2, langinfo_t * langinfo, term_t * term,
-                  win_t * win, long line, long offset);
-
-static void
-sig_handler(int s);
-
-static void
-set_new_first_column(win_t * win, term_t * term);
-
-static void
-merge_intervals(ll_t * list);
-
-static int
-parse_sed_like_string(sed_t * sed);
-
-static void
-parse_selectors(char * str, filters_t * filter, char * unparsed,
-                ll_t ** inc_interval_list, ll_t ** inc_regex_list,
-                ll_t ** exc_interval_list, ll_t ** exc_regex_list,
-                langinfo_t * langinfo);
-
-static int
-replace(char * orig, sed_t * sed);
-
-static int
-decode_attr_toggles(char * s, attr_t * attr);
-
-static int
-parse_attr(char * str, attr_t * attr, short max_color);
-
-static void
-apply_attr(term_t * term, attr_t attr);
-
-static int (*my_isprint)(int);
-
-static int
-delims_cmp(const void * a, const void * b);
-
-/* ***************** */
-/* Emums and structs */
-/* ***************** */
-
-/* Various filter pseudo constants */
-/* """"""""""""""""""""""""""""""" */
-enum filter_types
-{
-  UNKNOWN_FILTER,
-  INCLUDE_FILTER,
-  EXCLUDE_FILTER
-};
-
-/* Used by the -N -F and -D options */
-/* """""""""""""""""""""""""""""""" */
-enum daccess_modes
-{
-  DA_TYPE_NONE = 0, /* must be 0 (boolean value) */
-  DA_TYPE_AUTO = 1,
-  DA_TYPE_POS  = 2
-};
-
-/* Used when managing the -R option */
-/* """""""""""""""""""""""""""""""" */
-enum row_regex_types
-{
-  ROW_REGEX_EXCLUDE = 0, /* must be 0 (boolean value) */
-  ROW_REGEX_INCLUDE = 1
-};
-
-/* Used when managing the -C option */
-/* """""""""""""""""""""""""""""""" */
-enum filter_infos
-{
-  EXCLUDE_MARK = 0,      /* must be 0 because used in various tests     *
-                          * these words cannot be re-included           */
-  INCLUDE_MARK = 1,      /* to forcibly include a word, these words can *
-                          * be excluded later                           */
-  SOFT_EXCLUDE_MARK = 2, /* word with this mark are excluded by default *
-                          * but can be included later                   */
-  SOFT_INCLUDE_MARK = 3  /* word with this mark are included by default *
-                          * but can be excluded later                   */
-};
-
-enum timeout_modes
-{
-  CURRENT, /* on timeout, outputs the selected word       */
-  QUIT,    /* on timeout, quit without selecting anything */
-  WORD     /* on timeout , outputs the specified word     */
-};
-
-enum attribute_settings
-{
-  UNSET = 0, /* must be 0 for future testings */
-  SET,
-  FORCED /* an attribute setting has been given in the command line */
-};
-
-enum search_modes
-{
-  NONE,
-  PREFIX,
-  FUZZY,
-  SUBSTRING
-};
-
-enum bitmap_affinities
-{
-  NO_AFFINITY,
-  END_AFFINITY,
-  START_AFFINITY
-};
-
-struct charsetinfo_s
-{
-  char * name; /* canonical name of the allowed charset */
-  int    bits; /* number of bits in this charset        */
-};
-
-/* Various toggles which can be set with command line options */
-/* """""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-struct toggle_s
-{
-  int del_line;            /* 1 if the clean option is set (-d) else 0   */
-  int enter_val_in_search; /* 1 if ENTER validates in search mode else 0 */
-  int no_scrollbar;        /* 1 to disable the scrollbar display else 0  */
-  int blank_nonprintable;  /* 1 to try to display non-blanks in          *
-                            * symbolic form else 0                       */
-  int keep_spaces;         /* 1 to keep the trailing spaces in columns   *
-                            * and tabulate mode.                         */
-  int taggable;            /* 1 if tagging is enabled                    */
-  int pinable;             /* 1 if pinning is selected                   */
-  int autotag;             /* 1 if tagging is selected and pinning is    *
-                            * not and we do no want an automatic tagging *
-                            * when the users presses <ENTER>             */
-  int visual_bell;         /* 1 to flash the window, 0 to make a sound   */
-};
-
-/* Structure to store the default or imposed smenu limits */
-/* """""""""""""""""""""""""""""""""""""""""""""""""""""" */
-struct limits_s
-{
-  long word_length; /* maximum number of bytes in a word */
-  long words;       /* maximum number of words           */
-  long cols;        /* maximum number of columns         */
-};
-
-/* Structure to store the default or imposed timers */
-/* """""""""""""""""""""""""""""""""""""""""""""""" */
-struct timers_s
-{
-  int search;
-  int help;
-  int winch;
-  int direct_access;
-};
-
-/* Structure to store miscellaneous informations */
-/* """"""""""""""""""""""""""""""""""""""""""""" */
-struct misc_s
-{
-  search_mode_t default_search_method;
-};
-
-/* Terminal setting variables */
-/* """""""""""""""""""""""""" */
-struct termios new_in_attrs;
-struct termios old_in_attrs;
-
-/* Interval timers used */
-/* """""""""""""""""""" */
-struct itimerval periodic_itv; /* refresh rate for the timeout counter */
-
-int help_timer    = -1;
-int winch_timer   = -1;
-int daccess_timer = -1;
-
-/* Structure containing the attributes components */
-/* """""""""""""""""""""""""""""""""""""""""""""" */
-struct attr_s
-{
-  attr_set_t  is_set;
-  short       fg;
-  short       bg;
-  signed char bold;
-  signed char dim;
-  signed char reverse;
-  signed char standout;
-  signed char underline;
-  signed char italic;
-};
-
-/* Structure containing some terminal characteristics */
-/* """""""""""""""""""""""""""""""""""""""""""""""""" */
-struct term_s
-{
-  int   ncolumns;     /* number of columns                      */
-  int   nlines;       /* number of lines                        */
-  int   curs_column;  /* current cursor column                  */
-  int   curs_line;    /* current cursor line                    */
-  short colors;       /* number of available colors             */
-  short color_method; /* color method (0=classic (0-7), 1=ANSI) */
-
-  char has_cursor_up;         /* has cuu1 terminfo capability           */
-  char has_cursor_down;       /* has cud1 terminfo capability           */
-  char has_cursor_left;       /* has cub1 terminfo capability           */
-  char has_cursor_right;      /* has cuf1 terminfo capability           */
-  char has_parm_right_cursor; /* has cuf terminfo capability            */
-  char has_cursor_address;    /* has cup terminfo capability            */
-  char has_save_cursor;       /* has sc terminfo capability             */
-  char has_restore_cursor;    /* has rc terminfo capability             */
-  char has_setf;              /* has set_foreground terminfo capability */
-  char has_setb;              /* has set_background terminfo capability */
-  char has_setaf;             /* idem for set_a_foreground (ANSI)       */
-  char has_setab;             /* idem for set_a_background (ANSI)       */
-  char has_hpa;               /* has column_address terminfo capability */
-  char has_bold;              /* has bold mode                          */
-  char has_dim;               /* has dim mode                           */
-  char has_reverse;           /* has reverse mode                       */
-  char has_underline;         /* has underline mode                     */
-  char has_standout;          /* has standout mode                      */
-  char has_italic;            /* has italic mode                        */
-};
-
-/* Structure describing a word */
-/* """"""""""""""""""""""""""" */
-struct word_s
-{
-  long start, end;      /* start/end absolute horiz. word positions *
-                         * on the screen                            */
-  size_t mb;            /* number of UTF-8 glyphs to display        */
-  long   tag_order;     /* each time a word is tagged, this value   *
-                         * is increased                             */
-  size_t special_level; /* can vary from 0 to 5; 0 meaning normal   */
-  char * str;           /* display string associated with this word */
-  size_t len;           /* number of bytes of str (for trimming)    */
-  char * orig;          /* NULL or original string if is had been   *
-                         * shortened for being displayed or altered *
-                         * by is expansion.                         */
-  char * bitmap;        /* used to store the the position of the    *
-                         * currently searched chars in a word. The  *
-                         * objective is to speed their display      */
-  unsigned char is_matching;
-  unsigned char is_tagged;     /* 1 if the word is tagged, 0 if not   */
-  unsigned char is_last;       /* 1 if the word is the last of a line */
-  unsigned char is_selectable; /* word is selectable                  */
-  unsigned char is_numbered;   /* word has a direct access index      */
-};
-
-/* Structure describing the window in which the user */
-/* will be able to select a word                     */
-/* """"""""""""""""""""""""""""""""""""""""""""""""" */
-struct win_s
-{
-  long start, end;      /* index of the first and last word        */
-  long first_column;    /* number of the first character displayed */
-  long cur_line;        /* relative number of the cursor line (1+) */
-  long asked_max_lines; /* requested number of lines in the window */
-  long max_lines;       /* effective number of lines in the window */
-  long max_cols;        /* max number of words in a single line    */
-  long real_max_width;  /* max line length. In column, tab or line *
-                         * mode it can be greater than the         *
-                         * terminal width                          */
-  long message_lines;   /* number of lines taken by the messages   *
-                         * (updated by disp_message                */
-  long    max_width;    /* max usable line width or the terminal   */
-  long    offset;       /* window offset user when centered        */
-  char *  sel_sep;      /* output separator when tags are enabled  */
-  char ** gutter_a;     /* array of UTF-8 gutter glyphs            */
-  long    gutter_nb;    /* number of UTF-8 gutter glyphs           */
-
-  unsigned char tab_mode;  /* -t */
-  unsigned char col_mode;  /* -c */
-  unsigned char line_mode; /* -l */
-  unsigned char col_sep;   /* -g */
-  unsigned char wide;      /* -w */
-  unsigned char center;    /* -M */
-
-  attr_t cursor_attr;           /* current cursor attributes          */
-  attr_t cursor_on_tag_attr;    /* current cursor on tag attributes   */
-  attr_t bar_attr;              /* scrollbar attributes               */
-  attr_t shift_attr;            /* shift indicator attributes         */
-  attr_t search_field_attr;     /* search mode field attributes       */
-  attr_t search_text_attr;      /* search mode text attributes        */
-  attr_t search_err_field_attr; /* bad search mode field attributes   */
-  attr_t search_err_text_attr;  /* bad search mode text attributes    */
-  attr_t match_field_attr;      /* matching word field attributes     */
-  attr_t match_text_attr;       /* matching word text attributes      */
-  attr_t match_err_field_attr;  /* bad matching word field attributes */
-  attr_t match_err_text_attr;   /* bad matching word text attributes  */
-  attr_t include_attr;          /* selectable words attributes        */
-  attr_t exclude_attr;          /* non-selectable words attributes    */
-  attr_t tag_attr;              /* non-selectable words attributes    */
-  attr_t daccess_attr;          /* direct access tag attributes       */
-  attr_t special_attr[5];       /* special (-1,...) words attributes  */
-};
-
-/* Sed like node structure */
-/* """"""""""""""""""""""" */
-struct sed_s
-{
-  char *        pattern;      /* pattern to be matched             */
-  char *        substitution; /* substitution string               */
-  unsigned char visual;       /* Visual flag: alterations are only *
-                               *              visual               */
-  unsigned char global;       /* Global flag: alterations can      *
-                               *              occur more than once */
-  unsigned char stop;         /* Stop flag:   only one alteration  *
-                               *              per word is allowed  */
-  regex_t re;
-};
-
-/* Interval structure for use in lists of columns and rows */
-/* """"""""""""""""""""""""""""""""""""""""""""""""""""""" */
-struct interval_s
-{
-  long low;
-  long high;
-};
-
-/* Structure used by the replace function to delimit matches */
-/* """"""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-struct range_s
-{
-  size_t start;
-  size_t end;
-};
-
-/* Structure used to keep track of the different timeout values */
-/* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-struct timeout_s
-{
-  to_mode_t mode;          /* timeout mode: current/quit/word */
-  unsigned  initial_value; /* 0: no timeout else value in sec */
-  unsigned  remain;        /* remaining seconds               */
-  unsigned  reached;       /* 1: timeout has expired, else 0  */
-};
-
-/* Structure used during the construction of the pinned words list */
-/* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-struct output_s
-{
-  long   order;
-  char * output_str;
-};
-
-/* Structure describing the formating of the automatic direct access entries */
-/* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-struct daccess_s
-{
-  da_mode_t mode; /* DA_TYPE_NONE (0), DA_TYPE_AUTO, DA_TYPE_POS          */
-
-  char * left;  /* character to put before the direct access selector     */
-  char * right; /* character to put after the direct access selector      */
-
-  char   alignment;  /* l: left; r: right                                 */
-  char   padding;    /* a: all; i: only included words are padded         */
-  char   head;       /* What to do with chars before the embedded number  */
-  int    length;     /* selector size (5 max)                             */
-  int    flength;    /* 0 or length + 3 (full prefix lengh                */
-  size_t offset;     /* offset to the start of the selector               */
-  int    plus;       /* 1 if we can look for the number to extract after  *
-                      * the offset, else 0. (a '+' follows the offset)    */
-  int    size;       /* size in bytes of the selector to extract          */
-  size_t ignore;     /* number of UTF-8 glyphs to ignore after the number */
-  char   follow;     /* y: the numbering follows the last nuber set       */
-  char * num_sep;    /* character to separate de number and the selection */
-  int    def_number; /* 1: the numbering is on by default 0: it is not    */
-};
-
-struct search_data_s
-{
-  char * buf;        /* Search buffer                            */
-  long   len;        /* Current position in the search buffer    */
-  long   utf8_len;   /* Current position in the search buffer in *
-                      * UTF-8 units                              */
-  long * utf8_off_a; /* Array of mb offsets in buf               */
-  long * utf8_len_a; /* Array of mb lengths in buf               */
-
-  int  fuzzy_err;     /* fuzzy match error indicator             */
-  long fuzzy_err_pos; /* last good position in search buffer     */
-
-  int only_ending;   /* only searches giving a result with the   *
-                      * pattern at the end of the word will be   *
-                      * selected                                 */
-  int only_starting; /* Same with the pattern at the beginning   */
-};
+#include "smenu.h"
 
 /* **************** */
 /* Extern variables */
@@ -746,7 +138,7 @@ static long next_buffer_pos = 0; /* next free position in the getc buffer */
 /* ====================================== */
 /* Get a (possibly pushed-back) character */
 /* ====================================== */
-static int
+int
 my_fgetc(FILE * input)
 {
   return (next_buffer_pos > 0) ? getc_buffer[--next_buffer_pos] : fgetc(input);
@@ -755,7 +147,7 @@ my_fgetc(FILE * input)
 /* ============================ */
 /* Push character back on input */
 /* ============================ */
-static void
+void
 my_ungetc(int c)
 {
   if (next_buffer_pos >= GETC_BUFF_SIZE)
@@ -772,7 +164,7 @@ my_ungetc(int c)
 /* =================== */
 /* Short usage display */
 /* =================== */
-static void
+void
 short_usage(void)
 {
   fprintf(stderr, "Usage: smenu [-h|-?] [-f config_file] [-n lines] ");
@@ -818,7 +210,7 @@ short_usage(void)
 /* ====================== */
 /* Usage display and exit */
 /* ====================== */
-static void
+void
 usage(void)
 {
   short_usage();
@@ -952,7 +344,7 @@ usage(void)
 /* ==================== */
 /* Help message display */
 /* ==================== */
-static void
+void
 help(win_t * win, term_t * term, long last_line, toggle_t * toggle)
 {
   int index;      /* used to identify the objects long the help line */
@@ -1083,7 +475,7 @@ help(win_t * win, term_t * term, long last_line, toggle_t * toggle)
 /* Returns 0 if some unexpected     */
 /* toggle is found else 0           */
 /* ================================ */
-static int
+int
 decode_attr_toggles(char * s, attr_t * attr)
 {
   int rc = 1;
@@ -1136,7 +528,7 @@ decode_attr_toggles(char * s, attr_t * attr)
 /* Returns 1 on success else 0                              */
 /* attr will be filled by the function                      */
 /* =========================================================*/
-static int
+int
 parse_attr(char * str, attr_t * attr, short max_color)
 {
   int    n;
@@ -1204,7 +596,7 @@ parse_attr(char * str, attr_t * attr, short max_color)
 /* ============================================= */
 /* Set the terminal attributes according to attr */
 /* ============================================= */
-static void
+void
 apply_attr(term_t * term, attr_t attr)
 {
   if (attr.fg >= 0)
@@ -1241,7 +633,7 @@ apply_attr(term_t * term, attr_t attr)
 /* line of the ini file.                                 */
 /* Returns 0 if OK, 1 if not.                            */
 /* ===================================================== */
-static int
+int
 ini_cb(win_t * win, term_t * term, limits_t * limits, timers_t * timers,
        misc_t * misc, const char * section, const char * name, char * value)
 {
@@ -1455,7 +847,7 @@ out:
 /* This function is public domain. No copyright is claimed.                  */
 /* Jon Mayo April 2011                                                       */
 /* ========================================================================= */
-static int
+int
 ini_load(const char * filename, win_t * win, term_t * term, limits_t * limits,
          timers_t * timers, misc_t * misc,
          int (*report)(win_t * win, term_t * term, limits_t * limits,
@@ -1543,7 +935,7 @@ out:
 /* to be in the home directory of the user.                */
 /* NULL is returned if the built path is too large.        */
 /* ======================================================= */
-static char *
+char *
 make_ini_path(char * name, char * base)
 {
   char * path;
@@ -1587,7 +979,7 @@ make_ini_path(char * name, char * base)
 /* ===================== */
 /* Create a new interval */
 /* ===================== */
-static interval_t *
+interval_t *
 interval_new(void)
 {
   interval_t * ret = xmalloc(sizeof(interval_t));
@@ -1599,7 +991,7 @@ interval_new(void)
 /* Compare 2 intervals as integer couples */
 /* same return values as for strcmp       */
 /* ====================================== */
-static int
+int
 interval_comp(void * a, void * b)
 {
   interval_t * ia = (interval_t *)a;
@@ -1620,7 +1012,7 @@ interval_comp(void * a, void * b)
 /* ================================ */
 /* Swap the values of two intervals */
 /* ================================ */
-static void
+void
 interval_swap(void * a, void * b)
 {
   interval_t * ia = (interval_t *)a;
@@ -1639,7 +1031,7 @@ interval_swap(void * a, void * b)
 /* =========================================================== */
 /* Compare the pin order of two pinned word in the output list */
 /* =========================================================== */
-static int
+int
 tag_comp(void * a, void * b)
 {
   output_t * oa = (output_t *)a;
@@ -1654,7 +1046,7 @@ tag_comp(void * a, void * b)
 /* ======================================================== */
 /* Swap the values of two selected words in the output list */
 /* ======================================================== */
-static void
+void
 tag_swap(void * a, void * b)
 {
   output_t * oa = (output_t *)a;
@@ -1694,7 +1086,7 @@ sub_tst_new(void)
 /* =============================== */
 /* 7 bits aware version of isprint */
 /* =============================== */
-static int
+int
 isprint7(int i)
 {
   return (i >= 0x20 && i <= 0x7e);
@@ -1703,7 +1095,7 @@ isprint7(int i)
 /* =============================== */
 /* 8 bits aware version of isprint */
 /* =============================== */
-static int
+int
 isprint8(int i)
 {
   unsigned char c = i & (unsigned char)0xff;
@@ -1745,7 +1137,7 @@ beep(toggle_t * toggle)
 /* buffer.                                                                  */
 /* The disp_word function will use it to display these special characters.  */
 /* ======================================================================== */
-static void
+void
 update_bitmaps(search_mode_t mode, search_data_t * data,
                bitmap_affinity_t affinity)
 {
@@ -2156,7 +1548,7 @@ clean_matches(search_data_t * search_data, long size)
 /* outch is a function version of putchar that can be passed to tputs as */
 /* a routine to call.                                                    */
 /* ===================================================================== */
-static int
+int
 #ifdef __sun
 outch(char c)
 #else
@@ -2171,7 +1563,7 @@ outch(int c)
 /* Set the terminal in non echo/non canonical mode */
 /* wait for at least one byte, no timeout.         */
 /* =============================================== */
-static void
+void
 setup_term(int const fd)
 {
   /* Save the terminal parameters and configure it in row mode */
@@ -2192,7 +1584,7 @@ setup_term(int const fd)
 /* ===================================== */
 /* Set the terminal in its previous mode */
 /* ===================================== */
-static void
+void
 restore_term(int const fd)
 {
   tcsetattr(fd, TCSANOW, &old_in_attrs);
@@ -2203,7 +1595,7 @@ restore_term(int const fd)
 /* Assume that the TIOCGWINSZ, ioctl is available */
 /* Defaults to 80x24                              */
 /* ============================================== */
-static void
+void
 get_terminal_size(int * const r, int * const c)
 {
   struct winsize ws;
@@ -2230,7 +1622,7 @@ get_terminal_size(int * const r, int * const c)
 /* Get cursor position the terminal                       */
 /* Assume that the Escape sequence ESC [ 6 n is available */
 /* ====================================================== */
-static int
+int
 get_cursor_position(int * const r, int * const c)
 {
   char   buf[32];
@@ -2273,7 +1665,7 @@ get_cursor_position(int * const r, int * const c)
 /* ======================= */
 /* Trim leading characters */
 /* ======================= */
-static void
+void
 ltrim(char * str, const char * trim_str)
 {
   size_t len   = strlen(str);
@@ -2290,7 +1682,7 @@ ltrim(char * str, const char * trim_str)
 /* The resulting string will have at least min bytes */
 /* even if trailing spaces remain.                   */
 /* ================================================= */
-static void
+void
 rtrim(char * str, const char * trim_str, size_t min)
 {
   size_t len = strlen(str);
@@ -2301,7 +1693,7 @@ rtrim(char * str, const char * trim_str, size_t min)
 /* ===================================================== */
 /* Returns 1 if a string is empty or only made of spaces */
 /* ===================================================== */
-static int
+int
 isempty(const char * s)
 {
   while (*s != '\0')
@@ -2317,7 +1709,7 @@ isempty(const char * s)
 /* Case insensitive strcmp                   */
 /* from http://c.snippets.org/code/stricmp.c */
 /* ========================================= */
-static int
+int
 my_strcasecmp(const char * str1, const char * str2)
 {
 #ifdef HAVE_STRCASECMP
@@ -2367,7 +1759,7 @@ my_strcpy(char * str1, char * str2)
 /* exc_regex_list (out) INCLUDE_FILTER or EXCLUDE_FILTER                    */
 /*                      regular expression if the filter is EXCLUDE_FILTER  */
 /* ======================================================================== */
-static void
+void
 parse_regex_selector_part(char * str, filters_t filter, ll_t ** inc_regex_list,
                           ll_t ** exc_regex_list)
 {
@@ -2420,7 +1812,7 @@ parse_regex_selector_part(char * str, filters_t filter, ll_t ** inc_regex_list,
 /* exc_regex_list    (out) is a list of extended interval of elements to */
 /*                         be excluded.                                  */
 /* ===================================================================== */
-static void
+void
 parse_selectors(char * str, filters_t * filter, char * unparsed,
                 ll_t ** inc_interval_list, ll_t ** inc_regex_list,
                 ll_t ** exc_interval_list, ll_t ** exc_regex_list,
@@ -2644,7 +2036,7 @@ parse_selectors(char * str, filters_t * filter, char * unparsed,
 /* Merge the intervals from an interval list in order to get the minimum */
 /* number of intervals to consider.                                      */
 /* ===================================================================== */
-static void
+void
 merge_intervals(ll_t * list)
 {
   ll_node_t * node1, *node2;
@@ -2692,7 +2084,7 @@ merge_intervals(ll_t * list)
 /* ======================================================== */
 /* Parse the sed like string passed as argument to -S/-I/-E */
 /* ======================================================== */
-static int
+int
 parse_sed_like_string(sed_t * sed)
 {
   char   sep;
@@ -2793,7 +2185,7 @@ err:
 /* OUT:                                                                  */
 /* The modified string according to the content of repl                  */
 /* ===================================================================== */
-static char *
+char *
 build_repl_string(char * to_match, char * repl, long match_start,
                   long match_end, struct range_s * subs_a, long subs_nb,
                   long match)
@@ -2912,7 +2304,7 @@ build_repl_string(char * to_match, char * repl, long match_start,
 /* NOTE:                                                                  */
 /* uses the global variable word_buffer                                   */
 /* ====================================================================== */
-static int
+int
 replace(char * to_match, sed_t * sed)
 {
   size_t match_nb = 0;   /* number of matches in the original string */
@@ -3036,7 +2428,7 @@ fail:
 /* Remove all ANSI color codes from s and puts the result in d. */
 /* Memory space for d must have been allocated before.          */
 /* ============================================================ */
-static void
+void
 strip_ansi_color(char * s, toggle_t * toggle)
 {
   char * p   = s;
@@ -3077,7 +2469,7 @@ strip_ansi_color(char * s, toggle_t * toggle)
 /* domain implementation which can be found here:                            */
 /* http://openwall.info/wiki/people/solar/software/public-domain-source-code */
 /* ========================================================================= */
-static char *
+char *
 concat(const char * s1, ...)
 {
   va_list      args;
@@ -3124,7 +2516,7 @@ concat(const char * s1, ...)
 /* =============================================== */
 /* Is the string str2 a prefix of the string str1? */
 /* =============================================== */
-static int
+int
 strprefix(char * str1, char * str2)
 {
   while (*str1 != '\0' && *str1 == *str2)
@@ -3139,7 +2531,7 @@ strprefix(char * str1, char * str2)
 /* ================================================================ */
 /* Callback to add a word index in the sorted list of matched words */
 /* ================================================================ */
-static int
+int
 set_matching_flag(void * elem)
 {
   ll_t * list = (ll_t *)elem;
@@ -3169,7 +2561,7 @@ set_matching_flag(void * elem)
 /* array avoiding duplications keeping the array sorted.                   */
 /* Mark the identified words as a matching word.                           */
 /* ======================================================================= */
-static int
+int
 tst_cb(void * elem)
 {
   /* The data attached to the string in the tst is a linked list of position */
@@ -3205,7 +2597,7 @@ tst_cb(void * elem)
 /* Require new_current to be set to count - 1 at start                     */
 /* Update new_current to the smallest greater position than current        */
 /* ======================================================================= */
-static int
+int
 tst_cb_cli(void * elem)
 {
   long n  = 0;
@@ -3262,7 +2654,7 @@ tst_cb_cli(void * elem)
 /* Update a scancodes buffer and return its length */
 /* in bytes.                                       */
 /* =============================================== */
-static int
+int
 get_scancode(unsigned char * s, size_t max)
 {
   int            c;
@@ -3326,7 +2718,7 @@ get_scancode(unsigned char * s, size_t max)
 /* The utf8_get_length function is used to get the number of bytes of    */
 /* the character.                                                        */
 /* ===================================================================== */
-static int
+int
 get_bytes(FILE * input, char * utf8_buffer, langinfo_t * langinfo)
 {
   int byte;
@@ -3374,7 +2766,7 @@ get_bytes(FILE * input, char * utf8_buffer, langinfo_t * langinfo)
 /* their corresponding escape sequence                                       */
 /* dest must be long enough to contain the expanded string                   */
 /* ========================================================================= */
-static size_t
+size_t
 expand(char * src, char * dest, langinfo_t * langinfo, toggle_t * toggle)
 {
   char   c;
@@ -3505,7 +2897,7 @@ expand(char * src, char * dest, langinfo_t * langinfo, toggle_t * toggle)
 /*    On Success: the return value will point to a nul-terminated string */
 /*    On Failure: the return value will be set to NULL                   */
 /* ===================================================================== */
-static char *
+char *
 get_word(FILE * input, ll_t * word_delims_list, ll_t * record_delims_list,
          char * utf8_buffer, unsigned char * is_last, toggle_t * toggle,
          langinfo_t * langinfo, win_t * win, limits_t * limits)
@@ -3710,7 +3102,7 @@ get_word(FILE * input, ll_t * word_delims_list, ll_t * record_delims_list,
 /* ========================================================= */
 /* Set a foreground color according to terminal capabilities */
 /* ========================================================= */
-static void
+void
 set_foreground_color(term_t * term, short color)
 {
   if (term->color_method == 0 && term->has_setf)
@@ -3722,7 +3114,7 @@ set_foreground_color(term_t * term, short color)
 /* ========================================================= */
 /* Set a background color according to terminal capabilities */
 /* ========================================================= */
-static void
+void
 set_background_color(term_t * term, short color)
 {
   if (term->color_method == 0 && term->has_setb)
@@ -3734,7 +3126,7 @@ set_background_color(term_t * term, short color)
 /* ====================================================== */
 /* Put a scrolling symbol at the first column of the line */
 /* ====================================================== */
-static void
+void
 left_margin_putp(char * s, term_t * term, win_t * win)
 {
   apply_attr(term, win->shift_attr);
@@ -3750,7 +3142,7 @@ left_margin_putp(char * s, term_t * term, win_t * win)
 /* ===================================================== */
 /* Put a scrolling symbol at the last column of the line */
 /* ===================================================== */
-static void
+void
 right_margin_putp(char * s1, char * s2, langinfo_t * langinfo, term_t * term,
                   win_t * win, long line, long offset)
 {
@@ -3794,7 +3186,7 @@ right_margin_putp(char * s1, char * s2, langinfo_t * langinfo, term_t * term,
 /* Also fill the maximum screen width and the maximum number      */
 /* of bytes of the longest line                                   */
 /* ============================================================== */
-static void
+void
 get_message_lines(char * message, ll_t * message_lines_list,
                   long * message_max_width, long * message_max_len)
 {
@@ -3866,7 +3258,7 @@ get_message_lines(char * message, ll_t * message_lines_list,
 /* Set the new start and the new end of the window structure according */
 /* to the current cursor position.                                     */
 /* =================================================================== */
-static void
+void
 set_win_start_end(win_t * win, long current, long last)
 {
   long cur_line, end_line;
@@ -3902,7 +3294,7 @@ set_win_start_end(win_t * win, long current, long last)
 /* This function is only called initially, when resizing the terminal and    */
 /* potentially when the search function is used.                             */
 /* ========================================================================= */
-static long
+long
 build_metadata(term_t * term, long count, win_t * win)
 {
   long i = 0;
@@ -4182,7 +3574,7 @@ disp_matching_word(long pos, win_t * win, term_t * term, int is_cursor, int err)
 /* - Normal display                                                       */
 /* - Color or mono display                                                */
 /* ====================================================================== */
-static void
+void
 disp_word(long pos, search_mode_t search_mode, search_data_t * search_data,
           term_t * term, win_t * win, char * tmp_word)
 {
@@ -4367,7 +3759,7 @@ disp_word(long pos, search_mode_t search_mode, search_data_t * search_data,
 /* ======================================= */
 /* Display a message line above the window */
 /* ======================================= */
-static void
+void
 disp_message(ll_t * message_lines_list, long message_max_width,
              long message_max_len, term_t * term, win_t * win)
 {
@@ -4453,7 +3845,7 @@ disp_message(ll_t * message_lines_list, long message_max_width,
 /* ============================ */
 /* Display the selection window */
 /* ============================ */
-static long
+long
 disp_lines(win_t * win, toggle_t * toggle, long current, long count,
            search_mode_t search_mode, search_data_t * search_data,
            term_t * term, long last_line, char * tmp_word,
@@ -4715,7 +4107,7 @@ disp_lines(win_t * win, toggle_t * toggle, long current, long count,
 /* ============================================ */
 /* Signal handler. Manages SIGWINCH and SIGALRM */
 /* ============================================ */
-static void
+void
 sig_handler(int s)
 {
   switch (s)
@@ -4869,7 +4261,7 @@ char * optstart = START;    /* list of characters that start options */
 
 /* Here it is: */
 /* """"""""""" */
-static int
+int
 egetopt(int nargc, char ** nargv, char * ostr)
 {
   static char *   place = EMSG; /* option letter processing */
@@ -5014,7 +4406,7 @@ egetopt(int nargc, char ** nargv, char * ostr)
 /* =========================================================== */
 /* Helper function to compare to delimiters for use by ll_find */
 /* =========================================================== */
-static int
+int
 delims_cmp(const void * a, const void * b)
 {
   return strcmp((const char *)a, (const char *)b);
@@ -5024,7 +4416,7 @@ delims_cmp(const void * a, const void * b)
 /* Set new first column to display when horizontal scrolling */
 /* Alter win->first_column                                   */
 /* ========================================================= */
-static void
+void
 set_new_first_column(win_t * win, term_t * term)
 {
   long pos;
