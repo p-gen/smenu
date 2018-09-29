@@ -42,6 +42,7 @@
 #include "ptrlist.h"
 #include "index.h"
 #include "utf8.h"
+#include "fgetc.h"
 #include "smenu.h"
 
 /* **************** */
@@ -121,41 +122,6 @@ char *    timeout_word;    /* printed word when the timeout type is WORD.   */
 char *    timeout_seconds; /* string containing the number of remaining     *
                             * seconds.                                      */
 int quiet_timeout = 0;     /* 1 when we want no message to be displayed.    */
-
-/* ************************************************************************ */
-/* Custom fgetc/ungetc implementation able to unget more than one character */
-/* ************************************************************************ */
-
-enum
-{
-  GETC_BUFF_SIZE = 16
-};
-
-static char getc_buffer[GETC_BUFF_SIZE] = { '\0' };
-
-static long next_buffer_pos = 0; /* next free position in the getc buffer */
-
-/* ====================================== */
-/* Get a (possibly pushed-back) character */
-/* ====================================== */
-int
-my_fgetc(FILE * input)
-{
-  return (next_buffer_pos > 0) ? getc_buffer[--next_buffer_pos] : fgetc(input);
-}
-
-/* ============================ */
-/* Push character back on input */
-/* ============================ */
-void
-my_ungetc(int c)
-{
-  if (next_buffer_pos >= GETC_BUFF_SIZE)
-    fprintf(stderr, "Error: cannot push back more than %d characters\n",
-            GETC_BUFF_SIZE);
-  else
-    getc_buffer[next_buffer_pos++] = c;
-}
 
 /* ************** */
 /* Help functions */
