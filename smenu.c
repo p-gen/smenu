@@ -417,17 +417,6 @@ help(win_t * win, term_t * term, long last_line, toggle_t * toggle)
   tputs(TPARM1(restore_cursor), 1, outch);
 }
 
-/* *************************** */
-/* Memory allocation functions */
-/* *************************** */
-
-/* Created by Kevin Locke (from numerous canonical examples)         */
-/*                                                                   */
-/* I hereby place this file in the public domain.  It may be freely  */
-/* reproduced, distributed, used, modified, built upon, or otherwise */
-/* employed by anyone for any purpose without restriction.           */
-/* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-
 /* ********************************** */
 /* Attributes string parsing function */
 /* ********************************** */
@@ -996,6 +985,9 @@ sub_tst_new(void)
   return elem;
 }
 
+/* ======================================== */
+/* Emit a small (visual) beep warn the user */
+/* ======================================== */
 void
 beep(toggle_t * toggle)
 {
