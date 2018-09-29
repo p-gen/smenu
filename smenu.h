@@ -40,7 +40,6 @@ typedef struct limits_s      limits_t;
 typedef struct timers_s      timers_t;
 typedef struct misc_s        misc_t;
 typedef struct sed_s         sed_t;
-typedef struct interval_s    interval_t;
 typedef struct timeout_s     timeout_t;
 typedef struct output_s      output_t;
 typedef struct daccess_s     daccess_t;
@@ -66,44 +65,14 @@ short_usage(void);
 void
 usage(void);
 
-char *
-concat(const char * s1, ...);
-
-interval_t *
-interval_new(void);
-
-int
-interval_comp(void * a, void * b);
-
-void
-interval_swap(void * a, void * b);
-
 int
 tag_comp(void * a, void * b);
 
 void
 tag_swap(void * a, void * b);
 
-void
-ltrim(char * str, const char * trim);
-
-void
-rtrim(char * str, const char * trim, size_t min_len);
-
 int
-isempty(const char * str);
-
-int
-my_strcasecmp(const char * str1, const char * str2);
-
-char *
-my_strcpy(char * dst, char * src);
-
-int
-isprint7(int i);
-
-int
-isprint8(int i);
+isempty(const char * s);
 
 void
 beep(toggle_t * toggle);
@@ -129,9 +98,6 @@ setup_term(int const fd);
 
 void
 strip_ansi_color(char * s, toggle_t * toggle);
-
-int
-strprefix(char * str1, char * str2);
 
 int
 tst_cb(void * elem);
@@ -233,9 +199,6 @@ sig_handler(int s);
 void
 set_new_first_column(win_t * win, term_t * term);
 
-void
-merge_intervals(ll_t * list);
-
 int
 parse_sed_like_string(sed_t * sed);
 
@@ -256,8 +219,6 @@ parse_attr(char * str, attr_t * attr, short max_color);
 
 void
 apply_attr(term_t * term, attr_t attr);
-
-int (*my_isprint)(int);
 
 int
 delims_cmp(const void * a, const void * b);
@@ -532,22 +493,6 @@ struct sed_s
   unsigned char stop;         /* Stop flag:   only one alteration  *
                                *              per word is allowed  */
   regex_t re;
-};
-
-/* Interval structure for use in lists of columns and rows */
-/* """"""""""""""""""""""""""""""""""""""""""""""""""""""" */
-struct interval_s
-{
-  long low;
-  long high;
-};
-
-/* Structure used by the replace function to delimit matches */
-/* """"""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-struct range_s
-{
-  size_t start;
-  size_t end;
 };
 
 /* Structure used to keep track of the different timeout values */

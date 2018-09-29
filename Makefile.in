@@ -103,7 +103,7 @@ CONFIG_CLEAN_VPATH_FILES =
 am__installdirs = "$(DESTDIR)$(bindir)" "$(DESTDIR)$(man1dir)"
 PROGRAMS = $(bin_PROGRAMS)
 am_smenu_OBJECTS = smenu.$(OBJEXT) ptrlist.$(OBJEXT) xmalloc.$(OBJEXT) \
-	index.$(OBJEXT) utf8.$(OBJEXT) fgetc.$(OBJEXT)
+	index.$(OBJEXT) utf8.$(OBJEXT) fgetc.$(OBJEXT) utils.$(OBJEXT)
 smenu_OBJECTS = $(am_smenu_OBJECTS)
 smenu_LDADD = $(LDADD)
 AM_V_P = $(am__v_P_@AM_V@)
@@ -307,7 +307,8 @@ top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 smenu_SOURCES = smenu.c smenu.h ptrlist.c ptrlist.h xmalloc.c xmalloc.h \
-                index.c index.h utf8.c utf8.h fgetc.c fgetc.h
+                index.c index.h utf8.c utf8.h fgetc.c fgetc.h           \
+		utils.c utils.h
 
 dist_man_MANS = smenu.1
 EXTRA_DIST = smenu.spec.in smenu.spec ChangeLog build.sh version \
@@ -427,6 +428,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ptrlist.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/smenu.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/utf8.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/utils.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/xmalloc.Po@am__quote@
 
 .c.o:
