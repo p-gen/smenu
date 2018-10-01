@@ -52,12 +52,12 @@
 /* **************** */
 
 extern ll_t * tst_search_list;
-extern char * optarg;
-extern char * opterr;
-extern int    optind;
-extern int    optopt;
-extern int    optbad;
-extern int    opterrfd;
+extern char * eoptarg;
+extern char * eopterr;
+extern int    eoptind;
+extern int    eoptopt;
+extern int    eoptbad;
+extern int    eopterrfd;
 
 /* **************** */
 /* Global variables */
@@ -98,12 +98,11 @@ char * sbar_curs       = "\xe2\x95\x91"; /* box_drawings_double_vertical     */
 char * sbar_arr_up     = "\xe2\x96\xb2"; /* black_up_pointing_triangle       */
 char * sbar_arr_down   = "\xe2\x96\xbc"; /* black_down_pointing_triangle     */
 
-daccess_t daccess;
-
 /* Variables used to manage the direct access entries */
 /* """""""""""""""""""""""""""""""""""""""""""""""""" */
-char * daccess_stack;
-int    daccess_stack_head;
+daccess_t daccess;
+char *    daccess_stack;
+int       daccess_stack_head;
 
 /* Variables used for fuzzy and substring searching */
 /* """""""""""""""""""""""""""""""""""""""""""""""" */
@@ -801,16 +800,16 @@ out:
   return error;
 }
 
-/* ========================================================================= */
-/* Load an .ini format file                                                  */
-/* filename - path to a file                                                 */
-/* report - callback can return non-zero to stop, the callback error code is */
-/*     returned from this function.                                          */
-/* return - return 0 on success                                              */
-/*                                                                           */
-/* This function is public domain. No copyright is claimed.                  */
-/* Jon Mayo April 2011                                                       */
-/* ========================================================================= */
+/* ======================================================================== */
+/* Load an .ini format file                                                 */
+/* filename - path to a file                                                */
+/* report   - callback can return non-zero to stop, the callback error code */
+/*            returned from this function.                                  */
+/* return   - return 0 on success                                           */
+/*                                                                          */
+/* This function is public domain. No copyright is claimed.                 */
+/* Jon Mayo April 2011                                                      */
+/* ======================================================================== */
 int
 ini_load(const char * filename, win_t * win, term_t * term, limits_t * limits,
          timers_t * timers, misc_t * misc,
@@ -908,6 +907,9 @@ make_ini_path(char * name, char * base)
   long   len;
   char * conf;
 
+  /* Set the prefix of the path from the environment */
+  /* base can be "HOME" or "PWD".                    */
+  /* """"""""""""""""""""""""""""""""""""""""""""""" */
   home = getenv(base);
 
   if (home == NULL)
@@ -935,6 +937,10 @@ make_ini_path(char * name, char * base)
 
   return path;
 }
+
+/* ******************************** */
+/* Functions used when sorting tags */
+/* ******************************** */
 
 /* =========================================================== */
 /* Compare the pin order of two pinned word in the output list */
@@ -4637,8 +4643,8 @@ main(int argc, char * argv[])
         exit(0);
 
       case 'f':
-        if (optarg && *optarg != '-')
-          custom_ini_file = xstrdup(optarg);
+        if (eoptarg && *eoptarg != '-')
+          custom_ini_file = xstrdup(eoptarg);
         else
         {
           TELL("Option requires an argument -- ");
@@ -4647,8 +4653,8 @@ main(int argc, char * argv[])
         break;
 
       case 'n':
-        if (optarg && *optarg != '-')
-          win.asked_max_lines = abs(atoi(optarg));
+        if (eoptarg && *eoptarg != '-')
+          win.asked_max_lines = abs(atoi(eoptarg));
         else
         {
           TELL("Option requires an argument -- ");
@@ -4665,9 +4671,9 @@ main(int argc, char * argv[])
         break;
 
       case 's':
-        if (optarg && *optarg != '-')
+        if (eoptarg && *eoptarg != '-')
         {
-          pre_selection_index = xstrdup(optarg);
+          pre_selection_index = xstrdup(eoptarg);
           utf8_interpret(pre_selection_index, &langinfo);
         }
         else
@@ -4678,9 +4684,9 @@ main(int argc, char * argv[])
         break;
 
       case 't':
-        if (optarg != NULL)
+        if (eoptarg != NULL)
         {
-          if (sscanf(optarg, "%ld", &(win.max_cols)) != 1)
+          if (sscanf(eoptarg, "%ld", &(win.max_cols)) != 1)
           {
             TELL("Argument must be numeric -- ");
             short_usage();
@@ -4724,7 +4730,7 @@ main(int argc, char * argv[])
         if (win.col_sep)
           break;
 
-        if (optarg == NULL)
+        if (eoptarg == NULL)
         {
           win.gutter_a = xmalloc(1 * sizeof(char *));
 
@@ -4743,7 +4749,7 @@ main(int argc, char * argv[])
           int       mblen;
           char *    gutter;
 
-          gutter = xstrdup(optarg);
+          gutter = xstrdup(eoptarg);
 
           utf8_interpret(gutter, &langinfo); /* Guarantees a well formed *
                                               * UTF-8 string             */
@@ -4790,9 +4796,9 @@ main(int argc, char * argv[])
         break;
 
       case 'm':
-        if (optarg && *optarg != '-')
+        if (eoptarg && *eoptarg != '-')
         {
-          message = xstrdup(optarg);
+          message = xstrdup(eoptarg);
           if (!langinfo.utf8)
             utf8_sanitize(message);
           utf8_interpret(message, &langinfo);
@@ -4813,7 +4819,7 @@ main(int argc, char * argv[])
         break;
 
       case 'i':
-        if (optarg && *optarg != '-')
+        if (eoptarg && *eoptarg != '-')
         {
           /* Set the default behaviour if not already set */
           /* """""""""""""""""""""""""""""""""""""""""""" */
@@ -4821,9 +4827,9 @@ main(int argc, char * argv[])
             pattern_def_include = 0;
 
           if (include_pattern == NULL)
-            include_pattern = concat("(", optarg, ")", NULL);
+            include_pattern = concat("(", eoptarg, ")", NULL);
           else
-            include_pattern = concat(include_pattern, "|(", optarg, ")", NULL);
+            include_pattern = concat(include_pattern, "|(", eoptarg, ")", NULL);
         }
         else
         {
@@ -4833,7 +4839,7 @@ main(int argc, char * argv[])
         break;
 
       case 'e':
-        if (optarg && *optarg != '-')
+        if (eoptarg && *eoptarg != '-')
         {
           /* Set the default behaviour if not already set */
           /* """""""""""""""""""""""""""""""""""""""""""" */
@@ -4841,9 +4847,9 @@ main(int argc, char * argv[])
             pattern_def_include = 1;
 
           if (exclude_pattern == NULL)
-            exclude_pattern = concat("(", optarg, ")", NULL);
+            exclude_pattern = concat("(", eoptarg, ")", NULL);
           else
-            exclude_pattern = concat(exclude_pattern, "|(", optarg, ")", NULL);
+            exclude_pattern = concat(exclude_pattern, "|(", eoptarg, ")", NULL);
         }
         else
         {
@@ -4853,12 +4859,12 @@ main(int argc, char * argv[])
         break;
 
       case 'C':
-        if (optarg && *optarg != '-')
+        if (eoptarg && *eoptarg != '-')
         {
           if (cols_selector_list == NULL)
             cols_selector_list = ll_new();
 
-          ll_append(cols_selector_list, xstrdup(optarg));
+          ll_append(cols_selector_list, xstrdup(eoptarg));
         }
         else
         {
@@ -4868,12 +4874,12 @@ main(int argc, char * argv[])
         break;
 
       case 'R':
-        if (optarg && *optarg != '-')
+        if (eoptarg && *eoptarg != '-')
         {
           if (rows_selector_list == NULL)
             rows_selector_list = ll_new();
 
-          ll_append(rows_selector_list, xstrdup(optarg));
+          ll_append(rows_selector_list, xstrdup(eoptarg));
           win.max_cols = 0;
         }
         else
@@ -4884,7 +4890,7 @@ main(int argc, char * argv[])
         break;
 
       case 'S':
-        if (optarg && *optarg != '-')
+        if (eoptarg && *eoptarg != '-')
         {
           sed_t * sed_node;
 
@@ -4892,7 +4898,7 @@ main(int argc, char * argv[])
             sed_list = ll_new();
 
           sed_node          = xmalloc(sizeof(sed_t));
-          sed_node->pattern = xstrdup(optarg);
+          sed_node->pattern = xstrdup(eoptarg);
           utf8_interpret(sed_node->pattern, &langinfo);
           sed_node->stop = 0;
           ll_append(sed_list, sed_node);
@@ -4905,7 +4911,7 @@ main(int argc, char * argv[])
         break;
 
       case 'I':
-        if (optarg && *optarg != '-')
+        if (eoptarg && *eoptarg != '-')
         {
           sed_t * sed_node;
 
@@ -4913,7 +4919,7 @@ main(int argc, char * argv[])
             include_sed_list = ll_new();
 
           sed_node          = xmalloc(sizeof(sed_t));
-          sed_node->pattern = xstrdup(optarg);
+          sed_node->pattern = xstrdup(eoptarg);
           utf8_interpret(sed_node->pattern, &langinfo);
           sed_node->stop = 0;
           ll_append(include_sed_list, sed_node);
@@ -4926,7 +4932,7 @@ main(int argc, char * argv[])
         break;
 
       case 'E':
-        if (optarg && *optarg != '-')
+        if (eoptarg && *eoptarg != '-')
         {
           sed_t * sed_node;
 
@@ -4934,7 +4940,7 @@ main(int argc, char * argv[])
             exclude_sed_list = ll_new();
 
           sed_node          = xmalloc(sizeof(sed_t));
-          sed_node->pattern = xstrdup(optarg);
+          sed_node->pattern = xstrdup(eoptarg);
           utf8_interpret(sed_node->pattern, &langinfo);
           sed_node->stop = 0;
           ll_append(exclude_sed_list, sed_node);
@@ -4951,17 +4957,17 @@ main(int argc, char * argv[])
       case '3':
       case '4':
       case '5':
-        if (optarg && *optarg != '-')
+        if (eoptarg && *eoptarg != '-')
         {
           long   count = 1;
           attr_t attr  = init_attr;
 
-          special_pattern[opt - '1'] = xstrdup(optarg);
+          special_pattern[opt - '1'] = xstrdup(eoptarg);
           utf8_interpret(special_pattern[opt - '1'], &langinfo);
 
           /* Parse optional additional arguments */
           /* """"""""""""""""""""""""""""""""""" */
-          while (argv[optind] && *argv[optind] != '-')
+          while (argv[eoptind] && *argv[eoptind] != '-')
           {
             if (count > 2)
             {
@@ -4971,7 +4977,7 @@ main(int argc, char * argv[])
 
             /* Colors must respect the format: <fg color>/<bg color> */
             /* """"""""""""""""""""""""""""""""""""""""""""""""""""" */
-            if (parse_attr(argv[optind], &attr, term.colors))
+            if (parse_attr(argv[eoptind], &attr, term.colors))
             {
               win.special_attr[opt - '1'].is_set    = FORCED;
               win.special_attr[opt - '1'].fg        = attr.fg;
@@ -4989,7 +4995,7 @@ main(int argc, char * argv[])
               short_usage();
             }
 
-            optind++;
+            eoptind++;
             count++;
           }
         }
@@ -5001,7 +5007,7 @@ main(int argc, char * argv[])
         break;
 
       case 'a':
-        if (optarg && *optarg != '-')
+        if (eoptarg && *eoptarg != '-')
         {
           long i;          /* loop index                                */
           long offset = 0; /* nb of chars to ship to find the attribute *
@@ -5083,9 +5089,9 @@ main(int argc, char * argv[])
                 &daccess_attr_set, "da:", 3 },
               { NULL, NULL, NULL, NULL, 0 } };
 
-          optind--;
+          eoptind--;
 
-          if (*argv[optind] == '-')
+          if (*argv[eoptind] == '-')
           {
             TELL("A blank is required before the first sub-option -- ");
             short_usage();
@@ -5093,11 +5099,11 @@ main(int argc, char * argv[])
 
           /* Parse the arguments arguments */
           /* """"""""""""""""""""""""""""" */
-          while (argv[optind] && *argv[optind] != '-')
+          while (argv[eoptind] && *argv[eoptind] != '-')
           {
             attr = init_attr;
 
-            if (strlen(argv[optind]) < 3)
+            if (strlen(argv[eoptind]) < 3)
             {
               TELL("Empty attribute value -- ");
               short_usage();
@@ -5106,7 +5112,7 @@ main(int argc, char * argv[])
             i = 0;
             while (attr_infos[i].flag != NULL)
             {
-              if (strncmp(argv[optind], attr_infos[i].prefix,
+              if (strncmp(argv[eoptind], attr_infos[i].prefix,
                           attr_infos[i].prefix_len)
                   == 0)
               {
@@ -5133,7 +5139,7 @@ main(int argc, char * argv[])
             /* Attributes must respect the format: */
             /* <fg color>/<bg color>,<styles>      */
             /* """"""""""""""""""""""""""""""""""" */
-            if (parse_attr(argv[optind] + offset, &attr, term.colors))
+            if (parse_attr(argv[eoptind] + offset, &attr, term.colors))
             {
               attr_to_set->is_set    = FORCED;
               attr_to_set->fg        = attr.fg;
@@ -5151,7 +5157,7 @@ main(int argc, char * argv[])
               short_usage();
             }
 
-            optind++;
+            eoptind++;
           }
         }
         else
@@ -5164,20 +5170,20 @@ main(int argc, char * argv[])
       case 'X':
         quiet_timeout = 1;
       case 'x':
-        if (optarg && *optarg != '-')
+        if (eoptarg && *eoptarg != '-')
         {
-          if (strprefix("current", optarg))
+          if (strprefix("current", eoptarg))
             timeout.mode = CURRENT;
-          else if (strprefix("quit", optarg))
+          else if (strprefix("quit", eoptarg))
             timeout.mode = QUIT;
-          else if (strprefix("word", optarg))
+          else if (strprefix("word", eoptarg))
           {
-            if (argv[optind] && *argv[optind] != '-')
+            if (argv[eoptind] && *argv[eoptind] != '-')
             {
               timeout.mode = WORD;
-              timeout_word = argv[optind];
+              timeout_word = argv[eoptind];
               utf8_interpret(timeout_word, &langinfo);
-              optind++;
+              eoptind++;
             }
             else
             {
@@ -5191,9 +5197,9 @@ main(int argc, char * argv[])
             short_usage();
           }
 
-          if (argv[optind] && *argv[optind] != '-')
+          if (argv[eoptind] && *argv[eoptind] != '-')
           {
-            if (sscanf(argv[optind], "%5u", &timeout.initial_value) == 1)
+            if (sscanf(argv[eoptind], "%5u", &timeout.initial_value) == 1)
             {
               timeout.initial_value *= FREQ;
               timeout.remain = timeout.initial_value;
@@ -5210,7 +5216,7 @@ main(int argc, char * argv[])
             short_usage();
           }
 
-          optind++;
+          eoptind++;
         }
         break;
 
@@ -5219,9 +5225,9 @@ main(int argc, char * argv[])
         break;
 
       case 'A':
-        if (optarg && *optarg != '-')
+        if (eoptarg && *eoptarg != '-')
         {
-          first_word_pattern = xstrdup(optarg);
+          first_word_pattern = xstrdup(eoptarg);
           utf8_interpret(first_word_pattern, &langinfo);
         }
         else
@@ -5232,9 +5238,9 @@ main(int argc, char * argv[])
         break;
 
       case 'Z':
-        if (optarg && *optarg != '-')
+        if (eoptarg && *eoptarg != '-')
         {
-          last_word_pattern = xstrdup(optarg);
+          last_word_pattern = xstrdup(eoptarg);
           utf8_interpret(last_word_pattern, &langinfo);
         }
         else
@@ -5245,9 +5251,9 @@ main(int argc, char * argv[])
         break;
 
       case 'W':
-        if (optarg && *optarg != '-')
+        if (eoptarg && *eoptarg != '-')
         {
-          iws = xstrdup(optarg);
+          iws = xstrdup(eoptarg);
           utf8_interpret(iws, &langinfo);
         }
         else
@@ -5258,9 +5264,9 @@ main(int argc, char * argv[])
         break;
 
       case 'L':
-        if (optarg && *optarg != '-')
+        if (eoptarg && *eoptarg != '-')
         {
-          ils = xstrdup(optarg);
+          ils = xstrdup(eoptarg);
           utf8_interpret(ils, &langinfo);
         }
         else
@@ -5274,9 +5280,9 @@ main(int argc, char * argv[])
         toggle.pinable = 1;
       case 'T':
         toggle.taggable = 1;
-        if (optarg != NULL)
+        if (eoptarg != NULL)
         {
-          win.sel_sep = xstrdup(optarg);
+          win.sel_sep = xstrdup(eoptarg);
           utf8_interpret(win.sel_sep, &langinfo);
         }
         break;
@@ -5286,7 +5292,7 @@ main(int argc, char * argv[])
         break;
 
       case 'D':
-        if (optarg && *optarg != '-')
+        if (eoptarg && *eoptarg != '-')
         {
           int       pos;
           wchar_t * w;
@@ -5294,28 +5300,28 @@ main(int argc, char * argv[])
 
           /* Parse optional additional arguments */
           /* """"""""""""""""""""""""""""""""""" */
-          optind--;
+          eoptind--;
 
-          if (*argv[optind] == '-')
+          if (*argv[eoptind] == '-')
           {
             TELL("A blank is required before the first sub-option -- ");
             short_usage();
           }
 
-          while (argv[optind] && *argv[optind] != '-')
+          while (argv[eoptind] && *argv[eoptind] != '-')
           {
-            if (argv[optind][1] != ':')
+            if (argv[eoptind][1] != ':')
             {
               TELL("Bad format -- ");
               short_usage();
             }
 
-            switch (*(argv[optind]))
+            switch (*(argv[eoptind]))
             {
               case 'l': /* left char */
                 free(daccess.left);
 
-                daccess.left = xstrdup(argv[optind] + 2);
+                daccess.left = xstrdup(argv[eoptind] + 2);
                 utf8_interpret(daccess.left, &langinfo);
 
                 if (utf8_strlen(daccess.left) != 1)
@@ -5339,7 +5345,7 @@ main(int argc, char * argv[])
               case 'r': /* right char */
                 free(daccess.right);
 
-                daccess.right = xstrdup(argv[optind] + 2);
+                daccess.right = xstrdup(argv[eoptind] + 2);
                 utf8_interpret(daccess.right, &langinfo);
 
                 if (utf8_strlen(daccess.right) != 1)
@@ -5361,9 +5367,9 @@ main(int argc, char * argv[])
                 break;
 
               case 'a': /* alignment */
-                if (strprefix("left", argv[optind] + 2))
+                if (strprefix("left", argv[eoptind] + 2))
                   daccess.alignment = 'l';
-                else if (strprefix("right", argv[optind] + 2))
+                else if (strprefix("right", argv[eoptind] + 2))
                   daccess.alignment = 'r';
                 else
                 {
@@ -5373,9 +5379,9 @@ main(int argc, char * argv[])
                 break;
 
               case 'p': /* padding */
-                if (strprefix("all", argv[optind] + 2))
+                if (strprefix("all", argv[eoptind] + 2))
                   daccess.padding = 'a';
-                else if (strprefix("included", argv[optind] + 2))
+                else if (strprefix("included", argv[eoptind] + 2))
                   daccess.padding = 'i';
                 else
                 {
@@ -5385,13 +5391,13 @@ main(int argc, char * argv[])
                 break;
 
               case 'w': /* width */
-                if (sscanf(argv[optind] + 2, "%d%n", &daccess.length, &pos)
+                if (sscanf(argv[eoptind] + 2, "%d%n", &daccess.length, &pos)
                     != 1)
                 {
                   TELL("Bad format -- ");
                   short_usage();
                 }
-                if (argv[optind][pos + 2] != '\0')
+                if (argv[eoptind][pos + 2] != '\0')
                 {
                   TELL("Bad format -- ");
                   short_usage();
@@ -5404,20 +5410,20 @@ main(int argc, char * argv[])
                 break;
 
               case 'o': /* start offset */
-                if (sscanf(argv[optind] + 2, "%zu%n+", &daccess.offset, &pos)
+                if (sscanf(argv[eoptind] + 2, "%zu%n+", &daccess.offset, &pos)
                     == 1)
                 {
-                  if (argv[optind][pos + 2] == '+')
+                  if (argv[eoptind][pos + 2] == '+')
                   {
                     daccess.plus = 1;
 
-                    if (argv[optind][pos + 3] != '\0')
+                    if (argv[eoptind][pos + 3] != '\0')
                     {
                       TELL("Bad format -- ");
                       short_usage();
                     }
                   }
-                  else if (argv[optind][pos + 2] != '\0')
+                  else if (argv[eoptind][pos + 2] != '\0')
                   {
                     TELL("Bad format -- ");
                     short_usage();
@@ -5432,12 +5438,12 @@ main(int argc, char * argv[])
                 break;
 
               case 'n': /* numbor of digits to extract */
-                if (sscanf(argv[optind] + 2, "%d%n", &daccess.size, &pos) != 1)
+                if (sscanf(argv[eoptind] + 2, "%d%n", &daccess.size, &pos) != 1)
                 {
                   TELL("Bad format -- ");
                   short_usage();
                 }
-                if (argv[optind][pos + 2] != '\0')
+                if (argv[eoptind][pos + 2] != '\0')
                 {
                   TELL("Bad format -- ");
                   short_usage();
@@ -5451,13 +5457,13 @@ main(int argc, char * argv[])
 
               case 'i': /* Number of UTF-8 glyphs to ignore after the *
                          * selector to extract                        */
-                if (sscanf(argv[optind] + 2, "%zu%n", &daccess.ignore, &pos)
+                if (sscanf(argv[eoptind] + 2, "%zu%n", &daccess.ignore, &pos)
                     != 1)
                 {
                   TELL("Bad format -- ");
                   short_usage();
                 }
-                if (argv[optind][pos + 2] != '\0')
+                if (argv[eoptind][pos + 2] != '\0')
                 {
                   TELL("Bad format -- ");
                   short_usage();
@@ -5465,9 +5471,9 @@ main(int argc, char * argv[])
                 break;
 
               case 'f': /* follow */
-                if (strprefix("yes", argv[optind] + 2))
+                if (strprefix("yes", argv[eoptind] + 2))
                   daccess.follow = 'y';
-                else if (strprefix("no", argv[optind] + 2))
+                else if (strprefix("no", argv[eoptind] + 2))
                   daccess.follow = 'n';
                 else
                 {
@@ -5479,7 +5485,7 @@ main(int argc, char * argv[])
               case 'd': /* decorate */
                 free(daccess.num_sep);
 
-                daccess.num_sep = xstrdup(argv[optind] + 2);
+                daccess.num_sep = xstrdup(argv[eoptind] + 2);
                 utf8_interpret(daccess.num_sep, &langinfo);
 
                 if (utf8_strlen(daccess.num_sep) != 1)
@@ -5504,10 +5510,10 @@ main(int argc, char * argv[])
               {
                 long pos;
 
-                if (sscanf(argv[optind] + 2, "%ld%ln", &daccess_index, &pos)
+                if (sscanf(argv[eoptind] + 2, "%ld%ln", &daccess_index, &pos)
                     == 1)
                 {
-                  if (daccess_index < 0 || *(argv[optind] + 2 + pos) != '\0')
+                  if (daccess_index < 0 || *(argv[eoptind] + 2 + pos) != '\0')
                     daccess_index = 1;
                 }
                 else
@@ -5519,11 +5525,11 @@ main(int argc, char * argv[])
               break;
 
               case 'h': /* head */
-                if (strprefix("trim", argv[optind] + 2))
+                if (strprefix("trim", argv[eoptind] + 2))
                   daccess.head = 't';
-                else if (strprefix("cut", argv[optind] + 2))
+                else if (strprefix("cut", argv[eoptind] + 2))
                   daccess.head = 'c';
-                else if (strprefix("keep", argv[optind] + 2))
+                else if (strprefix("keep", argv[eoptind] + 2))
                   daccess.head = 'k';
                 else
                 {
@@ -5542,7 +5548,7 @@ main(int argc, char * argv[])
             if (daccess.length <= 0 || daccess.length > 5)
               daccess.length = -2; /* special value -> auto */
 
-            optind++;
+            eoptind++;
           }
         }
         else
@@ -5554,18 +5560,18 @@ main(int argc, char * argv[])
         break;
 
       case 'N':
-        if (optarg == NULL)
-          optarg = ".";
-        else if (*optarg == '\0')
-          optarg = ".";
+        if (eoptarg == NULL)
+          eoptarg = ".";
+        else if (*eoptarg == '\0')
+          eoptarg = ".";
 
         if (daccess_np == NULL)
         {
-          daccess_np = concat("(", optarg, ")", NULL);
+          daccess_np = concat("(", eoptarg, ")", NULL);
           daccess.mode |= DA_TYPE_AUTO; /* auto */
         }
         else
-          daccess_np = concat(daccess_np, "|(", optarg, ")", NULL);
+          daccess_np = concat(daccess_np, "|(", eoptarg, ")", NULL);
 
         if (daccess.def_number < 0)
           daccess.def_number = 0;
@@ -5573,18 +5579,18 @@ main(int argc, char * argv[])
         break;
 
       case 'U':
-        if (optarg == NULL)
-          optarg = ".";
-        else if (*optarg == '\0')
-          optarg = ".";
+        if (eoptarg == NULL)
+          eoptarg = ".";
+        else if (*eoptarg == '\0')
+          eoptarg = ".";
 
         if (daccess_up == NULL)
         {
-          daccess_up = concat("(", optarg, ")", NULL);
+          daccess_up = concat("(", eoptarg, ")", NULL);
           daccess.mode |= DA_TYPE_AUTO; /* auto */
         }
         else
-          daccess_up = concat(daccess_up, "|(", optarg, ")", NULL);
+          daccess_up = concat(daccess_up, "|(", eoptarg, ")", NULL);
 
         if (daccess.def_number < 0)
           daccess.def_number = 1;
@@ -5597,11 +5603,11 @@ main(int argc, char * argv[])
         break;
 
       case '/':
-        if (strprefix("prefix", optarg))
+        if (strprefix("prefix", eoptarg))
           misc.default_search_method = PREFIX;
-        else if (strprefix("fuzzy", optarg))
+        else if (strprefix("fuzzy", eoptarg))
           misc.default_search_method = FUZZY;
-        else if (strprefix("substring", optarg))
+        else if (strprefix("substring", eoptarg))
           misc.default_search_method = SUBSTRING;
         else
         {
@@ -5625,10 +5631,10 @@ main(int argc, char * argv[])
       default:
         exit(EXIT_FAILURE);
     }
-    optarg = NULL;
+    eoptarg = NULL;
   }
 
-  if (optind < argc)
+  if (eoptind < argc)
   {
     if (argv[argc - 1][0] == '-')
     {
@@ -6971,7 +6977,8 @@ main(int argc, char * argv[])
   /* - Possibly modify the word according to -S/-I/-E arguments             */
   /* - Replace unprintable characters in the word by mnemonics              */
   /* - Remember the max size of the words/columns/tabs                      */
-  /* - Insert the word in a TST tree for future search                      */
+  /* - Insert the word in a TST (Ternary Search Tree) index to facilitate   */
+  /*   word search (each node pf the TST will contaun an UTF-8 glyph).      */
   /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
   col_index = 0;
   for (wi = 0; wi < count; wi++)
@@ -9951,7 +9958,8 @@ main(int argc, char * argv[])
               /*                  level 1         level_2               */
               /*                                                        */
               /* Each sub_tst_t * points to a data structure including  */
-              /* a sorted array to starting nodes in the words tst.     */
+              /* a sorted array to nodes in the words tst.              */
+              /* Each of these node starts a matching candidate         */
               /* """""""""""""""""""""""""""""""""""""""""""""""""""""" */
               wchar_t * w = utf8_strtowcs(search_data.buf + old_len);
 

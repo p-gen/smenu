@@ -268,6 +268,8 @@ enum filter_infos
                           * but can be excluded later                   */
 };
 
+/* Various timeout mode used by the -x/-X option */
+/* """"""""""""""""""""""""""""""""""""""""""""" */
 enum timeout_modes
 {
   CURRENT, /* on timeout, outputs the selected word       */
@@ -275,6 +277,8 @@ enum timeout_modes
   WORD     /* on timeout , outputs the specified word     */
 };
 
+/* Constants used to set the color attributes */
+/* """""""""""""""""""""""""""""""""""""""""" */
 enum attribute_settings
 {
   UNSET = 0, /* must be 0 for future testings */
@@ -282,6 +286,8 @@ enum attribute_settings
   FORCED /* an attribute setting has been given in the command line */
 };
 
+/* Constant to distinguish between the various search modes */
+/* """""""""""""""""""""""""""""""""""""""""""""""""""""""" */
 enum search_modes
 {
   NONE,
@@ -290,6 +296,8 @@ enum search_modes
   SUBSTRING
 };
 
+/* Constants used in search mode to orient the bit-mask building */
+/* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
 enum bitmap_affinities
 {
   NO_AFFINITY,
@@ -297,6 +305,8 @@ enum bitmap_affinities
   START_AFFINITY
 };
 
+/* Used to store the different allowed charsets data */
+/* """"""""""""""""""""""""""""""""""""""""""""""""" */
 struct charsetinfo_s
 {
   char * name; /* canonical name of the allowed charset */
@@ -487,13 +497,13 @@ struct sed_s
 {
   char *        pattern;      /* pattern to be matched             */
   char *        substitution; /* substitution string               */
-  unsigned char visual;       /* Visual flag: alterations are only *
+  unsigned char visual;       /* visual flag: alterations are only *
                                *              visual               */
-  unsigned char global;       /* Global flag: alterations can      *
+  unsigned char global;       /* global flag: alterations can      *
                                *              occur more than once */
-  unsigned char stop;         /* Stop flag:   only one alteration  *
+  unsigned char stop;         /* stop flag:   only one alteration  *
                                *              per word is allowed  */
-  regex_t re;
+  regex_t re;                 /* compiled regular expression       */
 };
 
 /* Structure used to keep track of the different timeout values */
@@ -510,8 +520,8 @@ struct timeout_s
 /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
 struct output_s
 {
-  long   order;
-  char * output_str;
+  long   order;      /* this field is incremented each time a word is pinned */
+  char * output_str; /* The pinned word itself                               */
 };
 
 /* Structure describing the formating of the automatic direct access entries */
@@ -538,14 +548,17 @@ struct daccess_s
   int    def_number; /* 1: the numbering is on by default 0: it is not    */
 };
 
+/* Structure used in search mod to store the current buffer and various   */
+/* related values.                                                        */
+/* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
 struct search_data_s
 {
-  char * buf;        /* Search buffer                            */
-  long   len;        /* Current position in the search buffer    */
-  long   utf8_len;   /* Current position in the search buffer in *
+  char * buf;        /* search buffer                            */
+  long   len;        /* current position in the search buffer    */
+  long   utf8_len;   /* current position in the search buffer in *
                       * UTF-8 units                              */
-  long * utf8_off_a; /* Array of mb offsets in buf               */
-  long * utf8_len_a; /* Array of mb lengths in buf               */
+  long * utf8_off_a; /* array of mb offsets in buf               */
+  long * utf8_len_a; /* array of mb lengths in buf               */
 
   int  fuzzy_err;     /* fuzzy match error indicator             */
   long fuzzy_err_pos; /* last good position in search buffer     */
@@ -553,7 +566,7 @@ struct search_data_s
   int only_ending;   /* only searches giving a result with the   *
                       * pattern at the end of the word will be   *
                       * selected                                 */
-  int only_starting; /* Same with the pattern at the beginning   */
+  int only_starting; /* same with the pattern at the beginning   */
 };
 
 #endif

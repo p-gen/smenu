@@ -49,16 +49,16 @@
 
 /* Here are all the pertinent global variables. */
 /* """""""""""""""""""""""""""""""""""""""""""" */
-int    opterr = 1;          /* if true, output error message */
-int    optind = 1;          /* index into parent argv vector */
-int    optopt;              /* character checked for validity */
-int    optbad   = BADCH;    /* character returned on error */
-int    optchar  = 0;        /* character that begins returned option */
-int    optneed  = NEEDSEP;  /* flag for mandatory argument */
-int    optmaybe = MAYBESEP; /* flag for optional argument */
-int    opterrfd = ERRFD;    /* file descriptor for error text */
-char * optarg   = NULL;     /* argument associated with option */
-char * optstart = START;    /* list of characters that start options */
+int    eopterr = 1;          /* if true, output error message */
+int    eoptind = 1;          /* index into parent argv vector */
+int    eoptopt;              /* character checked for validity */
+int    eoptbad   = BADCH;    /* character returned on error */
+int    eoptchar  = 0;        /* character that begins returned option */
+int    eoptneed  = NEEDSEP;  /* flag for mandatory argument */
+int    eoptmaybe = MAYBESEP; /* flag for optional argument */
+int    eopterrfd = ERRFD;    /* file descriptor for error text */
+char * eoptarg   = NULL;     /* argument associated with option */
+char * eoptstart = START;    /* list of characters that start options */
 
 /* Here it is: */
 /* """"""""""" */
@@ -72,7 +72,7 @@ egetopt(int nargc, char ** nargv, char * ostr)
   if (nargv == (char **)NULL)
     return (EOF);
 
-  if (nargc <= optind || nargv[optind] == NULL)
+  if (nargc <= eoptind || nargv[eoptind] == NULL)
     return (EOF);
 
   if (place == NULL)
@@ -82,17 +82,17 @@ egetopt(int nargc, char ** nargv, char * ostr)
   /* """""""""""""""""""""""" */
   if (*place == '\0')
   {
-    place = nargv[optind];
+    place = nargv[eoptind];
     if (place == NULL)
       return (EOF);
     else if (*place == '\0')
       return (EOF);
 
-    osi = strchr(optstart, *place);
+    osi = strchr(eoptstart, *place);
     if (osi != NULL)
-      optchar = (int)*osi;
+      eoptchar = (int)*osi;
 
-    if (optind >= nargc || osi == NULL || *++place == '\0')
+    if (eoptind >= nargc || osi == NULL || *++place == '\0')
       return (EOF);
 
     /* Two adjacent, identical flag characters were found. */
@@ -100,7 +100,7 @@ egetopt(int nargc, char ** nargv, char * ostr)
     /* """"""""""""""""""""""""""""""""""""""""""""""""""" */
     if (*place == place[-1])
     {
-      ++optind;
+      ++eoptind;
       return (EOF);
     }
   }
@@ -108,15 +108,15 @@ egetopt(int nargc, char ** nargv, char * ostr)
   /* If the option is a separator or the option isn't in the list, */
   /* we've got an error.                                           */
   /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-  optopt = (int)*place++;
-  oli    = strchr(ostr, optopt);
-  if (optopt == optneed || optopt == (int)optmaybe || oli == NULL)
+  eoptopt = (int)*place++;
+  oli     = strchr(ostr, eoptopt);
+  if (eoptopt == eoptneed || eoptopt == (int)eoptmaybe || oli == NULL)
   {
     /* If we're at the end of the current argument, bump the */
     /* argument index.                                       */
     /* """"""""""""""""""""""""""""""""""""""""""""""""""""" */
     if (*place == '\0')
-      ++optind;
+      ++eoptind;
 
     TELL("Illegal option -- "); /* bye bye */
   }
@@ -125,15 +125,15 @@ egetopt(int nargc, char ** nargv, char * ostr)
   /* return an argument.                                          */
   /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
   ++oli;
-  if (*oli == '\0' || (*oli != (char)optneed && *oli != (char)optmaybe))
+  if (*oli == '\0' || (*oli != (char)eoptneed && *oli != (char)eoptmaybe))
   {
     /* If we're at the end of the current argument, bump the */
     /* argument index.                                       */
     /* """"""""""""""""""""""""""""""""""""""""""""""""""""" */
     if (*place == '\0')
-      ++optind;
+      ++eoptind;
 
-    optarg = NULL;
+    eoptarg = NULL;
   }
   /* If we're here, there's an argument indicator.  It's handled */
   /* differently depending on whether it's a mandatory or an     */
@@ -146,60 +146,60 @@ egetopt(int nargc, char ** nargv, char * ostr)
     /* matter if the argument is mandatory or optional.  */
     /* """"""""""""""""""""""""""""""""""""""""""""""""" */
     if (*place != '\0')
-      optarg = place;
+      eoptarg = place;
 
     /* If we're here, there's whitespace after the option. */
     /*                                                     */
     /* Is it a mandatory argument?  If so, return the      */
     /* next command-line argument if there is one.         */
     /* """"""""""""""""""""""""""""""""""""""""""""""""""" */
-    else if (*oli == (char)optneed)
+    else if (*oli == (char)eoptneed)
     {
-      /* If we're at the end of the argument list, there */
-      /* isn't an argument and hence we have an error.   */
-      /* Otherwise, make 'optarg' point to the argument. */
-      /* """"""""""""""""""""""""""""""""""""""""""""""" */
-      if (nargc <= ++optind)
+      /* If we're at the end of the argument list, there  */
+      /* isn't an argument and hence we have an error.    */
+      /* Otherwise, make 'eoptarg' point to the argument. */
+      /* """""""""""""""""""""""""""""""""""""""""""""""" */
+      if (nargc <= ++eoptind)
       {
         place = EMSG;
         TELL("Option requires an argument -- ");
       }
       else
-        optarg = nargv[optind];
+        eoptarg = nargv[eoptind];
     }
     /* If we're here it must have been an optional argument. */
     /* """"""""""""""""""""""""""""""""""""""""""""""""""""" */
     else
     {
-      if (nargc <= ++optind)
+      if (nargc <= ++eoptind)
       {
-        place  = EMSG;
-        optarg = NULL;
+        place   = EMSG;
+        eoptarg = NULL;
       }
       else
       {
-        optarg = nargv[optind];
-        if (optarg == NULL)
+        eoptarg = nargv[eoptind];
+        if (eoptarg == NULL)
           place = EMSG;
 
-        /* If the next item begins with a flag */
-        /* character, we treat it like a new   */
-        /* argument.  This is accomplished by  */
-        /* decrementing 'optind' and returning */
-        /* a null argument.                    */
-        /* """"""""""""""""""""""""""""""""""" */
-        else if (strchr(optstart, *optarg) != NULL)
+        /* If the next item begins with a flag  */
+        /* character, we treat it like a new    */
+        /* argument.  This is accomplished by   */
+        /* decrementing 'eoptind' and returning */
+        /* a null argument.                     */
+        /* """""""""""""""""""""""""""""""""""" */
+        else if (strchr(eoptstart, *eoptarg) != NULL)
         {
-          --optind;
-          optarg = NULL;
+          --eoptind;
+          eoptarg = NULL;
         }
       }
     }
     place = EMSG;
-    ++optind;
+    ++eoptind;
   }
 
   /* Return option letter. */
   /* """"""""""""""""""""" */
-  return (optopt);
+  return (eoptopt);
 }
