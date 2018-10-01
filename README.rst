@@ -20,8 +20,8 @@ animations that detail some of the concepts and features of smenu.
 How to build it?
 ================
 **smenu** can be built on every system where a working ``terminfo``
-development platform is available. This includes every Unix and Unix
-like systems I am aware of.
+development platform is available. This includes every Unix and
+Unix-like system I am aware of.
 
 Please use the provided ``build.sh`` to build the executable. This
 script accepts the same arguments as ``configure``, type ``build.sh
@@ -112,7 +112,7 @@ The included testing system is relatively young, please be indulgent.
 **IMPORTANT** the testing system has some dependencies, please read the
 ``test/README.rst`` before going further.
 
-**WARNING** running all the test by running ``./tests.sh`` in the
+**WARNING** running all the tests by running ``./tests.sh`` in the
 ``tests`` directory will take some time (around 15 min for now).
 
 **NOTE** on some systems like \*BSD some tests may fail. This can be
@@ -124,7 +124,7 @@ If a test fails for unknown reason, then please send me its directory
 name and the relevant ``.bad`` file.
 
 If you are hit by a bug that no test covers, then you can create a new
-test in the ``tests`` directory in a existing or new directory, read the
+test in the ``tests`` directory in an existing or new directory: read the
 ``tests/README.rst`` file, use an existing test as model, create an
 ``.in`` file and a ``.tst`` file and send them to me as well as the
 produced files.
