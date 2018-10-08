@@ -39,6 +39,8 @@
  * UUCP:     ...!ames!fxgrp!ljz
  *
  * May, 1988
+ *
+ * This version is slightly adapted for use by smenu.
  */
 
 #include <stdio.h>

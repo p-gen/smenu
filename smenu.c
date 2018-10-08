@@ -1030,31 +1030,43 @@ beep(toggle_t * toggle)
 
 /* ======================================================================== */
 /* Update the bitmap associated with a word. This bitmap indicates the      */
-/* positions of the searched mb characters previously entered in the search */
-/* buffer.                                                                  */
+/* positions of the UFT-8 glyphs of the search buffer in each word.         */
 /* The disp_word function will use it to display these special characters.  */
 /* ======================================================================== */
 void
 update_bitmaps(search_mode_t mode, search_data_t * data,
                bitmap_affinity_t affinity)
 {
-  long   i, j, n;
-  long   fc, bc;
-  long   mb;
-  char * start;
-  char * p;
-  char * bm;
-  char * str;
-  char * str_orig;
+  long i, j, n; /* work variables */
+
+  long lmg; /* position of the last matching glyph of the search buffer *
+             * in a word                                                */
+
+  long sg; /* index going from lmg backward to 0 of the tested glyphs   *
+            * of the search buffer (searched glyph)                     */
+
+  long bm_len; /* number of chars taken by the bitmask                  */
+
+  char * start; /* pointer on the position of the matching position     *
+                 * of the last search buffer glyph in the word          */
+
+  char * bm; /* the word's current bitmap                               */
+
+  char * str;      /* copy of the current word put in lower case        */
+  char * str_orig; /* oiginal version of the word                       */
+
   char * first_mb;
 
-  char * sb_orig = data->buf;
+  char * sb_orig = data->buf; /* sb: search buffer                      */
   char * sb;
-  long * o    = data->utf8_off_a;
-  long * l    = data->utf8_len_a;
-  long   last = data->utf8_len - 1;
+  long * o = data->utf8_off_a;    /* array of the offsets of the search   *
+                                   * buffer glyphs                        */
+  long * l = data->utf8_len_a;    /* array of the lengths in bytes of the *
+                                   * search buffer glyphs                 */
+  long last = data->utf8_len - 1; /* offset of the last glyph in the      *
+                                   * search buffer                        */
 
-  long badness;
+  long badness; /* number of 0s between two 1s */
 
   best_matches_count = 0;
 
@@ -1082,9 +1094,12 @@ update_bitmaps(search_mode_t mode, search_data_t * data,
       /* """""""""""""""""""""""""""""""""""""""""""""""""""" */
       str_orig[word_a[n].len] = '\0';
 
-      mb = (word_a[n].mb - daccess.flength) / CHAR_BIT + 1;
-      bm = word_a[n].bitmap;
+      bm_len = (word_a[n].mb - daccess.flength) / CHAR_BIT + 1;
+      bm     = word_a[n].bitmap;
 
+      /* In fuzzy search mode str is converted in lowercases */
+      /* for comparison reason.                              */
+      /* """"""""""""""""""""""""""""""""""""""""""""""""""" */
       if (mode == FUZZY)
       {
         str = xstrdup(str_orig);
@@ -1094,22 +1109,31 @@ update_bitmaps(search_mode_t mode, search_data_t * data,
         str = str_orig;
 
       start = str;
-      fc    = 0;
+      lmg   = 0;
 
+      /* starts points to the first UTF-8 glyph og the word */
+      /* """""""""""""""""""""""""""""""""""""""""""""""""" */
       while (start - str < word_a[n].len - daccess.flength)
       {
         /* Reset the bitmap */
         /* """""""""""""""" */
-        memset(bm, '\0', mb);
+        memset(bm, '\0', bm_len);
 
+        /* Compare the glyph pointed to by start to the last glyph of */
+        /* the search buffer, the aim is to pinte to the first        */
+        /* occurrence of the last glyph of it.                        */
+        /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
         if (memcmp(start, sb + o[last], l[last]) == 0)
         {
-          /* As there is only on glyph in the search buffer, we can */
-          /* stop here.                                             */
-          /* """""""""""""""""""""""""""""""""""""""""""""""""""""" */
+          char * p; /* Pointer to the beginning of an UTF-8 glyph in *
+                     * the potential lowercase version of the word   */
+
           if (last == 0)
           {
-            BIT_ON(bm, fc);
+            /* There is only one glyph in the search buffer, we can */
+            /* stop here.                                           */
+            /* """""""""""""""""""""""""""""""""""""""""""""""""""" */
+            BIT_ON(bm, lmg);
             if (affinity != END_AFFINITY)
               break;
           }
@@ -1119,40 +1143,42 @@ update_bitmaps(search_mode_t mode, search_data_t * data,
           /* the word.                                                   */
           /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
           p = start;
-          j = last;
+          j = last; /* j counts the number of glyphs in the search buffer *
+                     * not found in the word                              */
 
           /* Proceed backwards from the position of last glyph of the search */
-          /* to check if all the previous glyphs ca be fond before in the    */
+          /* to check if all the previous glyphs can be fond before in the   */
           /* word. If not try to find the next position of this last glyph   */
           /* in the word.                                                    */
           /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-          bc = fc;
+          sg = lmg;
           while (j > 0 && (p = utf8_prev(str, p)) != NULL)
           {
             if (memcmp(p, sb + o[j - 1], l[j - 1]) == 0)
             {
-              BIT_ON(bm, bc - 1);
+              BIT_ON(bm, sg - 1);
               j--;
             }
             else if (mode == SUBSTRING)
               break;
 
-            bc--;
+            sg--;
           }
 
           /* All the glyphs have been found */
           /* """""""""""""""""""""""""""""" */
           if (j == 0)
           {
-            BIT_ON(bm, fc);
+            BIT_ON(bm, lmg);
             if (affinity != END_AFFINITY)
               break;
           }
         }
 
-        fc++;
+        lmg++;
         start = utf8_next(start);
       }
+
       if (mode == FUZZY)
       {
         size_t utf8_index;
@@ -1162,7 +1188,7 @@ update_bitmaps(search_mode_t mode, search_data_t * data,
         /* We know that the first glyph is part of the pattern, so        */
         /* highlight it if it is not and un-highlight the next occurrence */
         /* that must be here because this word has already been filtered  */
-        /* by select_staring_pattern()                                    */
+        /* by select_starting_pattern()                                   */
         /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
         if (affinity == START_AFFINITY)
         {
@@ -1258,11 +1284,11 @@ update_bitmaps(search_mode_t mode, search_data_t * data,
   {
     for (i = 0; i < matches_count; i++)
     {
-      n  = matching_words_a[i];
-      bm = word_a[n].bitmap;
-      mb = (word_a[n].mb - daccess.flength) / CHAR_BIT + 1;
+      n      = matching_words_a[i];
+      bm     = word_a[n].bitmap;
+      bm_len = (word_a[n].mb - daccess.flength) / CHAR_BIT + 1;
 
-      memset(bm, '\0', mb);
+      memset(bm, '\0', bm_len);
 
       for (j = 0; j <= last; j++)
         BIT_ON(bm, j);

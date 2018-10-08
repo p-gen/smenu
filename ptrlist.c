@@ -8,9 +8,15 @@
 #include "xmalloc.h"
 #include "ptrlist.h"
 
-/* ********************* */
-/* Linked List functions */
-/* ********************* */
+/* ********************************************************************* */
+/* Tiny list immplementation.                                            */
+/*                                                                       */
+/* Each node contain a void pointer to some opaque data, these functions */
+/* will not try to allocate or free this data pointer.                   */
+/*                                                                       */
+/* Also accessors are not provided, the user has to directly manipulate  */
+/* the structure members (head, tail, len, data, prev, next)             */
+/* ********************************************************************* */
 
 /* ======================== */
 /* Create a new linked list */
@@ -83,16 +89,15 @@ ll_append(ll_t * const list, void * const data)
   return ret;
 }
 
-#if 0 /* here for coherency but not used. */
 /* =================================================================== */
 /* Put a new node filled with its data at the beginning of the linked  */
 /* list. The user is responsible for the memory management of the data */
 /* =================================================================== */
 int
-ll_prepend(ll_t * const list, void *const data)
+ll_prepend(ll_t * const list, void * const data)
 {
-  int ret = 1;
-  ll_node_t *node;
+  int         ret = 1;
+  ll_node_t * node;
 
   if (list)
   {
@@ -123,9 +128,9 @@ ll_prepend(ll_t * const list, void *const data)
 /* TODO test it                                           */
 /* ======================================================= */
 void
-ll_insert_before(ll_t * const list, ll_node_t * node, void *const data)
+ll_insert_before(ll_t * const list, ll_node_t * node, void * const data)
 {
-  ll_node_t *new_node;
+  ll_node_t * new_node;
 
   if (list)
   {
@@ -136,9 +141,9 @@ ll_insert_before(ll_t * const list, ll_node_t * node, void *const data)
       new_node = ll_new_node();
       if (new_node)
       {
-        new_node->data = data;
-        new_node->next = node;
-        new_node->prev = node->prev;
+        new_node->data   = data;
+        new_node->next   = node;
+        new_node->prev   = node->prev;
         node->prev->next = new_node;
 
         ++list->len;
@@ -152,9 +157,9 @@ ll_insert_before(ll_t * const list, ll_node_t * node, void *const data)
 /* TODO test it                                           */
 /* ====================================================== */
 void
-ll_insert_after(ll_t * const list, ll_node_t * node, void *const data)
+ll_insert_after(ll_t * const list, ll_node_t * node, void * const data)
 {
-  ll_node_t *new_node;
+  ll_node_t * new_node;
 
   if (list)
   {
@@ -165,9 +170,9 @@ ll_insert_after(ll_t * const list, ll_node_t * node, void *const data)
       new_node = ll_new_node();
       if (new_node)
       {
-        new_node->data = data;
-        new_node->prev = node;
-        new_node->next = node->next;
+        new_node->data   = data;
+        new_node->prev   = node;
+        new_node->next   = node->next;
         node->next->prev = new_node;
 
         ++list->len;
@@ -175,7 +180,6 @@ ll_insert_after(ll_t * const list, ll_node_t * node, void *const data)
     }
   }
 }
-#endif
 
 /* ====================================================== */
 /* Partition code for the quicksort function              */

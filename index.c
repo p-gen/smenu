@@ -3,6 +3,7 @@
 /* Inspired by: https://www.cs.princeton.edu/~rs/strings/tstdemo.c */
 /* *************************************************************** */
 
+#include <stdlib.h>
 #include <unistd.h>
 #include <wchar.h>
 #include <string.h>
@@ -47,7 +48,6 @@ tst_insert(tst_node_t * p, wchar_t * w, void * data)
   return (p);
 }
 
-#if 0 /* here for coherency but not used. */
 /* ===================================== */
 /* Ternary search tree deletion function */
 /* user data area not cleaned            */
@@ -64,7 +64,6 @@ tst_cleanup(tst_node_t * p)
     free(p);
   }
 }
-#endif
 
 /* ========================================================== */
 /* Recursive traversal of a ternary tree. A callback function */
