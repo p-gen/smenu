@@ -102,7 +102,7 @@ CONFIG_CLEAN_FILES = smenu.spec
 CONFIG_CLEAN_VPATH_FILES =
 am__installdirs = "$(DESTDIR)$(bindir)" "$(DESTDIR)$(man1dir)"
 PROGRAMS = $(bin_PROGRAMS)
-am_smenu_OBJECTS = smenu.$(OBJEXT) ptrlist.$(OBJEXT) xmalloc.$(OBJEXT) \
+am_smenu_OBJECTS = smenu.$(OBJEXT) list.$(OBJEXT) xmalloc.$(OBJEXT) \
 	index.$(OBJEXT) utf8.$(OBJEXT) fgetc.$(OBJEXT) utils.$(OBJEXT) \
 	getopt.$(OBJEXT)
 smenu_OBJECTS = $(am_smenu_OBJECTS)
@@ -307,8 +307,8 @@ target_alias = @target_alias@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-smenu_SOURCES = smenu.c smenu.h ptrlist.c ptrlist.h xmalloc.c xmalloc.h \
-                index.c index.h utf8.c utf8.h fgetc.c fgetc.h           \
+smenu_SOURCES = smenu.c smenu.h list.c list.h xmalloc.c xmalloc.h \
+                index.c index.h utf8.c utf8.h fgetc.c fgetc.h     \
 		utils.c utils.h getopt.c getopt.h
 
 dist_man_MANS = smenu.1
@@ -427,7 +427,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/fgetc.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/getopt.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/index.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ptrlist.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/list.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/smenu.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/utf8.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/utils.Po@am__quote@

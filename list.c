@@ -6,7 +6,7 @@
 #include <errno.h>
 
 #include "xmalloc.h"
-#include "ptrlist.h"
+#include "list.h"
 
 /* ********************************************************************* */
 /* Tiny list immplementation.                                            */

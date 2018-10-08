@@ -4,7 +4,7 @@
 #include <ctype.h>
 #include <stdarg.h>
 #include "xmalloc.h"
-#include "ptrlist.h"
+#include "list.h"
 #include "utils.h"
 
 /* ****************** */

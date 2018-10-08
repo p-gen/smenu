@@ -9,7 +9,7 @@
 #include <string.h>
 
 #include "xmalloc.h"
-#include "ptrlist.h"
+#include "list.h"
 #include "index.h"
 
 /* List of matching words matching the current search */

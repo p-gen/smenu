@@ -39,7 +39,7 @@
 #include <wchar.h>
 
 #include "xmalloc.h"
-#include "ptrlist.h"
+#include "list.h"
 #include "index.h"
 #include "utf8.h"
 #include "fgetc.h"
