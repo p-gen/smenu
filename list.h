@@ -29,21 +29,20 @@ struct ll_s
 int
 ll_append(ll_t * const list, void * const data);
 
-#if 0 /* here for coherency but not used. */
-int ll_prepend(ll_t * const list, void *const data);
+int
+ll_prepend(ll_t * const list, void * const data);
 
 void
-ll_insert_before(ll_t * const list, ll_node_t * node, void *const data);
+ll_insert_before(ll_t * const list, ll_node_t * node, void * const data);
 
 void
-ll_insert_after(ll_t * const list, ll_node_t * node, void *const data);
-#endif
+ll_insert_after(ll_t * const list, ll_node_t * node, void * const data);
 
-ll_node_t *
+static ll_node_t *
 ll_partition(ll_node_t * l, ll_node_t * h, int (*comp)(void *, void *),
              void (*swap)(void *, void *));
 
-void
+static void
 ll_quicksort(ll_node_t * l, ll_node_t * h, int (*comp)(void *, void *),
              void (*swap)(void * a, void *));
 

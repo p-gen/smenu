@@ -1,3 +1,7 @@
+/* ******************************* */
+/* Various small utility functions */
+/* ******************************* */
+
 #include <stdlib.h>
 #include <limits.h>
 #include <string.h>
@@ -179,10 +183,6 @@ strprefix(char * str1, char * str2)
 
   return *str2 == '\0';
 }
-
-/* ***************************** */
-/* Strings and utility functions */
-/* ***************************** */
 
 /* ======================= */
 /* Trim leading characters */

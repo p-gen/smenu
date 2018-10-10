@@ -1,3 +1,7 @@
+/* ************************************ */
+/* Various UTF-8 manipulation functions */
+/* ************************************ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>

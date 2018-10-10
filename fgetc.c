@@ -1,9 +1,9 @@
-#include <stdio.h>
-#include "fgetc.h"
-
 /* ************************************************************************ */
 /* Custom fgetc/ungetc implementation able to unget more than one character */
 /* ************************************************************************ */
+
+#include <stdio.h>
+#include "fgetc.h"
 
 enum
 {

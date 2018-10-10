@@ -1055,7 +1055,7 @@ update_bitmaps(search_mode_t mode, search_data_t * data,
   char * str;      /* copy of the current word put in lower case        */
   char * str_orig; /* oiginal version of the word                       */
 
-  char * first_mb;
+  char * first_glyph;
 
   char * sb_orig = data->buf; /* sb: search buffer                      */
   char * sb;
@@ -1072,7 +1072,7 @@ update_bitmaps(search_mode_t mode, search_data_t * data,
 
   if (mode == FUZZY || mode == SUBSTRING)
   {
-    first_mb = xmalloc(5);
+    first_glyph = xmalloc(5);
 
     if (mode == FUZZY)
     {
@@ -1196,7 +1196,8 @@ update_bitmaps(search_mode_t mode, search_data_t * data,
           long  i = 1;
           long  utf8_len;
 
-          first_mb = utf8_strprefix(first_mb, word_a[n].str, 1, &utf8_len);
+          first_glyph = utf8_strprefix(first_glyph, word_a[n].str, 1,
+                                       &utf8_len);
 
           if (!BIT_ISSET(word_a[n].bitmap, 0))
           {
@@ -1204,7 +1205,7 @@ update_bitmaps(search_mode_t mode, search_data_t * data,
             ptr1 = word_a[n].str;
             while ((ptr2 = utf8_next(ptr1)) != NULL)
             {
-              if (memcmp(ptr2, first_mb, utf8_len) == 0)
+              if (memcmp(ptr2, first_glyph, utf8_len) == 0)
               {
                 if (BIT_ISSET(word_a[n].bitmap, i))
                 {
@@ -1278,7 +1279,7 @@ update_bitmaps(search_mode_t mode, search_data_t * data,
     if (mode == FUZZY)
       free(sb);
 
-    free(first_mb);
+    free(first_glyph);
   }
   else if (mode == PREFIX)
   {
@@ -3962,7 +3963,7 @@ select_ending_matches(win_t * win, term_t * term, search_data_t * search_data,
     long   nb;
     long * tmp;
     char * ptr;
-    char * last_mb;
+    char * last_glyph;
     int    utf8_len;
 
     /* Creation of an alternate array which will      */
@@ -4004,12 +4005,12 @@ select_ending_matches(win_t * win, term_t * term, search_data_t * search_data,
         /* """""""""""""""""""""""""""""""""""""""""""""""""" */
         if (search_mode == FUZZY)
         {
-          utf8_len = mblen(ptr, 4);
-          last_mb  = search_data->buf + search_data->len - utf8_len;
+          utf8_len   = mblen(ptr, 4);
+          last_glyph = search_data->buf + search_data->len - utf8_len;
 
           /* in fuzzy search mode we only look the last glyph */
           /* """""""""""""""""""""""""""""""""""""""""""""""" */
-          if (memcmp(ptr, last_mb, utf8_len) == 0)
+          if (memcmp(ptr, last_glyph, utf8_len) == 0)
             alt_matching_words_a[j++] = index;
           else
             memset(word_a[index].bitmap, '\0',
@@ -4071,13 +4072,13 @@ select_starting_matches(win_t * win, term_t * term, search_data_t * search_data,
     long   index;
     long * tmp;
     long   pos;
-    char * first_mb;
+    char * first_glyph;
     int    utf8_len;
 
     alt_matching_words_a = xrealloc(alt_matching_words_a,
                                     matches_count * (sizeof(long)));
 
-    first_mb = xmalloc(5);
+    first_glyph = xmalloc(5);
 
     for (i = 0; i < matches_count; i++)
     {
@@ -4088,14 +4089,14 @@ select_starting_matches(win_t * win, term_t * term, search_data_t * search_data,
       {
         if (search_mode == FUZZY)
         {
-          first_mb = utf8_strprefix(first_mb,
-                                    word_a[index].str + daccess.flength, 1,
-                                    &pos);
-          utf8_len = pos;
+          first_glyph = utf8_strprefix(first_glyph,
+                                       word_a[index].str + daccess.flength, 1,
+                                       &pos);
+          utf8_len    = pos;
 
           /* in fuzzy search mode we only look the first glyph */
           /* """"""""""""""""""""""""""""""""""""""""""""""""" */
-          if (memcmp(search_data->buf, first_mb, utf8_len) == 0)
+          if (memcmp(search_data->buf, first_glyph, utf8_len) == 0)
             alt_matching_words_a[j++] = index;
           else
             memset(word_a[index].bitmap, '\0',
@@ -4115,7 +4116,7 @@ select_starting_matches(win_t * win, term_t * term, search_data_t * search_data,
       }
     }
 
-    free(first_mb);
+    free(first_glyph);
 
     matches_count         = j;
     matching_words_a_size = j;

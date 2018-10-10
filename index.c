@@ -1,5 +1,5 @@
 /* *************************************************************** */
-/* Ternary Search Tree functions                                   */
+/* Ternary Search Tree and sorted array creation functions         */
 /* Inspired by: https://www.cs.princeton.edu/~rs/strings/tstdemo.c */
 /* *************************************************************** */
 

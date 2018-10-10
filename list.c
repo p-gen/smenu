@@ -1,13 +1,3 @@
-#include "config.h"
-#include <stdio.h>
-#include <stdlib.h>
-#include <limits.h>
-#include <string.h>
-#include <errno.h>
-
-#include "xmalloc.h"
-#include "list.h"
-
 /* ********************************************************************* */
 /* Tiny list immplementation.                                            */
 /*                                                                       */
@@ -17,6 +7,16 @@
 /* Also accessors are not provided, the user has to directly manipulate  */
 /* the structure members (head, tail, len, data, prev, next)             */
 /* ********************************************************************* */
+
+#include "config.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <limits.h>
+#include <string.h>
+#include <errno.h>
+
+#include "xmalloc.h"
+#include "list.h"
 
 /* ======================== */
 /* Create a new linked list */
@@ -186,7 +186,7 @@ ll_insert_after(ll_t * const list, ll_node_t * node, void * const data)
 /* Based on code found here:                              */
 /* http://www.geeksforgeeks.org/quicksort-for-linked-list */
 /* ====================================================== */
-ll_node_t *
+static ll_node_t *
 ll_partition(ll_node_t * l, ll_node_t * h, int (*comp)(void *, void *),
              void (*swap)(void *, void *))
 {
@@ -221,7 +221,7 @@ ll_partition(ll_node_t * l, ll_node_t * h, int (*comp)(void *, void *),
 /* ======================================================= */
 /* A recursive implementation of quicksort for linked list */
 /* ======================================================= */
-void
+static void
 ll_quicksort(ll_node_t * l, ll_node_t * h, int (*comp)(void *, void *),
              void (*swap)(void * a, void *))
 {

@@ -1,5 +1,5 @@
-#ifndef TST_H
-#define TST_H
+#ifndef INDEX_H
+#define INDEX_H
 
 /* *************************************** */
 /* Ternary Search Tree specific structures */

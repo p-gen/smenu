@@ -1,5 +1,5 @@
 /* *************************** */
-/* Memory allocation functions */
+/* Memory management functions */
 /* *************************** */
 
 /* Created by Kevin Locke (from numerous canonical examples)         */
