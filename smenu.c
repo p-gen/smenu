@@ -168,7 +168,7 @@ short_usage(void)
   fprintf(stderr, "sfe|ste|mfe|mte|da\n");
   fprintf(stderr, "       <arg>           ::= [l|r:<char>]|[a:l|r]|[p:i|a]|");
   fprintf(stderr, "[w:<size>]|\n");
-  fprintf(stderr, "                           [f:y|n]|[o:<num>]|[n:<num>]|");
+  fprintf(stderr, "                           [f:y|n]|[o:<num>[+]]|[n:<num>]|");
   fprintf(stderr, "[i:<num>]|[d:<char>]|\n");
   fprintf(stderr, "                           [s:<num>]|[h:t|c|k]\n");
   fprintf(stderr, "         Ex: l:'(' a:l\n");
