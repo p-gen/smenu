@@ -1,4 +1,4 @@
-$ OUT=$(smenu -n 0 -N -c t0026.in)
+$ OUT=$(smenu -n 0 -N -c t0027.in)
 
  1) ab     
 0:01 1:01 2:01 4:23 5:23 
