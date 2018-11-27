@@ -12,9 +12,9 @@
 #include "list.h"
 #include "index.h"
 
-/* List of matching words matching the current search */
-/* """""""""""""""""""""""""""""""""""""""""""""""""" */
-ll_t * tst_search_list; /* Should be initialized by ll_new() before use */
+/* List of words matching the current search */
+/* """"""""""""""""""""""""""""""""""""""""" */
+ll_t * tst_search_list; /* Must be initialized by ll_new() before use */
 
 /* ====================================== */
 /* Ternary search tree insertion function */
@@ -184,9 +184,9 @@ tst_fuzzy_traverse(tst_node_t * p, int (*callback)(void *), int first_call,
   return !!rc;
 }
 
-/* =================================================================== */
-/* Search a complete string in a Ternary tree staring from a root node */
-/* =================================================================== */
+/* ==================================================================== */
+/* Search a complete string in a ternary tree starting from a root node */
+/* ==================================================================== */
 void *
 tst_search(tst_node_t * root, wchar_t * w)
 {

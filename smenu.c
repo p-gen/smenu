@@ -63,20 +63,21 @@ extern int    eopterrfd;
 /* Global variables */
 /* **************** */
 
-word_t * word_a;       /* Array containing words data (size: count)         */
+word_t * word_a;       /* array containing words data (size: count)         */
 long     count = 0;    /* number of words read from stdin                   */
 long     current;      /* index the current selection under the cursor)     */
 long     new_current;  /* final current position, (used in search function) */
 long     prev_current; /* previous position stored when using direct access */
 
-long * line_nb_of_word_a;    /* array containing the line number *
-                              * (from 0) of each word read       */
-long * first_word_in_line_a; /* array containing the index of    *
-                              * the first word of each lines     */
+long * line_nb_of_word_a;    /* array containing the line number (from 0) *
+                              * of each word read                         */
+long * first_word_in_line_a; /* array containing the index of the first   *
+                              * word of each lines                        */
+
 search_mode_t search_mode     = NONE;
 search_mode_t old_search_mode = NONE;
 
-int help_mode = 0; /* 1 if help is display else 0      */
+int help_mode = 0; /* 1 if help is displayed else 0 */
 
 char * word_buffer;
 
@@ -126,10 +127,10 @@ volatile sig_atomic_t got_timeout_tick = 0;
 /* Variables used when a timeout is set (option -x) */
 /* """""""""""""""""""""""""""""""""""""""""""""""" */
 timeout_t timeout;
-char *    timeout_word;    /* printed word when the timeout type is WORD.   */
-char *    timeout_seconds; /* string containing the number of remaining     *
-                            * seconds.                                      */
-int quiet_timeout = 0;     /* 1 when we want no message to be displayed.    */
+char *    timeout_word;    /* printed word when the timeout type is WORD. */
+char *    timeout_seconds; /* string containing the number of remaining   *
+                            * seconds.                                    */
+int quiet_timeout = 0;     /* 1 when we want no message to be displayed.  */
 
 /* ************** */
 /* Help functions */
@@ -278,7 +279,7 @@ usage(void)
           "-/ changes the affectation of the / key (default fuzzy search).\n");
   fprintf(stderr, "\nNavigation keys are:\n");
   fprintf(stderr, "  - Left/Down/Up/Right arrows or h/j/k/l, J/K.\n");
-  fprintf(stderr, "  - Home/End, SHIFT|CTRL+Home/End.\n");
+  fprintf(stderr, "  - Home/End, SHIFT|CTRL+Home/End CTRK+J/CTRL+K.\n");
   fprintf(stderr, "  - Numbers if some words are numbered (-N/-U/-F).\n");
   fprintf(stderr, "  - SPACE to search for the next match of a previously\n");
   fprintf(stderr, "          entered search prefix if any, see below.\n\n");
@@ -322,12 +323,12 @@ void
 help(win_t * win, term_t * term, long last_line, toggle_t * toggle)
 {
   int index;      /* used to identify the objects long the help line */
-  int line   = 0; /* number of windows lines used by the help line  */
-  int len    = 0; /* length of the help line                        */
-  int offset = 0; /* offset from the first column of the terminal   *
-                   * to the start of the help line                  */
-  int entries_nb; /* number of help entries to display              */
-  int help_len;   /* total length of the help line                  */
+  int line   = 0; /* number of windows lines used by the help line   */
+  int len    = 0; /* length of the help line                         */
+  int offset = 0; /* offset from the first column of the terminal to *
+                   * the start of the help line                      */
+  int entries_nb; /* number of help entries to display               */
+  int help_len;   /* total length of the help line                   */
 
   struct entry_s
   {
@@ -1039,25 +1040,25 @@ update_bitmaps(search_mode_t mode, search_data_t * data,
 {
   long i, j, n; /* work variables */
 
-  long lmg; /* position of the last matching glyph of the search buffer *
-             * in a word                                                */
+  long lmg; /* position of the last matching glyph of the search buffer   *
+             * in a word                                                  */
 
-  long sg; /* index going from lmg backward to 0 of the tested glyphs   *
-            * of the search buffer (searched glyph)                     */
+  long sg; /* index going from lmg backward to 0 of the tested glyphs     *
+            * of the search buffer (searched glyph)                       */
 
-  long bm_len; /* number of chars taken by the bitmask                  */
+  long bm_len; /* number of chars taken by the bitmask                    */
 
-  char * start; /* pointer on the position of the matching position     *
-                 * of the last search buffer glyph in the word          */
+  char * start; /* pointer on the position of the matching position       *
+                 * of the last search buffer glyph in the word            */
 
-  char * bm; /* the word's current bitmap                               */
+  char * bm; /* the word's current bitmap                                 */
 
-  char * str;      /* copy of the current word put in lower case        */
-  char * str_orig; /* oiginal version of the word                       */
+  char * str;      /* copy of the current word put in lower case          */
+  char * str_orig; /* oiginal version of the word                         */
 
   char * first_glyph;
 
-  char * sb_orig = data->buf; /* sb: search buffer                      */
+  char * sb_orig = data->buf; /* sb: search buffer                        */
   char * sb;
   long * o = data->utf8_off_a;    /* array of the offsets of the search   *
                                    * buffer glyphs                        */
@@ -1066,7 +1067,7 @@ update_bitmaps(search_mode_t mode, search_data_t * data,
   long last = data->utf8_len - 1; /* offset of the last glyph in the      *
                                    * search buffer                        */
 
-  long badness; /* number of 0s between two 1s */
+  long badness; /* number of 0s between two 1s                            */
 
   best_matches_count = 0;
 
@@ -1444,6 +1445,7 @@ clean_matches(search_data_t * search_data, long size)
   /* Clean the search buffer */
   /* """"""""""""""""""""""" */
   memset(search_data->buf, '\0', size - daccess.flength);
+
   search_data->len           = 0;
   search_data->utf8_len      = 0;
   search_data->only_ending   = 0;
@@ -3206,7 +3208,7 @@ disp_cursor_word(long pos, win_t * win, term_t * term, int err)
 
 /* ==================================================================== */
 /* Helper function used by disp_word to print a matching word NOT under */
-/* the cursor withe the matching characters of the word highlighted.    */
+/* the cursor with the matching characters of the word highlighted.     */
 /* ==================================================================== */
 void
 disp_matching_word(long pos, win_t * win, term_t * term, int is_cursor, int err)
@@ -5464,7 +5466,7 @@ main(int argc, char * argv[])
 
                 break;
 
-              case 'n': /* numbor of digits to extract */
+              case 'n': /* number of digits to extract */
                 if (sscanf(argv[eoptind] + 2, "%d%n", &daccess.size, &pos) != 1)
                 {
                   TELL("Bad format -- ");
@@ -5812,8 +5814,8 @@ main(int argc, char * argv[])
   }
   else
   {
-    /* Build the full path of the ini file */
-    /* """"""""""""""""""""""""""""""""""" */
+    /* Build the full path of the .ini file */
+    /* """""""""""""""""""""""""""""""""""" */
     home_ini_file  = make_ini_path(argv[0], "HOME");
     local_ini_file = make_ini_path(argv[0], "PWD");
 
@@ -6113,6 +6115,8 @@ main(int argc, char * argv[])
     }
   }
 
+  /* Initialize the timeout message when the x/X option is set */
+  /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""" */
   if (!quiet_timeout && timeout.initial_value > 0)
   {
     switch (timeout.mode)
@@ -6276,6 +6280,8 @@ main(int argc, char * argv[])
     col_index = cols_number = 0;
   }
 
+  /* Compile the regular expression patterns */
+  /* """"""""""""""""""""""""""""""""""""""" */
   if (daccess_np
       && regcomp(&daccess_np_re, daccess_np, REG_EXTENDED | REG_NOSUB) != 0)
   {
@@ -7005,7 +7011,7 @@ main(int argc, char * argv[])
   /* - Replace unprintable characters in the word by mnemonics              */
   /* - Remember the max size of the words/columns/tabs                      */
   /* - Insert the word in a TST (Ternary Search Tree) index to facilitate   */
-  /*   word search (each node pf the TST will contaun an UTF-8 glyph).      */
+  /*   word search (each node pf the TST will contain an UTF-8 glyph).      */
   /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
   col_index = 0;
   for (wi = 0; wi < count; wi++)
