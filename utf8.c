@@ -152,14 +152,14 @@ utf8_interpret(char * s, langinfo_t * langinfo)
 int
 utf8_get_length(unsigned char c)
 {
-  if (c >= 0xf0)
-    return 4;
-  else if (c >= 0xe0)
-    return 3;
-  else if (c >= 0xc2)
-    return 2;
-  else
+  if (c < 0x80)
     return 1;
+  else if (c < 0xe0)
+    return 2;
+  else if (c < 0xf0)
+    return 3;
+  else
+    return 4;
 }
 
 /* ================================================== */
