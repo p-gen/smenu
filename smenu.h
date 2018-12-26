@@ -148,7 +148,7 @@ disp_message(ll_t * message_lines_list, long width, long max_len, term_t * term,
 
 void
 update_bitmaps(search_mode_t search_mode, search_data_t * search_data,
-               bitmap_affinity_t ending_pattern);
+               bitmap_affinity_t affinity);
 
 long
 find_next_matching_word(long * array, long nb, long value, long * index);
@@ -163,7 +163,7 @@ void
 disp_cursor_word(long pos, win_t * win, term_t * term, int err);
 
 void
-disp_matching_word(long pos, win_t * win, term_t * term, int is_matching,
+disp_matching_word(long pos, win_t * win, term_t * term, int is_cursor,
                    int err);
 
 void

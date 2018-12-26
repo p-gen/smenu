@@ -1975,12 +1975,12 @@ err:
 /* ===================================================================== */
 /* Utility function used by replace to expand the replacement string     */
 /* IN:                                                                   */
-/* to_match:        matching part of the original string to be replaced  */
+/* orig:            matching part of the original string to be replaced  */
 /* repl:            string containing the replacement directives         */
 /* subs_a:          array of ranges containing the start and end offset  */
 /*                  of the remembered parts of the strings referenced by */
 /*                  the sequence \n where n is in [1,10]                 */
-/* match_start/end: offset in to_match for the current matched string    */
+/* match_start/end: offset in orig for the current matched string        */
 /* subs_nb:         number of elements containing significant values in  */
 /*                  the array described above                            */
 /* match:           current match number in the original string          */
@@ -1989,8 +1989,8 @@ err:
 /* The modified string according to the content of repl                  */
 /* ===================================================================== */
 char *
-build_repl_string(char * to_match, char * repl, long match_start,
-                  long match_end, range_t * subs_a, long subs_nb, long match)
+build_repl_string(char * orig, char * repl, long match_start, long match_end,
+                  range_t * subs_a, long subs_nb, long match)
 {
   size_t rsize     = 0;
   size_t allocated = 16;
@@ -2039,7 +2039,7 @@ build_repl_string(char * to_match, char * repl, long match_start,
               if (allocated <= rsize + delta)
                 str = xrealloc(str, allocated += (delta + 16));
 
-              memcpy(str + rsize, to_match + subs_a[index].start, delta);
+              memcpy(str + rsize, orig + subs_a[index].start, delta);
 
               rsize += delta;
               str[rsize] = '\0';
@@ -2065,7 +2065,7 @@ build_repl_string(char * to_match, char * repl, long match_start,
             if (allocated <= rsize + delta)
               str = xrealloc(str, allocated += (delta + 16));
 
-            memcpy(str + rsize, to_match + match_start, delta);
+            memcpy(str + rsize, orig + match_start, delta);
 
             rsize += delta;
             str[rsize] = '\0';
@@ -2095,7 +2095,7 @@ build_repl_string(char * to_match, char * repl, long match_start,
 /* by the substitution string                                             */
 /* The regex used must have been previously compiled                      */
 /*                                                                        */
-/* to_match: original string                                              */
+/* orig: original string                                              */
 /* sed:      composite variable containing the regular expression, a      */
 /*           substitution string and various other informations.          */
 /* output:   destination buffer                                           */
@@ -2107,7 +2107,7 @@ build_repl_string(char * to_match, char * repl, long match_start,
 /* uses the global variable word_buffer                                   */
 /* ====================================================================== */
 int
-replace(char * to_match, sed_t * sed)
+replace(char * orig, sed_t * sed)
 {
   size_t match_nb = 0;   /* number of matches in the original string */
   int    sub_nb   = 0;   /* number of remembered matches in the      *
@@ -2115,15 +2115,15 @@ replace(char * to_match, sed_t * sed)
   size_t target_len = 0; /* length of the resulting string           */
   size_t subs_max   = 0;
 
-  if (*to_match == '\0')
+  if (*orig == '\0')
     return 1;
 
-  range_t * matches_a = xmalloc(strlen(to_match) * sizeof(range_t));
+  range_t * matches_a = xmalloc(strlen(orig) * sizeof(range_t));
   range_t * subs_a    = xmalloc(10 * sizeof(range_t));
 
-  const char * p = to_match; /* points to the end of the previous match. */
-  regmatch_t   m[10];        /* array containing the start/end offsets   *
-                              * of the matches found.                    */
+  const char * p = orig; /* points to the end of the previous match. */
+  regmatch_t   m[10];    /* array containing the start/end offsets   *
+                          * of the matches found.                    */
 
   while (1)
   {
@@ -2143,14 +2143,14 @@ replace(char * to_match, sed_t * sed)
       if (match_nb > 0)
       {
         for (index = 0; index < matches_a[0].start; index++)
-          word_buffer[target_len++] = to_match[index];
+          word_buffer[target_len++] = orig[index];
 
         for (match = 0; match < match_nb; match++)
         {
           size_t len;
           size_t end;
 
-          exp_repl = build_repl_string(to_match, sed->substitution,
+          exp_repl = build_repl_string(orig, sed->substitution,
                                        matches_a[match].start,
                                        matches_a[match].end, subs_a, subs_max,
                                        match);
@@ -2166,10 +2166,10 @@ replace(char * to_match, sed_t * sed)
           if (match < match_nb - 1 && sed->global)
             end = matches_a[match + 1].start;
           else
-            end = strlen(to_match);
+            end = strlen(orig);
 
           while (index < end)
-            word_buffer[target_len++] = to_match[index++];
+            word_buffer[target_len++] = orig[index++];
 
           word_buffer[target_len] = '\0';
 
@@ -2179,7 +2179,7 @@ replace(char * to_match, sed_t * sed)
       }
       else
       {
-        my_strcpy(word_buffer, to_match);
+        my_strcpy(word_buffer, orig);
         return 0;
       }
 
@@ -2195,15 +2195,15 @@ replace(char * to_match, sed_t * sed)
       if (m[i].rm_so == -1)
         break;
 
-      start  = m[i].rm_so + (p - to_match);
-      finish = m[i].rm_eo + (p - to_match);
+      start  = m[i].rm_so + (p - orig);
+      finish = m[i].rm_eo + (p - orig);
 
       if (i == 0)
       {
         matches_a[match_nb].start = start;
         matches_a[match_nb].end   = finish;
         match_nb++;
-        if (match_nb > utf8_strlen(to_match))
+        if (match_nb > utf8_strlen(orig))
           goto fail;
       }
       else
