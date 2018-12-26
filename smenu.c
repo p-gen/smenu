@@ -1067,7 +1067,7 @@ update_bitmaps(search_mode_t mode, search_data_t * data,
   long last = data->utf8_len - 1; /* offset of the last glyph in the      *
                                    * search buffer                        */
 
-  long badness; /* number of 0s between two 1s                            */
+  long badness = 0; /* number of 0s between two 1s                        */
 
   best_matches_count = 0;
 
