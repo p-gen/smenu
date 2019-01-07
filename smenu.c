@@ -142,8 +142,8 @@ int quiet_timeout = 0;     /* 1 when we want no message to be displayed.  */
 void
 short_usage(void)
 {
-  fprintf(stderr, "Usage: smenu [-h|-?] [-f config_file] [-n lines] ");
-  fprintf(stderr, "[-t [cols]] [-k] [-v]         \\\n");
+  fprintf(stderr, "Usage: smenu [-h|-?] [-f config_file] [-n [lines]] ");
+  fprintf(stderr, "[-t [cols]] [-k] [-v]       \\\n");
   fprintf(stderr, "       [-s pattern] [-m message] [-w] [-d] [-M] [-c] [-l] ");
   fprintf(stderr, "[-r] [-b]            \\\n");
   fprintf(stderr, "       [-a prefix:attr [prefix:attr]...] ");
@@ -5131,7 +5131,7 @@ main(int argc, char * argv[])
   /* """"""""""""""""""""""""""""" */
   while ((opt = egetopt(argc, argv,
                         "Vf:h?X:x:qdMba:i:e:S:I:E:A:Z:1:2:3:4:5:C:R:"
-                        "kvclwrg%n:t%m:s:W:L:T%P%pN%U%FD:/:"))
+                        "kvclwrg%n%t%m:s:W:L:T%P%pN%U%FD:/:"))
          != -1)
   {
     switch (opt)
@@ -5151,13 +5151,16 @@ main(int argc, char * argv[])
         break;
 
       case 'n':
-        if (eoptarg && *eoptarg != '-')
-          win.asked_max_lines = abs(atoi(eoptarg));
-        else
+        if (eoptarg != NULL)
         {
-          TELL("Option requires an argument -- ");
-          short_usage();
+          if (sscanf(eoptarg, "%ld", &(win.asked_max_lines)) != 1)
+          {
+            TELL("Argument must be numeric -- ");
+            short_usage();
+          }
         }
+        else
+          win.asked_max_lines = 0;
         break;
 
       case 'd':

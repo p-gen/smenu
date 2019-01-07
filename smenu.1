@@ -5,7 +5,7 @@ and outputs the selection to stdout.
 .SH SYNOPSIS
 .nf
 \f(CRsmenu [\fB-h\fP|\fB-?\fP] [\fB-f\fP \fIconfiguration_file\fP] \\
-      [\fB-n\fP \fIlines\fP] [\fB-t\fP [\fIcols\fP]] [\fB-k\fP] \\
+      [\fB-n\fP [\fIlines\fP]] [\fB-t\fP [\fIcols\fP]] [\fB-k\fP] \\
       [\fB-s\fP \fIpattern\fP] [\fB-m\fP \fImessage\fP] [\fB-w\fP] \\
       [\fB-d\fP] [\fB-M\fP] [\fB-c\fP] [\fB-l\fP] [\fB-r\fP] [\fB-b\fP] \\
       [\fB-a\fP (i|e|c|b|s|t|ct|sf|st|mf|mt|sfe|ste|mfe|mte|da):\fIATTR\fP]... \\
@@ -469,14 +469,17 @@ default values will be used.
 
 The \fB.smenu\fP files in the user's home directory and in the current
 directory, if present, will be ignored when this option is used.
-.IP "\fB-n\fP \fIlines\fB"
+.IP "\fB-n\fP \fI[lines\fB]"
 Gives the maximum number of lines in the scrolling selection window.
-By default five lines at most are displayed and the other ones, if
-any, need you to scroll the window.
 
-The special value \fI0\fP sets this number to match the number of lines
-in the terminal (minus the lines taken by the message if any).
+If \fB-n\fP is not present the number of lines will be set to \fI5\fP.
+
+If \fB-n\fP is present without argument, then the height of the terminal will
+be used to determine the number of lines.
 This remains true even if the terminal is resized.
+
+If \fB-n\fP is present with a numerical argument, this value will be used
+to determine the number of lines.
 .IP "\fB-t\fP [\fIcolumns\fP]"
 This option sets the tabulation mode and, if a number is specified,
 attents to set the number of displayed columns to that number.
