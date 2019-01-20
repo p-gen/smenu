@@ -1,4 +1,8 @@
-/* *************************************************************** */
+/* ########################################################### */
+/* This Software is licensed under the GPL licensed Version 2, */
+/* please read http://www.gnu.org/copyleft/gpl.html            */
+/* ########################################################### */
+
 /* Ternary Search Tree and sorted array creation functions         */
 /* Inspired by: https://www.cs.princeton.edu/~rs/strings/tstdemo.c */
 /* *************************************************************** */
