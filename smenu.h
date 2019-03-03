@@ -229,6 +229,9 @@ apply_attr(term_t * term, attr_t attr);
 int
 delims_cmp(const void * a, const void * b);
 
+long
+get_line_last_word(long line, long last_line);
+
 void
 move_left(win_t * win, term_t * term, toggle_t * toggle,
           search_data_t * search_data, langinfo_t * langinfo, long * nl,
@@ -239,15 +242,23 @@ move_right(win_t * win, term_t * term, toggle_t * toggle,
            search_data_t * search_data, langinfo_t * langinfo, long * nl,
            long last_line, char * tmp_word);
 
+int
+find_best_word_upward(win_t * win, term_t * term, long line, long last_word,
+                      long s, long e);
+
+int
+find_best_word_downward(win_t * win, term_t * term, long line, long last_word,
+                        long s, long e);
+
 void
 move_up(win_t * win, term_t * term, toggle_t * toggle,
         search_data_t * search_data, langinfo_t * langinfo, long * nl,
-        long page, long last_line, char * tmp_word);
+        long page, long first_selectable, long last_line, char * tmp_word);
 
 void
 move_down(win_t * win, term_t * term, toggle_t * toggle,
           search_data_t * search_data, langinfo_t * langinfo, long * nl,
-          long page, long last_line, char * tmp_word);
+          long page, long last_selectable, long last_line, char * tmp_word);
 
 /* ***************** */
 /* Emums and structs */

@@ -1,0 +1,19 @@
+$ OUT=$(LC_ALL=en_US smenu -c -e x -e '[0-9]' t0008.in)
+
+<abcdefghi xxxxxxxxx xxxxxxxxx xxxxxxxxx xxxxxxxxx xxxxxxxxx xxxxxxxxx>        \
+0:01 1:07 2:07 3:07 4:07 5:07 6:07 7:07 8:07 9:07 11:24 12:24 13:24 14:24 15:24 16:24 17:24 18:24 19:24 21:24 22:24 23:24 24:24 25:24 26:24 27:24 28:24 29:24 31:24 32:24 33:24 34:24 35:24 36:24 37:24 38:24 39:24 41:24 42:24 43:24 44:24 45:24 46:24 47:24 48:24 49:24 51:24 52:24 53:24 54:24 55:24 56:24 57:24 58:24 59:24 61:24 62:24 63:24 64:24 65:24 66:24 67:24 68:24 69:24 70:01 79:20 
+<xxxxxxxxx xxxxxxxxx xxxxxxxxx xxxxxxxxx xxxxxxxxx xxxxxxxxx xxxxxxxxx>        +
+0:01 1:24 2:24 3:24 4:24 5:24 6:24 7:24 8:24 9:24 11:24 12:24 13:24 14:24 15:24 16:24 17:24 18:24 19:24 21:24 22:24 23:24 24:24 25:24 26:24 27:24 28:24 29:24 31:24 32:24 33:24 34:24 35:24 36:24 37:24 38:24 39:24 41:24 42:24 43:24 44:24 45:24 46:24 47:24 48:24 49:24 51:24 52:24 53:24 54:24 55:24 56:24 57:24 58:24 59:24 61:24 62:24 63:24 64:24 65:24 66:24 67:24 68:24 69:24 70:01 79:20 
+<abcdefghi jabcdefgh ijabcdefg hijbcdefg hijabcdef ghijabcde fghijabcd>        |
+0:01 70:01 79:20 
+<abcdefghi jabcdefgh ijabcdefg hijbcdefg hijabcdef ghijabcde fghijabcd>        |
+0:01 70:01 79:20 
+<abcdefghi jabcdefgh ijabcdefg hijbcdefg hijabcdef ghijabcde fghijabcd>        v
+0:01 70:01 79:20 
+$ 
+
+$ echo ":$OUT:"
+
+:abcdefghi:
+
+$ exit 0

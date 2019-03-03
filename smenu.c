@@ -4322,22 +4322,195 @@ move_right(win_t * win, term_t * term, toggle_t * toggle,
                      term, last_line, tmp_word, langinfo);
 }
 
+/* ================================================================== */
+/* Get the last word of a line after it has been formed to fit in the */
+/* terminal.                                                          */
+/* ================================================================== */
+long
+get_line_last_word(long line, long last_line)
+{
+  if (line == last_line)
+    return count - 1;
+  else
+    return first_word_in_line_a[line + 1] - 1;
+}
+
+/* ==================================================================== */
+/* Try to locate the best word in the target line when trying to move   */
+/* the cursor upward.                                                   */
+/* returns 1 if a word has been found else 0.                           */
+/* This function has the side effect to potentially change the value of */
+/* the variable 'current' if an adequate word is found.                 */
+/* ==================================================================== */
+int
+find_best_word_upward(win_t * win, term_t * term, long line, long last_word,
+                      long s, long e)
+{
+  int  found = 0;
+  long index;
+  long cursor;
+
+  /* Look for the first word whose start position in the line is */
+  /* less or equal to the source word starting position          */
+  /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+  cursor = last_word;
+  while (word_a[cursor].start > s)
+    cursor--;
+
+  /* In case no word is eligible, keep the cursor on */
+  /* the last word                                   */
+  /* """"""""""""""""""""""""""""""""""""""""""""""" */
+  if (cursor == last_word && word_a[cursor].start > 0)
+    cursor--;
+
+  /* Try to guess the best choice if we have multiple choices */
+  /* """""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+  if (word_a[cursor].end >= s
+      && word_a[cursor].end - s >= e - word_a[cursor + 1].start)
+    current = cursor;
+  else
+  {
+    if (cursor < last_word)
+      current = cursor + 1;
+    else
+      current = cursor;
+  }
+
+  /* If the word is not selectable, try to find a selectable word */
+  /* in the line                                                  */
+  /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+  if (!word_a[current].is_selectable)
+  {
+    index = 0;
+    while (word_a[current - index].start > 0
+           && !word_a[current - index].is_selectable)
+      index++;
+
+    if (word_a[current - index].is_selectable)
+    {
+      current -= index;
+      found = 1;
+    }
+    else
+    {
+      index = 0;
+      while (current + index < last_word
+             && !word_a[current + index].is_selectable)
+        index++;
+
+      if (word_a[current + index].is_selectable)
+      {
+        current += index;
+        found = 1;
+      }
+    }
+  }
+  else
+    found = 1;
+
+  return found;
+}
+
+/* ==================================================================== */
+/* Try to locate the best word in the target line when trying to move   */
+/* the cursor downward.                                                 */
+/* returns 1 if a word has been found else 0.                           */
+/* This function has the side effect to potentially change the value of */
+/* the variable 'current' if an adequate word is found.                 */
+/* ==================================================================== */
+int
+find_best_word_downward(win_t * win, term_t * term, long line, long last_word,
+                        long s, long e)
+{
+  int  found = 0;
+  long index;
+  long cursor;
+
+  /* Look for the first word whose start position in the line is */
+  /* less or equal than the source word starting position        */
+  /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+  cursor = last_word;
+  while (word_a[cursor].start > s)
+    cursor--;
+
+  /* In case no word is eligible, keep the cursor on */
+  /* the last word                                   */
+  /* """"""""""""""""""""""""""""""""""""""""""""""" */
+  if (cursor == last_word && word_a[cursor].start > 0)
+    cursor--;
+
+  /* Try to guess the best choice if we have multiple choices */
+  /* """""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+  if (cursor < count - 1
+      && word_a[cursor].end - s >= e - word_a[cursor + 1].start)
+    current = cursor;
+  else
+  {
+    if (cursor < count - 1)
+    {
+      if (cursor < last_word)
+        current = cursor + 1;
+      else
+        current = cursor;
+    }
+    else
+      current = count - 1;
+  }
+
+  /* If the word is not selectable, try to find a selectable word */
+  /* in ts line                                                   */
+  /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+  if (!word_a[current].is_selectable)
+  {
+    index = 0;
+    while (word_a[current - index].start > 0
+           && !word_a[current - index].is_selectable)
+      index++;
+
+    if (word_a[current - index].is_selectable)
+    {
+      current -= index;
+      found = 1;
+    }
+    else
+    {
+      index = 0;
+      while (current + index < last_word
+             && !word_a[current + index].is_selectable)
+        index++;
+
+      if (word_a[current + index].is_selectable)
+      {
+        current += index;
+        found = 1;
+      }
+    }
+  }
+  else
+    found = 1;
+
+  return found;
+}
+
 /* =================== */
 /* Moves the cursor up */
 /* =================== */
 void
 move_up(win_t * win, term_t * term, toggle_t * toggle,
         search_data_t * search_data, langinfo_t * langinfo, long * nl,
-        long page, long last_line, char * tmp_word)
+        long page, long first_selectable, long last_line, char * tmp_word)
 {
-  long cur_line;
-  long start_line;
-  long last_word;
-  long cursor;
-  long old_current = current;
-  long old_start   = win->start;
-  long index;
-  long s, e; /* Starting and ending terminal position of a word */
+  long line;                  /* The line being processed (the target line) */
+  long start_line;            /* The first line of the window               */
+  long cur_line;              /* The line of the cursor                     */
+  long first_selectable_line; /* the line containing the first              *
+                               * selectable word                            */
+  long lines_skipped; /* The number of line between the target line and the *
+                       * first line containing a selectable word in case of *
+                       * exclusions.                                        */
+  long last_word;     /* The last word on the target line                   */
+  long s, e;          /* Starting and ending terminal position of a word    */
+  int  found;         /* 1 if a line could be fond else 0                   */
 
   /* Store the initial starting and ending positions of */
   /* the word under the cursor                          */
@@ -4345,121 +4518,100 @@ move_up(win_t * win, term_t * term, toggle_t * toggle,
   s = word_a[current].start;
   e = word_a[current].end;
 
-  do
+  /* Identify the line number of the first window's line */
+  /* and the line number of the current line             */
+  /* """"""""""""""""""""""""""""""""""""""""""""""""""" */
+  start_line            = line_nb_of_word_a[win->start];
+  cur_line              = line_nb_of_word_a[current];
+  first_selectable_line = line_nb_of_word_a[first_selectable];
+  lines_skipped         = 0;
+  found                 = 0;
+
+  /* initialise the target line */
+  /* """""""""""""""""""""""""" */
+  line = cur_line;
+
+  if (line - page < 0)
   {
-    /* Identify the line number of the first window's line */
-    /* and the line number of the current line             */
-    /* """"""""""""""""""""""""""""""""""""""""""""""""""" */
-    start_line = line_nb_of_word_a[win->start];
-    cur_line   = line_nb_of_word_a[current];
-
-    if (cur_line == 0)
-      break;
-
-    /* Manage the different cases */
-    /* """""""""""""""""""""""""" */
-    if (start_line >= page)
-    {
-      if (start_line > cur_line - page)
-        start_line -= page;
-    }
-    else
-      start_line = 0;
-
-    /* Get the index of the last word of the destination line */
-    /* """""""""""""""""""""""""""""""""""""""""""""""""""""" */
-    if (cur_line >= page)
-      last_word = first_word_in_line_a[cur_line - page + 1] - 1;
-    else
-      last_word = first_word_in_line_a[1] - 1;
-
-    /* And set the new value of the starting word of the window */
-    /* """""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-    win->start = first_word_in_line_a[start_line];
-
-    /* Look for the first word whose start position in the line is */
-    /* less or equal to the source word starting position          */
-    /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-    cursor = last_word;
-    while (word_a[cursor].start > s)
-      cursor--;
-
-    /* In case no word is eligible, keep the cursor on */
-    /* the last word                                   */
-    /* """"""""""""""""""""""""""""""""""""""""""""""" */
-    if (cursor == last_word && word_a[cursor].start > 0)
-      cursor--;
-
-    /* Try to guess the best choice if we have multiple choices */
-    /* """""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-    if (word_a[cursor].end >= s
-        && word_a[cursor].end - s >= e - word_a[cursor + 1].start)
-      current = cursor;
-    else
-    {
-      if (cursor < last_word)
-        current = cursor + 1;
-      else
-        current = cursor;
-    }
-
-    /* Set new first column to display */
-    /* """"""""""""""""""""""""""""""" */
-    set_new_first_column(win, term);
-
-    /* If the word is not selectable, try to find a selectable word */
-    /* in ts line                                                   */
-    /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-    if (!word_a[current].is_selectable)
-    {
-      index = 0;
-      while (word_a[current - index].start > 0
-             && !word_a[current - index].is_selectable)
-        index++;
-
-      if (word_a[current - index].is_selectable)
-        current -= index;
-      else
-      {
-        index = 0;
-        while (current + index < last_word
-               && !word_a[current + index].is_selectable)
-          index++;
-
-        if (word_a[current + index].is_selectable)
-          current += index;
-      }
-    }
-  } while (current != old_current && !word_a[current].is_selectable);
-
-  /* If no selectable word could be find; stay at the original */
-  /* position                                                  */
-  /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-  if (!word_a[current].is_selectable)
-  {
-    current    = old_current;
-    win->start = old_start;
+    /* Trivial case, we are already on the first page */
+    /* just jump to the first selectable line         */
+    /* """""""""""""""""""""""""""""""""""""""""""""" */
+    line      = first_selectable_line;
+    last_word = get_line_last_word(line, last_line);
+    find_best_word_upward(win, term, line, last_word, s, e);
   }
-
-  /* Display the window */
-  /* """""""""""""""""" */
-  if (current != old_current)
-    *nl = disp_lines(win, toggle, current, count, search_mode, search_data,
-                     term, last_line, tmp_word, langinfo);
   else
   {
-    /* We couldn't move to a selectable word, */
-    /* try to move the window offset instead  */
-    /* """""""""""""""""""""""""""""""""""""" */
-    if (line_nb_of_word_a[old_start] > 0 && win->cur_line < win->max_lines
-        && page == 1)
-    {
-      win->start = first_word_in_line_a[line_nb_of_word_a[old_start] - 1];
+    /* Temporarily move up one page */
+    /* """""""""""""""""""""""""""" */
+    line -= page;
 
-      *nl = disp_lines(win, toggle, current, count, search_mode, search_data,
-                       term, last_line, tmp_word, langinfo);
+    /* The target line cannot be before the line containing the first */
+    /* selectable word.                                               */
+    /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+    if (line < first_selectable_line)
+    {
+      line      = first_selectable_line;
+      last_word = get_line_last_word(line, last_line);
+      find_best_word_upward(win, term, line, last_word, s, e);
+    }
+    else
+    {
+      /* If this is not the case, search upward for the line with a */
+      /* selectable word. This line is guaranteed to exist.         */
+      /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+      while (line >= first_selectable_line)
+      {
+        last_word = get_line_last_word(line, last_line);
+
+        if (find_best_word_upward(win, term, line, last_word, s, e))
+        {
+          found = 1;
+          break;
+        }
+
+        line--;
+        lines_skipped++;
+      }
     }
   }
+
+  /* Look if we need to adjust the window to follow the cursor */
+  /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+  if (!found && start_line - page >= 0)
+  {
+    /* We are on the first line containing a selectable word and  */
+    /* There is enough place to scroll up a page but only scrolls */
+    /* up if the cursor remains in the window                     */
+    /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+    if (start_line + win->max_lines - line > page)
+      start_line -= page;
+  }
+  else if (line < start_line)
+  {
+    /* The target line is above the windows */
+    /* """""""""""""""""""""""""""""""""""" */
+    if (start_line - page - lines_skipped < 0)
+      /* There isn't enough remaining lines to scroll up */
+      /* a page size.                                    */
+      /* """"""""""""""""""""""""""""""""""""""""""""""" */
+      start_line = 0;
+    else
+      start_line -= page + lines_skipped;
+  }
+
+  /* And set the new value of the starting word of the window */
+  /* """""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+  win->start = first_word_in_line_a[start_line];
+
+  /* Set the new first column to display */
+  /* """"""""""""""""""""""""""""""""""" */
+  set_new_first_column(win, term);
+
+  /* Redisplay the window */
+  /* """""""""""""""""""" */
+  *nl = disp_lines(win, toggle, current, count, search_mode, search_data, term,
+                   last_line, tmp_word, langinfo);
 }
 
 /* ===================== */
@@ -4468,16 +4620,19 @@ move_up(win_t * win, term_t * term, toggle_t * toggle,
 void
 move_down(win_t * win, term_t * term, toggle_t * toggle,
           search_data_t * search_data, langinfo_t * langinfo, long * nl,
-          long page, long last_line, char * tmp_word)
+          long page, long last_selectable, long last_line, char * tmp_word)
 {
-  long cur_line;
-  long start_line;
-  long last_word;
-  long cursor;
-  long old_current = current;
-  long old_start   = win->start;
-  long index;
-  long s, e; /* Starting and ending terminal position of a word */
+  long line;                 /* The line being processed (the target line)  */
+  long start_line;           /* The first line of the window                */
+  long cur_line;             /* The line of the cursor                      */
+  long last_selectable_line; /* the line containing the last                *
+                              * selectable word                             */
+  long lines_skipped; /* The number of line between the target line and the *
+                       * first line containing a selectable word in case of *
+                       * exclusions.                                        */
+  long last_word;     /* The last word on the target line                   */
+  long s, e;          /* Starting and ending terminal position of a word    */
+  int  found;         /* 1 if a line could be fond in the next page else 0  */
 
   /* Store the initial starting and ending positions of */
   /* the word under the cursor                          */
@@ -4485,135 +4640,100 @@ move_down(win_t * win, term_t * term, toggle_t * toggle,
   s = word_a[current].start;
   e = word_a[current].end;
 
-  do
+  /* Identify the line number of the first window's line */
+  /* and the line number of the current line             */
+  /* """"""""""""""""""""""""""""""""""""""""""""""""""" */
+  start_line           = line_nb_of_word_a[win->start];
+  cur_line             = line_nb_of_word_a[current];
+  last_selectable_line = line_nb_of_word_a[last_selectable];
+  lines_skipped        = 0;
+  found                = 0;
+
+  /* initialise the target line */
+  /* """""""""""""""""""""""""" */
+  line = cur_line;
+
+  if (last_line - line - page < 0)
   {
-    /* Identify the line number of the first window's line */
-    /* and the line number of the current line             */
-    /* """"""""""""""""""""""""""""""""""""""""""""""""""" */
-    start_line = line_nb_of_word_a[win->start];
-    cur_line   = line_nb_of_word_a[current];
-
-    /* Do nothing when we are already on the last line */
-    /* """"""""""""""""""""""""""""""""""""""""""""""" */
-    if (cur_line == last_line)
-      break;
-
-    /* Determine and set the future start of the window */
-    /* """""""""""""""""""""""""""""""""""""""""""""""" */
-    if (start_line > 0 || last_line >= page)
-      if (cur_line + page > start_line + win->max_lines - 1)
-      {
-        if (last_line - (cur_line + page) < page)
-        {
-          start_line = last_line - win->max_lines + 1;
-          win->start = first_word_in_line_a[start_line];
-        }
-        else
-        {
-          if (win->end < count - 1)
-          {
-            start_line += page;
-            win->start = first_word_in_line_a[start_line];
-          }
-        }
-      }
-
-    /* Calculate the index of the last word of the target line */
-    /* """"""""""""""""""""""""""""""""""""""""""""""""""""""" */
-    if (cur_line + 1 == last_line)
-      last_word = count - 1;
-    else
-    {
-      if (cur_line + page < last_line)
-        last_word = first_word_in_line_a[cur_line + page + 1] - 1;
-      else
-        last_word = count - 1;
-    }
-
-    /* Look for the first word whose start position in the line is */
-    /* less or equal than the source word starting position        */
-    /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-    cursor = last_word;
-    while (word_a[cursor].start > s)
-      cursor--;
-
-    /* In case no word is eligible, keep the cursor on */
-    /* the last word                                   */
-    /* """"""""""""""""""""""""""""""""""""""""""""""" */
-    if (cursor == last_word && word_a[cursor].start > 0)
-      cursor--;
-
-    /* Try to guess the best choice if we have multiple choices */
-    /* """""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-    if (cursor < count - 1
-        && word_a[cursor].end - s >= e - word_a[cursor + 1].start)
-      current = cursor;
-    else
-    {
-      if (cursor < count - 1)
-      {
-        if (cursor < last_word)
-          current = cursor + 1;
-        else
-          current = cursor;
-      }
-      else
-        current = count - 1;
-    }
-
-    /* Set the new first column to display */
-    /* """"""""""""""""""""""""""""""""""" */
-    set_new_first_column(win, term);
-
-    /* If the word is not selectable, try to find a selectable word */
-    /* in ts line                                                   */
-    /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-    if (!word_a[current].is_selectable)
-    {
-      index = 0;
-      while (word_a[current - index].start > 0
-             && !word_a[current - index].is_selectable)
-        index++;
-
-      if (word_a[current - index].is_selectable)
-        current -= index;
-      else
-      {
-        index = 0;
-        while (current + index < last_word
-               && !word_a[current + index].is_selectable)
-          index++;
-
-        if (word_a[current + index].is_selectable)
-          current += index;
-      }
-    }
-  } while (current != old_current && !word_a[current].is_selectable);
-
-  if (!word_a[current].is_selectable)
-  {
-    current    = old_current;
-    win->start = old_start;
+    /* Trivial case, we are already on the last page */
+    /* just jump to the last selectable line         */
+    /* """""""""""""""""""""""""""""""""""""""""""""" */
+    line      = last_selectable_line;
+    last_word = get_line_last_word(line, last_line);
+    find_best_word_downward(win, term, line, last_word, s, e);
   }
-
-  /* Display the window */
-  /* """""""""""""""""" */
-  if (current != old_current)
-    *nl = disp_lines(win, toggle, current, count, search_mode, search_data,
-                     term, last_line, tmp_word, langinfo);
   else
   {
-    /* We couldn't move to a selectable word, */
-    /* try to move the window offset instead  */
-    /* """""""""""""""""""""""""""""""""""""" */
-    if (win->cur_line > 1 && win->end < count - 1 && page == 1)
-    {
-      win->start = first_word_in_line_a[line_nb_of_word_a[old_start] + 1];
+    /* Temporarily move down one page */
+    /* """""""""""""""""""""""""""""" */
+    line += page;
 
-      *nl = disp_lines(win, toggle, current, count, search_mode, search_data,
-                       term, last_line, tmp_word, langinfo);
+    /* The target line cannot be before the line containing the first */
+    /* selectable word.                                               */
+    /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+    if (line > last_selectable_line)
+    {
+      line      = last_selectable_line;
+      last_word = get_line_last_word(line, last_line);
+      find_best_word_downward(win, term, line, last_word, s, e);
+    }
+    else
+    {
+      /* If this is not the case, search upward for the line with a */
+      /* selectable word. This line is guaranteed to exist.         */
+      /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+      while (line <= last_selectable_line)
+      {
+        last_word = get_line_last_word(line, last_line);
+
+        if (find_best_word_downward(win, term, line, last_word, s, e))
+        {
+          found = 1;
+          break;
+        }
+
+        line++;
+        lines_skipped++;
+      }
     }
   }
+
+  /* Look if we need to adjust the window to follow the cursor */
+  /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+  if (!found && start_line + win->max_lines - 1 + page <= last_line)
+  {
+    /* We are on the last line containing a selectable word and     */
+    /* There is enough place to scroll down a page but only scrolls */
+    /* down if the cursor remains in the window                     */
+    /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+    if (line - start_line >= page)
+      start_line += page;
+  }
+  else if (line > start_line + win->max_lines - 1)
+  {
+    /* The target line is below the windows */
+    /* """""""""""""""""""""""""""""""""""" */
+    if (start_line + win->max_lines + page + lines_skipped - 1 > last_line)
+      /* There isn't enough remaining lines to scroll down */
+      /* a page size.                                      */
+      /* """"""""""""""""""""""""""""""""""""""""""""""""" */
+      start_line = last_line - win->max_lines + 1;
+    else
+      start_line += page + lines_skipped;
+  }
+
+  /* And set the new value of the starting word of the window */
+  /* """""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+  win->start = first_word_in_line_a[start_line];
+
+  /* Set the new first column to display */
+  /* """"""""""""""""""""""""""""""""""" */
+  set_new_first_column(win, term);
+
+  /* Redisplay the window */
+  /* """""""""""""""""""" */
+  *nl = disp_lines(win, toggle, current, count, search_mode, search_data, term,
+                   last_line, tmp_word, langinfo);
 }
 
 /* ================ */
@@ -9438,7 +9558,7 @@ main(int argc, char * argv[])
         case 'k':
           if (search_mode == NONE)
             move_up(&win, &term, &toggle, &search_data, &langinfo, &nl, page,
-                    last_line, tmp_word);
+                    first_selectable, last_line, tmp_word);
           else
             goto special_cmds_when_searching;
 
@@ -9504,7 +9624,7 @@ main(int argc, char * argv[])
         case 'j':
           if (search_mode == NONE)
             move_down(&win, &term, &toggle, &search_data, &langinfo, &nl, page,
-                      last_line, tmp_word);
+                      last_selectable, last_line, tmp_word);
           else
             goto special_cmds_when_searching;
 
