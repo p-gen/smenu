@@ -107,17 +107,23 @@ if available, and have the following meanings:
 tab(@);
 l l.
 \(<-, h@Previous word
+CTRL+\(<-, H@Start of line
 \(ua, k@Previous line
-PgUp, K@Previous pages
+PgUp, K@Previous page
 Home@First word of the window
 CTRL+Home, SHIFT+Home, CTRL+k@First word
-.sp
-\(->, l@Next Word
+
+\(->, l@Next word
+CTRL+\(->, L@End of line
 \(da, j@Next line
-PgDn, J@Next pages
+PgDn, J@Next page
 End@Last word of the window
 CTRL+End, SHIFT+End, CTRL+j@Last word
 .TE
+
+\fBCTRL+\(<-\fP/\fBH\fP (resp. \fBCTRL+\(->\fP/\fBL\fP) places the cursor
+so that a maximum number of words (selectable or not) are visible to
+the left (reps. right) side of the window.
 
 If the \fB-N\fP, \fB-U\fP or \fB-F\fP are used then it is possible to
 directly access a word by entering its number.
@@ -253,11 +259,13 @@ Key@Meaning@Closes
 _
 \(<-@Previous word@Yes
 \(ua@Previous line@Yes
+CTRL+\(<-@Start of line@Yes
 PgUp@Previous page@Yes
 CTRL+Home, SHIFT+Home, CTRL+k@First word@Yes
 
 \(->@Next word@Yes
 \(da@Next line@Yes
+CTRL+\(->@End of line@Yes
 PgDn@Next pages@Yes
 CTRL+End, SHIFT+End, CTRL+j@Last word@Yes
 

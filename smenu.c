@@ -9024,6 +9024,18 @@ main(int argc, char * argv[])
             /* """"""""""""""""""""""""" */
             goto kdel;
 
+          if (memcmp("\x1b[1;5C", buffer, 6) == 0
+              || memcmp("\x1bOc", buffer, 3) == 0)
+            /* CTRL -> has been pressed */
+            /* """"""""""""""""""""""""" */
+            goto keol;
+
+          if (memcmp("\x1b[1;5D", buffer, 6) == 0
+              || memcmp("\x1bOd", buffer, 3) == 0)
+            /* CTRL <- key has been pressed */
+            /* """""""""""""""""""""""""""" */
+            goto ksol;
+
           if (buffer[0] == 0x1b && buffer[1] == '\0')
           {
             /* ESC key has been pressed */
@@ -9503,17 +9515,70 @@ main(int argc, char * argv[])
           exit(EXIT_SUCCESS);
         }
 
+        ksol:
+          /* Go to the start of the line */
+          /* """"""""""""""""""""""""""" */
+          if (search_mode != NONE)
+            search_mode = NONE;
+
+        case 'H':
+          if (search_mode == NONE)
+          {
+            current = first_word_in_line_a[line_nb_of_word_a[current]];
+
+            while (!word_a[current].is_selectable)
+              current++;
+
+            win.first_column = 0;
+            set_new_first_column(&win, &term);
+
+            nl = disp_lines(&win, &toggle, current, count, search_mode,
+                            &search_data, &term, last_line, tmp_word,
+                            &langinfo);
+          }
+          else
+            goto special_cmds_when_searching;
+
+          break;
+
         kl:
           /* Cursor Left key has been pressed */
           /* """""""""""""""""""""""""""""""" */
           if (search_mode != NONE)
             search_mode = NONE;
 
-        case 'H':
         case 'h':
           if (search_mode == NONE)
             move_left(&win, &term, &toggle, &search_data, &langinfo, &nl,
                       last_line, tmp_word);
+          else
+            goto special_cmds_when_searching;
+
+          break;
+
+        keol:
+          /* Go to the end of the line */
+          /* """"""""""""""""""""""""" */
+          if (search_mode != NONE)
+            search_mode = NONE;
+
+        case 'L':
+          if (search_mode == NONE)
+          {
+            long cur_line = line_nb_of_word_a[current];
+
+            current          = get_line_last_word(cur_line, last_line);
+            win.first_column = win.real_max_width - 1 - (term.ncolumns - 3);
+
+            while (!word_a[current].is_selectable)
+              current--;
+
+            set_new_first_column(&win, &term);
+
+            nl = disp_lines(&win, &toggle, current, count, search_mode,
+                            &search_data, &term, last_line, tmp_word,
+                            &langinfo);
+          }
           else
             goto special_cmds_when_searching;
 
@@ -9525,7 +9590,6 @@ main(int argc, char * argv[])
           if (search_mode != NONE)
             search_mode = NONE;
 
-        case 'L':
         case 'l':
           if (search_mode == NONE)
             move_right(&win, &term, &toggle, &search_data, &langinfo, &nl,
