@@ -6321,12 +6321,13 @@ main(int argc, char * argv[])
 
   void sig_handler(int s);
 
-  /* Ignore SIGTTIN and SIGTTOU */
-  /* """""""""""""""""""""""""" */
+  /* Ignore SIGTTIN and SIGINT */
+  /* """"""""""""""""""""""""" */
   sigset_t sigs, oldsigs;
 
   sigemptyset(&sigs);
   sigaddset(&sigs, SIGTTIN);
+  sigaddset(&sigs, SIGINT);
   sigprocmask(SIG_BLOCK, &sigs, &oldsigs);
 
   sa.sa_handler = sig_handler;
@@ -9082,7 +9083,7 @@ main(int argc, char * argv[])
         case 3: /* ^C */
           /* q or Q of ^C has been pressed */
           /* """"""""""""""""""""""""""""" */
-          if (search_mode != NONE)
+          if (search_mode != NONE && buffer[0] != 3)
             goto special_cmds_when_searching;
 
           {
