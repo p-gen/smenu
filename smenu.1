@@ -106,22 +106,22 @@ if available, and have the following meanings:
 .TS
 tab(@);
 l l.
-\(<-, h@Previous word
-CTRL+\(<-, H@Start of line
-\(ua, k@Previous line
-PgUp, K@Previous page
-Home@First word of the window
-CTRL+Home, SHIFT+Home, CTRL+k@First word
+\fB\(<-\fP, \fBh\fP@Previous word
+\fBCTRL \(<-\fP, \fBH\fP@Start of line
+\fB\(ua\fP, \fBk\fP@Previous line
+\fBPgUp\fP, \fBK\fP@Previous page
+\fBHOME\fP@First word of the window
+\fBCTRL HOME\fP, \fBSHIFT HOME\fP, \fBCTRL K\fP@First word
 
-\(->, l@Next word
-CTRL+\(->, L@End of line
-\(da, j@Next line
-PgDn, J@Next page
-End@Last word of the window
-CTRL+End, SHIFT+End, CTRL+j@Last word
+\fB\(->\fP, \fBl\fP@Next word
+\fBCTRL \(->\fP, \fBL\fP@End of line
+\fB\(da\fP, \fBj\fP@Next line
+\fBPgDn\fP, \fBJ\fP@Next page
+\fBEND\fP@Last word of the window
+\fBCTRL END\fP, \fBSHIFT END\fP, \fBCTRL J\fP@Last word
 .TE
 
-\fBCTRL+\(<-\fP/\fBH\fP (resp. \fBCTRL+\(->\fP/\fBL\fP) places the cursor
+\fBCTRL \(<-\fP/\fBH\fP (resp. \fBCTRL \(->\fP/\fBL\fP) places the cursor
 so that a maximum number of words (selectable or not) are visible to
 the left (reps. right) side of the window.
 
@@ -209,19 +209,19 @@ To move the cursor to the next/previous fuzzy match, use the
 \fBs\fP means next \fPs\fPubstring match in this context while \fBn\fP
 just means \fBn\fPext match.
 .PP
-If the user hits the \fBHome\fP or \fBEnd\fP key during a search session
+If the user hits the \fBHOME\fP or \fBEND\fP key during a search session
 then the list of matching words is reduced to the words starting
 (respectively) ending with the current search pattern and the window
 is refreshed.
-For those who consider \fBHome\fP and \fBEnd\fP as non-intuitive,
-the \fBCTRL-A\fP and \fBCtrl-Z\fP keys are also available in search mode
+For those who consider \fBHOME\fP and \fBEND\fP as non-intuitive,
+the \fBCTRL A\fP and \fBCTRL Z\fP keys are also available in search mode
 as an alternative.
 
 This behaviour is persistent until the user hit the \fBESC\fP or
 \fBENTER\fP key.
 
 By example, if the search pattern in substring mode is \f(CBsh\fP and
-the user hits \fBEnd\fP, then only the words \fIending\fP with \f(CBsh\fP
+the user hits \fBEND\fP, then only the words \fIending\fP with \f(CBsh\fP
 will be added in the searched word list and enhanced.
 
 Note that when a matching word is selected, its enhanced characters only
@@ -257,27 +257,27 @@ Key@Meaning@Closes
 @@search
 @@session
 _
-\(<-@Previous word@Yes
-\(ua@Previous line@Yes
-CTRL+\(<-@Start of line@Yes
-PgUp@Previous page@Yes
-CTRL+Home, SHIFT+Home, CTRL+k@First word@Yes
+\fB\(<-\fP@Previous word@Yes
+\fB\(ua\fP@Previous line@Yes
+\fBCTRL \(<-\fP@Start of line@Yes
+\fBPgUp\fP@Previous page@Yes
+\fBCTRL HOME\fP, \fBSHIFT HOME\fP, \fBCTRL K\fP@First word@Yes
 
-\(->@Next word@Yes
-\(da@Next line@Yes
-CTRL+\(->@End of line@Yes
-PgDn@Next pages@Yes
-CTRL+End, SHIFT+End, CTRL+j@Last word@Yes
+\fB\(->\fP@Next word@Yes
+\fB\(da\fP@Next line@Yes
+\fBCTRL \(->\fP@END of line@Yes
+\fBPgDn\fP@Next pages@Yes
+\fBCTRL END\fP, \fBSHIFT END\fP, \fBCTRL J\fP@Last word@Yes
 
-Home,CTRL-A@T{
+\fBHOME\fP, \fBCTRL A\fP@T{
 Only keep the words starting with the search pattern
 T}@No
-End,CTRL-Z@T{
+\fBEND\fP, \fBCTRL Z\fP@T{
 Only keep the words ending with the search pattern
 T}@No
 
-Ins@Tag word@No
-Del@Untag word@No
+\fBINS\fP@Tag word@No
+\fBDEL\fP@Untag word@No
 _
 .TE
 .PP
