@@ -1,0 +1,24 @@
+# Directives
+#  .columns:    Number of columns in the menu
+#  .centered:   The menu will be centered
+#  .eraseafter: The menu window will be destroyed after the selection
+#  .title:      The menu tittle
+
+.columns 2
+.centered yes
+.eraseafter yes
+.title Simple menu
+
+ITEM1   First item
+>sub1   First submenu
+ITEM3   Third item
+>sub2   Second submenu
+===
+ITEM5   Fifth item
+ITEM6   Sixth item
+ITEM7   Seventh item
+ITEM8   Eighth item
+ITEM9   Ninth item
+ITEM10  Tenth item
+===
+EXIT    Exit without selection

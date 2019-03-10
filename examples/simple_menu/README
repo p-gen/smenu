@@ -1,0 +1,39 @@
+This example presents a simple hierarchical menu interpreter.
+
+Each menu and submenu are in a file suffixed by .mnu and is constituted
+by directives and menu entries/preudo-entries. Each of them are in its
+proper line.
+
+Comment lines are allowed and are introduced by a '#' in the first column
+
+The directives are:
+
+.columns:    Set the number of columns in the menu
+.centered:   Tell if the menu must be centered
+.eraseafter: Tell if the menu window must be destroyed after the selection
+             and the old cursor location restored.
+.title:      Set the menu tittle.
+
+The item lines has at least two fields: a tag and a menu item which will
+be displayed.
+
+The tag is normally the returned value when an item is selected but may
+also be part of a pseudo-entry.
+
+These special tags are:
+
+>xxx : Loads the submenu file xxx.mnu and interprets it.
+<    : Reload the previous menu file and interprets it
+---  : Inserts an empty item in the menu
+===  : Inserts an empty line in the menu (useful when there is more than
+       1 column)
+EXIT : Exits the menu without outputting anything.
+
+As usual, 'ENTER' triggers the selection and 'q' quits the menu without
+outputting anything.
+
+To launch the demo, just enter: ./simple_menu.sh main.mnu ./actions.sh
+
+The first argument is the main menu file and the second one is the path
+of the program which will be called each time a selection is made. This
+program will be given the selected tag as argument.

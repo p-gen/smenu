@@ -1,0 +1,7 @@
+.columns 1
+.title First submenu
+.eraseafter yes
+SUB1ITEM1   First item of the first submenu
+SUB1ITEM2   Second item of the first submenu
+===
+<           Previous Menu
