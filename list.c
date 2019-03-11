@@ -4,7 +4,7 @@
 /* ########################################################### */
 
 /* ********************************************************************* */
-/* Tiny list immplementation.                                            */
+/* Tiny linked list implementation.                                      */
 /*                                                                       */
 /* Each node contain a void pointer to some opaque data, these functions */
 /* will not try to allocate or free this data pointer.                   */
@@ -130,7 +130,7 @@ ll_prepend(ll_t * const list, void * const data)
 
 /* ======================================================= */
 /* Insert a new node before the specified node in the list */
-/* TODO test it                                           */
+/* TODO test it                                            */
 /* ======================================================= */
 void
 ll_insert_before(ll_t * const list, ll_node_t * node, void * const data)

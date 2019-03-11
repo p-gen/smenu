@@ -72,6 +72,6 @@ The ``tests.sh`` script will show these occurrences, if any, anyway.
 
 Note
 ----
-Before reporting a bug due to a failing test, please re-execute is again
-at least 3 times with ``test.sh`` as you may have found a i(timing)
+Before reporting a bug due to a failing test, please re-execute is
+again at least 3 times with ``test.sh`` as you may have found a (timing)
 bug in **ptylie**/**hlvt** and not in **smenu**.

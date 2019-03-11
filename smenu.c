@@ -3553,7 +3553,7 @@ disp_message(ll_t * message_lines_list, long message_max_width,
       long i;
 
       for (i = 0; i < offset; i++)
-        putc(' ', stdout);
+        fputc(' ', stdout);
     }
 
     /* Only print the start of a line if the screen width if too small */
