@@ -107,25 +107,25 @@ if available, and have the following meanings:
 tab(@);
 l l.
 \fB\(<-\fP, \fBh\fP@Previous word
-\fBCTRL \(<-\fP, \fBH\fP@Start of line
+\fBCTRL\ \(<-\fP, \fBH\fP@Start of line
 \fB\(ua\fP, \fBk\fP@Previous line
 \fBPgUp\fP, \fBK\fP@Previous page
 \fBHOME\fP@First word of the window
-\fBCTRL HOME\fP, \fBSHIFT HOME\fP, \fBCTRL K\fP@First word
+\fBCTRL\ HOME\fP, \fBSHIFT\ HOME\fP, \fBCTRL\ K\fP@First word
 
 \fB\(->\fP, \fBl\fP@Next word
-\fBCTRL \(->\fP, \fBL\fP@End of line
+\fBCTRL\ \(->\fP, \fBL\fP@End of line
 \fB\(da\fP, \fBj\fP@Next line
 \fBPgDn\fP, \fBJ\fP@Next page
 \fBEND\fP@Last word of the window
-\fBCTRL END\fP, \fBSHIFT END\fP, \fBCTRL J\fP@Last word
+\fBCTRL\ END\fP, \fBSHIFT\ END\fP, \fBCTRL\ J\fP@Last word
 .TE
 
-\fBCTRL \(<-\fP/\fBH\fP (resp. \fBCTRL \(->\fP/\fBL\fP) places the cursor
+\fBCTRL\ \(<-\fP/\fBH\fP (resp. \fBCTRL\ \(->\fP/\fBL\fP) places the cursor
 so that a maximum number of words (selectable or not) are visible to
 the left (reps. right) side of the window.
 
-If the \fB-N\fP, \fB-U\fP or \fB-F\fP are used then it is possible to
+If \fB-N\fP, \fB-U\fP or \fB-F\fP are used, then it becomes possible to
 directly access a word by entering its number.
 The numbering created using these option is done \fBbefore\fP any words
 substitution done using \fB-S\fP, \fB-I\fP or \fB-E\fP.
@@ -135,7 +135,7 @@ will be numbered by adding a special symbol in it before using smenu and
 removing it (substituted by nothing) afterward using \fB-I\fP by example.
 
 \fB-E\fP gives another way to do that, see below or more.
-.SS "Searching for a word"
+.SS "Searching for words"
 A word can be searched using different algorithms: \fIprefix\fP,
 \fIsubstring\fP of \fIfuzzy\fP.
 .TP
@@ -146,8 +146,8 @@ The sequence of characters entered must match the beginning of a word.
 The sequence of characters entered must match a substring in a word.
 .TP
 \fIfuzzy\fP (keys \fB~\fP or \fB*\fP):
-All the character in the entered sequence must appear in the same order
-in a word must not necessarily be consecutive.
+All the characters in the entered sequence must appear in the same order
+in a word, but need not be consecutive.
 
 The case is also ignored.
 
@@ -164,7 +164,7 @@ this situation.
 
 The erroneous symbols will \fInot\fP be inserted in the search buffer.
 
-By example: if the word \fBabcdef\fP is present in the standard input,
+For example: if the word \fBabcdef\fP is present in the standard input,
 then entering \f(CBabxcdye\fP puts \fBabcdef\fP in the search buffer
 and the word is added to the list of matching words and displayed with
 an error attribute (in red by default).
@@ -176,20 +176,20 @@ During a search session, the cursor changes and each character entered is
 added in (or removed from) the search buffer.
 The display is refreshed after each change in this buffer.
 .PP
-The \fB/\fP key can also be used instead of any of these keys. By default
-is is programmed to do a \fIfuzzy\fP search but this can be altered by
-using the command line option (\fB-/\fP) or by tuning a configuration
-file, see below.
+The slash key (fB/\fP) can also be used instead of any of these keys.
+By default it is is programmed to do a \fIfuzzy\fP search but this can
+be changed by using the command line option (\fB-/\fP) or by tuning
+a configuration file, see below.
 .PP
 All the words matching the current search buffer are enhanced:
 The characters present in the current search buffer are highlighted in
 one way and the other characters in another way.
 Both of these highlighting methods are configurable.
 .PP
-Typically, if the user has entered the search sequence: \fBo\fP, \fBs\fP,
-then the matching word "words" will be displayed as
-\fBw\fP\fIo\fP\fBrd\fP\fIs\fP when the \fIfuzzy\fP algorithm is in use
-depending of the display attributes configured.
+If the user has entered the search sequence: \fBo\fP, \fBs\fP, then the
+matching word "words" will be displayed as \fBw\fP\fIo\fP\fBrd\fP\fIs\fP
+when the \fIfuzzy\fP algorithm is in use depending of the display
+attributes configured.
 .PP
 \fBESC\fP can be used anytime to abort the current search session.
 \fBENTER\fP and all cursor moves also terminate the search
@@ -214,13 +214,12 @@ then the list of matching words is reduced to the words starting
 (respectively) ending with the current search pattern and the window
 is refreshed.
 For those who consider \fBHOME\fP and \fBEND\fP as non-intuitive,
-the \fBCTRL A\fP and \fBCTRL Z\fP keys are also available in search mode
+the \fBCTRL\ A\fP and \fBCTRL\ Z\fP keys are also available in search mode
 as an alternative.
-
 This behaviour is persistent until the user hit the \fBESC\fP or
 \fBENTER\fP key.
 
-By example, if the search pattern in substring mode is \f(CBsh\fP and
+For example, if the search pattern in substring mode is \f(CBsh\fP and
 the user hits \fBEND\fP, then only the words \fIending\fP with \f(CBsh\fP
 will be added in the searched word list and enhanced.
 
@@ -259,20 +258,20 @@ Key@Meaning@Closes
 _
 \fB\(<-\fP@Previous word@Yes
 \fB\(ua\fP@Previous line@Yes
-\fBCTRL \(<-\fP@Start of line@Yes
+\fBCTRL\ \(<-\fP@Start of line@Yes
 \fBPgUp\fP@Previous page@Yes
-\fBCTRL HOME\fP, \fBSHIFT HOME\fP, \fBCTRL K\fP@First word@Yes
+\fBCTRL\ HOME\fP, \fBSHIFT\ HOME\fP, \fBCTRL\ K\fP@First word@Yes
 
 \fB\(->\fP@Next word@Yes
 \fB\(da\fP@Next line@Yes
-\fBCTRL \(->\fP@END of line@Yes
+\fBCTRL\ \(->\fP@END of line@Yes
 \fBPgDn\fP@Next pages@Yes
-\fBCTRL END\fP, \fBSHIFT END\fP, \fBCTRL J\fP@Last word@Yes
+\fBCTRL\ END\fP, \fBSHIFT\ END\fP, \fBCTRL\ J\fP@Last word@Yes
 
-\fBHOME\fP, \fBCTRL A\fP@T{
+\fBHOME\fP, \fBCTRL\ A\fP@T{
 Only keep the words starting with the search pattern
 T}@No
-\fBEND\fP, \fBCTRL Z\fP@T{
+\fBEND\fP, \fBCTRL\ Z\fP@T{
 Only keep the words ending with the search pattern
 T}@No
 
@@ -290,7 +289,7 @@ By default, \fBENTER\fP writes the selected word to stdout when not in
 search mode otherwise it exits from this mode and does nothing more.
 If you want to be able to select a word \fIeven\fP when in search mode,
 use the \fB-r\fP option to change this behavior.
-.SS "Tagging (multi-selections)"
+.SS "Tagging (multiple selections)"
 When the tagging is activated by using the command line \fB-T\fP or
 \fB-P\fP option, then the keys \fBt\fP, \fBT\fP, \fBINS\fP and \fBDEL\fP
 can be used to tag/untag some words.
@@ -472,8 +471,9 @@ columns@256
 Displays a long (\fB-h\fP) or short (\fB-?\fP) help message and exits.
 .IP "\fB-f\fP \fIconfiguration_file\fB"
 This option gives the possibility to select an alternative configuration
-file.  If the given file doesn't exist or is not readable then the
-default values will be used.
+file.
+If the given file doesn't exist or is not readable then the default
+values will be used.
 
 The \fB.smenu\fP files in the user's home directory and in the current
 directory, if present, will be ignored when this option is used.
@@ -507,8 +507,8 @@ This option forces them to be retained.
 .IP \fB-v\fP
 By default, when searching, an alarm is produced by the terminal when
 the user enters a character or makes a move which lead to no result or
-to an error condition. This argument make this beep visual by briefly
-showing the cursor.
+to an error condition.
+This argument make this beep visual by briefly showing the cursor.
 .IP "\fB-s\fP \fIpattern\fP"
 Place the cursor on the first word corresponding to the specified pattern.
 
@@ -851,26 +851,30 @@ format \fBx\fP:\fBy\fP where \fBx\fP can be:
 .TP
 \f(CBl\fP (\fB-F\fP, \fB-N\fP and \fB-U\fP options)
 Here \fBy\fP is the UTF-8 character (in native or \fI\\u\fP form)
-to print before the number. The default is a single space.
+to print before the number.
+The default is a single space.
 .
 .TP
 \f(CBr\fP (\fB-F\fP, \fB-N\fP and \fB-U\fP options)
 Here \fBy\fP is the UTF-8 character (in native or \fI\\u\fP form)
-to print after the number. The default is \f(CB)\fP.
+to print after the number.
+The default is \f(CB)\fP.
 .
 .TP
 \f(CBa\fP (\fB-F\fP, \fB-N\fP and \fB-U\fP options)
 Here \fBy\fP is '\f(CBleft\fP' (or one of its prefixes) if the number
 must be \fIleft\fP aligned, or '\f(CBright\fP' (or one of its prefixes)
-if it must be \fIright\fP aligned. The default is \f(CBright\fP.
+if it must be \fIright\fP aligned.
+The default is \f(CBright\fP.
 .
 .TP
 \f(CBp\fP (\fB-F\fP, \fB-N\fP and \fB-U\fP options)
 Here \fBy\fP is '\f(CBincluded\fP' (or one of its prefixes)
 or '\f(CBall\fP' (or one of its prefixes) for the initial \fIp\fPadding of
-the non numbered words. '\f(CBincluded\fP' means that only \fIincluded\fP
-word will be padded while '\f(CBall\fP' means pad \fIall\fP words. The
-default is \f(CBall\fP.
+the non numbered words.
+'\f(CBincluded\fP' means that only \fIincluded\fP word will be padded
+while '\f(CBall\fP' means pad \fIall\fP words.
+The default is \f(CBall\fP.
 .
 .TP
 \f(CBw\fP (\fB-F\fP, \fB-N\fP and \fB-U\fP options)
@@ -936,8 +940,8 @@ according to its direct access number.
 .TP
 \f(CBs\fP (\fB-F\fP, \fB-N\fP and \fB-U\fP options)
 Here \fBy\fP is the direct access number that will be set for the first
-numbered word. Its value is \fB1\fP by default, a value of \fB0\fP
-is possible.
+numbered word.
+Its value is \fB1\fP by default, a value of \fB0\fP is possible.
 .P
 Example: \f(CWr:\\> l:\\< a:l d:_ \fP
 
@@ -1039,7 +1043,7 @@ also used.
 
 \fI\\u\fP sequences can also be used here.
 .IP "\fB-T\fP [\fIseparator\fP]"
-Enables the multi-selections or tag mode.
+Enables the multiple selections or tag mode.
 In this mode, several selectable words can be selected without leaving
 the program.
 
@@ -1061,9 +1065,9 @@ A space is used as the default separator if none is given.
 and earlier, you must also use the \fB-p\fP option.
 .IP "\fB-P\fP [\fIseparator\fP]"
 Works like \fB-T\fP but, unlike \fB-T\fP, the output depends on the order
-in which the words were tagged.  In other words, the first tagged word
-comes first in the output, the second tagged word comes next, and so
-on.
+in which the words were tagged.
+In other words, the first tagged word comes first in the output, the
+second tagged word comes next, and so on.
 \fB-P\fP stands for "Pin".
 .IP \fB-p\fP
 This option modifies the default behavior of the \fB-T\fP and \fB-P\fP
@@ -1088,8 +1092,9 @@ quit:
 At the timeout, nothing is selected as if the \fBq\fP key has been pressed
 .TP 10
 word:
-At the timeout, the word given after the type is selected.  Note that this
-word doesn't need to be part of the words coming from the standard input.
+At the timeout, the word given after the type is selected.
+Note that this word doesn't need to be part of the words coming from
+the standard input.
 .PP
 Each type can be be shortened as a prefix of its full name ("cur" for
 "current" of "q" for "quit" per example).
@@ -1107,9 +1112,9 @@ The \fB-X\fP version works like \fB-x\fP but no periodic remaining
 messages is displayed above the selection window.
 .RE
 .IP "\fB-/\fP \fIsearch_method\fP"
-Affects the '\fB/\fP' key to a search method. By default '\fB/\fP'
-is affected to '\fIfuzzy\fP' but the argument can be any prefix
-of '\fIprefix\fP', '\fIsubstring\fP' or '\fIfuzzy\fP'.
+Affects the '\fB/\fP' key to a search method.
+By default '\fB/\fP' is affected to '\fIfuzzy\fP' but the argument can
+be any prefix of '\fIprefix\fP', '\fIsubstring\fP' or '\fIfuzzy\fP'.
 .SH NOTES
 If tabulators (\fI\\t\fP) are embedded in the input, there is no way
 to replace them with the original number of spaces.
