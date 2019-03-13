@@ -165,7 +165,7 @@ short_usage(void)
   fprintf(stderr, "       [-/ prefix|substring|fuzzy] [--] [input_file]\n\n");
   fprintf(stderr, "       <col selectors> ::= col1[-col2]...|<RE>...\n");
   fprintf(stderr, "       <row selectors> ::= row1[-row2]...|<RE>...\n");
-  fprintf(stderr, "       <prefix>        ::= i|e|c|b|s|t|ct|sf|st|mf|mt|");
+  fprintf(stderr, "       <prefix>        ::= i|e|c|b|s|m|t|ct|sf|st|mf|mt|");
   fprintf(stderr, "sfe|ste|mfe|mte|da\n");
   fprintf(stderr, "       <arg>           ::= [l|r:<char>]|[a:l|r]|[p:i|a]|");
   fprintf(stderr, "[w:<size>]|\n");
@@ -691,6 +691,7 @@ ini_cb(win_t * win, term_t * term, limits_t * limits, timers_t * timers,
       CHECK_ATTR(cursor)
       CHECK_ATTR(bar)
       CHECK_ATTR(shift)
+      CHECK_ATTR(message)
       CHECK_ATTR(search_field)
       CHECK_ATTR(search_text)
       CHECK_ATTR(match_field)
@@ -3527,17 +3528,18 @@ disp_message(ll_t * message_lines_list, long message_max_width,
   node = message_lines_list->head;
   buf  = xmalloc(message_max_len + 1);
 
-  if (term->has_bold)
-    tputs(TPARM1(enter_bold_mode), 1, outch);
-
   /* Follow the message lines list and display each line */
   /* """"""""""""""""""""""""""""""""""""""""""""""""""" */
   while (node != NULL)
   {
+    long i;
+
     line = node->data;
     len  = utf8_strlen(line);
     w    = utf8_strtowcs(line);
 
+    /* Adjust size and len if the terminal is not large enough */
+    /* """"""""""""""""""""""""""""""""""""""""""""""""""""""" */
     size = wcswidth(w, len);
     while (len > 0 && size > term->ncolumns)
       size = wcswidth(w, --len);
@@ -3549,23 +3551,37 @@ disp_message(ll_t * message_lines_list, long message_max_width,
     offset = (term->ncolumns - message_max_width - 3) / 2;
 
     if (win->center && offset > 0)
-    {
-      long i;
-
       for (i = 0; i < offset; i++)
         fputc(' ', stdout);
-    }
+
+    apply_attr(term, win->message_attr);
 
     /* Only print the start of a line if the screen width if too small */
     /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
     utf8_strprefix(buf, line, len, &size);
-    puts(buf);
+
+    /* Print the line without the ending \n */
+    /* '''''''''''''''''''''''''''''''''''' */
+    printf("%s", buf);
+
+    /* Complete the short line with spaces until it reach the */
+    /* message max size                                       */
+    /* '''''''''''''''''''''''''''''''''''''''''''''''''''''' */
+    for (i = size; i < message_max_width; i++)
+    {
+      if (i + (offset < 0 ? 0 : offset) >= term->ncolumns)
+        break;
+      fputc(' ', stdout);
+    }
+
+    /* Drop the attributes and print a \n */
+    /* '''''''''''''''''''''''''''''''''' */
+    tputs(TPARM1(exit_attribute_mode), 1, outch);
+    puts("");
 
     node = node->next;
     win->message_lines++;
   }
-
-  tputs(TPARM1(exit_attribute_mode), 1, outch);
 
   free(buf);
 
@@ -5086,6 +5102,7 @@ main(int argc, char * argv[])
   win.cursor_on_tag_attr    = init_attr;
   win.bar_attr              = init_attr;
   win.shift_attr            = init_attr;
+  win.message_attr          = init_attr;
   win.search_field_attr     = init_attr;
   win.search_text_attr      = init_attr;
   win.search_err_field_attr = init_attr;
@@ -5644,6 +5661,7 @@ main(int argc, char * argv[])
           int cur_attr_set           = 0; /* highlighted word (cursor)       */
           int bar_attr_set           = 0; /* scroll bar                      */
           int shift_attr_set         = 0; /* hor. scrolling arrows           */
+          int message_attr_set       = 0; /* message (title)                 */
           int tag_attr_set           = 0; /* selected (tagged) words         */
           int cursor_on_tag_attr_set = 0; /* selected words under the cursor */
           int sf_attr_set            = 0; /* currently searched field color  */
@@ -5674,6 +5692,8 @@ main(int argc, char * argv[])
                 &bar_attr_set, "b:", 2 },
               { &win.shift_attr, "The shift attribute is already set -- ",
                 &shift_attr_set, "s:", 2 },
+              { &win.message_attr, "The message attribute is already set -- ",
+                &message_attr_set, "m:", 2 },
               { &win.tag_attr, "The tag attribute is already set -- ",
                 &tag_attr_set, "t:", 2 },
               { &win.cursor_on_tag_attr,
@@ -6482,6 +6502,21 @@ main(int argc, char * argv[])
       win.shift_attr.is_set = SET;
     }
 
+    if (!win.message_attr.is_set)
+    {
+      if (term.has_bold)
+        win.message_attr.bold = 1;
+      else if (term.has_reverse)
+        win.message_attr.reverse = 1;
+      else
+      {
+        win.message_attr.fg = 0;
+        win.message_attr.bg = 7;
+      }
+
+      win.message_attr.is_set = SET;
+    }
+
     if (!win.search_field_attr.is_set)
     {
       win.search_field_attr.bg     = 5;
@@ -6608,6 +6643,16 @@ main(int argc, char * argv[])
         win.shift_attr.reverse = 1;
 
       win.shift_attr.is_set = SET;
+    }
+
+    if (!win.message_attr.is_set)
+    {
+      if (term.has_bold)
+        win.message_attr.bold = 1;
+      else if (term.has_reverse)
+        win.message_attr.reverse = 1;
+
+      win.message_attr.is_set = SET;
     }
 
     if (!win.search_field_attr.is_set)

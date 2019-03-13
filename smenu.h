@@ -512,6 +512,7 @@ struct win_s
   attr_t cursor_on_tag_attr;    /* current cursor on tag attributes   */
   attr_t bar_attr;              /* scrollbar attributes               */
   attr_t shift_attr;            /* shift indicator attributes         */
+  attr_t message_attr;          /* message (title) attributes         */
   attr_t search_field_attr;     /* search mode field attributes       */
   attr_t search_text_attr;      /* search mode text attributes        */
   attr_t search_err_field_attr; /* bad search mode field attributes   */

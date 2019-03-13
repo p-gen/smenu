@@ -8,7 +8,8 @@ and outputs the selection to stdout.
       [\fB-n\fP [\fIlines\fP]] [\fB-t\fP [\fIcols\fP]] [\fB-k\fP] \\
       [\fB-s\fP \fIpattern\fP] [\fB-m\fP \fImessage\fP] [\fB-w\fP] \\
       [\fB-d\fP] [\fB-M\fP] [\fB-c\fP] [\fB-l\fP] [\fB-r\fP] [\fB-b\fP] \\
-      [\fB-a\fP (i|e|c|b|s|t|ct|sf|st|mf|mt|sfe|ste|mfe|mte|da):\fIATTR\fP]... \\
+      [\fB-a\fP \
+(i|e|c|b|si|m|t|ct|sf|st|mf|mt|sfe|ste|mfe|mte|da):\fIATTR\fP]... \\
       [\fB-i\fP \fIregex\fP] [\fB-e\fP \fIregex\fP] \\
       [\fB-C\fP \
 [\fIi\fP|\fIe\fP]<col selectors>] \\
@@ -396,6 +397,7 @@ allowed:
   cursor=0/2              ; cursor attributes
   cursor_on_tag=0/2,u     ; cursor on tag attributes
   shift=6,b               ; shift symbol attributes
+  message=0/3             ; message (title) attributes
   bar = 7/4,b             ; scroll bar attributes
   search_field = 0/6      ; search field attributes
   search_text = 7,bu      ; search text attributes
@@ -611,6 +613,8 @@ cursor.
 scroll bar.
 .IP \fIs\fP
 shift indicator.
+.IP \fIm\fP
+message (title).
 .IP \fIt\fP
 tagged words.
 .IP \fIct\fP
