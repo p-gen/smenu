@@ -3583,6 +3583,12 @@ disp_message(ll_t * message_lines_list, long message_max_width,
     win->message_lines++;
   }
 
+  /* Add an empty line without attribute to separate the menu title */
+  /* and the menu content.                                          */
+  /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+  puts("");
+  win->message_lines++;
+
   free(buf);
 
   /* Re-arm the periodic timer */
