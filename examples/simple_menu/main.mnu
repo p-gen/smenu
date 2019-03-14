@@ -5,8 +5,6 @@
 #  .title:      The menu tittle
 
 .columns 2
-.centered yes
-.eraseafter yes
 .title Simple menu
 
 ITEM1   First item

@@ -47,9 +47,9 @@ USER_PROGRAM=$2
 # ======================================================================= #
 function process_menu
 {
-  TITLE="[ENTER: select, q: abort]"$'\n' # Untitled by default
-  CENTERING= # Is the menu centered in the screen ?
-  ERASE=  # Destroy the selection window after use
+  TITLE=$'\n'"[ENTER: select, q: abort]" # Untitled by default
+  CENTERING="-M" # Is the menu centered in the screen ?, defaults to yes
+  ERASE="-d"  # Destroy the selection window after use. Defaults to yes
 
   MENU_FILE=$1
   MENU= # Make sure the working area is empty
@@ -72,11 +72,11 @@ function process_menu
            ;;
 
         .centered) # Is the menu centered?
-           [[ $VALUE == yes ]] && CENTERING="-M"
+           [[ $VALUE == no ]] && CENTERING=""
            ;;
 
         .eraseafter) # Will the space used by the menu be reclaimed?
-           [[ $VALUE == yes ]] && ERASE="-d"
+           [[ $VALUE == no ]] && ERASE=""
            ;;
 
         .title) # The menu title
@@ -145,6 +145,7 @@ function process_menu
                          -N                 \
                          -F -D o:10 i:0 n:2 \
                          -n                 \
+                         -a m:0/6           \
                          -m "$TITLE"        \
                          -t $COL            \
                          -S'/@@@/ /'        \
