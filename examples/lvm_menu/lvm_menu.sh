@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 MENU+="\
 'Create' 'Delete' 'Extend' 'Shrink'

@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 RES=$(
        ../../smenu -2 ^Y -1 ^N -3 ^C -s /^N -x cur 10 \

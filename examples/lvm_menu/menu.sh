@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # ################################################################ #
 # Frontend to smenu to display a nice menu                         #

@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # Find backwards for the directory where test.sh is
 # """""""""""""""""""""""""""""""""""""""""""""""""
