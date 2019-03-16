@@ -13,7 +13,6 @@
 /* the structure members (head, tail, len, data, prev, next)             */
 /* ********************************************************************* */
 
-#include "config.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <limits.h>
