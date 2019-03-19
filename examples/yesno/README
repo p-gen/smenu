@@ -1,6 +1,9 @@
 With this example you will discover how easily you can ask a user to
 confirm a previous choice
 
+First, make sure to make yesno.sh executable (chmod +x yesno.sh) and
+enter: ./yesno.sh
+
 The screenshot shows three use cases, one when just hitting 'Enter',
 one when moving the cursor to YES before hitting 'Enter' and the last
 one when just hitting 'q'

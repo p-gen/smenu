@@ -1,5 +1,8 @@
 This is an example of bash tool to build a customized LVM management menu.
 
+First, make sure to make menu.sh and lvm_menu.sh executable:
+(chmod +x menu.sh lvm_menu.sh).
+
 menu.sh     is used to create a generic menu with smenu
 lvm_menu.sh uses menu.sh to create a specialized menu to manage LVM objects
 

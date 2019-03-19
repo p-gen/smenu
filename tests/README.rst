@@ -44,6 +44,7 @@ Usage
   - Decompress the **tests.cpio.gz** archive (``gzip -dv tests.cpio.gz``).
   - Extract the tests from the **tests.cpio** archive in this directory
     (``cpio -idv < tests.cpio``).
+  - Make tests.sh and test.sh executable (``chmod u+x tests.sh test.sh``)
 
 - Make sure that your terminal has at least a size of 80x84.
 - Make sure that you have previously built **smenu** with ``build.sh``.

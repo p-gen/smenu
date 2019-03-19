@@ -25,6 +25,7 @@ Group:          Productivity/Text/Utilities
 URL:            https://github.com/p-gen/%{name}
 Source:         %{name}-%{version}.tar.bz2
 BuildRequires:  ncurses-devel
+BuildRoot:      %{_tmppath}/%{name}-%{version}-build
 
 %description
 This tool reads words from a file or standard input, presents them in an
@@ -47,14 +48,24 @@ This packages contains some scripts and a number of tests to check the
 %{name} tool.
 
 %install
+%if 0%{?suse_version} < 1315
+make install DESTDIR="%{?buildroot}"
+%else
 %make_install
+%endif
 
 %files tests
+%defattr(-,root,root,-)
 %doc tests
 
 %files
+%defattr(-,root,root,-)
 %attr(0755,root,root) %{_bindir}/*
+%if 0%{?sle_version} < 120300
+%doc COPYRIGHT
+%else
 %license COPYRIGHT
+%endif
 %doc examples README.rst
 %{_mandir}/man1/*
 
