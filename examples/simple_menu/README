@@ -33,7 +33,7 @@ As usual, 'ENTER' triggers the selection and 'q' quits the menu without
 outputting anything.
 
 To launch the demo, first, make sure to make simple_menu.sh executable
-(chmod +x simple_menu.sh) and enter:
+(chmod +x simple_menu.sh actions.sh) and enter:
 
 ./simple_menu.sh main.mnu ./actions.sh
 

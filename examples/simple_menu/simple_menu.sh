@@ -102,14 +102,15 @@ function process_menu
       ITEMS_TO_ADD=1 # By default, only one iteration of the tag is taken
                      # into account
 
-      (( ${#TAG} > 10 )) && error "Menu tag too long (max 10 characters)."
+      (( ${#TAG} > 30 )) \
+        && error "Menu tag \"${TAG}\" too long (max 30 characters)."
 
       [[ $TAG == --- ]] && VALUE=@@@
       [[ $TAG == === ]] && VALUE=@@@ && ITEMS_TO_ADD=COL
 
       [[ -z $VALUE ]] && error "Empty menu entry for $TAG"
-      [[ $TAG == EXIT ]] && TAG="@EXIT@xxxx00"
-      [[ $TAG == "<"* ]] && TAG="<xxxxxxxxx00"
+      [[ $TAG == EXIT ]] && TAG="@EXIT@xxxxxxxxxxxxxxxxxxxxxxxx00"
+      [[ $TAG == "<"* ]] && TAG="<xxxxxxxxxxxxxxxxxxxxxxxxxxxxx00"
 
       # Protect quotes in VALUE
       # """""""""""""""""""""""
@@ -143,7 +144,7 @@ function process_menu
                          $CENTERING         \
                          $ERASE             \
                          -N                 \
-                         -F -D o:10 i:0 n:2 \
+                         -F -D o:30 i:0 n:2 \
                          -n                 \
                          -a m:0/6           \
                          -m "$TITLE"        \
