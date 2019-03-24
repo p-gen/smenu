@@ -4525,6 +4525,7 @@ move_up(win_t * win, term_t * term, toggle_t * toggle,
   long line;                  /* The line being processed (the target line) */
   long start_line;            /* The first line of the window               */
   long cur_line;              /* The line of the cursor                     */
+  long nlines;                /* Number of line in the window               */
   long first_selectable_line; /* the line containing the first              *
                                * selectable word                            */
   long lines_skipped; /* The number of line between the target line and the *
@@ -4548,52 +4549,92 @@ move_up(win_t * win, term_t * term, toggle_t * toggle,
   first_selectable_line = line_nb_of_word_a[first_selectable];
   lines_skipped         = 0;
   found                 = 0;
+  nlines = win->max_lines < last_line + 1 ? win->max_lines : last_line + 1;
 
   /* initialise the target line */
   /* """""""""""""""""""""""""" */
   line = cur_line;
 
-  if (line - page < 0)
+  /* Special case if the cursor is already in the line containing the */
+  /* first selectable word.                                           */
+  /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+  if (line == first_selectable_line)
   {
-    /* Trivial case, we are already on the first page */
-    /* just jump to the first selectable line         */
-    /* """""""""""""""""""""""""""""""""""""""""""""" */
-    line      = first_selectable_line;
-    last_word = get_line_last_word(line, last_line);
-    find_best_word_upward(win, term, line, last_word, s, e);
+    /* we can't move the cursor up but we still can try to show the */
+    /* more non selectable words as we can.                         */
+    /* '''''''''''''''''''''''''''''''''''''''''''''''''''''''''''' */
+    if (line <= start_line + nlines - 1 - page)
+    {
+      /* We are scrolling one line at a time and the cursor is not in */
+      /* the last line of the window.                                 */
+      /* '''''''''''''''''''''''''''''''''''''''''''''''''''''''''''' */
+      if (start_line - page > 0)
+        /* There is enough remaining line to fill a window. */
+        /* '''''''''''''''''''''''''''''''''''''''''''''''' */
+        start_line -= page;
+      else
+        /* We cannot scroll further */
+        /* '''''''''''''''''''''''' */
+        start_line = 0;
+    }
+    else
+    {
+      /* The cursor is already in the last line of the windows. */
+      /* '''''''''''''''''''''''''''''''''''''''''''''''''''''' */
+      if (line >= nlines)
+        /* There is enough remaining line to fill a window. */
+        /* '''''''''''''''''''''''''''''''''''''''''''''''' */
+        start_line = line - nlines + 1;
+      else
+        /* We cannot scroll further */
+        /* '''''''''''''''''''''''' */
+        start_line = 0;
+    }
   }
   else
   {
-    /* Temporarily move up one page */
-    /* """""""""""""""""""""""""""" */
-    line -= page;
-
-    /* The target line cannot be before the line containing the first */
-    /* selectable word.                                               */
-    /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-    if (line < first_selectable_line)
+    if (line - page < 0)
     {
+      /* Trivial case, we are already on the first page */
+      /* just jump to the first selectable line         */
+      /* """""""""""""""""""""""""""""""""""""""""""""" */
       line      = first_selectable_line;
       last_word = get_line_last_word(line, last_line);
       find_best_word_upward(win, term, line, last_word, s, e);
     }
     else
     {
-      /* If this is not the case, search upward for the line with a */
-      /* selectable word. This line is guaranteed to exist.         */
-      /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-      while (line >= first_selectable_line)
+      /* Temporarily move up one page */
+      /* """""""""""""""""""""""""""" */
+      line -= page;
+
+      /* The target line cannot be before the line containing the first */
+      /* selectable word.                                               */
+      /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+      if (line < first_selectable_line)
       {
+        line      = first_selectable_line;
         last_word = get_line_last_word(line, last_line);
-
-        if (find_best_word_upward(win, term, line, last_word, s, e))
+        find_best_word_upward(win, term, line, last_word, s, e);
+      }
+      else
+      {
+        /* If this is not the case, search upward for the line with a */
+        /* selectable word. This line is guaranteed to exist.         */
+        /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+        while (line >= first_selectable_line)
         {
-          found = 1;
-          break;
-        }
+          last_word = get_line_last_word(line, last_line);
 
-        line--;
-        lines_skipped++;
+          if (find_best_word_upward(win, term, line, last_word, s, e))
+          {
+            found = 1;
+            break;
+          }
+
+          line--;
+          lines_skipped++;
+        }
       }
     }
   }
@@ -4606,7 +4647,7 @@ move_up(win_t * win, term_t * term, toggle_t * toggle,
     /* There is enough place to scroll up a page but only scrolls */
     /* up if the cursor remains in the window                     */
     /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-    if (start_line + win->max_lines - line > page)
+    if (start_line + nlines - line > page)
       start_line -= page;
   }
   else if (line < start_line)
@@ -4647,6 +4688,7 @@ move_down(win_t * win, term_t * term, toggle_t * toggle,
   long line;                 /* The line being processed (the target line)  */
   long start_line;           /* The first line of the window                */
   long cur_line;             /* The line of the cursor                      */
+  long nlines;               /* Number of line in the window                */
   long last_selectable_line; /* the line containing the last                *
                               * selectable word                             */
   long lines_skipped; /* The number of line between the target line and the *
@@ -4670,78 +4712,120 @@ move_down(win_t * win, term_t * term, toggle_t * toggle,
   last_selectable_line = line_nb_of_word_a[last_selectable];
   lines_skipped        = 0;
   found                = 0;
+  nlines = win->max_lines < last_line + 1 ? win->max_lines : last_line + 1;
 
   /* initialise the target line */
   /* """""""""""""""""""""""""" */
   line = cur_line;
 
-  if (last_line - line - page < 0)
+  /* Special case if the cursor is already in the line containing the */
+  /* last selectable word.                                            */
+  /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+  if (line == last_selectable_line)
   {
-    /* Trivial case, we are already on the last page */
-    /* just jump to the last selectable line         */
-    /* """""""""""""""""""""""""""""""""""""""""""""" */
-    line      = last_selectable_line;
-    last_word = get_line_last_word(line, last_line);
-    find_best_word_downward(win, term, line, last_word, s, e);
+    /* we can't move the cursor down but we still can try to show the */
+    /* more non selectable words as we can.                           */
+    /* '''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''' */
+    if (line >= start_line + page)
+    {
+      /* We are scrolling one line at a time and the cursor is not in */
+      /* the first line of the window.                                */
+      /* '''''''''''''''''''''''''''''''''''''''''''''''''''''''''''' */
+      if (start_line + page + nlines - 1 <= last_line)
+        /* There is enough remaining line to fill a window. */
+        /* '''''''''''''''''''''''''''''''''''''''''''''''' */
+        start_line += page;
+      else
+        /* We cannot scroll further */
+        /* '''''''''''''''''''''''' */
+        start_line = last_line - nlines + 1;
+    }
+    else
+    {
+      /* The cursor is already in the first line of the windows. */
+      /* ''''''''''''''''''''''''''''''''''''''''''''''''''''''' */
+      if (last_line - line + 1 > nlines)
+        /* There is enough remaining line to fill a window. */
+        /* '''''''''''''''''''''''''''''''''''''''''''''''' */
+        start_line = line;
+      else
+        /* We cannot scroll further */
+        /* '''''''''''''''''''''''' */
+        start_line = last_line - nlines + 1;
+    }
   }
   else
   {
-    /* Temporarily move down one page */
-    /* """""""""""""""""""""""""""""" */
-    line += page;
-
-    /* The target line cannot be before the line containing the first */
-    /* selectable word.                                               */
-    /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-    if (line > last_selectable_line)
+    /* The cursor is above the line containing the last selectable word. */
+    /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+    if (last_line - line - page < 0)
     {
+      /* Trivial case, we are already on the last page */
+      /* just jump to the last selectable line         */
+      /* """""""""""""""""""""""""""""""""""""""""""""" */
       line      = last_selectable_line;
       last_word = get_line_last_word(line, last_line);
       find_best_word_downward(win, term, line, last_word, s, e);
     }
     else
     {
-      /* If this is not the case, search upward for the line with a */
-      /* selectable word. This line is guaranteed to exist.         */
-      /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-      while (line <= last_selectable_line)
+      /* Temporarily move down one page */
+      /* """""""""""""""""""""""""""""" */
+      line += page;
+
+      /* The target line cannot be before the line containing the first */
+      /* selectable word.                                               */
+      /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+      if (line > last_selectable_line)
       {
+        line      = last_selectable_line;
         last_word = get_line_last_word(line, last_line);
-
-        if (find_best_word_downward(win, term, line, last_word, s, e))
+        find_best_word_downward(win, term, line, last_word, s, e);
+      }
+      else
+      {
+        /* If this is not the case, search upward for the line with a */
+        /* selectable word. This line is guaranteed to exist.         */
+        /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+        while (line <= last_selectable_line)
         {
-          found = 1;
-          break;
-        }
+          last_word = get_line_last_word(line, last_line);
 
-        line++;
-        lines_skipped++;
+          if (find_best_word_downward(win, term, line, last_word, s, e))
+          {
+            found = 1;
+            break;
+          }
+
+          line++;
+          lines_skipped++;
+        }
       }
     }
-  }
 
-  /* Look if we need to adjust the window to follow the cursor */
-  /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-  if (!found && start_line + win->max_lines - 1 + page <= last_line)
-  {
-    /* We are on the last line containing a selectable word and     */
-    /* There is enough place to scroll down a page but only scrolls */
-    /* down if the cursor remains in the window                     */
-    /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-    if (line - start_line >= page)
-      start_line += page;
-  }
-  else if (line > start_line + win->max_lines - 1)
-  {
-    /* The target line is below the windows */
-    /* """""""""""""""""""""""""""""""""""" */
-    if (start_line + win->max_lines + page + lines_skipped - 1 > last_line)
-      /* There isn't enough remaining lines to scroll down */
-      /* a page size.                                      */
-      /* """"""""""""""""""""""""""""""""""""""""""""""""" */
-      start_line = last_line - win->max_lines + 1;
-    else
-      start_line += page + lines_skipped;
+    /* Look if we need to adjust the window to follow the cursor */
+    /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+    if (!found && start_line + nlines - 1 + page <= last_line)
+    {
+      /* We are on the last line containing a selectable word and     */
+      /* There is enough place to scroll down a page but only scrolls */
+      /* down if the cursor remains in the window                     */
+      /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+      if (line - start_line >= page)
+        start_line += page;
+    }
+    else if (line > start_line + nlines - 1)
+    {
+      /* The target line is below the windows */
+      /* """""""""""""""""""""""""""""""""""" */
+      if (start_line + nlines + page + lines_skipped - 1 > last_line)
+        /* There isn't enough remaining lines to scroll down */
+        /* a page size.                                      */
+        /* """"""""""""""""""""""""""""""""""""""""""""""""" */
+        start_line = last_line - nlines + 1;
+      else
+        start_line += page + lines_skipped;
+    }
   }
 
   /* And set the new value of the starting word of the window */
