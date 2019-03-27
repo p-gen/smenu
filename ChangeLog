@@ -1,4 +1,34 @@
-May 22 22:01 UTC 2018 - p.gen.progs@gmail.com
+- Version 0.9.15
+* Bug fixes:
+  + An ending pattern search was not correctly highlighted
+  + An highlighting issue when hitting the HOME key during a search
+    in numbered mode has been fixed
+  + The PgUp/PgDn moves have been fixed and improved in the presence of
+    excluded words
+  + The SIGINT signal handling is working properly now
+  + A vt100 terminal is assumed when the environment variable TERM
+    is unset
+* Improvements:
+  + The 'o' sub-option of the -D option has been enhanced
+  + The documentation has been improved and enhanced
+  + An example of a hierarchical menu interpreter has been added
+  + The message (title) appearance can now be changed with the -a option
+  + An empty line has been added after the message (title) for clarity
+  + The .spec file has been updated to support older SUSE/RH versions
+  + An issue opening /dev/tty is now clearly signaled
+  + The argument of the -n option is now optional and defaults to 0
+    (full height)
+  + It is now possible to directly move the cursor to the start/end of
+    the current line
+* Misc:
+  + The code has been split into several files
+  + The pull request #15 from sumbach/patch-1 has been merged
+  + The pull request #12 from jonnydubowsky/patch-1 has been merged
+  + More tests for the automatic regressions checking have been added
+  + UTF-8 string length processing has been optimized
+  + Help and usage messages are now printed on stdout
+  + A FAQ has been added
+  + Compiler warnings have been silenced
 
 - Version 0.9.14
 * Rework the search system (major change)
