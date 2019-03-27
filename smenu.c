@@ -142,44 +142,44 @@ int quiet_timeout = 0;     /* 1 when we want no message to be displayed.  */
 void
 short_usage(void)
 {
-  fprintf(stderr, "Usage: smenu [-h|-?] [-f config_file] [-n [lines]] ");
-  fprintf(stderr, "[-t [cols]] [-k] [-v]       \\\n");
-  fprintf(stderr, "       [-s pattern] [-m message] [-w] [-d] [-M] [-c] [-l] ");
-  fprintf(stderr, "[-r] [-b]            \\\n");
-  fprintf(stderr, "       [-a prefix:attr [prefix:attr]...] ");
-  fprintf(stderr, "[-i regex] [-e regex]                 \\\n");
-  fprintf(stderr, "       [-C [i|e]<col selectors>] ");
-  fprintf(stderr, "[-R [i|e]<row selectors>]                     \\\n");
-  fprintf(stderr, "       [-S /regex/repl/[g][v][s][i]] ");
-  fprintf(stderr, "[-I /regex/repl/[g][v][s][i]]             \\\n");
-  fprintf(stderr, "       [-E /regex/repl/[g][v][s][i]] ");
-  fprintf(stderr, "[-A regex] [-Z regex]                     \\\n");
-  fprintf(stderr, "       [-N [regex]] [-U [regex]] [-F] [-D arg...] ");
-  fprintf(stderr, "                             \\\n");
-  fprintf(stderr, "       [-1 regex [attr]] [-2 regex [attr]]... ");
-  fprintf(stderr, "[-5 regex [attr]] [-g [string]]  \\\n");
-  fprintf(stderr, "       [-q] [-W bytes] [-L bytes] [-T [separator]] ");
-  fprintf(stderr, "[-P [separator]] [-p]       \\\n");
-  fprintf(stderr, "       [-V] [-x|-X current|quit|word [<word>] ");
-  fprintf(stderr, "<seconds>]                       \\\n");
-  fprintf(stderr, "       [-/ prefix|substring|fuzzy] [--] [input_file]\n\n");
-  fprintf(stderr, "       <col selectors> ::= col1[-col2]...|<RE>...\n");
-  fprintf(stderr, "       <row selectors> ::= row1[-row2]...|<RE>...\n");
-  fprintf(stderr, "       <prefix>        ::= i|e|c|b|s|m|t|ct|sf|st|mf|mt|");
-  fprintf(stderr, "sfe|ste|mfe|mte|da\n");
-  fprintf(stderr, "       <arg>           ::= [l|r:<char>]|[a:l|r]|[p:i|a]|");
-  fprintf(stderr, "[w:<size>]|\n");
-  fprintf(stderr, "                           [f:y|n]|[o:<num>[+]]|[n:<num>]|");
-  fprintf(stderr, "[i:<num>]|[d:<char>]|\n");
-  fprintf(stderr, "                           [s:<num>]|[h:t|c|k]\n");
-  fprintf(stderr, "         Ex: l:'(' a:l\n");
-  fprintf(stderr, "       <attr>          ::= [fg][/bg][,style] \n");
-  fprintf(stderr, "         Ex: 7/4,bu\n");
-  fprintf(stderr, "       <RE>            ::= <char>regex<char> \n");
-  fprintf(stderr, "         Ex: /regex/ or :regex:\n\n");
-  fprintf(stderr, "       <col/row selectors> and <RE> can be freely mixed ");
-  fprintf(stderr, "when used\n");
-  fprintf(stderr, "       with -C and -R (ex: 2,/x/,4-5).\n");
+  printf("Usage: smenu [-h|-?] [-f config_file] [-n [lines]] ");
+  printf("[-t [cols]] [-k] [-v]       \\\n");
+  printf("       [-s pattern] [-m message] [-w] [-d] [-M] [-c] [-l] ");
+  printf("[-r] [-b]            \\\n");
+  printf("       [-a prefix:attr [prefix:attr]...] ");
+  printf("[-i regex] [-e regex]                 \\\n");
+  printf("       [-C [i|e]<col selectors>] ");
+  printf("[-R [i|e]<row selectors>]                     \\\n");
+  printf("       [-S /regex/repl/[g][v][s][i]] ");
+  printf("[-I /regex/repl/[g][v][s][i]]             \\\n");
+  printf("       [-E /regex/repl/[g][v][s][i]] ");
+  printf("[-A regex] [-Z regex]                     \\\n");
+  printf("       [-N [regex]] [-U [regex]] [-F] [-D arg...] ");
+  printf("                             \\\n");
+  printf("       [-1 regex [attr]] [-2 regex [attr]]... ");
+  printf("[-5 regex [attr]] [-g [string]]  \\\n");
+  printf("       [-q] [-W bytes] [-L bytes] [-T [separator]] ");
+  printf("[-P [separator]] [-p]       \\\n");
+  printf("       [-V] [-x|-X current|quit|word [<word>] ");
+  printf("<seconds>]                       \\\n");
+  printf("       [-/ prefix|substring|fuzzy] [--] [input_file]\n\n");
+  printf("       <col selectors> ::= col1[-col2]...|<RE>...\n");
+  printf("       <row selectors> ::= row1[-row2]...|<RE>...\n");
+  printf("       <prefix>        ::= i|e|c|b|s|m|t|ct|sf|st|mf|mt|");
+  printf("sfe|ste|mfe|mte|da\n");
+  printf("       <arg>           ::= [l|r:<char>]|[a:l|r]|[p:i|a]|");
+  printf("[w:<size>]|\n");
+  printf("                           [f:y|n]|[o:<num>[+]]|[n:<num>]|");
+  printf("[i:<num>]|[d:<char>]|\n");
+  printf("                           [s:<num>]|[h:t|c|k]\n");
+  printf("         Ex: l:'(' a:l\n");
+  printf("       <attr>          ::= [fg][/bg][,style] \n");
+  printf("         Ex: 7/4,bu\n");
+  printf("       <RE>            ::= <char>regex<char> \n");
+  printf("         Ex: /regex/ or :regex:\n\n");
+  printf("       <col/row selectors> and <RE> can be freely mixed ");
+  printf("when used\n");
+  printf("       with -C and -R (ex: 2,/x/,4-5).\n");
 }
 
 /* ====================== */
@@ -190,128 +190,102 @@ usage(void)
 {
   short_usage();
 
-  fprintf(stderr, "\nThis is a filter that gets words from stdin ");
-  fprintf(stderr, "and outputs the selected\n");
-  fprintf(stderr, "words (or nothing) on stdout in a nice selection ");
-  fprintf(stderr, "window\n\n");
-  fprintf(stderr, "The selection window appears on /dev/tty ");
-  fprintf(stderr, "immediately after the current line\n");
-  fprintf(stderr, "(no clear screen!).\n\n");
-  fprintf(stderr, "The following options are available:\n\n");
-  fprintf(stderr, "-h displays this help.\n");
-  fprintf(stderr, "-f selects an alternative configuration file.\n");
-  fprintf(stderr, "-n sets the number of lines in the selection window.\n");
-  fprintf(stderr,
-          "-t tabulates the items. The number of columns can be limited "
-          "with\n");
-  fprintf(stderr, "   an optional number.\n");
-  fprintf(stderr,
-          "-k does not trim spaces surrounding the output string if any.\n");
-  fprintf(stderr, "-v makes the bell visual (fuzzy search with error).\n");
-  fprintf(stderr,
-          "-s sets the initial cursor position (read the manual for "
-          "more details).\n");
-  fprintf(stderr, "-m displays a one-line message above the window.\n");
-  fprintf(stderr,
-          "-w uses all the terminal width for the columns if their numbers "
-          "is given.\n");
-  fprintf(stderr, "-d deletes the selection window on exit.\n");
-  fprintf(stderr, "-M centers the display if possible.\n");
-  fprintf(stderr,
-          "-c is like -t without argument but respects end of lines.\n");
-  fprintf(stderr, "-l is like -c without column alignments.\n");
-  fprintf(stderr,
-          "-r enables ENTER to validate the selection even in "
-          "search mode.\n");
-  fprintf(stderr, "-b displays the non printable characters as space.\n");
-  fprintf(stderr, "-a sets the attributes for the various displayed ");
-  fprintf(stderr, "elements.\n");
-  fprintf(stderr,
-          "-i sets the regex input filter to match the selectable words.\n");
-  fprintf(stderr,
-          "-e sets the regex input filter to match the non-selectable "
-          "words.\n");
-  fprintf(stderr, "-C sets columns restrictions for selections.\n");
-  fprintf(stderr, "-R sets rows restrictions for selections.\n");
-  fprintf(stderr,
-          "-S sets the post-processing action to apply to all words.\n");
-  fprintf(stderr,
-          "-I sets the post-processing action to apply to selectable "
-          "words only.\n");
-  fprintf(stderr,
-          "-E sets the post-processing action to apply to non-selectable "
-          "words only.\n");
-  fprintf(stderr,
-          "-A forces a class of words to be the first of the line they "
-          "appear in.\n");
-  fprintf(stderr,
-          "-Z forces a class of words to be the latest of the line they "
-          "appear in.\n");
-  fprintf(stderr,
-          "-N/-U numbers/un-numbers and provides a direct access to words "
-          "matching\n");
-  fprintf(stderr, "   (or not) a specific regex.\n");
-  fprintf(stderr,
-          "-F numbers and provides a direct access to words by extracting the "
-          "number\n");
-  fprintf(stderr, "   from the words.\n");
-  fprintf(stderr,
-          "-D sets sub-options to modify the behaviour of -N, -U and -F.\n");
-  fprintf(stderr,
-          "-1,-2,...,-5 gives specific colors to up to 5 classes of "
-          "selectable words.\n");
-  fprintf(stderr,
-          "-g separates columns with a character in column or tabulate "
-          "mode.\n");
-  fprintf(stderr, "-q prevents the display of the scroll bar.\n");
-  fprintf(stderr, "-W sets the input words separators.\n");
-  fprintf(stderr, "-L sets the input lines separators.\n");
-  fprintf(stderr, "-T/-P enables the tagging (multi-selections) mode. ");
-  fprintf(stderr, "An optional parameter\n");
-  fprintf(stderr, "   sets the separator string between the selected words ");
-  fprintf(stderr, "on the output.\n");
-  fprintf(stderr, "   A single space is the default separator.\n");
-  fprintf(stderr, "-p activates the auto-tagging when using -T or -P.\n");
-  fprintf(stderr, "-V displays the current version and quits.\n");
-  fprintf(stderr,
-          "-x|-X sets a timeout and specifies what to do when it expires.\n");
-  fprintf(stderr,
-          "-/ changes the affectation of the / key (default fuzzy search).\n");
-  fprintf(stderr, "\nNavigation keys are:\n");
-  fprintf(stderr, "  - Left/Down/Up/Right arrows or h/j/k/l, J/K.\n");
-  fprintf(stderr, "  - Home/End, SHIFT|CTRL+Home/End CTRK+J/CTRL+K.\n");
-  fprintf(stderr, "  - Numbers if some words are numbered (-N/-U/-F).\n");
-  fprintf(stderr, "  - SPACE to search for the next match of a previously\n");
-  fprintf(stderr, "          entered search prefix if any, see below.\n\n");
-  fprintf(stderr, "Other useful keys are:\n");
-  fprintf(stderr,
-          "  - Help key (temporary display of a short help line): "
-          "?\n");
-  fprintf(stderr,
-          "  - Exit key without output (do nothing)             : "
-          "q\n");
-  fprintf(stderr,
-          "  - Tagging keys: Select/Deselect/Toggle             : "
-          "INS/DEL/t\n");
-  fprintf(stderr,
-          "  - Selection key                                    : "
-          "ENTER\n");
-  fprintf(stderr,
-          "  - Cancel key                                       : "
-          "ESC\n");
-  fprintf(stderr,
-          "  - Search key                                       : "
-          "/ or CTRL-F\n\n");
-  fprintf(stderr, "The search key activates a timed search mode in which\n");
-  fprintf(stderr, "you can enter the first letters of the searched word.\n");
-  fprintf(stderr, "When entering this mode you have 7s to start typing\n");
-  fprintf(stderr, "and each entered letter gives you 5 more seconds before\n");
-  fprintf(stderr, "the timeout. After that the search mode is ended.\n\n");
-  fprintf(stderr, "Notes:\n");
-  fprintf(stderr, "- the timer can be cancelled by pressing ESC.\n");
-  fprintf(stderr, "- a bad search letter can be removed with ");
-  fprintf(stderr, "CTRL-H or Backspace.\n\n");
-  fprintf(stderr, "(C) Pierre Gentile (2015).\n");
+  printf("\nThis is a filter that gets words from stdin ");
+  printf("and outputs the selected\n");
+  printf("words (or nothing) on stdout in a nice selection ");
+  printf("window\n\n");
+  printf("The selection window appears on /dev/tty ");
+  printf("immediately after the current line\n");
+  printf("(no clear screen!).\n\n");
+  printf("The following options are available:\n\n");
+  printf("-h displays this help.\n");
+  printf("-f selects an alternative configuration file.\n");
+  printf("-n sets the number of lines in the selection window.\n");
+  printf("-t tabulates the items. The number of columns can be limited "
+         "with\n");
+  printf("   an optional number.\n");
+  printf("-k does not trim spaces surrounding the output string if any.\n");
+  printf("-v makes the bell visual (fuzzy search with error).\n");
+  printf("-s sets the initial cursor position (read the manual for "
+         "more details).\n");
+  printf("-m displays a one-line message above the window.\n");
+  printf("-w uses all the terminal width for the columns if their numbers "
+         "is given.\n");
+  printf("-d deletes the selection window on exit.\n");
+  printf("-M centers the display if possible.\n");
+  printf("-c is like -t without argument but respects end of lines.\n");
+  printf("-l is like -c without column alignments.\n");
+  printf("-r enables ENTER to validate the selection even in "
+         "search mode.\n");
+  printf("-b displays the non printable characters as space.\n");
+  printf("-a sets the attributes for the various displayed ");
+  printf("elements.\n");
+  printf("-i sets the regex input filter to match the selectable words.\n");
+  printf("-e sets the regex input filter to match the non-selectable "
+         "words.\n");
+  printf("-C sets columns restrictions for selections.\n");
+  printf("-R sets rows restrictions for selections.\n");
+  printf("-S sets the post-processing action to apply to all words.\n");
+  printf("-I sets the post-processing action to apply to selectable "
+         "words only.\n");
+  printf("-E sets the post-processing action to apply to non-selectable "
+         "words only.\n");
+  printf("-A forces a class of words to be the first of the line they "
+         "appear in.\n");
+  printf("-Z forces a class of words to be the latest of the line they "
+         "appear in.\n");
+  printf("-N/-U numbers/un-numbers and provides a direct access to words "
+         "matching\n");
+  printf("   (or not) a specific regex.\n");
+  printf("-F numbers and provides a direct access to words by extracting the "
+         "number\n");
+  printf("   from the words.\n");
+  printf("-D sets sub-options to modify the behaviour of -N, -U and -F.\n");
+  printf("-1,-2,...,-5 gives specific colors to up to 5 classes of "
+         "selectable words.\n");
+  printf("-g separates columns with a character in column or tabulate "
+         "mode.\n");
+  printf("-q prevents the display of the scroll bar.\n");
+  printf("-W sets the input words separators.\n");
+  printf("-L sets the input lines separators.\n");
+  printf("-T/-P enables the tagging (multi-selections) mode. ");
+  printf("An optional parameter\n");
+  printf("   sets the separator string between the selected words ");
+  printf("on the output.\n");
+  printf("   A single space is the default separator.\n");
+  printf("-p activates the auto-tagging when using -T or -P.\n");
+  printf("-V displays the current version and quits.\n");
+  printf("-x|-X sets a timeout and specifies what to do when it expires.\n");
+  printf("-/ changes the affectation of the / key (default fuzzy search).\n");
+  printf("\nNavigation keys are:\n");
+  printf("  - Left/Down/Up/Right arrows or h/j/k/l, H/J/K/L.\n");
+  printf("  - Home/End, SHIFT|CTRL+Home/End CTRK+J/CTRL+K.\n");
+  printf("  - Numbers if some words are numbered (-N/-U/-F).\n");
+  printf("  - SPACE to search for the next match of a previously\n");
+  printf("          entered search prefix if any, see below.\n\n");
+  printf("Other useful keys are:\n");
+  printf("  - Help key (temporary display of a short help line): "
+         "?\n");
+  printf("  - Exit key without output (do nothing)             : "
+         "q\n");
+  printf("  - Tagging keys: Select/Deselect/Toggle             : "
+         "INS/DEL/t\n");
+  printf("  - Selection key                                    : "
+         "ENTER\n");
+  printf("  - Cancel key                                       : "
+         "ESC\n");
+  printf("  - Search key                                       : "
+         "/ or CTRL-F\n\n");
+  printf("The search key activates a timed search mode in which\n");
+  printf("you can enter the first letters of the searched word.\n");
+  printf("When entering this mode you have 7s to start typing\n");
+  printf("and each entered letter gives you 5 more seconds before\n");
+  printf("the timeout. After that the search mode is ended.\n\n");
+  printf("Notes:\n");
+  printf("- the timer can be cancelled by pressing ESC.\n");
+  printf("- a bad search letter can be removed with ");
+  printf("CTRL-H or Backspace.\n\n");
+  printf("(C) Pierre Gentile (2015).\n");
 
   exit(EXIT_FAILURE);
 }
@@ -6066,9 +6040,8 @@ main(int argc, char * argv[])
 
                 if (n > 1)
                 {
-                  TELL(
-                    "A multi columns character is not allowed "
-                    "after l: -- ");
+                  TELL("A multi columns character is not allowed "
+                       "after l: -- ");
                   short_usage();
                 }
                 break;
@@ -6090,9 +6063,8 @@ main(int argc, char * argv[])
 
                 if (n > 1)
                 {
-                  TELL(
-                    "A multi columns character is not allowed "
-                    "after r: -- ");
+                  TELL("A multi columns character is not allowed "
+                       "after r: -- ");
                   short_usage();
                 }
                 break;
@@ -6230,9 +6202,8 @@ main(int argc, char * argv[])
 
                 if (n > 1)
                 {
-                  TELL(
-                    "A multi columns separator is not allowed "
-                    "after d: -- ");
+                  TELL("A multi columns separator is not allowed "
+                       "after d: -- ");
                   short_usage();
                 }
                 break;
@@ -6499,9 +6470,8 @@ main(int argc, char * argv[])
       || !term.has_cursor_right || !term.has_save_cursor
       || !term.has_restore_cursor)
   {
-    fprintf(stderr,
-            "The terminal does not have the required cursor "
-            "management capabilities.\n");
+    fprintf(stderr, "The terminal does not have the required cursor "
+                    "management capabilities.\n");
 
     exit(EXIT_FAILURE);
   }
@@ -7084,9 +7054,8 @@ main(int argc, char * argv[])
     {
       if (!parse_sed_like_string((sed_t *)(node->data)))
       {
-        fprintf(stderr,
-                "Bad -S argument. Must be something like: "
-                "/regex/repl_string/[g][v][s][i]\n");
+        fprintf(stderr, "Bad -S argument. Must be something like: "
+                        "/regex/repl_string/[g][v][s][i]\n");
 
         exit(EXIT_FAILURE);
       }
@@ -7109,9 +7078,8 @@ main(int argc, char * argv[])
     {
       if (!parse_sed_like_string((sed_t *)(node->data)))
       {
-        fprintf(stderr,
-                "Bad -I argument. Must be something like: "
-                "/regex/repl_string/[g][v][s][i]\n");
+        fprintf(stderr, "Bad -I argument. Must be something like: "
+                        "/regex/repl_string/[g][v][s][i]\n");
 
         exit(EXIT_FAILURE);
       }
@@ -7131,9 +7099,8 @@ main(int argc, char * argv[])
     {
       if (!parse_sed_like_string((sed_t *)(node->data)))
       {
-        fprintf(stderr,
-                "Bad -E argument. Must be something like: "
-                "/regex/repl_string/[g][v][s][i]\n");
+        fprintf(stderr, "Bad -E argument. Must be something like: "
+                        "/regex/repl_string/[g][v][s][i]\n");
 
         exit(EXIT_FAILURE);
       }
