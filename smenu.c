@@ -123,6 +123,9 @@ volatile sig_atomic_t got_winch_alrm   = 0;
 volatile sig_atomic_t got_help_alrm    = 0;
 volatile sig_atomic_t got_daccess_alrm = 0;
 volatile sig_atomic_t got_timeout_tick = 0;
+volatile sig_atomic_t got_sigsegv      = 0;
+volatile sig_atomic_t got_sigterm      = 0;
+volatile sig_atomic_t got_sighup       = 0;
 
 /* Variables used when a timeout is set (option -x) */
 /* """""""""""""""""""""""""""""""""""""""""""""""" */
@@ -3847,21 +3850,16 @@ sig_handler(int s)
     /* Standard termination signals */
     /* """""""""""""""""""""""""""" */
     case SIGSEGV:
-      fputs("SIGSEGV received!\n", stderr);
-      tputs(TPARM1(carriage_return), 1, outch);
-      tputs(TPARM1(cursor_visible), 1, outch);
-      restore_term(fileno(stdin));
-
-      exit(EXIT_FAILURE);
+      got_sigsegv = 1;
+      break;
 
     case SIGTERM:
-    case SIGHUP:
-      fputs("Interrupted!\n", stderr);
-      tputs(TPARM1(carriage_return), 1, outch);
-      tputs(TPARM1(cursor_visible), 1, outch);
-      restore_term(fileno(stdin));
+      got_sigterm = 1;
+      break;
 
-      exit(EXIT_FAILURE);
+    case SIGHUP:
+      got_sighup = 1;
+      break;
 
     /* Terminal resize */
     /* """"""""""""""" */
@@ -8675,6 +8673,32 @@ main(int argc, char * argv[])
   while (1)
   {
     int sc = 0; /* scancode */
+
+    /* Manage a segmentation fault by exiting with failure and restoring */
+    /* the terminal and the cursor.                                      */
+    /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+    if (got_sigsegv)
+    {
+      fputs("SIGSEGV received!\n", stderr);
+      tputs(TPARM1(carriage_return), 1, outch);
+      tputs(TPARM1(cursor_normal), 1, outch);
+      restore_term(fileno(stdin));
+
+      exit(EXIT_FAILURE);
+    }
+
+    /* Manage the hangup and termination signal by exiting with failure */
+    /* and restoring the terminal and the cursor.                       */
+    /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+    if (got_sigterm || got_sighup)
+    {
+      fputs("Interrupted!\n", stderr);
+      tputs(TPARM1(carriage_return), 1, outch);
+      tputs(TPARM1(cursor_normal), 1, outch);
+      restore_term(fileno(stdin));
+
+      exit(EXIT_FAILURE);
+    }
 
     /* If this alarm is triggered, then redisplay the window */
     /* to remove the help message and disable this timer.    */

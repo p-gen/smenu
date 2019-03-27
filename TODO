@@ -2,6 +2,3 @@
 # ========================================.
 I: Improve configure.ac
 I: Improve the checking of system/library calls returns
-I: Cleanup the code and split it into several files
-I: Make sure that no async-signal-safe functions are
-   used in the signal handler.
