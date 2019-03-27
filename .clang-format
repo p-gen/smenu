@@ -14,7 +14,7 @@ AllowShortCaseLabelsOnASingleLine: 'false'
 AllowShortFunctionsOnASingleLine: None
 AllowShortIfStatementsOnASingleLine: 'false'
 AllowShortLoopsOnASingleLine: 'false'
-AlwaysBreakBeforeMultilineStrings: 'true'
+AlwaysBreakBeforeMultilineStrings: 'false'
 BinPackArguments: 'true'
 BinPackParameters: 'true'
 BreakBeforeBraces: Allman
