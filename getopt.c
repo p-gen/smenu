@@ -121,6 +121,8 @@ egetopt(int nargc, char ** nargv, char * ostr)
       ++eoptind;
 
     TELL("Illegal option -- "); /* bye bye */
+
+    return (eoptbad);
   }
 
   /* If there is no argument indicator, then we don't even try to */
@@ -165,6 +167,8 @@ egetopt(int nargc, char ** nargv, char * ostr)
       {
         place = EMSG;
         TELL("Option requires an argument -- ");
+
+        return (eoptbad);
       }
       else
         eoptarg = nargv[eoptind];

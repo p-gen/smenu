@@ -25,7 +25,9 @@
       dummy_rc    = write(eopterrfd, &option, 1);     \
       dummy_rc    = write(eopterrfd, "\n", 1);        \
     }                                                 \
-    return (eoptbad);                                 \
   }
+
+int
+egetopt(int nargc, char ** nargv, char * ostr);
 
 #endif

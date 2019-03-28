@@ -65,12 +65,6 @@ typedef enum bitmap_affinities  bitmap_affinity_t;
 void
 help(win_t * win, term_t * term, long last_line, toggle_t * toggle);
 
-void
-short_usage(void);
-
-void
-usage(void);
-
 int
 tag_comp(void * a, void * b);
 
@@ -174,9 +168,6 @@ disp_matching_word(long pos, win_t * win, term_t * term, int is_cursor,
 void
 disp_word(long pos, search_mode_t search_mode, search_data_t * search_data,
           term_t * term, win_t * win, char * tmp_word);
-
-int
-egetopt(int nargc, char ** nargv, char * ostr);
 
 size_t
 expand(char * src, char * dest, langinfo_t * langinfo, toggle_t * toggle);
