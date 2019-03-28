@@ -713,7 +713,7 @@ out:
   fclose(f);
 
   if (error)
-    fprintf(stderr, "Invalid entry: %s=%s in %s, exiting.\n", name, value,
+    fprintf(stderr, "Invalid entry found: %s=%s in %s.\n", name, value,
             filename);
 
   return error;
@@ -2502,8 +2502,8 @@ get_word(FILE * input, ll_t * word_delims_list, ll_t * record_delims_list,
     if (utf8_count >= limits->word_length)
     {
       fprintf(stderr,
-              "A word's length has reached the limit "
-              "(%ld), exiting.\n",
+              "The length of a word has reached the limit of "
+              "%ld characters.\n",
               limits->word_length);
 
       exit(EXIT_FAILURE);
@@ -5113,7 +5113,7 @@ main(int argc, char * argv[])
 
   if (!is_supported_charset)
   {
-    fprintf(stderr, "%s: %s\n", "Unsupported charset", charset);
+    fprintf(stderr, "%s is not a supported charset.", charset);
 
     exit(EXIT_FAILURE);
   }
@@ -6829,7 +6829,7 @@ main(int argc, char * argv[])
   if (daccess_np
       && regcomp(&daccess_np_re, daccess_np, REG_EXTENDED | REG_NOSUB) != 0)
   {
-    fprintf(stderr, "Bad regular expression %s\n", daccess_np);
+    fprintf(stderr, "Bad regular expression: %s.\n", daccess_np);
 
     exit(EXIT_FAILURE);
   }
@@ -6837,7 +6837,7 @@ main(int argc, char * argv[])
   if (daccess_up
       && regcomp(&daccess_up_re, daccess_up, REG_EXTENDED | REG_NOSUB) != 0)
   {
-    fprintf(stderr, "Bad regular expression %s\n", daccess_up);
+    fprintf(stderr, "Bad regular expression: %s.\n", daccess_up);
 
     exit(EXIT_FAILURE);
   }
@@ -6845,7 +6845,7 @@ main(int argc, char * argv[])
   if (include_pattern
       && regcomp(&include_re, include_pattern, REG_EXTENDED | REG_NOSUB) != 0)
   {
-    fprintf(stderr, "Bad regular expression %s\n", include_pattern);
+    fprintf(stderr, "Bad regular expression: %s.\n", include_pattern);
 
     exit(EXIT_FAILURE);
   }
@@ -6853,7 +6853,7 @@ main(int argc, char * argv[])
   if (exclude_pattern
       && regcomp(&exclude_re, exclude_pattern, REG_EXTENDED | REG_NOSUB) != 0)
   {
-    fprintf(stderr, "Bad regular expression %s\n", exclude_pattern);
+    fprintf(stderr, "Bad regular expression: %s.\n", exclude_pattern);
 
     exit(EXIT_FAILURE);
   }
@@ -6862,7 +6862,7 @@ main(int argc, char * argv[])
       && regcomp(&first_word_re, first_word_pattern, REG_EXTENDED | REG_NOSUB)
            != 0)
   {
-    fprintf(stderr, "Bad regular expression %s\n", first_word_pattern);
+    fprintf(stderr, "Bad regular expression: %s.\n", first_word_pattern);
 
     exit(EXIT_FAILURE);
   }
@@ -6871,7 +6871,7 @@ main(int argc, char * argv[])
       && regcomp(&last_word_re, last_word_pattern, REG_EXTENDED | REG_NOSUB)
            != 0)
   {
-    fprintf(stderr, "Bad regular expression %s\n", last_word_pattern);
+    fprintf(stderr, "Bad regular expression: %s.\n", last_word_pattern);
 
     exit(EXIT_FAILURE);
   }
@@ -6883,7 +6883,7 @@ main(int argc, char * argv[])
                    REG_EXTENDED | REG_NOSUB)
              != 0)
     {
-      fprintf(stderr, "Bad regular expression %s\n", special_pattern[index]);
+      fprintf(stderr, "Bad regular expression: %s.\n", special_pattern[index]);
 
       exit(EXIT_FAILURE);
     }
@@ -6901,7 +6901,7 @@ main(int argc, char * argv[])
       if (!parse_sed_like_string((sed_t *)(node->data)))
       {
         fprintf(stderr, "Bad -S argument. Must be something like: "
-                        "/regex/repl_string/[g][v][s][i]\n");
+                        "/regex/repl_string/[g][v][s][i].\n");
 
         exit(EXIT_FAILURE);
       }
@@ -6925,7 +6925,7 @@ main(int argc, char * argv[])
       if (!parse_sed_like_string((sed_t *)(node->data)))
       {
         fprintf(stderr, "Bad -I argument. Must be something like: "
-                        "/regex/repl_string/[g][v][s][i]\n");
+                        "/regex/repl_string/[g][v][s][i].\n");
 
         exit(EXIT_FAILURE);
       }
@@ -6946,7 +6946,7 @@ main(int argc, char * argv[])
       if (!parse_sed_like_string((sed_t *)(node->data)))
       {
         fprintf(stderr, "Bad -E argument. Must be something like: "
-                        "/regex/repl_string/[g][v][s][i]\n");
+                        "/regex/repl_string/[g][v][s][i].\n");
 
         exit(EXIT_FAILURE);
       }
@@ -6976,7 +6976,7 @@ main(int argc, char * argv[])
 
       if (*unparsed != '\0')
       {
-        fprintf(stderr, "Bad -R argument. Unparsed part: %s\n", unparsed);
+        fprintf(stderr, "Bad -R argument. Unparsed part: %s.\n", unparsed);
 
         exit(EXIT_FAILURE);
       }
@@ -7015,7 +7015,7 @@ main(int argc, char * argv[])
 
       if (*unparsed != '\0')
       {
-        fprintf(stderr, "Bad -C argument. Unparsed part: %s\n", unparsed);
+        fprintf(stderr, "Bad -C argument. Unparsed part: %s.\n", unparsed);
 
         exit(EXIT_FAILURE);
       }
@@ -7382,8 +7382,7 @@ main(int argc, char * argv[])
           if (col_index == limits.cols)
           {
             fprintf(stderr,
-                    "The number of columns has reached the limit "
-                    "(%ld), exiting.\n",
+                    "The number of columns has reached the limit of %ld.\n",
                     limits.cols);
 
             exit(EXIT_FAILURE);
@@ -7518,8 +7517,7 @@ main(int argc, char * argv[])
     if (count == limits.words)
     {
       fprintf(stderr,
-              "The number of read words has reached the limit "
-              "(%ld), exiting.\n",
+              "The number of read words has reached the limit of %ld.\n",
               limits.words);
 
       exit(EXIT_FAILURE);
@@ -8297,7 +8295,7 @@ main(int argc, char * argv[])
 
     if (regcomp(&re, pre_selection_index + 1, REG_EXTENDED | REG_NOSUB) != 0)
     {
-      fprintf(stderr, "Invalid regular expression (%s)\n", pre_selection_index);
+      fprintf(stderr, "Invalid regular expression :%s.\n", pre_selection_index);
 
       exit(EXIT_FAILURE);
     }
@@ -8388,7 +8386,7 @@ main(int argc, char * argv[])
         current = last_selectable;
       else
       {
-        fprintf(stderr, "Invalid index (%s)\n", ptr);
+        fprintf(stderr, "Invalid index: %s.\n", ptr);
 
         exit(EXIT_FAILURE);
       }

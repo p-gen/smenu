@@ -1,0 +1,21 @@
+Q: What is smenu?
+
+A: smenu is a selection tool which acts as a filter that takes words
+   from the standard input or a file and presents them on the screen in
+   various ways in a scrolling window.
+
+   A cursor that you can easily move allows you to select one or more
+   of them.
+
+   The selected words are printed on the standard output.
+--------
+Q: Why smenu tells me: "The length of a word has reached the limit of
+   512 characters." but there is no such word in my entry?
+
+A: There is a good chance you have an unbalanced quote, single or double,
+   somewhere. smenu uses quotation marks to be able to have spaces in
+   'words', and these quotation marks that do not serve as delimiters
+   must be protected.
+
+   You can use something like: sed -e "s/'/\\\'/g" -e 's/"/\\"/g' to
+   pre-process the input in such a case.
