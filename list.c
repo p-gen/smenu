@@ -190,7 +190,7 @@ ll_insert_after(ll_t * const list, ll_node_t * node, void * const data)
 /* Based on code found here:                              */
 /* http://www.geeksforgeeks.org/quicksort-for-linked-list */
 /* ====================================================== */
-static ll_node_t *
+ll_node_t *
 ll_partition(ll_node_t * l, ll_node_t * h, int (*comp)(void *, void *),
              void (*swap)(void *, void *))
 {
@@ -225,7 +225,7 @@ ll_partition(ll_node_t * l, ll_node_t * h, int (*comp)(void *, void *),
 /* ======================================================= */
 /* A recursive implementation of quicksort for linked list */
 /* ======================================================= */
-static void
+void
 ll_quicksort(ll_node_t * l, ll_node_t * h, int (*comp)(void *, void *),
              void (*swap)(void * a, void *))
 {

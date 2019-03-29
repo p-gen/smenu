@@ -939,7 +939,7 @@ update_bitmaps(search_mode_t mode, search_data_t * data,
 
       /* starts points to the first UTF-8 glyph og the word */
       /* """""""""""""""""""""""""""""""""""""""""""""""""" */
-      while (start - str < word_a[n].len - daccess.flength)
+      while ((size_t)(start - str) < word_a[n].len - daccess.flength)
       {
         /* Reset the bitmap */
         /* """""""""""""""" */
@@ -4184,8 +4184,7 @@ get_line_last_word(long line, long last_line)
 /* the variable 'current' if an adequate word is found.                 */
 /* ==================================================================== */
 int
-find_best_word_upward(win_t * win, term_t * term, long line, long last_word,
-                      long s, long e)
+find_best_word_upward(long last_word, long s, long e)
 {
   int  found = 0;
   long index;
@@ -4260,8 +4259,7 @@ find_best_word_upward(win_t * win, term_t * term, long line, long last_word,
 /* the variable 'current' if an adequate word is found.                 */
 /* ==================================================================== */
 int
-find_best_word_downward(win_t * win, term_t * term, long line, long last_word,
-                        long s, long e)
+find_best_word_downward(long last_word, long s, long e)
 {
   int  found = 0;
   long index;
@@ -4419,7 +4417,7 @@ move_up(win_t * win, term_t * term, toggle_t * toggle,
       /* """""""""""""""""""""""""""""""""""""""""""""" */
       line      = first_selectable_line;
       last_word = get_line_last_word(line, last_line);
-      find_best_word_upward(win, term, line, last_word, s, e);
+      find_best_word_upward(last_word, s, e);
     }
     else
     {
@@ -4434,7 +4432,7 @@ move_up(win_t * win, term_t * term, toggle_t * toggle,
       {
         line      = first_selectable_line;
         last_word = get_line_last_word(line, last_line);
-        find_best_word_upward(win, term, line, last_word, s, e);
+        find_best_word_upward(last_word, s, e);
       }
       else
       {
@@ -4445,7 +4443,7 @@ move_up(win_t * win, term_t * term, toggle_t * toggle,
         {
           last_word = get_line_last_word(line, last_line);
 
-          if (find_best_word_upward(win, term, line, last_word, s, e))
+          if (find_best_word_upward(last_word, s, e))
           {
             found = 1;
             break;
@@ -4584,7 +4582,7 @@ move_down(win_t * win, term_t * term, toggle_t * toggle,
       /* """""""""""""""""""""""""""""""""""""""""""""" */
       line      = last_selectable_line;
       last_word = get_line_last_word(line, last_line);
-      find_best_word_downward(win, term, line, last_word, s, e);
+      find_best_word_downward(last_word, s, e);
     }
     else
     {
@@ -4599,7 +4597,7 @@ move_down(win_t * win, term_t * term, toggle_t * toggle,
       {
         line      = last_selectable_line;
         last_word = get_line_last_word(line, last_line);
-        find_best_word_downward(win, term, line, last_word, s, e);
+        find_best_word_downward(last_word, s, e);
       }
       else
       {
@@ -4610,7 +4608,7 @@ move_down(win_t * win, term_t * term, toggle_t * toggle,
         {
           last_word = get_line_last_word(line, last_line);
 
-          if (find_best_word_downward(win, term, line, last_word, s, e))
+          if (find_best_word_downward(last_word, s, e))
           {
             found = 1;
             break;
@@ -6682,6 +6680,11 @@ main(int argc, char * argv[])
         strcat(timeout_message, timeout_word);
         strcat(timeout_message, "\"]");
         break;
+
+      default:
+        /* The other cases are impossible due to options analysis */
+        /* '''''''''''''''''''''''''''''''''''''''''''''''''''''' */
+        timeout_message = xstrdup("      "); /* Just in case. */
     }
 
     timeout_seconds = xcalloc(1, 6);

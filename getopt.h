@@ -15,16 +15,18 @@
 /* setting of 'opterr' and 'opterrfd').  Note that this version of     */
 /* TELL() doesn't require the existence of stdio.h.                    */
 /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-#define TELL(S)                                       \
-  {                                                   \
-    ssize_t dummy_rc;                                 \
-    if (eopterr && eopterrfd >= 0)                    \
-    {                                                 \
-      char option = (char)eoptopt;                    \
-      dummy_rc    = write(eopterrfd, (S), strlen(S)); \
-      dummy_rc    = write(eopterrfd, &option, 1);     \
-      dummy_rc    = write(eopterrfd, "\n", 1);        \
-    }                                                 \
+#define TELL(S)                             \
+  {                                         \
+    if (eopterr && eopterrfd >= 0)          \
+    {                                       \
+      char option = (char)eoptopt;          \
+      if (write(eopterrfd, (S), strlen(S))) \
+        ;                                   \
+      if (write(eopterrfd, &option, 1))     \
+        ;                                   \
+      if (write(eopterrfd, "\n", 1))        \
+        ;                                   \
+    }                                       \
   }
 
 int
