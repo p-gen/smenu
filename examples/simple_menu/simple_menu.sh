@@ -14,7 +14,8 @@ typeset -A CENTERING_ARRAY
 typeset -A TITLE_ARRAY
 typeset -A ERASE_ARRAY
 
-SEL= # The selection
+SEL=   # The selection
+SMENU= # The smenu path will be stored here
 
 # ============================ #
 # Usage function, always fails #
@@ -140,7 +141,7 @@ function process_menu
 
   # Display the menu and get the selection
   # """"""""""""""""""""""""""""""""""""""
-  SEL=$(echo "$MENU" | ../../smenu          \
+  SEL=$(echo "$MENU" | $SMENU               \
                          $CENTERING         \
                          $ERASE             \
                          -N                 \
@@ -155,9 +156,10 @@ function process_menu
   SEL=${SEL%% *}
 }
 
-# Check for the presence of ../../smenu
-# """""""""""""""""""""""""""""""""""""
-[[ -x ../../smenu ]] || error "smenu is not there, please build it."
+# Check for the presence of smenu
+# """""""""""""""""""""""""""""""
+SMENU=$(which smenu 2>/dev/null)
+[[ -x "$SMENU" ]] || error "smenu is not in the PATH or not executable."
 
 # Initialize the menu stack with the argument
 # """""""""""""""""""""""""""""""""""""""""""

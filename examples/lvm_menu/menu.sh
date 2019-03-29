@@ -3,7 +3,8 @@
 # ################################################################ #
 # Frontend to smenu to display a nice menu                         #
 #                                                                  #
-# FLAGS: -i    (optional) add some help in the title               #
+# FLAGS: -p    The path of the smenu program                       #
+#        -i    (optional) add some help in the title               #
 #                                                                  #
 # ARGS:  $1    (required) must contain a string which will become  #
 #                         the menu title                           #
@@ -26,9 +27,12 @@ declare integer INFO=0
 
 # Option processing
 # """""""""""""""""
-while getopts ih OPT 2>/dev/null
+while getopts p:ih OPT 2>/dev/null
 do
   case ${OPT} in
+    p)   SMENU=${OPTARG}
+         ;;
+
     i)   INFO=1
          ;;
 
@@ -53,7 +57,7 @@ fi
 
 # Menu display
 # """"""""""""
-REP=$(../../smenu "$TITLE"                 \
+REP=$($SMENU "$TITLE"                      \
             -s /Exit                       \
             -q -d -M -n 30 -c -w           \
             -U "Exit menu"                 \

@@ -1,5 +1,19 @@
 #!/usr/bin/env bash
 
+# ==================== #
+# Fatal error function #
+# ==================== #
+function error
+{
+  echo $* >&2
+  exit 1
+}
+
+# Check for the presence of smenu
+# """""""""""""""""""""""""""""""
+SMENU=$(which smenu 2>/dev/null)
+[[ -x "$SMENU" ]] || error "smenu is not in the PATH or not executable."
+
 MENU+="\
 'Create' 'Delete' 'Extend' 'Shrink'
 'VGC VG' 'VGD VG' 'VGE VG' 'VGS VG'
@@ -19,7 +33,7 @@ do
    echo
 
    MESSAGE="LVM management"
-   read REP <<< $(echo "$MENU" | ./menu.sh -i "$MESSAGE" "-Re1")
+   read REP <<< $(echo "$MENU" | ./menu.sh -p $SMENU -i "$MESSAGE" "-Re1")
 
    case $REP in
      ABORT) exit 1         ;;
