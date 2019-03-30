@@ -4,22 +4,25 @@ What is it?
 ===========
 **smenu** is a selection filter just like ``sed`` is an editing filter.
 
-This simple tool reads words from the standard input, presents them in
-a cool interactive window after the current line on the terminal and writes
-the selected word, if any, on the standard output.
+This tool takes words from standard input or from a file and presents
+them on the screen in different layouts in a scrolling window.
+A cursor that you can easily move lets you select one or more of them.
 
-After having unsuccessfully searched the NET for what I wanted, I
-decided to try to write my own.
+Note that the screen is not previously cleared when the scrolling window
+of **smenu** is displayed.
 
-I have tried hard to made its usage as simple as possible. It should
-work, even when using an old ``vt100`` terminal and is ``UTF-8`` aware.
+I tried to make its use as simple as possible. It supports the ``UTF-8``
+encoding and should work on all terminals managed by the ``terminfo``
+database.
+
+Please use the included man page to learn more about this little program.
 
 The wiki (https://github.com/p-gen/smenu/wiki) contains screenshots and
-animations that detail some of the concepts and features of smenu.
+animations that detail some of the concepts and features of **smenu**.
 
 How to build it?
 ================
-**smenu** can be built on every system where a working ``terminfo``
+**smenu** can be built on any system on which a working ``terminfo``
 development platform is available. This includes every Unix and
 Unix-like system I am aware of.
 
@@ -72,10 +75,6 @@ A cursor should be under ``"VmHWM "``.
 After having moved the cursor to ``"      136 kB"`` and ended the program
 with ``<Enter>``, the shell variable R should contain: ``"      136 kB"``.
 
-.. raw:: pdf
-
-  PageBreak
-
 Unix example.
 -------------
 The following command, which is Unix brand agnostic, should give you a
@@ -117,7 +116,7 @@ The included testing system is relatively young, please be indulgent.
 
 **NOTE** on some systems like \*BSD some tests may fail. This can be
 explained by differences in posix/libc/... implementations.  This can
-notably occur when some specific regular expressions or uncommon UTF-8
+notably occur when some specific regular expressions or uncommon ``UTF-8``
 byte sequences are used.
 
 If a test fails for unknown reason, then please send me its directory
@@ -128,7 +127,3 @@ test in the ``tests`` directory in an existing or new directory: read the
 ``tests/README.rst`` file, use an existing test as model, create an
 ``.in`` file and a ``.tst`` file and send them to me as well as the
 produced files.
-
-Interested?
------------
-Please use the included man page to learn more about this little program.

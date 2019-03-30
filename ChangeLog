@@ -5,6 +5,8 @@
     in numbered mode has been fixed
   + The PgUp/PgDn moves have been fixed and improved in the presence of
     excluded words
+  + The height of the windows when a message is present is now correctly
+    calculated
   + The SIGINT signal handling is working properly now
   + A vt100 terminal is assumed when the environment variable TERM
     is unset
