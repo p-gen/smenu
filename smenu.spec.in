@@ -30,7 +30,7 @@ BuildRoot:      %{_tmppath}/%{name}-%{version}-build
 %description
 This tool reads words from a file or standard input, presents them in an
 interactive window after the current line on the terminal, and writes the
-selected word, if any, to standard output.
+selected words, if any, to standard output.
 
 %prep
 %setup -q
