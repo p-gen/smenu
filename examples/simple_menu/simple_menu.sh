@@ -177,15 +177,15 @@ while true; do
     # Back to the previous menu
     # '''''''''''''''''''''''''
     if (( ${#MENU_STACK[*]} == 1 )); then
-      process_menu ${MENU_STACK[-1]}
+      process_menu ${MENU_STACK[${#MENU_STACK[*]}-1]} 
     else
       # Unstack the newly found submenu
       # '''''''''''''''''''''''''''''''
-      unset MENU_STACK[-1]
+      unset ${MENU_STACK[${#MENU_STACK[*]}-1]}
 
       # And generate the previous menu
       # ''''''''''''''''''''''''''''''
-      process_menu ${MENU_STACK[-1]}
+      process_menu ${MENU_STACK[${#MENU_STACK[*]}-1]}
     fi
 
   elif [[ $SEL == ">"* ]]; then
