@@ -127,3 +127,9 @@ test in the ``tests`` directory in an existing or new directory: read the
 ``tests/README.rst`` file, use an existing test as model, create an
 ``.in`` file and a ``.tst`` file and send them to me as well as the
 produced files.
+
+Special thanks.
+---------------
+I want to thank everyone who took the time to pack *smenu* for an easy
+installation in their operating system or distributions. Look here to
+find their names: https://repology.org/project/smenu/packages
