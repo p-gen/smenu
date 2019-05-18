@@ -53,9 +53,6 @@ ll_new_node(void)
 {
   ll_node_t * ret = xmalloc(sizeof(ll_node_t));
 
-  if (ret == NULL)
-    errno = ENOMEM;
-
   return ret;
 }
 
