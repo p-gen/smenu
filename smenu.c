@@ -879,7 +879,7 @@ update_bitmaps(search_mode_t mode, search_data_t * data,
   char * bm; /* the word's current bitmap                                 */
 
   char * str;      /* copy of the current word put in lower case          */
-  char * str_orig; /* oiginal version of the word                         */
+  char * str_orig; /* original version of the word                        */
 
   char * first_glyph;
 
@@ -937,7 +937,7 @@ update_bitmaps(search_mode_t mode, search_data_t * data,
       start = str;
       lmg   = 0;
 
-      /* starts points to the first UTF-8 glyph og the word */
+      /* starts points to the first UTF-8 glyph of the word */
       /* """""""""""""""""""""""""""""""""""""""""""""""""" */
       while ((size_t)(start - str) < word_a[n].len - daccess.flength)
       {
@@ -946,7 +946,7 @@ update_bitmaps(search_mode_t mode, search_data_t * data,
         memset(bm, '\0', bm_len);
 
         /* Compare the glyph pointed to by start to the last glyph of */
-        /* the search buffer, the aim is to pinte to the first        */
+        /* the search buffer, the aim is to point to the first        */
         /* occurrence of the last glyph of it.                        */
         /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
         if (memcmp(start, sb + o[last], l[last]) == 0)
@@ -1012,7 +1012,7 @@ update_bitmaps(search_mode_t mode, search_data_t * data,
         free(str);
 
         /* We know that the first glyph is part of the pattern, so        */
-        /* highlight it if it is not and un-highlight the next occurrence */
+        /* highlight it if it is not and unhighlight the next occurrence  */
         /* that must be here because this word has already been filtered  */
         /* by select_starting_pattern()                                   */
         /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
@@ -4827,7 +4827,7 @@ main(int argc, char * argv[])
   regex_t daccess_np_re; /* variable to store the compiled direct access     *
                           * pattern (-N) RE                                  */
 
-  char *  daccess_up = NULL; /* direct access un-numbered pattern            */
+  char *  daccess_up = NULL; /* direct access not numbered pattern           */
   regex_t daccess_up_re; /* variable to store the compiled direct access     *
                           * pattern (-U) RE                                  */
 
@@ -9104,8 +9104,8 @@ main(int argc, char * argv[])
 
         case 'n':
         case ' ':
-          /* n or the sspace bar has been pressed */
-          /* """""""""""""""""""""""""""""""""""" */
+          /* n or the space bar has been pressed */
+          /* """"""""""""""""""""""""""""""""""" */
           if (search_mode != NONE)
             goto special_cmds_when_searching;
 
