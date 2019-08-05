@@ -1212,10 +1212,10 @@ Then this quite esoteric command will render it (centered on the screen) as:
 
 with the cursor on \fIQuit\fP and only the numbers and "Quit" selectable.
 
-\f(CBR=$(smenu R=$(./smenu -q -d -s/Exit -M -n 30 -c      \\
-                      -e "@+" -E '/@+/ /'            \\
-                      -F -D n:1 i:1                  \\
-                      -m "Test menu"$'\n' < sample.mnu)
+\f(CBR=$(smenu -q -d -s/Exit -M -n 30 -c        \\
+          -e "@+" -E '/@+/ /'              \\
+          -F -D n:1 i:1                    \\
+          -m "Test menu"$'\\n' < sample.mnu)
 
 The selected entry will be available in \f(CBR\fP
 
