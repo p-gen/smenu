@@ -10,9 +10,9 @@
 #define WORDSCHUNK 8
 #define COLSCHUNK 16
 
-#define TPARM1(p, ...) tparm(p, 0, 0, 0, 0, 0, 0, 0, 0, 0)
-#define TPARM2(p, q, ...) tparm(p, q, 0, 0, 0, 0, 0, 0, 0, 0)
-#define TPARM3(p, q, r, ...) tparm(p, q, r, 0, 0, 0, 0, 0, 0, 0)
+#define TPARM1(p) tparm(p, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+#define TPARM2(p, q) tparm(p, q, 0, 0, 0, 0, 0, 0, 0, 0)
+#define TPARM3(p, q, r) tparm(p, q, r, 0, 0, 0, 0, 0, 0, 0)
 
 #define _XOPEN_SOURCE 700
 
@@ -51,12 +51,82 @@ typedef struct output_s      output_t;
 typedef struct daccess_s     daccess_t;
 typedef struct search_data_s search_data_t;
 
-typedef enum filter_types       filters_t;
-typedef enum daccess_modes      da_mode_t;
-typedef enum timeout_modes      to_mode_t;
-typedef enum attribute_settings attr_set_t;
-typedef enum search_modes       search_mode_t;
-typedef enum bitmap_affinities  bitmap_affinity_t;
+/* Various filter pseudo constants */
+/* """"""""""""""""""""""""""""""" */
+typedef enum filter_types
+{
+  UNKNOWN_FILTER,
+  INCLUDE_FILTER,
+  EXCLUDE_FILTER
+} filters_t;
+
+/* Used by the -N -F and -D options */
+/* """""""""""""""""""""""""""""""" */
+typedef enum daccess_modes
+{
+  DA_TYPE_NONE = 0, /* must be 0 (boolean value) */
+  DA_TYPE_AUTO = 1,
+  DA_TYPE_POS  = 2
+} da_mode_t;
+
+/* Various timeout mode used by the -x/-X option */
+/* """"""""""""""""""""""""""""""""""""""""""""" */
+typedef enum timeout_modes
+{
+  CURRENT, /* on timeout, outputs the selected word       */
+  QUIT,    /* on timeout, quit without selecting anything */
+  WORD     /* on timeout , outputs the specified word     */
+} to_mode_t;
+
+/* Constants used to set the color attributes */
+/* """""""""""""""""""""""""""""""""""""""""" */
+typedef enum attribute_settings
+{
+  UNSET = 0, /* must be 0 for future testings */
+  SET,
+  FORCED /* an attribute setting has been given in the command line */
+} attr_set_t;
+
+/* Constant to distinguish between the various search modes */
+/* """""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+typedef enum search_modes
+{
+  NONE,
+  PREFIX,
+  FUZZY,
+  SUBSTRING
+} search_mode_t;
+
+/* Constants used in search mode to orient the bit-mask building */
+/* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+typedef enum bitmap_affinities
+{
+  NO_AFFINITY,
+  END_AFFINITY,
+  START_AFFINITY
+} bitmap_affinity_t;
+
+/* Used when managing the -R option */
+/* """""""""""""""""""""""""""""""" */
+enum
+{
+  ROW_REGEX_EXCLUDE = 0, /* must be 0 (boolean value) */
+  ROW_REGEX_INCLUDE = 1
+};
+
+/* Used when managing the -C option */
+/* """""""""""""""""""""""""""""""" */
+enum
+{
+  EXCLUDE_MARK = 0,      /* must be 0 because used in various tests     *
+                          * these words cannot be re-included           */
+  INCLUDE_MARK = 1,      /* to forcibly include a word, these words can *
+                          * be excluded later                           */
+  SOFT_EXCLUDE_MARK = 2, /* word with this mark are excluded by default *
+                          * but can be included later                   */
+  SOFT_INCLUDE_MARK = 3  /* word with this mark are included by default *
+                          * but can be excluded later                   */
+};
 
 /* ********** */
 /* Prototypes */
@@ -249,86 +319,9 @@ move_down(win_t * win, term_t * term, toggle_t * toggle,
           search_data_t * search_data, langinfo_t * langinfo, long * nl,
           long page, long last_selectable, long last_line, char * tmp_word);
 
-/* ***************** */
-/* Emums and structs */
-/* ***************** */
-
-/* Various filter pseudo constants */
-/* """"""""""""""""""""""""""""""" */
-enum filter_types
-{
-  UNKNOWN_FILTER,
-  INCLUDE_FILTER,
-  EXCLUDE_FILTER
-};
-
-/* Used by the -N -F and -D options */
-/* """""""""""""""""""""""""""""""" */
-enum daccess_modes
-{
-  DA_TYPE_NONE = 0, /* must be 0 (boolean value) */
-  DA_TYPE_AUTO = 1,
-  DA_TYPE_POS  = 2
-};
-
-/* Used when managing the -R option */
-/* """""""""""""""""""""""""""""""" */
-enum row_regex_types
-{
-  ROW_REGEX_EXCLUDE = 0, /* must be 0 (boolean value) */
-  ROW_REGEX_INCLUDE = 1
-};
-
-/* Used when managing the -C option */
-/* """""""""""""""""""""""""""""""" */
-enum filter_infos
-{
-  EXCLUDE_MARK = 0,      /* must be 0 because used in various tests     *
-                          * these words cannot be re-included           */
-  INCLUDE_MARK = 1,      /* to forcibly include a word, these words can *
-                          * be excluded later                           */
-  SOFT_EXCLUDE_MARK = 2, /* word with this mark are excluded by default *
-                          * but can be included later                   */
-  SOFT_INCLUDE_MARK = 3  /* word with this mark are included by default *
-                          * but can be excluded later                   */
-};
-
-/* Various timeout mode used by the -x/-X option */
-/* """"""""""""""""""""""""""""""""""""""""""""" */
-enum timeout_modes
-{
-  CURRENT, /* on timeout, outputs the selected word       */
-  QUIT,    /* on timeout, quit without selecting anything */
-  WORD     /* on timeout , outputs the specified word     */
-};
-
-/* Constants used to set the color attributes */
-/* """""""""""""""""""""""""""""""""""""""""" */
-enum attribute_settings
-{
-  UNSET = 0, /* must be 0 for future testings */
-  SET,
-  FORCED /* an attribute setting has been given in the command line */
-};
-
-/* Constant to distinguish between the various search modes */
-/* """""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-enum search_modes
-{
-  NONE,
-  PREFIX,
-  FUZZY,
-  SUBSTRING
-};
-
-/* Constants used in search mode to orient the bit-mask building */
-/* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-enum bitmap_affinities
-{
-  NO_AFFINITY,
-  END_AFFINITY,
-  START_AFFINITY
-};
+/* ******* */
+/* structs */
+/* ******* */
 
 /* Used to store the different allowed charsets data */
 /* """"""""""""""""""""""""""""""""""""""""""""""""" */
