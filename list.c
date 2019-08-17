@@ -126,7 +126,6 @@ ll_prepend(ll_t * const list, void * const data)
 
 /* ======================================================= */
 /* Insert a new node before the specified node in the list */
-/* TODO test it                                            */
 /* ======================================================= */
 void
 ll_insert_before(ll_t * const list, ll_node_t * node, void * const data)
@@ -146,6 +145,7 @@ ll_insert_before(ll_t * const list, ll_node_t * node, void * const data)
         new_node->next   = node;
         new_node->prev   = node->prev;
         node->prev->next = new_node;
+        node->prev       = new_node;
 
         ++list->len;
       }
@@ -155,7 +155,6 @@ ll_insert_before(ll_t * const list, ll_node_t * node, void * const data)
 
 /* ====================================================== */
 /* Insert a new node after the specified node in the list */
-/* TODO test it                                           */
 /* ====================================================== */
 void
 ll_insert_after(ll_t * const list, ll_node_t * node, void * const data)
@@ -175,6 +174,7 @@ ll_insert_after(ll_t * const list, ll_node_t * node, void * const data)
         new_node->prev   = node;
         new_node->next   = node->next;
         node->next->prev = new_node;
+        node->next       = new_node;
 
         ++list->len;
       }
