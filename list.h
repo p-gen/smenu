@@ -31,10 +31,10 @@ struct ll_s
   long        len;
 };
 
-int
+void
 ll_append(ll_t * const list, void * const data);
 
-int
+void
 ll_prepend(ll_t * const list, void * const data);
 
 void

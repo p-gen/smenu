@@ -59,69 +59,59 @@ ll_new_node(void)
 /* ==================================================================== */
 /* Append a new node filled with its data at the end of the linked list */
 /* The user is responsible for the memory management of the data        */
+/*                                                                      */
+/* Note: list is assumed to be initialized by ll_new()                  */
 /* ==================================================================== */
-int
+void
 ll_append(ll_t * const list, void * const data)
 {
-  int         ret = 1;
   ll_node_t * node;
 
-  if (list)
-  {
-    node = ll_new_node();
-    if (node)
-    {
-      node->data = data;
-      node->next = NULL;
+  node = ll_new_node(); /* ll_new_node cannot return NULL because it   *
+                         * uses xmalloc which does not return if there *
+                         * is an allocation error.                     */
 
-      node->prev = list->tail;
-      if (list->tail)
-        list->tail->next = node;
-      else
-        list->head = node;
+  node->data = data;
+  node->next = NULL;
 
-      list->tail = node;
+  node->prev = list->tail;
+  if (list->tail)
+    list->tail->next = node;
+  else
+    list->head = node;
 
-      ++list->len;
-      ret = 0;
-    }
-  }
+  list->tail = node;
 
-  return ret;
+  ++list->len;
 }
 
 /* =================================================================== */
 /* Put a new node filled with its data at the beginning of the linked  */
 /* list. The user is responsible for the memory management of the data */
+/*                                                                     */
+/* Note: list is assumed to be initialized by ll_new()                 */
 /* =================================================================== */
-int
+void
 ll_prepend(ll_t * const list, void * const data)
 {
-  int         ret = 1;
   ll_node_t * node;
 
-  if (list)
-  {
-    node = ll_new_node();
-    if (node)
-    {
-      node->data = data;
-      node->prev = NULL;
+  node = ll_new_node(); /* ll_new_node cannot return NULL because it   *
+                         * uses xmalloc which does not return if there *
+                         * is an allocation error.                     */
 
-      node->next = list->head;
-      if (list->head)
-        list->head->prev = node;
-      else
-        list->tail = node;
+  node->data = data;
+  node->prev = NULL;
 
-      list->head = node;
+  node->next = list->head;
+  if (list->head)
+    list->head->prev = node;
+  else
+    list->tail = node;
 
-      ++list->len;
-      ret = 0;
-    }
-  }
+  list->head = node;
 
-  return ret;
+  ++list->len;
 }
 
 /* ======================================================= */
@@ -132,24 +122,21 @@ ll_insert_before(ll_t * const list, ll_node_t * node, void * const data)
 {
   ll_node_t * new_node;
 
-  if (list)
+  if (node->prev == NULL)
+    ll_prepend(list, data);
+  else
   {
-    if (node->prev == NULL)
-      ll_prepend(list, data);
-    else
-    {
-      new_node = ll_new_node();
-      if (new_node)
-      {
-        new_node->data   = data;
-        new_node->next   = node;
-        new_node->prev   = node->prev;
-        node->prev->next = new_node;
-        node->prev       = new_node;
+    node = ll_new_node(); /* ll_new_node cannot return NULL because it   *
+                           * uses xmalloc which does not return if there *
+                           * is an allocation error.                     */
 
-        ++list->len;
-      }
-    }
+    new_node->data   = data;
+    new_node->next   = node;
+    new_node->prev   = node->prev;
+    node->prev->next = new_node;
+    node->prev       = new_node;
+
+    ++list->len;
   }
 }
 
@@ -161,24 +148,21 @@ ll_insert_after(ll_t * const list, ll_node_t * node, void * const data)
 {
   ll_node_t * new_node;
 
-  if (list)
+  if (node->next == NULL)
+    ll_append(list, data);
+  else
   {
-    if (node->next == NULL)
-      ll_append(list, data);
-    else
-    {
-      new_node = ll_new_node();
-      if (new_node)
-      {
-        new_node->data   = data;
-        new_node->prev   = node;
-        new_node->next   = node->next;
-        node->next->prev = new_node;
-        node->next       = new_node;
+    node = ll_new_node(); /* ll_new_node cannot return NULL because it   *
+                           * uses xmalloc which does not return if there *
+                           * is an allocation error.                     */
 
-        ++list->len;
-      }
-    }
+    new_node->data   = data;
+    new_node->prev   = node;
+    new_node->next   = node->next;
+    node->next->prev = new_node;
+    node->next       = new_node;
+
+    ++list->len;
   }
 }
 
