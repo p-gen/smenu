@@ -22,6 +22,10 @@
 #include "xmalloc.h"
 #include "list.h"
 
+static ll_node_t *
+ll_partition(ll_node_t * l, ll_node_t * h, int (*comp)(void *, void *),
+             void (*swap)(void *, void *));
+
 /* ======================== */
 /* Create a new linked list */
 /* ======================== */
@@ -85,6 +89,7 @@ ll_append(ll_t * const list, void * const data)
   ++list->len;
 }
 
+#if 0
 /* =================================================================== */
 /* Put a new node filled with its data at the beginning of the linked  */
 /* list. The user is responsible for the memory management of the data */
@@ -113,7 +118,9 @@ ll_prepend(ll_t * const list, void * const data)
 
   ++list->len;
 }
+#endif
 
+#if 0
 /* ======================================================= */
 /* Insert a new node before the specified node in the list */
 /* ======================================================= */
@@ -126,9 +133,9 @@ ll_insert_before(ll_t * const list, ll_node_t * node, void * const data)
     ll_prepend(list, data);
   else
   {
-    node = ll_new_node(); /* ll_new_node cannot return NULL because it   *
-                           * uses xmalloc which does not return if there *
-                           * is an allocation error.                     */
+    new_node = ll_new_node(); /* ll_new_node cannot return NULL because it   *
+                               * uses xmalloc which does not return if there *
+                               * is an allocation error.                     */
 
     new_node->data   = data;
     new_node->next   = node;
@@ -139,7 +146,9 @@ ll_insert_before(ll_t * const list, ll_node_t * node, void * const data)
     ++list->len;
   }
 }
+#endif
 
+#if 0
 /* ====================================================== */
 /* Insert a new node after the specified node in the list */
 /* ====================================================== */
@@ -152,9 +161,9 @@ ll_insert_after(ll_t * const list, ll_node_t * node, void * const data)
     ll_append(list, data);
   else
   {
-    node = ll_new_node(); /* ll_new_node cannot return NULL because it   *
-                           * uses xmalloc which does not return if there *
-                           * is an allocation error.                     */
+    new_node = ll_new_node(); /* ll_new_node cannot return NULL because it   *
+                               * uses xmalloc which does not return if there *
+                               * is an allocation error.                     */
 
     new_node->data   = data;
     new_node->prev   = node;
@@ -165,13 +174,14 @@ ll_insert_after(ll_t * const list, ll_node_t * node, void * const data)
     ++list->len;
   }
 }
+#endif
 
 /* ====================================================== */
 /* Partition code for the quicksort function              */
 /* Based on code found here:                              */
 /* http://www.geeksforgeeks.org/quicksort-for-linked-list */
 /* ====================================================== */
-ll_node_t *
+static ll_node_t *
 ll_partition(ll_node_t * l, ll_node_t * h, int (*comp)(void *, void *),
              void (*swap)(void *, void *))
 {

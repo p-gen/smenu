@@ -34,18 +34,20 @@ struct ll_s
 void
 ll_append(ll_t * const list, void * const data);
 
+#if 0
 void
 ll_prepend(ll_t * const list, void * const data);
+#endif
 
+#if 0
 void
 ll_insert_before(ll_t * const list, ll_node_t * node, void * const data);
+#endif
 
+#if 0
 void
 ll_insert_after(ll_t * const list, ll_node_t * node, void * const data);
-
-ll_node_t *
-ll_partition(ll_node_t * l, ll_node_t * h, int (*comp)(void *, void *),
-             void (*swap)(void *, void *));
+#endif
 
 void
 ll_quicksort(ll_node_t * l, ll_node_t * h, int (*comp)(void *, void *),
