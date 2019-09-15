@@ -7,9 +7,9 @@
 #define USAGE_H
 
 void
-short_usage(int must_exit);
+main_usage(void);
 
 void
-usage(void);
+da_ctx_usage(void);
 
 #endif

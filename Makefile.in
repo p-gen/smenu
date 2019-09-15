@@ -104,7 +104,7 @@ am__installdirs = "$(DESTDIR)$(bindir)" "$(DESTDIR)$(man1dir)"
 PROGRAMS = $(bin_PROGRAMS)
 am_smenu_OBJECTS = smenu.$(OBJEXT) list.$(OBJEXT) xmalloc.$(OBJEXT) \
 	index.$(OBJEXT) utf8.$(OBJEXT) fgetc.$(OBJEXT) utils.$(OBJEXT) \
-	getopt.$(OBJEXT) usage.$(OBJEXT)
+	usage.$(OBJEXT) ctxopt.$(OBJEXT)
 smenu_OBJECTS = $(am_smenu_OBJECTS)
 smenu_LDADD = $(LDADD)
 AM_V_P = $(am__v_P_@AM_V@)
@@ -309,7 +309,7 @@ top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 smenu_SOURCES = smenu.c smenu.h list.c list.h xmalloc.c xmalloc.h \
                 index.c index.h utf8.c utf8.h fgetc.c fgetc.h     \
-		utils.c utils.h getopt.c getopt.h usage.c usage.h
+		utils.c utils.h usage.c usage.h ctxopt.h ctxopt.c
 
 dist_man_MANS = smenu.1
 EXTRA_DIST = smenu.spec.in smenu.spec ChangeLog build.sh version  \
@@ -425,8 +425,8 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ctxopt.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/fgetc.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/getopt.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/index.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/list.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/smenu.Po@am__quote@

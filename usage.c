@@ -7,131 +7,116 @@
 #include <unistd.h>
 
 #include "usage.h"
-
-/* =================== */
-/* Short usage display */
-/* =================== */
-void
-short_usage(int must_exit)
-{
-  printf("\nUsage: smenu [-h|-?] [-f config_file] [-n [lines]] ");
-  printf("[-t [cols]] [-k] [-v]       \\\n");
-  printf("       [-s pattern] [-m message] [-w] [-d] [-M] [-c] [-l] ");
-  printf("[-r] [-b]            \\\n");
-  printf("       [-a prefix:attr [prefix:attr]...] ");
-  printf("[-i regex] [-e regex]                 \\\n");
-  printf("       [-C [i|e]<col selectors>] ");
-  printf("[-R [i|e]<row selectors>]                     \\\n");
-  printf("       [-S /regex/repl/[g][v][s][i]] ");
-  printf("[-I /regex/repl/[g][v][s][i]]             \\\n");
-  printf("       [-E /regex/repl/[g][v][s][i]] ");
-  printf("[-A regex] [-Z regex]                     \\\n");
-  printf("       [-N [regex]] [-U [regex]] [-F] [-D arg...] ");
-  printf("                             \\\n");
-  printf("       [-1 regex [attr]] [-2 regex [attr]]... ");
-  printf("[-5 regex [attr]] [-g [string]]  \\\n");
-  printf("       [-q] [-W bytes] [-L bytes] [-T [separator]] ");
-  printf("[-P [separator]] [-p]       \\\n");
-  printf("       [-V] [-x|-X current|quit|word [<word>] ");
-  printf("<seconds>]                       \\\n");
-  printf("       [-/ prefix|substring|fuzzy] [--] [input_file]\n\n");
-  printf("       <col selectors> ::= col1[-col2]...|<RE>...\n");
-  printf("       <row selectors> ::= row1[-row2]...|<RE>...\n");
-  printf("       <prefix>        ::= i|e|c|b|s|m|t|ct|sf|st|mf|mt|");
-  printf("sfe|ste|mfe|mte|da\n");
-  printf("       <arg>           ::= [l|r:<char>]|[a:l|r]|[p:i|a]|");
-  printf("[w:<size>]|\n");
-  printf("                           [f:y|n]|[o:<num>[+]]|[n:<num>]|");
-  printf("[i:<num>]|[d:<char>]|\n");
-  printf("                           [s:<num>]|[h:t|c|k]\n");
-  printf("         Ex: l:'(' a:l\n");
-  printf("       <attr>          ::= [fg][/bg][,style] \n");
-  printf("         Ex: 7/4,bu\n");
-  printf("       <RE>            ::= <char>regex<char> \n");
-  printf("         Ex: /regex/ or :regex:\n\n");
-  printf("       <col/row selectors> and <RE> can be freely mixed ");
-  printf("when used\n");
-  printf("       with -C and -R (ex: 2,/x/,4-5).\n\n");
-
-  if (must_exit)
-    exit(EXIT_FAILURE);
-}
+#include "ctxopt.h"
 
 /* ====================== */
 /* Usage display and exit */
 /* ====================== */
 void
-usage(void)
+main_usage(void)
 {
-  short_usage(0);
+  ctxopt_disp_usage(continue_after);
 
-  printf("This is a filter that gets words from stdin ");
-  printf("and outputs the selected\n");
-  printf("words (or nothing) on stdout in a nice selection ");
+  printf("\n----------\n");
+  printf("\nThis is a filter that gets words from stdin or from a file and ");
+  printf("outputs\n");
+  printf("the selected words (or nothing) on stdout in a nice selection ");
   printf("window\n\n");
   printf("The selection window appears on /dev/tty ");
-  printf("immediately after the current line\n");
+  printf("just below the current line\n");
   printf("(no clear screen!).\n\n");
   printf("The following options are available:\n\n");
-  printf("-h displays this help.\n");
-  printf("-f selects an alternative configuration file.\n");
-  printf("-n sets the number of lines in the selection window.\n");
-  printf("-t tabulates the items. The number of columns can be limited "
-         "with\n");
-  printf("   an optional number.\n");
-  printf("-k does not trim spaces surrounding the output string if any.\n");
-  printf("-v makes the bell visual (fuzzy search with error).\n");
-  printf("-s sets the initial cursor position (read the manual for "
+  printf("-h|-help\n");
+  printf("  displays this help.\n");
+  printf("-f|-cfg|-config_file\n");
+  printf("  selects an alternative configuration file.\n");
+  printf("-n|-lines|-height\n");
+  printf("  sets the number of lines in the selection window.\n");
+  printf("-t|-tab_mode|-tabulate_mode\n");
+  printf("  tabulates the items. The number of columns can be limited with\n");
+  printf("  an optional number.\n");
+  printf("-k|-ks|-keep_spaces\n");
+  printf("  does not trim spaces surrounding the output string if any.\n");
+  printf("-v|-vb|-visual_bell\n");
+  printf("  makes the bell visual (fuzzy search with error).\n");
+  printf("-s|-sp|-start|-start_pattern\n");
+  printf("  sets the initial cursor position (read the manual for "
          "more details).\n");
-  printf("-m displays a one-line message above the window.\n");
-  printf("-w uses all the terminal width for the columns if their numbers "
+  printf("-m|-msg|-message|-title\n");
+  printf("  displays a one-line message above the window.\n");
+  printf("-w|-wt|-wide_tab_mode\n");
+  printf("  uses all the terminal width for the columns if their numbers "
          "is given.\n");
-  printf("-d deletes the selection window on exit.\n");
-  printf("-M centers the display if possible.\n");
-  printf("-c is like -t without argument but respects end of lines.\n");
-  printf("-l is like -c without column alignments.\n");
-  printf("-r enables ENTER to validate the selection even in "
-         "search mode.\n");
-  printf("-b displays the non printable characters as space.\n");
-  printf("-a sets the attributes for the various displayed ");
-  printf("elements.\n");
-  printf("-i sets the regex input filter to match the selectable words.\n");
-  printf("-e sets the regex input filter to match the non-selectable "
-         "words.\n");
-  printf("-C sets columns restrictions for selections.\n");
-  printf("-R sets rows restrictions for selections.\n");
-  printf("-S sets the post-processing action to apply to all words.\n");
-  printf("-I sets the post-processing action to apply to selectable "
+  printf("-d|-delete_window|-clean_window\n");
+  printf("  deletes the selection window on exit.\n");
+  printf("-M|-middle|-center\n");
+  printf("  centers the display if possible.\n");
+  printf("-c|-col|-col_mode|-column\n");
+  printf("  is like|-t without argument but respects end of lines.\n");
+  printf("-l|-line|-line_mode\n");
+  printf("  is like|-c without column alignments.\n");
+  printf("-r|-auto_validate\n");
+  printf("  enables ENTER to validate the selection even in search mode.\n");
+  printf("-b|-blank\n");
+  printf("  displays non printable characters as space.\n");
+  printf("-a|-attributes\n");
+  printf("  sets the attributes for the various displayed elements.\n");
+  printf("-i|-include\n");
+  printf("  sets the regex input filter to match the selectable words.\n");
+  printf("-e|-exclude\n");
+  printf("  sets the regex input filter to match the non-selectable words.\n");
+  printf("-C|-cs|-col_select\n");
+  printf("  sets columns restrictions for selections.\n");
+  printf("-R|-rs|-row_select\n");
+  printf("  sets rows restrictions for selections.\n");
+  printf("-S|-subst\n");
+  printf("  sets the post-processing action to apply to all words.\n");
+  printf("-I|-si|-subst_included\n");
+  printf("  sets the post-processing action to apply to selectable "
          "words only.\n");
-  printf("-E sets the post-processing action to apply to non-selectable "
+  printf("-E|-se|-subst_excluded\n");
+  printf("  sets the post-processing action to apply to non-selectable "
          "words only.\n");
-  printf("-A forces a class of words to be the first of the line they "
+  printf("-A|-fc|-first_column\n");
+  printf("  forces a class of words to be the first of the line they "
          "appear in.\n");
-  printf("-Z forces a class of words to be the latest of the line they "
+  printf("-Z|-lc|-last_column\n");
+  printf("  forces a class of words to be the latest of the line they "
          "appear in.\n");
-  printf("-N/-U numbers/un-numbers and provides a direct access to words "
+  printf("-N|-number/-U|-unnumber\n");
+  printf("  numbers/un-numbers and provides a direct access to words "
          "matching\n");
-  printf("   (or not) a specific regex.\n");
-  printf("-F numbers and provides a direct access to words by extracting the "
+  printf("  (or not) a specific regex.\n");
+  printf("-F|-en|-embedded_number\n");
+  printf("  numbers and provides a direct access to words by extracting the "
          "number\n");
-  printf("   from the words.\n");
-  printf("-D sets sub-options to modify the behaviour of -N, -U and -F.\n");
-  printf("-1,-2,...,-5 gives specific colors to up to 5 classes of "
+  printf("  from the words.\n");
+  printf("-1|-l1|-level1,-2|-l2|-level2,...,-5|-l5|-level5\n");
+  printf("  gives specific colors to up to 5 classes of "
          "selectable words.\n");
-  printf("-g separates columns with a character in column or tabulate "
+  printf("-g|-gutter\n");
+  printf("  separates columns with a character in column or tabulate "
          "mode.\n");
-  printf("-q prevents the display of the scroll bar.\n");
-  printf("-W sets the input words separators.\n");
-  printf("-L sets the input lines separators.\n");
-  printf("-T/-P enables the tagging (multi-selections) mode. ");
+  printf("-q|-no_bar|-no-scroll_bar\n");
+  printf("  prevents the display of the scroll bar.\n");
+  printf("-W|-ws|-wd|-word_delimiters|-word_separators\n");
+  printf("  sets the input words separators.\n");
+  printf("-L|-ls|-ld|-line-delimiters|-line_separators\n");
+  printf("  sets the input lines separators.\n");
+  printf("-T|-tm|-tag_mode/-P|-pm|-pin_mode\n");
+  printf("  enables the tagging (multi-selections) mode. ");
   printf("An optional parameter\n");
-  printf("   sets the separator string between the selected words ");
+  printf("  sets the separator string between the selected words ");
   printf("on the output.\n");
-  printf("   A single space is the default separator.\n");
-  printf("-p activates the auto-tagging when using -T or -P.\n");
-  printf("-V displays the current version and quits.\n");
-  printf("-x|-X sets a timeout and specifies what to do when it expires.\n");
-  printf("-/ changes the affectation of the / key (default fuzzy search).\n");
+  printf("  A single space is the default separator.\n");
+  printf("-p|-at|-auto_tag\n");
+  printf("  activates the auto-tagging when using -T or -P.\n");
+  printf("-V|-version\n");
+  printf("  displays the current version and quits.\n");
+  printf("-x|-timeout/-X|-hidden_timeout\n");
+  printf("  sets a timeout and specifies what to do when it expires.\n");
+  printf("-/|-search_method\n");
+  printf("  changes the affectation of the / key (default fuzzy search).\n");
   printf("\nNavigation keys are:\n");
   printf("  - Left/Down/Up/Right arrows or h/j/k/l, H/J/K/L.\n");
   printf("  - Home/End, SHIFT|CTRL+Home/End CTRK+J/CTRL+K.\n");
@@ -160,7 +145,23 @@ usage(void)
   printf("- the timer can be cancelled by pressing ESC.\n");
   printf("- a bad search letter can be removed with ");
   printf("CTRL-H or Backspace.\n\n");
-  printf("(C) Pierre Gentile (2015).\n\n");
+  printf("(C) Pierre Gentile.\n\n");
+
+  exit(EXIT_FAILURE);
+}
+
+void
+da_ctx_usage(void)
+{
+  ctxopt_disp_usage(continue_after);
+
+  printf("\nDirect access specific help.\n\n");
+  printf("The following parameters are available in this context:\n\n");
+  printf("-h|-help\n");
+  printf("  displays this help.\n");
+  printf("-D|-data|-options:\n");
+  printf("  sets sub-options to modify the behaviour of -N|-number,\n");
+  printf("  -U|-unnumber and -F|-en|-embedded_number.\n");
 
   exit(EXIT_FAILURE);
 }
