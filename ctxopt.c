@@ -247,8 +247,8 @@ fatal(errors e, char * opt_par, char * opt_params, char * opt_name,
     fprintf(stderr, "\n");
   }
 
-  if (opt_par != NULL)
-    ctxopt_disp_usage(continue_after);
+  if (ctx_name != NULL)
+    ctxopt_ctx_disp_usage(ctx_name, continue_after);
 
   va_end(args);
 
@@ -264,7 +264,8 @@ error(const char * format, ...)
   vfprintf(stderr, format, args);
   va_end(args);
   fprintf(stderr, "\n");
-  ctxopt_disp_usage(exit_after);
+
+  exit(EXIT_FAILURE);
 }
 
 /* ******************************** */
@@ -1418,8 +1419,9 @@ bst_print_ctx_cb(const void * node, walk_order_e kind, int level)
   if (kind == postorder || kind == leaf)
     if (strcmp(ctx->name, cur_ctx->name) != 0)
     {
-      printf("\nOptions allowed in the context called %s:\n", cur_ctx->name);
       list = cur_ctx->opt_list;
+
+      printf("\nAllowed options in the context %s:\n", cur_ctx->name);
       print_options(list, &has_optional, &has_ellipsis, &has_rule,
                     &has_generic_arg, &has_ctx_change, &has_early_eval);
     }
@@ -1734,7 +1736,7 @@ opt_parse(char * s, opt_t ** opt)
     opt_optional = 1;
     s++;
   }
-  s = strtoken(s, token, sizeof(token), "[^] \t.]", &pos);
+  s = strtoken(s, token, sizeof(token), "[^] \n\t.]", &pos);
   if (s == NULL)
     return -1; /* empty string */
 
@@ -1967,7 +1969,7 @@ init_opts(char * spec, ctx_t * ctx)
   bst_t * node;
   int     offset;
 
-  ltrim(spec, " \t");
+  ltrim(spec, " \n\t");
   while (*spec)
   {
     if ((offset = opt_parse(spec, &opt)) > 0)
@@ -1976,7 +1978,7 @@ init_opts(char * spec, ctx_t * ctx)
 
       if ((node = bst_find(opt, &options_bst, opt_compare)) != NULL)
       {
-        int same_next_ctx;
+        int same_next_ctx = 0;
 
         bst_opt = node->key; /* node extracted from the BST */
 
@@ -1987,7 +1989,7 @@ init_opts(char * spec, ctx_t * ctx)
         else if (bst_opt->next_ctx != NULL && opt->next_ctx == NULL)
           same_next_ctx = 0;
         else
-          same_next_ctx = strcmp(bst_opt->next_ctx, opt->next_ctx) != 0;
+          same_next_ctx = strcmp(bst_opt->next_ctx, opt->next_ctx) == 0;
 
         if (bst_opt->optional_args != opt->optional_args
             || bst_opt->multiple_args != opt->multiple_args
@@ -3073,26 +3075,27 @@ ctxopt_new_ctx(char * name, char * opts_specs)
 }
 
 void
-ctxopt_disp_usage(usage_behaviour action)
+ctxopt_ctx_disp_usage(char * ctx_name, usage_behaviour action)
 {
-  ll_t * list;
-  int    has_optional    = 0;
-  int    has_ellipsis    = 0;
-  int    has_rule        = 0;
-  int    has_generic_arg = 0;
-  int    has_ctx_change  = 0;
-  int    has_early_eval  = 0;
+  ctx_t * ctx;
+  ll_t *  list;
 
-  if (main_ctx == NULL)
-    fatal(CTXOPTINTERNAL, NULL, NULL, NULL, NULL, NULL,
-          "At least one context must have been created.");
+  int has_optional    = 0;
+  int has_ellipsis    = 0;
+  int has_rule        = 0;
+  int has_generic_arg = 0;
+  int has_ctx_change  = 0;
+  int has_early_eval  = 0;
 
-  printf("\nOptions allowed in the default context:\n");
-  list = main_ctx->opt_list;
+  ctx = locate_ctx(ctx_name);
+  if (ctx == NULL)
+    fatal(CTXOPTINTERNAL, NULL, NULL, NULL, NULL, NULL, "%s: unknown context.",
+          ctx_name);
+
+  printf("\nSynopsis:\n");
+  list = ctx->opt_list;
   print_options(list, &has_optional, &has_ellipsis, &has_rule, &has_generic_arg,
                 &has_ctx_change, &has_early_eval);
-
-  bst_walk(contexts_bst, bst_print_ctx_cb);
 
   printf("\nExplanations:\n");
   if (has_early_eval)
@@ -3108,6 +3111,62 @@ ctxopt_disp_usage(usage_behaviour action)
   if (has_ellipsis)
     printf("...          : the previous object can be repeated more "
            "than one times.\n");
+  if (has_rule)
+    printf("[<|=|>]number: rules constraining the number of "
+           "parameters/arguments.\n");
+
+  if (action == exit_after)
+    exit(EXIT_FAILURE);
+}
+
+void
+ctxopt_disp_usage(usage_behaviour action)
+{
+  ll_t * list;
+  int    has_optional    = 0;
+  int    has_ellipsis    = 0;
+  int    has_rule        = 0;
+  int    has_generic_arg = 0;
+  int    has_ctx_change  = 0;
+  int    has_early_eval  = 0;
+
+  if (main_ctx == NULL)
+    fatal(CTXOPTINTERNAL, NULL, NULL, NULL, NULL, NULL,
+          "At least one context must have been created.");
+
+  /* Usage for the first context */
+  /* """"""""""""""""""""""""""" */
+  printf("\nAllowed options in the default context:\n");
+  list = main_ctx->opt_list;
+  print_options(list, &has_optional, &has_ellipsis, &has_rule, &has_generic_arg,
+                &has_ctx_change, &has_early_eval);
+
+  /* Usage for the other contexts */
+  /* """""""""""""""""""""""""""" */
+  bst_walk(contexts_bst, bst_print_ctx_cb);
+
+  /* Contextual syntactic explanations */
+  /* """"""""""""""""""""""""""""""""" */
+  printf("\nSyntactic explanations:\n");
+
+  if (has_early_eval)
+    printf("*            : the parameters for this option will be "
+           "evaluated first.\n");
+
+  if (has_ctx_change)
+    printf(">            : given after the parameters, sets the next "
+           "context to go.\n");
+
+  if (has_generic_arg)
+    printf("#            : generic name for an argument.\n");
+
+  if (has_optional)
+    printf("[...]        : the object is square brackets is optional.\n");
+
+  if (has_ellipsis)
+    printf("...          : the previous object can be repeated more "
+           "than one times.\n");
+
   if (has_rule)
     printf("[<|=|>]number: rules constraining the number of "
            "parameters/arguments.\n");

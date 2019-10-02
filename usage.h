@@ -7,9 +7,21 @@
 #define USAGE_H
 
 void
-main_usage(void);
+main_help(void);
 
 void
-da_ctx_usage(void);
+columns_help(void);
+
+void
+lines_help(void);
+
+void
+tabulations_help(void);
+
+void
+direct_access_help(void);
+
+void
+tagging_help(void);
 
 #endif

@@ -1,6 +1,3 @@
-/* This file was automatically generated.  Do not edit! */
-/* This file was automatically generated.  Do not edit! */
-
 typedef enum
 {
   parameters,
@@ -48,6 +45,9 @@ ctxopt_evaluate(void);
 
 void
 ctxopt_new_ctx(char * name, char * opts_specs);
+
+void
+ctxopt_ctx_disp_usage(char * ctx_name, usage_behaviour action);
 
 void
 ctxopt_disp_usage(usage_behaviour action);

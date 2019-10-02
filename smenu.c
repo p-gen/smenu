@@ -4668,10 +4668,30 @@ help_action(char * ctx_name, char * opt_name, char * param, int nb_values,
             char ** values, int nb_opt_data, void ** opt_data, int nb_ctx_data,
             void ** ctx_data)
 {
-  if (strcmp(ctx_name, "da_ctx") == 0)
-    da_ctx_usage();
+  if (strcmp(ctx_name, "Columns") == 0)
+    columns_help();
+  else if (strcmp(ctx_name, "Lines") == 0)
+    lines_help();
+  else if (strcmp(ctx_name, "Tabulations") == 0)
+    tabulations_help();
+  else if (strcmp(ctx_name, "Direct_access") == 0)
+    direct_access_help();
+  else if (strcmp(ctx_name, "Tagging") == 0)
+    tagging_help();
   else
-    main_usage();
+    main_help();
+
+  exit(EXIT_FAILURE);
+}
+
+void
+long_help_action(char * ctx_name, char * opt_name, char * param, int nb_values,
+            char ** values, int nb_opt_data, void ** opt_data, int nb_ctx_data,
+            void ** ctx_data)
+{
+  ctxopt_disp_usage(continue_after);
+
+  printf("\nRead the manual for more information.\n");
 
   exit(EXIT_FAILURE);
 }
@@ -4681,7 +4701,7 @@ usage_action(char * ctx_name, char * opt_name, char * param, int nb_values,
              char ** values, int nb_opt_data, void ** opt_data, int nb_ctx_data,
              void ** ctx_data)
 {
-  ctxopt_disp_usage(exit_after);
+  ctxopt_ctx_disp_usage(ctx_name, exit_after);
 }
 
 void
@@ -5928,6 +5948,14 @@ main(int argc, char * argv[])
 
   char * timeout_message;
 
+  char * common_options;
+  char * main_options, *main_spec_options;
+  char * col_options, *col_spec_options;
+  char * line_options, *line_spec_options;
+  char * tab_options, *tab_spec_options;
+  char * tag_options, *tag_spec_options;
+  char * da_options, *da_spec_options;
+
   /* Win fields initialization */
   /* """"""""""""""""""""""""" */
   win.max_lines       = 5;
@@ -6126,58 +6154,96 @@ main(int argc, char * argv[])
   /* Command line options setting */
   /* """""""""""""""""""""""""""" */
   ctxopt_init();
-  ctxopt_new_ctx("main", "[*help] "
-                         "[*usage] "
-                         "[*version] "
-                         "[config file] [lines [height]] "
-                         "[include_re... regex] "
-                         "[exclude_re... regex] "
-                         "[title message] "
-                         "[attributes prefix:attr...] "
-                         "[special_level_1 #...<3] "
-                         "[special_level_2 #...<3] "
-                         "[special_level_3 #...<3] "
-                         "[special_level_4 #...<3] "
-                         "[special_level_5 #...<3] "
-                         "[tag_mode [delim]] "
-                         "[pin_mode [delim]] "
-                         "[auto_tag] "
-                         "[auto_da_number>da_ctx... [regex]] "
-                         "[auto_da_unnumber>da_ctx... [regex]] "
-                         "[field_da_number>da_ctx] "
-                         "[blank_nonprintable] "
-                         "[center_mode] "
-                         "[clean] "
-                         "[column_mode] "
-                         "[line_mode] "
-                         "[tab_mode [cols]] "
-                         "[wide_tab_mode] "
-                         "[columns_select... selector...] "
-                         "[rows_select... selector...] "
-                         "[force_first_column regex] "
-                         "[force_last_column regex] "
-                         "[gutter [string]] "
-                         "[keep_spaces] "
-                         "[word_separators bytes] "
-                         "[line_separators bytes] "
-                         "[no_scoll_bar] "
-                         "[post_subst_all... /regex/repl/opts] "
-                         "[post_subst_included... /regex/repl/opts] "
-                         "[post_subst_excluded... /regex/repl/opts] "
-                         "[search_method prefix|substring|fuzzy] "
-                         "[start_pattern pattern] "
-                         "[timeout #...] "
-                         "[hidden_timeout #...] "
-                         "[validate_in_search_mode] "
-                         "[visual_bell]");
 
-  ctxopt_new_ctx("da_ctx", "[*help] "
-                           "[da_options prefix:attr...]");
+  common_options =
+    "[*help] [*usage] [include_re... regex] [exclude_re... regex] "
+    "[title message] [attributes prefix:attr...] [special_level_1 #...<3] "
+    "[special_level_2 #...<3] [special_level_3 #...<3] "
+    "[special_level_4 #...<3] [special_level_5 #...<3] "
+    "[lines [height]] "
+    "[blank_nonprintable] "
+    "[center_mode] [clean] [keep_spaces] [word_separators bytes] "
+    "[line_separators bytes] [no_scoll_bar] "
+    "[post_subst_all... /regex/repl/opts] "
+    "[post_subst_included... /regex/repl/opts] "
+    "[post_subst_excluded... /regex/repl/opts] "
+    "[search_method prefix|substring|fuzzy] [start_pattern pattern] "
+    "[timeout #...] [hidden_timeout #...] [validate_in_search_mode] "
+    "[visual_bell] ";
+
+  main_spec_options = "[*version] "
+                      "[*long_help] "
+                      "[config file] "
+                      "[auto_da_number>Direct_access... [regex]] "
+                      "[auto_da_unnumber>Direct_access... [regex]] "
+                      "[field_da_number>Direct_access] "
+                      "[column_mode>Columns] "
+                      "[line_mode>Lines] "
+                      "[tab_mode>Tabulations [cols]] "
+                      "[tag_mode>Tagging [delim]] "
+                      "[pin_mode>Tagging [delim]]";
+
+  col_spec_options = "[columns_select... selector...] "
+                     "[rows_select... selector...] "
+                     "[gutter [string]] "
+                     "[auto_da_number>Direct_access... [regex]] "
+                     "[auto_da_unnumber>Direct_access... [regex]] "
+                     "[field_da_number>Direct_access] "
+                     "[tag_mode>Tagging [delim]] "
+                     "[pin_mode>Tagging [delim]] "
+                     "[force_first_column regex] "
+                     "[force_last_column regex]";
+
+  line_spec_options = "[rows_select... selector...] "
+                      "[auto_da_number>Direct_access... [regex]] "
+                      "[auto_da_unnumber>Direct_access... [regex]] "
+                      "[field_da_number>Direct_access] "
+                      "[tag_mode>Tagging [delim]] "
+                      "[pin_mode>Tagging [delim]] "
+                      "[force_first_column regex] "
+                      "[force_last_column regex]";
+
+  tab_spec_options = "[wide_tab_mode] "
+                     "[gutter [string]] "
+                     "[auto_da_number>Direct_access... [regex]] "
+                     "[auto_da_unnumber>Direct_access... [regex]] "
+                     "[field_da_number>Direct_access] "
+                     "[tag_mode>Tagging [delim]] "
+                     "[pin_mode>Tagging [delim]] "
+                     "[force_first_column regex] "
+                     "[force_last_column regex]";
+
+  tag_spec_options = "[auto_tag] "
+                     "[column_mode>Columns] "
+                     "[line_mode>Lines] "
+                     "[tab_mode>Tabulations [cols]]";
+
+  da_spec_options = "[da_options prefix:attr...] "
+                    "[column_mode>Columns] "
+                    "[line_mode>Lines] "
+                    "[tab_mode>Tabulations [cols]] "
+                    "[tag_mode>Tagging [delim]] "
+                    "[pin_mode>Tagging [delim]]";
+
+  main_options = concat(common_options, main_spec_options, NULL);
+  col_options  = concat(common_options, col_spec_options, NULL);
+  line_options = concat(common_options, line_spec_options, NULL);
+  tab_options  = concat(common_options, tab_spec_options, NULL);
+  tag_options  = concat(common_options, tag_spec_options, NULL);
+  da_options   = concat(common_options, da_spec_options, NULL);
+
+  ctxopt_new_ctx("Main", main_options);
+  ctxopt_new_ctx("Columns", col_options);
+  ctxopt_new_ctx("Lines", line_options);
+  ctxopt_new_ctx("Tabulations", tab_options);
+  ctxopt_new_ctx("Tagging", tag_options);
+  ctxopt_new_ctx("Direct_access", da_options);
 
   /* ctxopt parameters */
   /* """"""""""""""""" */
 
   ctxopt_add_opt_settings(parameters, "help", "-h -help");
+  ctxopt_add_opt_settings(parameters, "long_help", "-H -long-help");
   ctxopt_add_opt_settings(parameters, "usage", "-? -u -usage");
   ctxopt_add_opt_settings(parameters, "version", "-V -version");
   ctxopt_add_opt_settings(parameters, "config", "-f -cfg -config_file");
@@ -6240,11 +6306,11 @@ main(int argc, char * argv[])
   /* ctxopt options incompatibilities  */
   /* """"""""""""""""""""""""""""""""" */
 
-  ctxopt_add_ctx_settings(incompatibilities, "main",
+  ctxopt_add_ctx_settings(incompatibilities, "Main",
                           "column_mode line_mode tab_mode");
-  ctxopt_add_ctx_settings(incompatibilities, "main", "tag_mode pin_mode");
-  ctxopt_add_ctx_settings(incompatibilities, "main", "help usage");
-  ctxopt_add_ctx_settings(incompatibilities, "main", "timeout hidden_timeout");
+  ctxopt_add_ctx_settings(incompatibilities, "Main", "tag_mode pin_mode");
+  ctxopt_add_ctx_settings(incompatibilities, "Main", "help usage");
+  ctxopt_add_ctx_settings(incompatibilities, "Main", "timeout hidden_timeout");
 
   /* ctxopt actions */
   /* """""""""""""" */
@@ -6270,6 +6336,7 @@ main(int argc, char * argv[])
   ctxopt_add_opt_settings(actions, "gutter", gutter_action, &win, &langinfo,
                           NULL);
   ctxopt_add_opt_settings(actions, "help", help_action, NULL);
+  ctxopt_add_opt_settings(actions, "long_help", long_help_action, NULL);
   ctxopt_add_opt_settings(actions, "usage", usage_action, NULL);
   ctxopt_add_opt_settings(actions, "include_re", include_re_action,
                           &pattern_def_include, &include_pattern, NULL);

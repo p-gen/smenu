@@ -1,46 +1,69 @@
-.TH smenu 1 "2015" "beta"
+.TH smenu 1 "2019"
 .SH NAME
 smenu - filter that allows one to interactively select a word from stdin
 and outputs the selection to stdout.
 .SH SYNOPSIS
 .nf
-\f(CRsmenu [\fB-h\fP|\fB-?\fP] [\fB-f\fP \fIconfiguration_file\fP] \\
-      [\fB-n\fP [\fIlines\fP]] [\fB-t\fP [\fIcols\fP]] [\fB-k\fP] \\
-      [\fB-s\fP \fIpattern\fP] [\fB-m\fP \fImessage\fP] [\fB-w\fP] \\
-      [\fB-d\fP] [\fB-M\fP] [\fB-c\fP] [\fB-l\fP] [\fB-r\fP] [\fB-b\fP] \\
-      [\fB-a\fP \
-(i|e|c|b|si|m|t|ct|sf|st|mf|mt|sfe|ste|mfe|mte|da):\fIATTR\fP]... \\
-      [\fB-i\fP \fIregex\fP] [\fB-e\fP \fIregex\fP] \\
-      [\fB-C\fP \
-[\fIi\fP|\fIe\fP]<col selectors>] \\
-      [\fB-R\fP \
-[\fIi\fP|\fIe\fP]<row selectors>] \\
-      [\fB-S\fP \fI/regex/string/\fP[\fIg\fP][\fIv\fP][\fIs\fP][\fIi\fP]] \\
-      [\fB-I\fP \fI/regex/string/\fP[\fIg\fP][\fIv\fP][\fIs\fP][\fIi\fP]] \\
-      [\fB-E\fP \fI/regex/string/\fP[\fIg\fP][\fIv\fP][\fIs\fP][\fIi\fP]] \\
-      [\fB-A\fP \fIregex\fP] [\fB-Z\fP \fIregex\fP] \\
-      [\fB-N\fP [\fIregex\fP]] [\fB-U\fP [\fIregex\fP]] [\fB-F\fP] \
-[\fB-D\fP \fIsub-option\fP...] \\
-      [\fB-1\fP \fIregex\fP [\fIATTR\fP]] \
-[\fB-2\fP \fIregex\fP [\fIATTR\fP]] ... \
-[\fB-5\fP \fIregex\fP [\fIATTR\fP]] \\
-      [\fB-g\fP [\fIstring\fP]] [\fB-q\fP] \
-[\fB-W\fP \fIbytes\fP] [\fB-L\fP \fIbytes\fP] \\
-      [\fB-T\fP [\fIseparator\fP]] [\fB-P\fP [\fIseparator\fP]] [\fB-p\fP] \\
-      [\fB-V\fP] [\fB-x\fP|\fB-X\fP \fItype\fP [\fIword\fP] \fIdelay\fP] \
-[\fB-/\fP \fIprefix\fP|\fIsubstring\fP|\fIfuzzy\fP] \\
-      [input_file]
+  [\fB*-h\fP|\fB-help\fP]
+  [\fB*-H\fP|\fB-long_help\fP]
+  [\fB*-?\fP|\fB-u\fP|\fB-usage\fP]
+  [\fB*-V\fP|\fB-version\fP]
+  [\fB-f\fP|\fB-cfg\fP|\fB-config_file file\fP]
+  [\fB-n\fP|\fB-lines\fP|\fB-height\fP [\fIheight\fP]]
+  [\fB-i\fP|\fB-include\fP... \fIregex\fP]
+  [\fB-e\fP|\fB-exclude\fP... \fIregex\fP]
+  [\fB-m\fP|\fB-msg\fP|\fB-message\fP|\fB-title\fP \fImessage\fP]
+  [\fB-a\fP|\fB-attributes\fP \fIprefix:attr\fP...]
+  [\fB-1\fP|\fB-l1\fP|\fB-level1\fP \fIregex\fP [\fIattr\fP]]
+  [\fB-2\fP|\fB-l2\fP|\fB-level2\fP \fIregex\fP [\fIattr\fP]]
+  [\fB-3\fP|\fB-l3\fP|\fB-level3\fP \fIregex\fP [\fIattr\fP]]
+  [\fB-4\fP|\fB-l4\fP|\fB-level4\fP \fIregex\fP [\fIattr\fP]]
+  [\fB-5\fP|\fB-l5\fP|\fB-level5\fP \fIregex\fP [\fIattr\fP]]
+  [\fB-T\fP|\fB-tm\fP|\fB-tag_mode\fP [\fIdelim\fP]]
+  [\fB-P\fP|\fB-pm\fP|\fB-pin_mode\fP [\fIdelim\fP]]
+  [\fB-p\fP|\fB-at\fP|\fB-auto_tag\fP]
+  [\fB-N\fP|\fB-number\fP>da_ctx... [\fIregex\fP]]
+  [\fB-U\fP|\fB-unnumber\fP>da_ctx... [\fIregex\fP]]
+  [\fB-F\fP|\fB-en\fP|\fB-embedded_number\fP>da_ctx]
+  [\fB-D\fP|\fB-data\fP|\fB-options\fP [\fIparameter\fP...]
+  [\fB-b\fP|\fB-blank\fP]
+  [\fB-M\fP|\fB-middle\fP|\fB-center\fP]
+  [\fB-d\fP|\fB-delete_window\fP|\fB-clean_window\fP]
+  [\fB-c\fP|\fB-col\fP|\fB-col_mode\fP|\fB-column\fP]
+  [\fB-l\fP|\fB-line\fP|\fB-line_mode\fP]
+  [\fB-t\fP|\fB-tab_mode\fP|\fB-tabulate_mode\fP [\fIcols\fP]]
+  [\fB-w\fP|\fB-wt\fP|\fB-wide_tab_mode\fP]
+  [\fB-C\fP|\fB-cs\fP|\fB-col_select\fP... \fIselector\fP]
+  [\fB-R\fP|\fB-rs\fP|\fB-row_select\fP... \fIselector\fP]
+  [\fB-A\fP|\fB-fc\fP|\fB-first_column\fP \fIregex\fP]
+  [\fB-Z\fP|\fB-lc\fP|\fB-last_column\fP \fIregex\fP]
+  [\fB-g\fP|\fB-gutter\fP [\fIstring\fP]]
+  [\fB-k\fP|\fB-ks\fP|\fB-keep_spaces\fP]
+  [\fB-W\fP|\fB-ws\fP|\fB-wd\fP|\fB-word_delimiters\fP|\fB-word_separators\fP \
+\fIbytes\fP]
+  [\fB-L\fP|\fB-ls\fP|\fB-ld\fP|\fB-line-delimiters\fP|\fB-line_separators\fP \
+\fIbytes\fP]
+  [\fB-q\fP|\fB-no_bar\fP|\fB-no-scroll_bar\fP]
+  [\fB-S\fP|\fB-subst\fP... \fI/regex/repl/opts\fP]
+  [\fB-I\fP|\fB-si\fP|\fB-subst_included\fP... \fI/regex/repl/opts\fP]
+  [\fB-E\fP|\fB-se\fP|\fB-subst_excluded\fP... \fI/regex/repl/opts\fP]
+  [\fB-/\fP|\fB-search_method\fP \fIprefix\fP|\fIsubstring\fP|\fIfuzzy\fP]
+  [\fB-s\fP|\fB-sp\fP|\fB-start\fP|\fB-start_pattern\fP \fIpattern\fP]
+  [\fB-x\fP|\fB-timeout\fP \fI#\fP...]
+  [\fB-X\fP|\fB-hidden_timeout\fP \fI#\fP...]
+  [\fB-r\fP|\fB-auto_validate\fP]
+  [\fB-v\fP|\fB-vb\fP|\fB-visual_bell\fP]
 
-      <col selectors> ::= \fIcol1\fP[-\fIcol2\fP],...|\fI<RE>\fP,...
-      <row selectors> ::= \fIcol1\fP[-\fIcol2\fP],...|\fI<RE>\fP,...
-      <sub-option>    ::= [l|r:<char>]|[a:left|right]|[p:included|all|
-                          [w:<num>]|[f:yes|no]|[o:<num>[+]]|[n:<num>]|
-                          [i:<num>]|[d:<char>]|[s:<num>]|[h:trim|cut|keep]
-      <ATTR>          ::= [fg][/bg][,style]
-      <RE>            ::= \fB<char>\fIregex\fB<char>\fR
 
-      <col/row selectors> and <RE> can be freely mixed.
-      The parameters of -a and -D must be delimited by blanks.
+  selectors ::= \fIcol1\fP[-\fIcol2\fP],...|\fIrow1\fP[-\fIrow2\fP],...|\
+\fIRE\fP,...
+  parameter ::= [l|r:<char>]|[a:left|right]|[p:included|all|[w:<num>]|
+                [f:yes|no]|[o:<num>[+]]|[n:<num>]|[i:<num>]|[d:<char>]|
+                [s:<num>]|[h:trim|cut|keep]
+  attr      ::= [fg][/bg][,style]
+  RE        ::= \fB<char>\fIregex\fB<char>\fR
+
+  selectors and RE can be freely mixed.
 .fi
 .SH DESCRIPTION
 This small utility acts as a filter when no input file is given
@@ -61,11 +84,14 @@ re-included after.
 Excluded words are skipped when the selection cursor is moved and cannot
 be searched for.
 .PP
-The \fB-W\fP option can be used to set the characters (or multibyte
+The \fB-W\fP|\fB-ws\fP|\fB-wd\fP|\fB-word_delimiters\fP|\fB-word_separators\fP
+option can be used to set the characters (or multibyte
 sequences) which will be used to delimit the input words.
 The default delimiters are: \fISPACE\fP, \fI\\t\fP and \fI\\n\fP.
 .PP
-The \fB-L\fP has a similar meaning for lines.
+The
+\fB-L\fP|\fB-ls\fP|\fB-ld\fP|\fB-line-delimiters\fP|\fB-line_separators\fP
+has a similar meaning for lines.
 
 Special character sequences formed by a \fI\\\fP followed by one of the
 characters \fIa\fP \fIb\fP \fIt\fP \fIn\fP \fIv\fP \fIf\fP \fIr\fP and
@@ -125,17 +151,21 @@ l l.
 \fBCTRL\ \(<-\fP/\fBH\fP (resp. \fBCTRL\ \(->\fP/\fBL\fP) places the cursor
 so that a maximum number of words (selectable or not) are visible to
 the left (reps. right) side of the window.
-
-If \fB-N\fP, \fB-U\fP or \fB-F\fP are used, then it becomes possible to
-directly access a word by entering its number.
+If \fB-N\fP|\fB-number\fP, \fB-U\fP|\fB-unnumber\fP or
+\fB-F\fP|\fB-en\fP|\fB-embedded_number\fP are used, then it becomes
+possible to directly access a word by entering its number.
 The numbering created using these option is done \fBbefore\fP any words
-substitution done using \fB-S\fP, \fB-I\fP or \fB-E\fP.
+substitution done using \fB-S\fP|\fB-subst\fP \fI/regex/repl/opts\fP,
+\fB-I\fP|\fB-si\fP|\fB-subst_included\fP or
+\fB-E\fP|\fB-se\fP|\fB-subst_excluded\fP.
 
 Using a combination of these options, it is easy to control which words
 will be numbered by adding a special symbol in it before using smenu and
-removing it (substituted by nothing) afterward using \fB-I\fP by example.
+removing it (substituted by nothing) afterward using
+\fB-I\fP|\fB-si\fP|\fB-subst_included\fP by example.
 
-\fB-E\fP gives another way to do that, see below or more.
+\fB-E\fP|\fB-se\fP|\fB-subst_excluded\fP gives another way to do that,
+see below or more.
 .SS "Searching for words"
 A word can be searched using different algorithms: \fIprefix\fP,
 \fIsubstring\fP of \fIfuzzy\fP.
@@ -179,8 +209,9 @@ The display is refreshed after each change in this buffer.
 .PP
 The slash key (fB/\fP) can also be used instead of any of these keys.
 By default it is is programmed to do a \fIfuzzy\fP search but this can
-be changed by using the command line option (\fB-/\fP) or by tuning
-a configuration file, see below.
+be changed by using the command line option
+(\fB-/\fP|\fB-search_method\fP) or by tuning a configuration file,
+see below.
 .PP
 All the words matching the current search buffer are enhanced:
 The characters present in the current search buffer are highlighted in
@@ -289,11 +320,12 @@ Pressing \fBq\fP gives the possibility to exit without selecting anything.
 By default, \fBENTER\fP writes the selected word to stdout when not in
 search mode otherwise it exits from this mode and does nothing more.
 If you want to be able to select a word \fIeven\fP when in search mode,
-use the \fB-r\fP option to change this behavior.
+use the \fB-r\fP|\fB-auto_validate\fP option to change this behavior.
 .SS "Tagging (multiple selections)"
-When the tagging is activated by using the command line \fB-T\fP or
-\fB-P\fP option, then the keys \fBt\fP, \fBT\fP, \fBINS\fP and \fBDEL\fP
-can be used to tag/untag some words.
+When the tagging is activated by using the command line
+\fB-T\fP|\fB-tm\fP|\fB-tag_mode\fP or \fB-P\fP|\fB-pm\fP|\fB-pin_mode\fP
+option, then the keys \fBt\fP, \fBT\fP, \fBINS\fP and \fBDEL\fP can be
+used to tag/untag some words.
 These tagged words will then be output on the standard output when
 \fBENTER\fP is pressed.
 .TP
@@ -469,9 +501,79 @@ word_length@512
 columns@256
 .TE
 .SH OPTIONS
-.IP "\fB-h\fP or \fB-?\fP"
-Displays a long (\fB-h\fP) or short (\fB-?\fP) help message and exits.
-.IP "\fB-f\fP \fIconfiguration_file\fB"
+
+Not all options may be available, depending on the current context.
+
+When menu is called and before the first option is evaluated, it is in
+the \fBMain\fP context.
+Each option can switch to another context in which only a subset of the
+options is usable.
+
+An option not defined in a context will force the end of the current
+context and will be recursively evaluated in the previous contexts until
+found (or not).
+If not found, an error message is displayed ans smenu is terminated.
+
+The contexts defined in smenu are:
+.IP \fBMain\fP 2
+The default context
+.IP \fBColumns\fP 2
+After the \fB-c\fP|\fB-col\fP|\fB-col_mode\fP|\fB-column\fP parameter.
+.IP \fBLines\fP 2
+After the \fB-l\fP|\fB-line\fP|\fB-line_mode\fP parameter.
+.IP \fBTabulations 2
+After the \fB-t\fP|\fB-tab_mode\fP|\fB-tabulate_mode\fP parameter.
+.IP \fBTagging\fP 2
+After the \fB-T\fP|\fB-tm\fP|\fB-tag_mode\fP or
+\fB-P\fP|\fB-pm\fP|\fB-pin_mode\fP parameter.
+.IP \fBDirect_access\fP 2
+After the \fB-N\fP|\fB-number\fP, \fB-U\fP|\fB-unnumber\fP or
+\fB-F\fP|\fB-en\fP|\fB-embedded_number\fP parameter.
+.IP Example: 2
+\f(CBsmenu -col_select\fP will trigger an error if not in the
+\fBColumns\fP context introduced by
+\fB-c\fP|\fB-col\fP|\fB-col_mode\fP|\fB-column\fP.
+
+You now have to explicitly enter:
+.
+\f(CBsmenu -c -col_select e1\fP
+. 
+to be able to make all but the first column of the input selectable.
+.PP
+The \fB-h\fP|\fB-help\fP and \fB-?\fP|\fB-u\fP|\fB-usage\fP options now
+display the help and synopsis of the available options in the current
+context.
+.IP Example: 2
+\f(CB-col -u\fP will only show the usage in the \fBColumns\fP context
+.PP
+The contexts contain all the non-context-changing option so in practice
+the usage should be intuitive.
+You may nevertheless have to adjust some scripts using the old smenu
+releases.
+.PP
+The benefits of this new option system are:
+.IP * 2
+Long options are available (only one leading dash although).
+.IP * 2
+Auto checking of missing mandatory options, duplicate option,...
+.IP * 2
+Abbreviations are possible:
+
+e.g: \fB-long_help\fP can be abbreviated by \fB-lo\fP, \fB-lon\fP,
+\fB-long\fP,... but not by \fB-l\fP as it would be in conflict with
+\fB-L\fP|\fB-ls\fP|\fB-ld\fP|\fB-line-delimiters\fP|\fB-line_separators\fP
+also defined in the default context.
+.IP * 2
+Only the relevant parameters are available in a context.
+.PP
+The description of each command line parameter is as follows:
+.IP "\fB-h\fP|\fB-help\fP"
+Display a long help messages and exits.
+.IP "\fB-?\fP|\fB-u\fP|\fB-usage\fP"
+Displays a short help message and exits.
+.IP \fB-V\fP|\fB-version\fP
+Displays the current version and quits.
+.IP "\fB-f\fP|\fB-cfg\fP|\fB-config_file file\fP"
 This option gives the possibility to select an alternative configuration
 file.
 If the given file doesn't exist or is not readable then the default
@@ -479,74 +581,39 @@ values will be used.
 
 The \fB.smenu\fP files in the user's home directory and in the current
 directory, if present, will be ignored when this option is used.
-.IP "\fB-n\fP \fI[lines\fB]"
+.IP "\fB-n\fP|\fB-lines\fP|\fB-height\fP [\fIheight\fP]"
 Gives the maximum number of lines in the scrolling selection window.
 
-If \fB-n\fP is not present the number of lines will be set to \fI5\fP.
+If \fB-n\fP|\fB-lines\fP|\fB-height\fP is not present the number of
+lines will be set to \fI5\fP.
 
-If \fB-n\fP is present without argument, then the height of the terminal will
-be used to determine the number of lines.
+If \fB-n\fP|\fB-lines\fP|\fB-height\fP is present without argument, then
+the height of the terminal will be used to determine the number of lines.
 This remains true even if the terminal is resized.
 
-If \fB-n\fP is present with a numerical argument, this value will be used
-to determine the number of lines.
-.IP "\fB-t\fP [\fIcolumns\fP]"
-This option sets the tabulation mode and, if a number is specified,
-attents to set the number of displayed columns to that number.
-In this mode, embedded line separators are ignored.
-The options \fB-A\fP and \fB-Z\fP can nevertheless be used to force words
-to appear in the first (respectively last) position of the displayed line.
-.PP
-.RS
-Note that the number of requested columns will be automatically reduced
-if a word does not fit in the calculated column size.
-.PP
-In this mode each column has the same width.
-.RE
-.IP \fB-k\fP
-By default, the spaces surrounding the output string will be deleted.
-This option forces them to be retained.
-.IP \fB-v\fP
-By default, when searching, an alarm is produced by the terminal when
-the user enters a character or makes a move which lead to no result or
-to an error condition.
-This argument make this beep visual by briefly showing the cursor.
-.IP "\fB-s\fP \fIpattern\fP"
-Place the cursor on the first word corresponding to the specified pattern.
+If \fB-n\fP|\fB-lines\fP|\fB-height\fP is present with a numerical
+argument, this value will be used to determine the number of lines.
+.IP "\fB-i\fP|\fB-include\fP... \fIregex\fP"
+Sets the \fBi\fPnclude filter to match the selectable words.
+All the other words will become implicitly non-selectable (excluded)
 
-\fIpattern\fP can be:
-.RS
-.IP * 2
-A \fB#\fP immediately followed by a \fBnumber\fP giving the initial
-position of the cursor (counting from 0).
+\fB-i\fP|\fB-include\fP can be used more than once with cumulative effect.
 
-If the word at this position is excluded, then the first previous non
-excluded word is selected if it exists, otherwise the first non excluded
-word is selected.
+\fI\\u\fP sequences can also be used in the regexp.
+.IP "\fB-e\fP|\fB-exclude\fP... \fIregex\fP"
+Sets the \fBe\fPxclude filter to match the non-selectable words.
+All the other selectable words will become implicitly selectable (included)
 
-If this number if greater than the number of words, the cursor will be
-set on the latest selectable position.
-.IP * 2
-A single \fB#\fP or the string \fB#last\fP to set the initial
-cursor position to the latest selectable word position.
-.IP * 2
-A string starting with a \fB/\fP indicating that we want the cursor
-to be set to the first word matching the given regular expression.
-.IP * 2
-A \fBprefix\fP string indicating that we want the cursor to be set on the
-first word matching the string given (\fBa\fP will match \fBCancel\fP
-by example).
-.PP
-Warning, when searching for a prefix or a regular expression, smenu
-only looks for them after an eventual modification, so for example,
-the command:
-\f(CBsmenu -I/c/x/ -s/c <<< "a b c d"\fP won't find c and put the cursor
-on \fBa\fP but \f(CBsmenu -I/c/x/v -s/c <<< "a b c d"\fP will find it and
-put the cursor on the \fBx\fP substituting the \fBc\fP on screen only
+\fB-e\fP|\fB-exclude\fP can be used more than once with cumulative effect.
+This filter has a higher priority than the include filter.
 
-\fI\\u\fP sequences can be used in the pattern.
-.RE
-.IP "\fB-m\fP \fImessage\fP"
+The \fIregex\fP selections made using \fB-i\fP|\fB-include\fP and/or
+\fB-e\fP|\fB-exclude\fP are done before the possible words alterations
+made by \fB-I\fP|\fB-si\fP|\fB-subst_included\fP or
+\fB-E\fP|\fB-se\fP|\fB-subst_excluded\fP (see below).
+
+\fI\\u\fP sequences can also be used in the regexp.
+.IP "\fB-m\fP|\fB-msg\fP|\fB-message\fP|\fB-title\fP \fImessage\fP"
 Displays a message above the window.
 If the current locale is not \fIUTF-8\fP, then all \fIUTF-8\fP characters
 in it will be converted into a dot.
@@ -555,53 +622,12 @@ in it will be converted into a dot.
 
 Note that the message will be truncated if it does not fit on a terminal
 line.
-.IP "\fB-w\fP"
-When \fB-t\fP is followed by a number of columns, the default is to
-compact the columns so that they use the less terminal width as
-possible.
-This option enlarges the columns in order to use the whole terminal width.
-
-When in column mode, \fB-w\fP can be used to force all the columns to
-have the same size (the largest one).
-See option \fB-c\fP below.
-.PP
-.RS
-Note that the column's size is only calculated once when the words are
-displayed for the first time.
-A terminal resize will not update this value.
-This choice enables a faster display.
-.RE
-.PP
-.IP \fB-d\fP
-Tells the program to clean up the display before quitting by removing
-the selection window after use as if it was never displayed.
-.IP \fB-M\fP
-Centers the display if possible.
-.IP \fB-c\fP
-Sets the column mode.
-In this mode the lines of words do not wrap when the right border of
-the terminal is reached but only when a special character is read.
-Some words will not be displayed without an horizontal scrolling.
-
-If such a scrolling is needed, some indications may appear on the left
-and right edge of the window to help the user to reach the unseen words.
-
-In this mode, the width of each column is minimal to keep the maximum
-information visible on the terminal.
-.IP \fB-l\fP
-Sets the line mode.
-This mode is the same as column mode but without any column alignment.
-.IP \fB-r\fP
-Enables \fBENTER\fP to validate the selection even in search mode.
-.IP \fB-b\fP
-Replaces all non-printable characters by a blank.
-If this results in a blank word, it will be potentially deleted.
-.IP "\fB-a \fIPREFIX:ATTR\fP [\fIPREFIX:ATTR\fP...]"
+.IP "\fB-a\fP|\fB-attributes\fP \fIprefix:attr\fP..."
 Sets the display attributes of the elements displayed and the cursor.
 
 At least one attribute prefixed attribute must be given.
 
-\fIPREFIX\fP can take the following values:
+\fIprefix\fP can take the following values:
 .RS
 .IP \fIi\fP
 included words.
@@ -642,29 +668,316 @@ direct access tag.
 If more than one attribute is given, then they must be separated by
 spaces.
 
-See the \fB-1\fP option for the \fIATTR\fP syntax.
-.IP "\fB-i\fP \fIregex\fP"
-Sets the \fBi\fPnclude filter to match the selectable words.
-All the other words will become implicitly non-selectable (excluded)
+See the \fB-1\fP|\fB-l1\fP|\fB-level1\fP option for the \fIattr\fP syntax.
+.IP "\fB-1\fP|\fB-l1\fP|\fB-level1\fP \fIregex\fP [\fIattr\fP]"
+.IP "\fB-2\fP|\fB-l2\fP|\fB-level2\fP \fIregex\fP [\fIattr\fP]"
+.IP "\fB-3\fP|\fB-l3\fP|\fB-level3\fP \fIregex\fP [\fIattr\fP]"
+.IP "\fB-4\fP|\fB-l4\fP|\fB-level4\fP \fIregex\fP [\fIattr\fP]"
+.IP "\fB-5\fP|\fB-l5\fP|\fB-level5\fP \fIregex\fP [\fIattr\fP]"
+Allows one to give a special display color to up to 5 classes of words
+specified by regular expressions.
+They are called \fBspecial levels\fP.
+Only selectable words will be considered.
 
-\fB-i\fP can be used more than once with cumulative effect.
+By default, the 5 special levels have their foreground color set to
+red, green, brown/yellow, purple and cyan.
+All these colors also can be set or modified permanently in the
+configuration files.
+See the example file above for an example.
 
-\fI\\u\fP sequences can also be used in the regexp.
-.IP "\fB-e\fP \fIregex\fP"
-Sets the \fBe\fPxclude filter to match the non-selectable words.
-All the other selectable words will become implicitly selectable (included)
+The optional second argument (\fIattr\fP) can be used to override the
+default or configured attributes of each class.
+Its syntax is the same as the one used in the configuration file:
+.nf
+[\fIfg\fP][/\fIbg\fP][,{\fIb\fP|\fId\fP|\fIr\fP|\fIs\fP|\fIu\fP|\fIi\fP}] \
+| [{\fIb\fP|\fId\fP|\fIr\fP|\fIs\fP|\fIu\fP|\fIi\fP}]
+.fi
 
-\fB-e\fP can be used more than once with cumulative effect.
-This filter has a higher priority than the include filter.
+Examples of possible attributes are:
+.nf
+  \f(CB2/0,bu \fPgreen on black bold underline
+  \f(CB/2     \fPgreen background
+  \f(CB5      \fPtext in purple
+  \f(CBrb     \fPreverse bold
+.fi
 
-The \fIregex\fP selections made using \fB-i\fP and/or \fB-e\fP are done
-before the possible words alterations made by \fB-I\fP or \fB-E\fP
-(see below).
+\fI\\u\fP sequences can be used in the pattern.
+.IP "\fB-T\fP|\fB-tm\fP|\fB-tag_mode\fP [\fIdelim\fP]
+Enables the multiple selections or tag mode.
+In this mode, several selectable words can be selected without leaving
+the program.
 
-\fI\\u\fP sequences can also be used in the regexp.
-.IP "\fB-C\fP [\fIi\fP|\fIe\fP] \
-<\fIcol selectors\fP>"
+The current word can be automatically tagged when the \fBENTER\fP key
+is pressed to complete the selection process if the
+\fB-p\fP|\fB-at\fP|\fB-auto_tag\fP option is
+also set or if no word has been tagged.
 
+All the tagged words (and possibly the world under the cursor) will
+be sent to stdout separated by the optional argument given after the
+option \fB-T\fP|\fB-tm\fP|\fB-tag_mode\fP.
+
+Note than this \fIseparator\fP can have more than one character, contain
+UTF-8 characters (in native or \fI\\u\fP form) and can even contain
+control character as in \f(CB$'\\n'\fP.
+
+A space is used as the default separator if none is given.
+
+\fBCaution\fP: To get exactly the same behavior as in version 0.9.11
+and earlier, you must also use the \fB-p\fP|\fB-at\fP|\fB-auto_tag\fP
+option.
+.IP "\fB-P\fP|\fB-pm\fP|\fB-pin_mode\fP [\fIdelim\fP]"
+Works like \fB-T\fP|\fB-tm\fP|\fB-tag_mode\fP but, unlike
+\fB-T\fP|\fB-tm\fP|\fB-tag_mode\fP, the output depends on the order in
+which the words were tagged.
+In other words, the first tagged word comes first in the output, the
+second tagged word comes next, and so on.
+.IP \fB-p\fP|\fB-at\fP|\fB-auto_tag\fP
+This option modifies the default behavior of the
+\fB-T\fP|\fB-tm\fP|\fB-tag_mode\fP and \fB-P\fP|\fB-pm\fP|\fB-pin_mode\fP
+options.
+An untagged word under the cursor will be automatically tagged when
+\fBENTER\fP is pressed.
+.IP "\fB-N\fP|\fB-number\fP>da_ctx... [\fIregex\fP]"
+This option allows one to number the selectable words matching a
+specific regular expression.
+These numbers are numbered starting from 1 and provides a direct access
+to the words.
+
+To use this functionality, the user must enter the number which
+corresponds to the desired entry digit per digit.
+
+Each new digit must be added in a time frame of 1/2 seconds (per default)
+otherwise the number is considered complete and a newly entered digit
+will start a new number.
+If the number does not exists, then the cursor is restored to it's
+initial position.
+
+The sub-options of the \fB-D\fP|\fB-data\fP|\fB-options\fP option
+described below can change the way \fB-N\fP|\fB-number\fP sets and
+formats the numbers.
+
+This option can be used more than once with cumulative effects.
+
+\fB-N\fP|\fB-number\fP, \fB-U\fP|\fB-unnumber\fP and
+\fB-F\fP|\fB-en\fP|\fB-embedded_number\fP can be mixed.
+.IP "\fB-U\fP|\fB-unnumber\fP>da_ctx... [\fIregex\fP]"
+This option allows one to un-number words.
+If placed after a previous \fB-N\fP|\fB-number\fP, it can be used to
+remove the numbering of selected words.
+If placed before, the word which doesn't match its regular expression
+will be numbered by default.
+
+This mechanism is similar to to the inclusion/exclusion of words by
+\fB-i\fP|\fB-include\fP and \fB-e\fP|\fB-exclude\fP.
+
+This option can be used more than once with cumulative effects.
+
+\fB-U\fP|\fB-unnumber\fP, \fB-N\fP|\fB-number\fP and
+\fB-F\fP|\fB-en\fP|\fB-embedded_number\fP can be mixed.
+.IP \fB-F\fP|\fB-en\fP|\fB-embedded_number\fP
+This option is similar to \fB-N\fP|\fB-number\fP but does not generate
+a continuous flow of numbers but extracts them from the word itself.
+
+With this option you can take full control of the numbering of the
+displayed word.
+Note that the numbering does not need to be ordered.
+
+The resulting word after the extraction of the number must be non empty.
+
+Some sub-option are required, see the \fB-D\fP|\fB-data\fP|\fB-options\fP
+option described below.
+
+\fBNotice\fP that for this option to work correctly, all the embedded
+numbers must have the same number of digits.
+To get that, a preprocessing may be necessary on the words before using
+this program.
+
+\fB-F\fP|\fB-en\fP|\fB-embedded_number\fP, \fB-N\fP|\fB-number\fP and
+\fB-U\fP|\fB-unnumber\fP can be mixed.
+.IP "\fB-D\fP|\fB-data\fP|\fB-options\fP [\fIparameter\fP...]"
+This option allows one to change the default behaviour of
+the \fB-N\fP|\fB-number\fP, \fB-U\fP|\fB-unnumber\fP and
+\fB-F\fP|\fB-en\fP|\fB-embedded_number\fP options.
+
+This option must be given just after \fB-N\fP|\fB-number\fP,
+\fB-U\fP|\fB-unnumber\fP or \fB-F\fP|\fB-en\fP|\fB-embedded_number\fP
+to be valid.
+
+Its optional parameters are called sub-options and must respect the
+format \fBx\fP:\fBy\fP where \fBx\fP can be:
+.RS
+.TP
+\f(CBl\fP (\fB-F\fP|\fB-en\fP|\fB-embedded_number\fP, \
+\fB-N\fP|\fB-number\fP and \fB-U\fP|\fB-unnumber\fP options)
+Here \fBy\fP is the UTF-8 character (in native or \fI\\u\fP form)
+to print before the number.
+The default is a single space.
+.
+.TP
+\f(CBr\fP (\fB-F\fP|\fB-en\fP|\fB-embedded_number\fP, \
+\fB-N\fP|\fB-number\fP and \fB-U\fP|\fB-unnumber\fP options)
+Here \fBy\fP is the UTF-8 character (in native or \fI\\u\fP form)
+to print after the number.
+The default is \f(CB)\fP.
+.
+.TP
+\f(CBa\fP (\fB-F\fP|\fB-en\fP|\fB-embedded_number\fP, \
+\fB-N\fP|\fB-number\fP and \fB-U\fP|\fB-unnumber\fP options)
+Here \fBy\fP is '\f(CBleft\fP' (or one of its prefixes) if the number
+must be \fIleft\fP aligned, or '\f(CBright\fP' (or one of its prefixes)
+if it must be \fIright\fP aligned.
+The default is \f(CBright\fP.
+.
+.TP
+\f(CBp\fP (\fB-F\fP|\fB-en\fP|\fB-embedded_number\fP, \
+\fB-N\fP|\fB-number\fP and \fB-U\fP|\fB-unnumber\fP options)
+Here \fBy\fP is '\f(CBincluded\fP' (or one of its prefixes)
+or '\f(CBall\fP' (or one of its prefixes) for the initial \fIp\fPadding of
+the non numbered words.
+The keyword '\f(CBincluded\fP' means that only \fIincluded\fP word will
+be padded while '\f(CBall\fP' means pad \fIall\fP words.  The default
+is \f(CBall\fP.
+.
+.TP
+\f(CBw\fP (\fB-F\fP|\fB-en\fP|\fB-embedded_number\fP, \
+\fB-N\fP|\fB-number\fP and \fB-U\fP|\fB-unnumber\fP options)
+Here \fBy\fP is the \fIw\fPidth of the number between 1 and 5 included.
+.
+.TP
+\f(CBf\fP (\fB-F\fP|\fB-en\fP|\fB-embedded_number\fP, \
+\fB-N\fP|\fB-number\fP and \fB-U\fP|\fB-unnumber\fP options)
+Here \fBy\fP controls if the numbering must \fIf\fPollow the last
+extracted number (defaults to \f(CByes\fP) or if it must remain
+independent.
+.
+.TP
+\f(CBh\fP (\fB-F\fP|\fB-en\fP|\fB-embedded_number\fP option)
+Tells what to do with the characters present before the embedded number if
+any.
+
+The allowed directives are: '\f(CBtrim\fP' which discads them if they
+form an empty word (only made of spaces and tabulations), '\f(CBcut\fP'
+which unconditionally discards them and '\f(CBkeep\fP' which places them
+at the beginning of the resulting word.
+
+The default value for this directive is '\f(CBkeep\fP'.
+.
+.TP
+\f(CBo\fP (\fB-F\fP|\fB-en\fP|\fB-embedded_number\fP option)
+Here \fBy\fP is the \fIo\fPffset of the first multibyte character of
+the number to extract from the word (defaults to \f(CB0\fP).
+
+If this offset if immediately followed by the character '\f(CB+\fP',
+then the parser will look for the first number (if any) after the given
+offset instead of using its absolute value to extract the number.
+
+Note that when the '\f(CB+\fP' is used, it is necessary that the length
+of all the numbers to extract have the same size as the algorithm looks
+for a digit to identify the beginning of the number to extract.
+Hence, for example, \fB1\fP should appear as \fB01\fP in the input is
+\f(CBn\fP is set to \f(CB2\fP.
+.
+.TP
+\f(CBn\fP (\fB-F\fP|\fB-en\fP|\fB-embedded_number\fP option)
+Here \fBy\fP is the \fIn\fPumber of multibyte characters to extract
+from the word starting at the offset given by the \f(CBo\fP sub-option.
+.
+.TP
+\f(CBi\fP (\fB-F\fP|\fB-en\fP|\fB-embedded_number\fP option)
+Here \fBy\fP is number of multibyte characters to \fIi\fPgnore after
+the extracted number
+.
+.TP
+\f(CBd\fP (\fB-F\fP|\fB-en\fP|\fB-embedded_number\fP, \
+\fB-N\fP|\fB-number\fP and \fB-U\fP|\fB-unnumber\fP options)
+Here \fBy\fP is a multibyte separator.
+When present, this directive instructs smenu to output the selected
+numbered word(s) \fIprefixed\fP by its(their) direct access number(s)
+and the given separator.
+
+Only the numbered word(s) will be prefixed.
+
+\f(CBd\fP stands for \fBd\fPecorate.
+
+This directive can be useful when you want to post-process the output
+according to its direct access number.
+.
+.TP
+\f(CBs\fP (\fB-F\fP|\fB-en\fP|\fB-embedded_number\fP, \
+\fB-N\fP|\fB-number\fP and \fB-U\fP|\fB-unnumber\fP options)
+Here \fBy\fP is the direct access number that will be set for the first
+numbered word.
+Its value is \fB1\fP by default, a value of \fB0\fP is possible.
+.P
+Example: \f(CWr:\\> l:\\< a:l d:_ \fP
+
+To number all words with the default parameters, use the
+syntax: "\f(CW-N .\fP" which is a shortcut for:
+"\f(CW-N . -D l:' ' r:')' a:r p:a\fP"
+
+The \fIpadding\fP sub-option specifies whether spaces must also be
+added in front of excluded words or not to improve compactness.
+
+When the \f(CBw\fP sub-option is not given the width of the numbers is
+determined automatically but if \fB-F\fP|\fB-en\fP|\fB-embedded_number\fP
+is set and the value of the \f(CBn\fP sub-option is given then this
+value is used.
+.RE
+.IP \fB-b\fP|\fB-blank\fP
+Replaces all non-printable characters by a blank.
+If this results in a blank word, it will be potentially deleted.
+.IP \fB-M\fP|\fB-middle\fP|\fB-center\fP
+Centers the display if possible.
+.IP \fB-d\fP|\fB-delete_window\fP|\fB-clean_window\fP
+Tells the program to clean up the display before quitting by removing
+the selection window after use as if it was never displayed.
+.IP \fB-c\fP|\fB-col\fP|\fB-col_mode\fP|\fB-column\fP
+Sets the column mode.
+In this mode the lines of words do not wrap when the right border of
+the terminal is reached but only when a special character is read.
+Some words will not be displayed without an horizontal scrolling.
+
+If such a scrolling is needed, some indications may appear on the left
+and right edge of the window to help the user to reach the unseen words.
+
+In this mode, the width of each column is minimal to keep the maximum
+information visible on the terminal.
+.IP \fB-l\fP|\fB-line\fP|\fB-line_mode\fP
+Sets the line mode.
+This mode is the same as column mode but without any column alignment.
+.IP "\fB-t\fP|\fB-tab_mode\fP|\fB-tabulate_mode\fP [\fIcols\fP]"
+This option sets the tabulation mode and, if a number is specified,
+attents to set the number of displayed columns to that number.
+In this mode, embedded line separators are ignored.
+The options \fB-A\fP|\fB-fc\fP|\fB-first_column\fP and
+\fB-Z\fP|\fB-lc\fP|\fB-last_column\fP can nevertheless be used to
+force words to appear in the first (respectively last) position of the
+displayed line.
+.PP
+.RS
+Note that the number of requested columns will be automatically reduced
+if a word does not fit in the calculated column size.
+.PP
+In this mode each column has the same width.
+.RE
+.IP \fB-w\fP|\fB-wt\fP|\fB-wide_tab_mode\fP
+When \fB-t\fP|\fB-tab_mode\fP|\fB-tabulate_mode\fP is followed by a
+number of columns, the default is to compact the columns so that they
+use the less terminal width as possible.
+This option enlarges the columns in order to use the whole terminal width.
+
+When in column mode, \fB-w\fP|\fB-wt\fP|\fB-wide_tab_mode\fP can be used
+to force all the columns to have the same size (the largest one).
+See option \fB-c\fP|\fB-col\fP|\fB-col_mode\fP|\fB-column\fP below.
+.PP
+.RS
+Note that the column's size is only calculated once when the words are
+displayed for the first time.
+A terminal resize will not update this value.
+This choice enables a faster display.
+.RE
+.PP
+.IP "\fB-C\fP|\fB-cs\fP|\fB-col_select\fP... [\fIi\fP|\fIe\fP]\fIselector\fP"
 These letters are case independent so \fII\fP can be used in place of
 \fIi\fP per example.
 
@@ -686,8 +999,9 @@ to the letter given after the option.
 
 Regular expressions and column numbers can be freely mixed.
 
-Regular expression in \fB-C\fP and \fB-R\fP can contain \fIUTF-8\fP
-characters either directly or by using the \fI\\u\fP notation.
+Regular expression in \fB-C\fP|\fB-cs\fP|\fB-col_select\fP and
+\fB-R\fP|\fB-rs\fP|\fB-row_select\fP can contain \fIUTF-8\fP characters
+either directly or by using the \fI\\u\fP notation.
 
 Example of columns selection: \f(CB-Ci2,3,/X./,5-7\fP forces the cursor
 to only navigate in columns \fB2\fP,\fB3\fP,\fB5\fP,\fB6\fP and \fB7\fP
@@ -699,297 +1013,43 @@ and those matching the extended regular expression '\f(CBX.\fP'.
 Spaces are allowed in the selection string if they are protected.
 
 The column mode is forced when this option is selected.
-.IP "\fB-R\fP [\fIi\fP|\fIe\fP] \
+.IP "\fB-R\fP|\fB-rs\fP|\fB-row_select\fP... \fIselector\fP"
 <\fIrow selectors\fP>"
-Similar to \fB-C\fP but for the rows.
+Similar to \fB-C\fP|\fB-cs\fP|\fB-col_select\fP but for the rows.
 
 One difference though: this is the line mode which is forced by this
 option NOT the column mode.
 
-\fB-C\fP and \fB-R\fP can be used more than once in a cumulative manner:
+\fB-C\fP|\fB-cs\fP|\fB-col_select\fP and
+\fB-R\fP|\fB-rs\fP|\fB-row_select\fP can be used more than once in a
+cumulative manner:
+
 The selection mode (selection or de-selection) is given by the first
 occurrence of the options, the other occurrences will only update the
 selected or de-selected ranges.
-.IP "\fB-S\fP /\fIregex\fP/replacement string/[\fIg\fP][\fIv\fP][\fIs\fP]"
-Post-processes the words by applying a regular expression based
-substitution.
-The argument must be formatted as in the \fBsed\fP editor.
-
-This option can be used more than once.
-Each substitution will be applied in sequence on each word.
-This sequence can be stopped if a \fBstop\fP flag is encountered.
-
-.RS
-\fBflags:\fP
-.IP * 2
-The optional trailing \fBg\fP (for \fIg\fPlobal) means that all matching
-occurrences shall be replaced and not only the first one.
-.IP * 2
-The optional trailing \fBv\fP (for \fIv\fPisual) means that the altered
-words will only be used for display and search.
-The modifications will \fInot\fP be reflected in the returned word.
-.IP * 2
-The optional trailing \fBs\fP (for \fIs\fPtop) means that no more
-substitution will be allowed on this word even if another \fB-S\fP is
-used.
-.IP * 2
-The optional trailing \fBi\fP (for \fIi\fPgnore case) means that the
-string search operation should ignore the case for this pattern.
-
-Small example:
-\f(CBR=$(echo a b c | smenu -S /b/B/)\fP
-will display \f(CR"a B c"\fP and \f(CBR\fP will contain \fIB\fP if \fI
-B\fP is
-selected meanwhile
-\f(CBR=$(echo a b c | smenu -S /b/B/\fBv\fP)\fR
-will display the same as above but \f(CBR\fP will contain the original
-word \fIb\fP if \fIB\fP is selected.
-In both cases, only the word \fIB\fP will be searchable and not \fIb\fP.
-.RE
-.IP "\fB-I\fP /\fIregex\fP/replacement string/[\fIg\fP][\fIv\fP][\fIs\fP]"
-Post-processes the \fBselectable\fP words by applying a regular
-expression based substitution (see \fB-S\fP for details).
-.IP "\fB-E\fP /\fIregex\fP/replacement string/[\fIg\fP][\fIv\fP][\fIs\fP]"
-Post-processes the \fBexcluded\fP (or \fBnon-selectable\fP) words by
-applying a regular expression based substitution (see \fB-S\fP for
-details).
-.PP
-.RS
-The \fB/\fP separator that \fB-I\fP and \fB-E\fP are using above can be
-substituted by any other character except \fISPACE\fP, \fI\\t\fP,
-\fI\\f\fP, \fI\\n\fP, \fI\\r\fP and \fI\\v\fP.
-.PP
-In the three previous options, \fIregex\fP is a \fBPOSIX\fP
-\fBE\fPxtended \fBR\fPegular \fBE\fPxpression.
-For details, please refer to the \fBregex\fP manual page.
-.PP
-Additionally \fI\\u\fP sequences can also be used in the regexp.
-.PP
-.RE
-If a post-processing action (\fB-S\fP/\fB-I\fP/\fB-E\fP) results in an
-empty (length 0) word, then we have two cases:
-.RS
-.IP "in column mode:"
-Substitutions involving empty words can lead to misalignments, so it is
-necessary to prohibit them and terminate the program.
-These substitutions have to be made with other tools before using this
-utility.
-.IP "otherwise:"
-The word is simply removed.
-.RE
-.IP "\fB-A\fP \fIregex\fP"
+.IP "\fB-A\fP|\fB-fc\fP|\fB-first_column\fP \fIregex\fP"
 In column mode, forces all words matching the given regular expression
 to be the first one in the displayed line.
 If you want to only rely on this method to build the lines, just specify
-an empty \fBregex\fP to set the end-of-line separator with \fI-L ''\fP)
+an empty \fBregex\fP to set the end-of-line separator with
+\fB-L\fP|\fB-ls\fP|\fB-ld\fP|\fB-line-delimiters\fP|\fB-line_separators\fP '')
 .PP
 .RS
-\fI\\u\fP sequences can also be used in the regexp after \fB-A\fP.
+\fI\\u\fP sequences can also be used in the regexp after
+\fB-A\fP|\fB-fc\fP|\fB-first_column\fP.
 .RE
-.IP "\fB-Z\fP \fIregex\fP"
-Similar to \fB-A\fP but forces the word to be the latest of its line.
-The same trick with \fB-L\fP can also be used.
+.IP "\fB-Z\fP|\fB-lc\fP|\fB-last_column\fP \fIregex\fP"
+Similar to \fB-A\fP|\fB-fc\fP|\fB-first_column\fP but forces the word
+to be the latest of its line.
+The same trick with
+\fB-L\fP|\fB-ls\fP|\fB-ld\fP|\fB-line-delimiters\fP|\fB-line_separators\fP
+can also be used.
 .PP
 .RS
-\fI\\u\fP sequences can also be used in the regexp after \fB-Z\fP.
+\fI\\u\fP sequences can also be used in the regexp after
+\fB-Z\fP|\fB-lc\fP|\fB-last_column\fP.
 .RE
-.IP "\fB-N\fP [\fIregex\fP]"
-This option allows one to number the selectable words matching a
-specific regular expression.
-These numbers are numbered starting from 1 and provides a direct access
-to the words.
-
-To use this functionality, the user must enter the number which
-corresponds to the desired entry digit per digit.
-
-Each new digit must be added in a time frame of 1/2 seconds (per default)
-otherwise the number is considered complete and a newly entered digit
-will start a new number.
-If the number does not exists, then the cursor is restored to it's
-initial position.
-
-The sub-options of the \fB-D\fP option described below can change the
-way \fB-N\fP sets and formats the numbers.
-
-This option can be used more than once with cumulative effects.
-
-\fB-N\fP, \fB-U\fP and \fB-F\fP can be mixed.
-.IP "\fB-U\fP [\fIregex\fP]"
-This option allows one to un-number words.
-If placed after a previous \fB-N\fP, it can be used to remove the
-numbering of selected words.
-If placed before, the word which doesn't match its regular expression
-will be numbered by default.
-
-This mechanism is similar to to the inclusion/exclusion of words by
-\fB-i\fP and \fB-e\fP.
-
-This option can be used more than once with cumulative effects.
-
-\fB-U\fP, \fB-N\fP and \fB-F\fP can be mixed.
-.IP "\fB-F\fP"
-This option is similar to \fB-N\fP but does not generate a continuous
-flow of numbers but extracts them from the word itself.
-
-With this option you can take full control of the numbering of the
-displayed word.
-Note that the numbering does not need to be ordered.
-
-The resulting word after the extraction of the number must be non empty.
-
-Some sub-option are required, see the \fB-D\fP option described below.
-
-\fBNotice\fP that for this option to work correctly, all the embedded
-numbers must have the same number of digits.
-To get that, a preprocessing may be necessary on the words before using
-this program.
-
-\fB-F\fP, \fB-N\fP and \fB-U\fP can be mixed.
-.IP "\fB-D\fP [\fIparameters\fP]"
-This option allows one to change the default behaviour of the \fB-N\fP,
-\fB-U\fP and \fB-F\fP options.
-
-Its optional parameters are called sub-options and must respect the
-format \fBx\fP:\fBy\fP where \fBx\fP can be:
-.RS
-.TP
-\f(CBl\fP (\fB-F\fP, \fB-N\fP and \fB-U\fP options)
-Here \fBy\fP is the UTF-8 character (in native or \fI\\u\fP form)
-to print before the number.
-The default is a single space.
-.
-.TP
-\f(CBr\fP (\fB-F\fP, \fB-N\fP and \fB-U\fP options)
-Here \fBy\fP is the UTF-8 character (in native or \fI\\u\fP form)
-to print after the number.
-The default is \f(CB)\fP.
-.
-.TP
-\f(CBa\fP (\fB-F\fP, \fB-N\fP and \fB-U\fP options)
-Here \fBy\fP is '\f(CBleft\fP' (or one of its prefixes) if the number
-must be \fIleft\fP aligned, or '\f(CBright\fP' (or one of its prefixes)
-if it must be \fIright\fP aligned.
-The default is \f(CBright\fP.
-.
-.TP
-\f(CBp\fP (\fB-F\fP, \fB-N\fP and \fB-U\fP options)
-Here \fBy\fP is '\f(CBincluded\fP' (or one of its prefixes)
-or '\f(CBall\fP' (or one of its prefixes) for the initial \fIp\fPadding of
-the non numbered words.
-The keyword '\f(CBincluded\fP' means that only \fIincluded\fP word will
-be padded while '\f(CBall\fP' means pad \fIall\fP words.  The default
-is \f(CBall\fP.
-.
-.TP
-\f(CBw\fP (\fB-F\fP, \fB-N\fP and \fB-U\fP options)
-Here \fBy\fP is the \fIw\fPidth of the number between 1 and 5 included.
-.
-.TP
-\f(CBf\fP (\fB-F\fP, \fB-N\fP and \fB-U\fP options)
-Here \fBy\fP controls if the numbering must \fIf\fPollow the last
-extracted number (defaults to \f(CByes\fP) or if it must remain
-independent.
-.
-.TP
-\f(CBh\fP (\fB-F\fP option)
-Tells what to do with the characters present before the embedded number if
-any.
-
-The allowed directives are: '\f(CBtrim\fP' which discads them if they
-form an empty word (only made of spaces and tabulations), '\f(CBcut\fP'
-which unconditionally discards them and '\f(CBkeep\fP' which places them
-at the beginning of the resulting word.
-
-The default value for this directive is '\f(CBkeep\fP'.
-.
-.TP
-\f(CBo\fP (\fB-F\fP option)
-Here \fBy\fP is the \fIo\fPffset of the first multibyte character of
-the number to extract from the word (defaults to \f(CB0\fP).
-
-If this offset if immediately followed by the character '\f(CB+\fP',
-then the parser will look for the first number (if any) after the given
-offset instead of using its absolute value to extract the number.
-
-Note that when the '\f(CB+\fP' is used, it is necessary that the length
-of all the numbers to extract have the same size as the algorithm looks
-for a digit to identify the beginning of the number to extract.
-Hence, for example, \fB1\fP should appear as \fB01\fP in the input is
-\f(CBn\fP is set to \f(CB2\fP.
-.
-.TP
-\f(CBn\fP (\fB-F\fP option)
-Here \fBy\fP is the \fIn\fPumber of multibyte characters to extract
-from the word starting at the offset given by the \f(CBo\fP sub-option.
-.
-.TP
-\f(CBi\fP (\fB-F\fP option)
-Here \fBy\fP is number of multibyte characters to \fIi\fPgnore after
-the extracted number
-.
-.TP
-\f(CBd\fP (\fB-F\fP, \fB-N\fP and \fB-U\fP options)
-Here \fBy\fP is a multibyte separator.
-When present, this directive instructs smenu to output the selected
-numbered word(s) \fIprefixed\fP by its(their) direct access number(s)
-and the given separator.
-
-Only the numbered word(s) will be prefixed.
-
-\f(CBd\fP stands for \fBd\fPecorate.
-
-This directive can be useful when you want to post-process the output
-according to its direct access number.
-.
-.TP
-\f(CBs\fP (\fB-F\fP, \fB-N\fP and \fB-U\fP options)
-Here \fBy\fP is the direct access number that will be set for the first
-numbered word.
-Its value is \fB1\fP by default, a value of \fB0\fP is possible.
-.P
-Example: \f(CWr:\\> l:\\< a:l d:_ \fP
-
-To number all words with the default parameters, use the
-syntax: "\f(CW-N .\fP" which is a shortcut for:
-"\f(CW-N . l:' ' r:')' a:r p:a\fP"
-
-The \fIpadding\fP sub-option specifies whether spaces must also be
-added in front of excluded words or not to improve compactness.
-
-When the \f(CBw\fP sub-option is not given the width of the numbers is
-determined automatically but if \fB-F\fP is set and the value of the
-\f(CBn\fP sub-option is given then this value is used.
-.RE
-.IP "\fB-1\fP ... \fB-5\fP \fIregex\fP [\fIATTR\fP]"
-Allows one to give a special display color to up to 5 classes of words
-specified by regular expressions.
-They are called \fBspecial levels\fP.
-Only selectable words will be considered.
-
-By default, the 5 special levels have their foreground color set to
-red, green, brown/yellow, purple and cyan.
-All these colors also can be set or modified permanently in the
-configuration files.
-See the example file above for an example.
-
-The optional second argument (\fIATTR\fP) can be used to override the
-default or configured attributes of each class.
-Its syntax is the same as the one used in the configuration file:
-.nf
-[\fIfg\fP][/\fIbg\fP][,{\fIb\fP|\fId\fP|\fIr\fP|\fIs\fP|\fIu\fP|\fIi\fP}] \
-| [{\fIb\fP|\fId\fP|\fIr\fP|\fIs\fP|\fIu\fP|\fIi\fP}]
-.fi
-
-Examples of possible attributes are:
-.nf
-  \f(CB2/0,bu \fPgreen on black bold underline
-  \f(CB/2     \fPgreen background
-  \f(CB5      \fPtext in purple
-  \f(CBrb     \fPreverse bold
-.fi
-
-\fI\\u\fP sequences can be used in the pattern.
-.IP "\fB-g\fP [\fIstring\fP]"
+.IP "\fB-g\fP|\fB-gutter\fP [\fIstring\fP]"
 Replaces the blank after each words in column or tabular mode by a column
 separator.
 
@@ -1009,9 +1069,11 @@ Each character can be given in normal or \fI\\u\fP form in the
 Example: "\f(CB|- \fP" will allow one to separate the first two columns
 with '\f(CB|\fP', then '\f(CB-\fP' will be used and '\f(CB \fP' will
 separate the remaining columns if any.
-.IP \fB-q\fP
-Prevents the display of the scroll bar.
-.IP "\fB-W\fP \fIbytes\fP"
+.IP \fB-k\fP|\fB-ks\fP|\fB-keep_spaces\fP
+By default, the spaces surrounding the output string will be deleted.
+This option forces them to be retained.
+.IP "\fB-W\fP|\fB-ws\fP|\fB-wd\fP|\fB-word_delimiters\fP|\fB-word_separators\fP\
+ \fIbytes\fP"
 This option can be used to specify the characters (or multibyte
 sequences) which will be used to delimit the input words.
 
@@ -1024,7 +1086,8 @@ Non-printable characters in arguments should be given using the standard
 \fI$'\\t'\fP stands for the tabulation character for example.
 
 The default delimiters are: \fISPACE\fP, \fI$'\\t'\fP and \fI$'\\n'\fP.
-.IP "\fB-L\fP \fIbytes\fP"
+.IP "\fB-L\fP|\fB-ls\fP|\fB-ld\fP|\fB-line-delimiters\fP|\fB-line_separators\fP\
+ \fIbytes\fP"
 This option can be used to specify the characters (or multibyte
 sequences) which will be used to delimit the lines in the input stream.
 
@@ -1038,52 +1101,135 @@ $'\\n' stands for the newline character for example.
 
 The default delimiter is: \fI$'\\n'\fP.
 
-This option is only useful when the \fB-c\fP or \fB-l\fP option is also
-set.
+This option is only useful when the
+\fB-c\fP|\fB-col\fP|\fB-col_mode\fP|\fB-column\fP or \fB-l\fP option is
+also set.
 
-The characters (or multibyte sequences) passed to \fB-L\fP are
-automatically added to the list of word delimiters as if \fB-W\fP was
+The characters (or multibyte sequences) passed to
+\fB-L\fP|\fB-ls\fP|\fB-ld\fP|\fB-line-delimiters\fP|\fB-line_separators\fP are
+automatically added to the list of word delimiters as if
+\fB-W\fP|\fB-ws\fP|\fB-wd\fP|\fB-word_delimiters\fP|\fB-word_separators\fP was
 also used.
 
 \fI\\u\fP sequences can also be used here.
-.IP "\fB-T\fP [\fIseparator\fP]"
-Enables the multiple selections or tag mode.
-In this mode, several selectable words can be selected without leaving
-the program.
-
-The current word can be automatically tagged when the \fBENTER\fP key
-is pressed to complete the selection process if the \fB-p\fP option is
-also set or if no word has been tagged.
-
-All the tagged words (and possibly the world under the cursor) will
-be sent to stdout separated by the optional argument given after the
-option \fB-T\fP.
-
-Note than this \fIseparator\fP can have more than one character, contain
-UTF-8 characters (in native or \fI\\u\fP form) and can even contain
-control character as in \f(CB$'\\n'\fP.
-
-A space is used as the default separator if none is given.
-
-\fBCaution\fP: To get exactly the same behavior as in version 0.9.11
-and earlier, you must also use the \fB-p\fP option.
-.IP "\fB-P\fP [\fIseparator\fP]"
-Works like \fB-T\fP but, unlike \fB-T\fP, the output depends on the order
-in which the words were tagged.
-In other words, the first tagged word comes first in the output, the
-second tagged word comes next, and so on.
-\fB-P\fP stands for "Pin".
-.IP \fB-p\fP
-This option modifies the default behavior of the \fB-T\fP and \fB-P\fP
-options.
-An untagged word under the cursor will be automatically tagged when
-\fBENTER\fP is pressed.
-.IP \fB-V\fP
-Displays the current version and quits.
 .TP
-\fB-x \fItype\fP [\fIword\fP] \fIdelay\fP
+.IP \fB-q\fP|\fB-no_bar\fP|\fB-no-scroll_bar\fP
+Prevents the display of the scroll bar.
+.IP "\fB-S\fP|\fB-subst\fP... \
+/\fIregex\fP/\fIrepl\fP/[\fIg\fP][\fIv\fP][\fIs\fP]"
+Post-processes the words by applying a regular expression based
+substitution.
+The argument must be formatted as in the \fBsed\fP editor.
+
+This option can be used more than once.
+Each substitution will be applied in sequence on each word.
+This sequence can be stopped if a \fBstop\fP flag is encountered.
+
+.RS
+\fBflags:\fP
+.IP * 2
+The optional trailing \fBg\fP (for \fIg\fPlobal) means that all matching
+occurrences shall be replaced and not only the first one.
+.IP * 2
+The optional trailing \fBv\fP (for \fIv\fPisual) means that the altered
+words will only be used for display and search.
+The modifications will \fInot\fP be reflected in the returned word.
+.IP * 2
+The optional trailing \fBs\fP (for \fIs\fPtop) means that no
+more substitution will be allowed on this word even if another
+\fB-S\fP|\fB-subst\fP is used.
+.IP * 2
+The optional trailing \fBi\fP (for \fIi\fPgnore case) means that the
+string search operation should ignore the case for this pattern.
+
+Small example:
+\f(CBR=$(echo a b c | smenu -S /b/B/)\fP
+will display \f(CR"a B c"\fP and \f(CBR\fP will contain \fIB\fP if \fI
+B\fP is
+selected meanwhile
+\f(CBR=$(echo a b c | smenu -S /b/B/\fBv\fP)\fR
+will display the same as above but \f(CBR\fP will contain the original
+word \fIb\fP if \fIB\fP is selected.
+In both cases, only the word \fIB\fP will be searchable and not \fIb\fP.
+.RE
+.IP "\fB-I\fP|\fB-si\fP|\fB-subst_included\fP... \
+/\fIregex\fP/\fIrepl\fP/[\fIg\fP][\fIv\fP][\fIs\fP]"
+Post-processes the \fBselectable\fP words by applying a regular
+expression based substitution (see \fB-S\fP|\fB-subst\fP for details).
+.IP "\fB-E\fP|\fB-se\fP|\fB-subst_excluded\fP... \
+/\fIregex\fP/\fIrepl\fP/[\fIg\fP][\fIv\fP][\fIs\fP]"
+Post-processes the \fBexcluded\fP (or \fBnon-selectable\fP)
+words by applying a regular expression based substitution (see
+\fB-S\fP|\fB-subst\fP for details).
+.PP
+.RS
+The \fB/\fP separator that \fB-I\fP|\fB-si\fP|\fB-subst_included\fP and
+\fB-E\fP|\fB-se\fP|\fB-subst_excluded\fP are using above can be
+substituted by any other character except \fISPACE\fP, \fI\\t\fP,
+\fI\\f\fP, \fI\\n\fP, \fI\\r\fP and \fI\\v\fP.
+.PP
+In the three previous options, \fIregex\fP is a \fBPOSIX\fP
+\fBE\fPxtended \fBR\fPegular \fBE\fPxpression.
+For details, please refer to the \fBregex\fP manual page.
+.PP
+Additionally \fI\\u\fP sequences can also be used in the regexp.
+.PP
+.RE
+If a post-processing action
+(\fB-S\fP|\fB-subst\fP/\fB-I\fP|\fB-si\fP|\fB-subst_included\fP\
+/\fB-E\fP|\fB-se\fP|\fB-subst_excluded\fP) results in an empty (length 0)
+word, then we have two cases:
+.RS
+.IP "in column mode:"
+Substitutions involving empty words can lead to misalignments, so it is
+necessary to prohibit them and terminate the program.
+These substitutions have to be made with other tools before using this
+utility.
+.IP "otherwise:"
+The word is simply removed.
+.RE
+.IP "\fB-/\fP|\fB-search_method\fP \fIsearch_method\fP"
+Affects the '\fB/\fP' key to a search method.
+By default '\fB/\fP' is affected to '\fIfuzzy\fP' but the argument can
+be any prefix of '\fIprefix\fP', '\fIsubstring\fP' or '\fIfuzzy\fP'.
+.IP "\fB-s\fP|\fB-sp\fP|\fB-start\fP|\fB-start_pattern\fP \fIpattern\fP"
+Place the cursor on the first word corresponding to the specified pattern.
+
+\fIpattern\fP can be:
+.RS
+.IP * 2
+A \fB#\fP immediately followed by a \fBnumber\fP giving the initial
+position of the cursor (counting from 0).
+
+If the word at this position is excluded, then the first previous non
+excluded word is selected if it exists, otherwise the first non excluded
+word is selected.
+
+If this number if greater than the number of words, the cursor will be
+set on the latest selectable position.
+.IP * 2
+A single \fB#\fP or the string \fB#last\fP to set the initial
+cursor position to the latest selectable word position.
+.IP * 2
+A string starting with a \fB/\fP indicating that we want the cursor
+to be set to the first word matching the given regular expression.
+.IP * 2
+A \fBprefix\fP string indicating that we want the cursor to be set on the
+first word matching the string given (\fBa\fP will match \fBCancel\fP
+by example).
+.PP
+Warning, when searching for a prefix or a regular expression, smenu
+only looks for them after an eventual modification, so for example,
+the command:
+\f(CBsmenu -I/c/x/ -s/c <<< "a b c d"\fP won't find c and put the cursor
+on \fBa\fP but \f(CBsmenu -I/c/x/v -s/c <<< "a b c d"\fP will find it and
+put the cursor on the \fBx\fP substituting the \fBc\fP on screen only
+
+\fI\\u\fP sequences can be used in the pattern.
+.RE
+\fB-x\fP|\fB-timeout\fP \fItype\fP [\fIword\fP] \fIdelay\fP
 .TQ
-\fB-X \fItype\fP [\fIword\fP] \fIdelay\fP
+\fB-X\fP|\fB-hidden_timeout\fP \fItype\fP [\fIword\fP] \fIdelay\fP
 Sets a timeout.
 Three types of timeout are possible:
 .RS
@@ -1112,13 +1258,17 @@ second.
 Each key press except \fBENTER\fP, \fBq\fP, \fBQ\fP and \fB^C\fP resets
 the timer to its initial value.
 
-The \fB-X\fP version works like \fB-x\fP but no periodic remaining
-messages is displayed above the selection window.
+The \fB-X\fP|\fB-hidden_timeout\fP version works like
+\fB-x\fP|\fB-timeout\fP but no periodic remaining messages is displayed
+above the selection window.
 .RE
-.IP "\fB-/\fP \fIsearch_method\fP"
-Affects the '\fB/\fP' key to a search method.
-By default '\fB/\fP' is affected to '\fIfuzzy\fP' but the argument can
-be any prefix of '\fIprefix\fP', '\fIsubstring\fP' or '\fIfuzzy\fP'.
+.IP \fB-r\fP|\fB-auto_validate\fP
+Enables \fBENTER\fP to validate the selection even in search mode.
+.IP \fB-v\fP|\fB-vb\fP|\fB-visual_bell\fP
+By default, when searching, an alarm is produced by the terminal when
+the user enters a character or makes a move which lead to no result or
+to an error condition.
+This argument make this beep visual by briefly showing the cursor.
 .SH NOTES
 If tabulators (\fI\\t\fP) are embedded in the input, there is no way
 to replace them with the original number of spaces.
@@ -1234,4 +1384,4 @@ On these types of terminals, the automatic re-display of the output of
 smenu will be disturbed and some artifacts may appear on the screen if
 the terminal window is resized.
 .SH AUTHORS
-\(co 2015 Pierre Gentile (p.gen.progs@gmail.com)
+\(co Pierre Gentile (p.gen.progs@gmail.com)

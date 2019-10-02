@@ -1,4 +1,4 @@
-$ OUT=$(smenu -Z X -c t0001.in)
+$ OUT=$(smenu -c -Z X t0001.in)
 
 a b c d X 
 

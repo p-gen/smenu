@@ -1,4 +1,4 @@
-$ OUT=$(smenu -a e:5,br b:0/6 -R2 -c -- t0004.in)
+$ OUT=$(smenu -a e:5,br b:0/6 -c -R2 -- t0004.in)
 
 1  ┐
 0:010723 3:1e2e 
