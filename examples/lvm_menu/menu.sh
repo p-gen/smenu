@@ -59,12 +59,12 @@ fi
 # """"""""""""
 REP=$($SMENU "$TITLE"                      \
             -s /Exit                       \
-            -q -d -M -n 30 -c -w           \
+            -q -d -M -n 30                 \
             -U "Exit menu"                 \
             -a da:3,b                      \
             -e '^#' -E '/(^#)+(.*)$/ \2/v' \
             -1 'Exit' 2,r                  \
-            -I '/([^ ]+) (.*)/\2/v'        \
+            -I '/([^ ]+) (.*)/\2/v' -c -w  \
             $1                             \
       || echo Abort)
 
