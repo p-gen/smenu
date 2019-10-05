@@ -6275,7 +6275,7 @@ main(int argc, char * argv[])
   ctxopt_add_opt_settings(parameters, "line_mode", "-l -line -line_mode");
   ctxopt_add_opt_settings(parameters, "tab_mode",
                           "-t -tab_mode -tabulate_mode");
-  ctxopt_add_opt_settings(parameters, "wide_mode", "-w -wt -wide_mode");
+  ctxopt_add_opt_settings(parameters, "wide_mode", "-w -wide_mode");
   ctxopt_add_opt_settings(parameters, "columns_select", "-C -cs -col_select");
   ctxopt_add_opt_settings(parameters, "rows_select", "-R -rs -row_select");
   ctxopt_add_opt_settings(parameters, "force_first_column",

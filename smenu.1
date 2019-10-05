@@ -22,9 +22,9 @@ and outputs the selection to stdout.
   [\fB-T\fP|\fB-tm\fP|\fB-tag_mode\fP [\fIdelim\fP]]
   [\fB-P\fP|\fB-pm\fP|\fB-pin_mode\fP [\fIdelim\fP]]
   [\fB-p\fP|\fB-at\fP|\fB-auto_tag\fP]
-  [\fB-N\fP|\fB-number\fP>da_ctx... [\fIregex\fP]]
-  [\fB-U\fP|\fB-unnumber\fP>da_ctx... [\fIregex\fP]]
-  [\fB-F\fP|\fB-en\fP|\fB-embedded_number\fP>da_ctx]
+  [\fB-N\fP|\fB-number\fP... [\fIregex\fP]]
+  [\fB-U\fP|\fB-unnumber\fP... [\fIregex\fP]]
+  [\fB-F\fP|\fB-en\fP|\fB-embedded_number\fP]
   [\fB-D\fP|\fB-data\fP|\fB-options\fP [\fIparameter\fP...]
   [\fB-b\fP|\fB-blank\fP]
   [\fB-M\fP|\fB-middle\fP|\fB-center\fP]
@@ -32,16 +32,18 @@ and outputs the selection to stdout.
   [\fB-c\fP|\fB-col\fP|\fB-col_mode\fP|\fB-column\fP]
   [\fB-l\fP|\fB-line\fP|\fB-line_mode\fP]
   [\fB-t\fP|\fB-tab_mode\fP|\fB-tabulate_mode\fP [\fIcols\fP]]
-  [\fB-w\fP|\fB-wt\fP|\fB-wide_tab_mode\fP]
+  [\fB-w\fP|\fB-wide_mode\fP]
   [\fB-C\fP|\fB-cs\fP|\fB-col_select\fP... \fIselector\fP]
   [\fB-R\fP|\fB-rs\fP|\fB-row_select\fP... \fIselector\fP]
   [\fB-A\fP|\fB-fc\fP|\fB-first_column\fP \fIregex\fP]
   [\fB-Z\fP|\fB-lc\fP|\fB-last_column\fP \fIregex\fP]
   [\fB-g\fP|\fB-gutter\fP [\fIstring\fP]]
   [\fB-k\fP|\fB-ks\fP|\fB-keep_spaces\fP]
-  [\fB-W\fP|\fB-ws\fP|\fB-wd\fP|\fB-word_delimiters\fP|\fB-word_separators\fP \
+  [\fB-W\fP|\fB-ws\fP|\fB-wd\fP|\fB-word_delimiters\fP|\
+\fB-word_separators\fP \
 \fIbytes\fP]
-  [\fB-L\fP|\fB-ls\fP|\fB-ld\fP|\fB-line-delimiters\fP|\fB-line_separators\fP \
+  [\fB-L\fP|\fB-ls\fP|\fB-ld\fP|\fB-line-delimiters\fP|\
+\fB-line_separators\fP \
 \fIbytes\fP]
   [\fB-q\fP|\fB-no_bar\fP|\fB-no-scroll_bar\fP]
   [\fB-S\fP|\fB-subst\fP... \fI/regex/repl/opts\fP]
@@ -49,8 +51,8 @@ and outputs the selection to stdout.
   [\fB-E\fP|\fB-se\fP|\fB-subst_excluded\fP... \fI/regex/repl/opts\fP]
   [\fB-/\fP|\fB-search_method\fP \fIprefix\fP|\fIsubstring\fP|\fIfuzzy\fP]
   [\fB-s\fP|\fB-sp\fP|\fB-start\fP|\fB-start_pattern\fP \fIpattern\fP]
-  [\fB-x\fP|\fB-timeout\fP \fI#\fP...]
-  [\fB-X\fP|\fB-hidden_timeout\fP \fI#\fP...]
+  [\fB-x\fP|\fB-timeout\fP \fItype\fP [\fIword\fP] \fIdelay\fP...]
+  [\fB-X\fP|\fB-hidden_timeout\fP \fItype\fP [\fIword\fP] \fIdelay\fP...]
   [\fB-r\fP|\fB-auto_validate\fP]
   [\fB-v\fP|\fB-vb\fP|\fB-visual_bell\fP]
 
@@ -509,10 +511,14 @@ the \fBMain\fP context.
 Each option can switch to another context in which only a subset of the
 options is usable.
 
+For each parameter described below, the contexts in which the associated
+option is defined as well as the context to which it leads, if any,
+are given.
+
 An option not defined in a context will force the end of the current
 context and will be recursively evaluated in the previous contexts until
 found (or not).
-If not found, an error message is displayed ans smenu is terminated.
+If not found, an error message is displayed and smenu is terminated.
 
 The contexts defined in smenu are:
 .IP \fBMain\fP 2
@@ -530,26 +536,27 @@ After the \fB-T\fP|\fB-tm\fP|\fB-tag_mode\fP or
 After the \fB-N\fP|\fB-number\fP, \fB-U\fP|\fB-unnumber\fP or
 \fB-F\fP|\fB-en\fP|\fB-embedded_number\fP parameter.
 .IP Example: 2
-\f(CBsmenu -col_select\fP will trigger an error if not in the
-\fBColumns\fP context introduced by
-\fB-c\fP|\fB-col\fP|\fB-col_mode\fP|\fB-column\fP.
+\fB-col_select\fP will trigger an error if not in the \fBColumns\fP
+context introduced by \fB-c\fP|\fB-col\fP|\fB-col_mode\fP|\fB-column\fP.
 
 You now have to explicitly enter:
 .
 \f(CBsmenu -c -col_select e1\fP
 . 
-to be able to make all but the first column of the input selectable.
+to be able to make all but the first column of the input selectable as
+\fB-col_select\fP is only available in the \fBColumns\fP context.
 .PP
 The \fB-h\fP|\fB-help\fP and \fB-?\fP|\fB-u\fP|\fB-usage\fP options now
 display the help and synopsis of the available options in the current
 context.
 .IP Example: 2
-\f(CB-col -u\fP will only show the usage in the \fBColumns\fP context
+\f(CBsmenu -col -u\fP will only show the usage in the \fBColumns\fP
+context
 .PP
-The contexts contain all the non-context-changing option so in practice
+The contexts contain all the non-context-changing options so, in practice,
 the usage should be intuitive.
 You may nevertheless have to adjust some scripts using the old smenu
-releases.
+releases as I did in the lvm_menu example.
 .PP
 The benefits of this new option system are:
 .IP * 2
@@ -568,12 +575,25 @@ Only the relevant parameters are available in a context.
 .PP
 The description of each command line parameter is as follows:
 .IP "\fB-h\fP|\fB-help\fP"
-Display a long help messages and exits.
+(Allowed in all contexts)
+
+Display a context specific help messages and exits.
+.IP "\fB-H\fP|\fB-long_help\fP"
+(Allowed in Main context)
+
+Display a long (non context specific) help messages and exits.
 .IP "\fB-?\fP|\fB-u\fP|\fB-usage\fP"
+(Allowed in all contexts)
+
 Displays a short help message and exits.
-.IP \fB-V\fP|\fB-version\fP
+.IP "\fB-V\fP|\fB-version\fP"
+(Allowed in Main context)
+
 Displays the current version and quits.
 .IP "\fB-f\fP|\fB-cfg\fP|\fB-config_file file\fP"
+(Allowed in Main context)
+
+Displays the current version and quits.
 This option gives the possibility to select an alternative configuration
 file.
 If the given file doesn't exist or is not readable then the default
@@ -582,6 +602,8 @@ values will be used.
 The \fB.smenu\fP files in the user's home directory and in the current
 directory, if present, will be ignored when this option is used.
 .IP "\fB-n\fP|\fB-lines\fP|\fB-height\fP [\fIheight\fP]"
+(Allowed in all contexts)
+
 Gives the maximum number of lines in the scrolling selection window.
 
 If \fB-n\fP|\fB-lines\fP|\fB-height\fP is not present the number of
@@ -594,6 +616,8 @@ This remains true even if the terminal is resized.
 If \fB-n\fP|\fB-lines\fP|\fB-height\fP is present with a numerical
 argument, this value will be used to determine the number of lines.
 .IP "\fB-i\fP|\fB-include\fP... \fIregex\fP"
+(Allowed in all contexts)
+
 Sets the \fBi\fPnclude filter to match the selectable words.
 All the other words will become implicitly non-selectable (excluded)
 
@@ -601,6 +625,8 @@ All the other words will become implicitly non-selectable (excluded)
 
 \fI\\u\fP sequences can also be used in the regexp.
 .IP "\fB-e\fP|\fB-exclude\fP... \fIregex\fP"
+(Allowed in all contexts)
+
 Sets the \fBe\fPxclude filter to match the non-selectable words.
 All the other selectable words will become implicitly selectable (included)
 
@@ -614,6 +640,8 @@ made by \fB-I\fP|\fB-si\fP|\fB-subst_included\fP or
 
 \fI\\u\fP sequences can also be used in the regexp.
 .IP "\fB-m\fP|\fB-msg\fP|\fB-message\fP|\fB-title\fP \fImessage\fP"
+(Allowed in all contexts)
+
 Displays a message above the window.
 If the current locale is not \fIUTF-8\fP, then all \fIUTF-8\fP characters
 in it will be converted into a dot.
@@ -623,6 +651,8 @@ in it will be converted into a dot.
 Note that the message will be truncated if it does not fit on a terminal
 line.
 .IP "\fB-a\fP|\fB-attributes\fP \fIprefix:attr\fP..."
+(Allowed in all contexts)
+
 Sets the display attributes of the elements displayed and the cursor.
 
 At least one attribute prefixed attribute must be given.
@@ -674,6 +704,8 @@ See the \fB-1\fP|\fB-l1\fP|\fB-level1\fP option for the \fIattr\fP syntax.
 .IP "\fB-3\fP|\fB-l3\fP|\fB-level3\fP \fIregex\fP [\fIattr\fP]"
 .IP "\fB-4\fP|\fB-l4\fP|\fB-level4\fP \fIregex\fP [\fIattr\fP]"
 .IP "\fB-5\fP|\fB-l5\fP|\fB-level5\fP \fIregex\fP [\fIattr\fP]"
+(Allowed in all contexts)
+
 Allows one to give a special display color to up to 5 classes of words
 specified by regular expressions.
 They are called \fBspecial levels\fP.
@@ -702,7 +734,10 @@ Examples of possible attributes are:
 .fi
 
 \fI\\u\fP sequences can be used in the pattern.
-.IP "\fB-T\fP|\fB-tm\fP|\fB-tag_mode\fP [\fIdelim\fP]
+.IP "\fB-T\fP|\fB-tm\fP|\fB-tag_mode\fP [\fIdelim\fP]"
+(Allowed in Main, Columns, Lines, Direct_access, Tabulations contexts,
+leads to Tagging context)
+
 Enables the multiple selections or tag mode.
 In this mode, several selectable words can be selected without leaving
 the program.
@@ -725,19 +760,27 @@ A space is used as the default separator if none is given.
 \fBCaution\fP: To get exactly the same behavior as in version 0.9.11
 and earlier, you must also use the \fB-p\fP|\fB-at\fP|\fB-auto_tag\fP
 option.
-.IP "\fB-P\fP|\fB-pm\fP|\fB-pin_mode\fP [\fIdelim\fP]"
+.IP "\fB-P\fP|\fB-pm\fP|\fB-pin_mode\fP [\fIdelim\fP]" 
+(Allowed in Main, Columns, Lines, Direct_access, Tabulations contexts,
+leads to Tagging context)
+
 Works like \fB-T\fP|\fB-tm\fP|\fB-tag_mode\fP but, unlike
 \fB-T\fP|\fB-tm\fP|\fB-tag_mode\fP, the output depends on the order in
 which the words were tagged.
 In other words, the first tagged word comes first in the output, the
 second tagged word comes next, and so on.
-.IP \fB-p\fP|\fB-at\fP|\fB-auto_tag\fP
+.IP "\fB-p\fP|\fB-at\fP|\fB-auto_tag\fP"
+(Allowed in Tagging context)
+
 This option modifies the default behavior of the
 \fB-T\fP|\fB-tm\fP|\fB-tag_mode\fP and \fB-P\fP|\fB-pm\fP|\fB-pin_mode\fP
 options.
 An untagged word under the cursor will be automatically tagged when
 \fBENTER\fP is pressed.
 .IP "\fB-N\fP|\fB-number\fP>da_ctx... [\fIregex\fP]"
+(Allowed in Main, Columns, Lines, Tabulation contexts, leads to
+Direct_access context)
+
 This option allows one to number the selectable words matching a
 specific regular expression.
 These numbers are numbered starting from 1 and provides a direct access
@@ -761,6 +804,9 @@ This option can be used more than once with cumulative effects.
 \fB-N\fP|\fB-number\fP, \fB-U\fP|\fB-unnumber\fP and
 \fB-F\fP|\fB-en\fP|\fB-embedded_number\fP can be mixed.
 .IP "\fB-U\fP|\fB-unnumber\fP>da_ctx... [\fIregex\fP]"
+(Allowed in Main, Columns, Lines, Tabulation contexts, leads to
+Direct_access context)
+
 This option allows one to un-number words.
 If placed after a previous \fB-N\fP|\fB-number\fP, it can be used to
 remove the numbering of selected words.
@@ -774,7 +820,10 @@ This option can be used more than once with cumulative effects.
 
 \fB-U\fP|\fB-unnumber\fP, \fB-N\fP|\fB-number\fP and
 \fB-F\fP|\fB-en\fP|\fB-embedded_number\fP can be mixed.
-.IP \fB-F\fP|\fB-en\fP|\fB-embedded_number\fP
+.IP "\fB-F\fP|\fB-en\fP|\fB-embedded_number\fP"
+(Allowed in Main, Columns, Lines, Tabulation contexts, leads to
+Direct_access context)
+
 This option is similar to \fB-N\fP|\fB-number\fP but does not generate
 a continuous flow of numbers but extracts them from the word itself.
 
@@ -795,6 +844,8 @@ this program.
 \fB-F\fP|\fB-en\fP|\fB-embedded_number\fP, \fB-N\fP|\fB-number\fP and
 \fB-U\fP|\fB-unnumber\fP can be mixed.
 .IP "\fB-D\fP|\fB-data\fP|\fB-options\fP [\fIparameter\fP...]"
+(Allowed in Direct_access context)
+
 This option allows one to change the default behaviour of
 the \fB-N\fP|\fB-number\fP, \fB-U\fP|\fB-unnumber\fP and
 \fB-F\fP|\fB-en\fP|\fB-embedded_number\fP options.
@@ -923,15 +974,24 @@ determined automatically but if \fB-F\fP|\fB-en\fP|\fB-embedded_number\fP
 is set and the value of the \f(CBn\fP sub-option is given then this
 value is used.
 .RE
-.IP \fB-b\fP|\fB-blank\fP
+.IP "\fB-b\fP|\fB-blank\fP"
+(Allowed in all contexts)
+
 Replaces all non-printable characters by a blank.
 If this results in a blank word, it will be potentially deleted.
-.IP \fB-M\fP|\fB-middle\fP|\fB-center\fP
+.IP "\fB-M\fP|\fB-middle\fP|\fB-center\fP"
+(Allowed in all contexts)
+
 Centers the display if possible.
-.IP \fB-d\fP|\fB-delete_window\fP|\fB-clean_window\fP
+.IP "\fB-d\fP|\fB-delete_window\fP|\fB-clean_window\fP"
+(Allowed in all contexts)
+
 Tells the program to clean up the display before quitting by removing
 the selection window after use as if it was never displayed.
-.IP \fB-c\fP|\fB-col\fP|\fB-col_mode\fP|\fB-column\fP
+.IP "\fB-c\fP|\fB-col\fP|\fB-col_mode\fP|\fB-column\fP"
+(Allowed in Main, Direct_access, Tagging contexts, leads to Columns
+context)
+
 Sets the column mode.
 In this mode the lines of words do not wrap when the right border of
 the terminal is reached but only when a special character is read.
@@ -942,10 +1002,15 @@ and right edge of the window to help the user to reach the unseen words.
 
 In this mode, the width of each column is minimal to keep the maximum
 information visible on the terminal.
-.IP \fB-l\fP|\fB-line\fP|\fB-line_mode\fP
+.IP "\fB-l\fP|\fB-line\fP|\fB-line_mode\fP"
+(Allowed in Main, Direct_access, Tagging contexts, leads to Lines context)
+
 Sets the line mode.
 This mode is the same as column mode but without any column alignment.
 .IP "\fB-t\fP|\fB-tab_mode\fP|\fB-tabulate_mode\fP [\fIcols\fP]"
+(Allowed in Main, Direct_access, Tagging contexts, leads to Tabulations
+context)
+
 This option sets the tabulation mode and, if a number is specified,
 attents to set the number of displayed columns to that number.
 In this mode, embedded line separators are ignored.
@@ -960,13 +1025,15 @@ if a word does not fit in the calculated column size.
 .PP
 In this mode each column has the same width.
 .RE
-.IP \fB-w\fP|\fB-wt\fP|\fB-wide_tab_mode\fP
+.IP "\fB-w\fP|\fB-wide_mode\fP"
+(Allowed in Columns, Tabulations contexts)
+
 When \fB-t\fP|\fB-tab_mode\fP|\fB-tabulate_mode\fP is followed by a
 number of columns, the default is to compact the columns so that they
 use the less terminal width as possible.
 This option enlarges the columns in order to use the whole terminal width.
 
-When in column mode, \fB-w\fP|\fB-wt\fP|\fB-wide_tab_mode\fP can be used
+When in column mode, \fB-w\fP|\fB-wide_mode\fP can be used
 to force all the columns to have the same size (the largest one).
 See option \fB-c\fP|\fB-col\fP|\fB-col_mode\fP|\fB-column\fP below.
 .PP
@@ -978,6 +1045,8 @@ This choice enables a faster display.
 .RE
 .PP
 .IP "\fB-C\fP|\fB-cs\fP|\fB-col_select\fP... [\fIi\fP|\fIe\fP]\fIselector\fP"
+(Allowed in Columns context)
+
 These letters are case independent so \fII\fP can be used in place of
 \fIi\fP per example.
 
@@ -1014,7 +1083,8 @@ Spaces are allowed in the selection string if they are protected.
 
 The column mode is forced when this option is selected.
 .IP "\fB-R\fP|\fB-rs\fP|\fB-row_select\fP... \fIselector\fP"
-<\fIrow selectors\fP>"
+(Allowed in Columns, Lines contexts)
+
 Similar to \fB-C\fP|\fB-cs\fP|\fB-col_select\fP but for the rows.
 
 One difference though: this is the line mode which is forced by this
@@ -1028,6 +1098,8 @@ The selection mode (selection or de-selection) is given by the first
 occurrence of the options, the other occurrences will only update the
 selected or de-selected ranges.
 .IP "\fB-A\fP|\fB-fc\fP|\fB-first_column\fP \fIregex\fP"
+(Allowed in Columns, Lines, Tabulations contexts)
+
 In column mode, forces all words matching the given regular expression
 to be the first one in the displayed line.
 If you want to only rely on this method to build the lines, just specify
@@ -1039,6 +1111,8 @@ an empty \fBregex\fP to set the end-of-line separator with
 \fB-A\fP|\fB-fc\fP|\fB-first_column\fP.
 .RE
 .IP "\fB-Z\fP|\fB-lc\fP|\fB-last_column\fP \fIregex\fP"
+(Allowed in Columns, Lines, Tabulations contexts)
+
 Similar to \fB-A\fP|\fB-fc\fP|\fB-first_column\fP but forces the word
 to be the latest of its line.
 The same trick with
@@ -1050,6 +1124,8 @@ can also be used.
 \fB-Z\fP|\fB-lc\fP|\fB-last_column\fP.
 .RE
 .IP "\fB-g\fP|\fB-gutter\fP [\fIstring\fP]"
+(Allowed in Columns, Tabulations contexts)
+
 Replaces the blank after each words in column or tabular mode by a column
 separator.
 
@@ -1069,11 +1145,15 @@ Each character can be given in normal or \fI\\u\fP form in the
 Example: "\f(CB|- \fP" will allow one to separate the first two columns
 with '\f(CB|\fP', then '\f(CB-\fP' will be used and '\f(CB \fP' will
 separate the remaining columns if any.
-.IP \fB-k\fP|\fB-ks\fP|\fB-keep_spaces\fP
+.IP "\fB-k\fP|\fB-ks\fP|\fB-keep_spaces\fP"
+(Allowed in all contexts)
+
 By default, the spaces surrounding the output string will be deleted.
 This option forces them to be retained.
-.IP "\fB-W\fP|\fB-ws\fP|\fB-wd\fP|\fB-word_delimiters\fP|\fB-word_separators\fP\
- \fIbytes\fP"
+.IP "\fB-W\fP|\fB-ws\fP|\fB-wd\fP|\fB-word_delimiters\fP|\
+\fB-word_separators\fP \fIbytes\fP"
+(Allowed in all contexts)
+
 This option can be used to specify the characters (or multibyte
 sequences) which will be used to delimit the input words.
 
@@ -1086,8 +1166,10 @@ Non-printable characters in arguments should be given using the standard
 \fI$'\\t'\fP stands for the tabulation character for example.
 
 The default delimiters are: \fISPACE\fP, \fI$'\\t'\fP and \fI$'\\n'\fP.
-.IP "\fB-L\fP|\fB-ls\fP|\fB-ld\fP|\fB-line-delimiters\fP|\fB-line_separators\fP\
- \fIbytes\fP"
+.IP "\fB-L\fP|\fB-ls\fP|\fB-ld\fP|\fB-line-delimiters\fP|\
+\fB-line_separators\fP \fIbytes\fP"
+(Allowed in all contexts)
+
 This option can be used to specify the characters (or multibyte
 sequences) which will be used to delimit the lines in the input stream.
 
@@ -1113,10 +1195,14 @@ also used.
 
 \fI\\u\fP sequences can also be used here.
 .TP
-.IP \fB-q\fP|\fB-no_bar\fP|\fB-no-scroll_bar\fP
+.IP "\fB-q\fP|\fB-no_bar\fP|\fB-no-scroll_bar\fP"
+(Allowed in all contexts)
+
 Prevents the display of the scroll bar.
 .IP "\fB-S\fP|\fB-subst\fP... \
 /\fIregex\fP/\fIrepl\fP/[\fIg\fP][\fIv\fP][\fIs\fP]"
+(Allowed in all contexts)
+
 Post-processes the words by applying a regular expression based
 substitution.
 The argument must be formatted as in the \fBsed\fP editor.
@@ -1154,10 +1240,14 @@ In both cases, only the word \fIB\fP will be searchable and not \fIb\fP.
 .RE
 .IP "\fB-I\fP|\fB-si\fP|\fB-subst_included\fP... \
 /\fIregex\fP/\fIrepl\fP/[\fIg\fP][\fIv\fP][\fIs\fP]"
+(Allowed in all contexts)
+
 Post-processes the \fBselectable\fP words by applying a regular
 expression based substitution (see \fB-S\fP|\fB-subst\fP for details).
 .IP "\fB-E\fP|\fB-se\fP|\fB-subst_excluded\fP... \
 /\fIregex\fP/\fIrepl\fP/[\fIg\fP][\fIv\fP][\fIs\fP]"
+(Allowed in all contexts)
+
 Post-processes the \fBexcluded\fP (or \fBnon-selectable\fP)
 words by applying a regular expression based substitution (see
 \fB-S\fP|\fB-subst\fP for details).
@@ -1176,8 +1266,8 @@ Additionally \fI\\u\fP sequences can also be used in the regexp.
 .PP
 .RE
 If a post-processing action
-(\fB-S\fP|\fB-subst\fP/\fB-I\fP|\fB-si\fP|\fB-subst_included\fP\
-/\fB-E\fP|\fB-se\fP|\fB-subst_excluded\fP) results in an empty (length 0)
+(\fB-S\fP|\fB-subst\fP, \fB-I\fP|\fB-si\fP|\fB-subst_included\fP, \
+\fB-E\fP|\fB-se\fP|\fB-subst_excluded\fP) results in an empty (length 0)
 word, then we have two cases:
 .RS
 .IP "in column mode:"
@@ -1189,10 +1279,14 @@ utility.
 The word is simply removed.
 .RE
 .IP "\fB-/\fP|\fB-search_method\fP \fIsearch_method\fP"
+(Allowed in all contexts)
+
 Affects the '\fB/\fP' key to a search method.
 By default '\fB/\fP' is affected to '\fIfuzzy\fP' but the argument can
 be any prefix of '\fIprefix\fP', '\fIsubstring\fP' or '\fIfuzzy\fP'.
 .IP "\fB-s\fP|\fB-sp\fP|\fB-start\fP|\fB-start_pattern\fP \fIpattern\fP"
+(Allowed in all contexts)
+
 Place the cursor on the first word corresponding to the specified pattern.
 
 \fIpattern\fP can be:
@@ -1227,9 +1321,10 @@ put the cursor on the \fBx\fP substituting the \fBc\fP on screen only
 
 \fI\\u\fP sequences can be used in the pattern.
 .RE
-\fB-x\fP|\fB-timeout\fP \fItype\fP [\fIword\fP] \fIdelay\fP
-.TQ
-\fB-X\fP|\fB-hidden_timeout\fP \fItype\fP [\fIword\fP] \fIdelay\fP
+.IP "\fB-x\fP|\fB-timeout\fP \fItype\fP [\fIword\fP] \fIdelay\fP"
+.IP "\fB-X\fP|\fB-hidden_timeout\fP \fItype\fP [\fIword\fP] \fIdelay\fP"
+(Allowed in all contexts)
+
 Sets a timeout.
 Three types of timeout are possible:
 .RS
@@ -1262,9 +1357,13 @@ The \fB-X\fP|\fB-hidden_timeout\fP version works like
 \fB-x\fP|\fB-timeout\fP but no periodic remaining messages is displayed
 above the selection window.
 .RE
-.IP \fB-r\fP|\fB-auto_validate\fP
+.IP "\fB-r\fP|\fB-auto_validate\fP"
+(Allowed in all contexts)
+
 Enables \fBENTER\fP to validate the selection even in search mode.
-.IP \fB-v\fP|\fB-vb\fP|\fB-visual_bell\fP
+.IP "\fB-v\fP|\fB-vb\fP|\fB-visual_bell\fP"
+(Allowed in all contexts)
+
 By default, when searching, an alarm is produced by the terminal when
 the user enters a character or makes a move which lead to no result or
 to an error condition.

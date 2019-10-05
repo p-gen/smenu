@@ -25,7 +25,8 @@ common_help(void)
   printf("-i|-include\n");
   printf("  sets the regex input filter to match the selectable words.\n");
   printf("-e|-exclude\n");
-  printf("  sets the regex input filter to match the non-selectable words.\n");
+  printf("  sets the regex input filter to match the non-selectable "
+         "words.\n");
   printf("-m|-msg|-message|-title\n");
   printf("  displays a one-line message above the window.\n");
   printf("-a|-attributes\n");
@@ -90,7 +91,8 @@ main_help(void)
   printf("-V|-version\n");
   printf("  displays the current version and quits.\n");
   printf("-H|-long_help\n");
-  printf("  displays a full help and the options available in all contexts.\n");
+  printf("  displays a full help and the options available in all "
+         "contexts.\n");
   printf("-f|-cfg|-config_file\n");
   printf("  selects an alternative configuration file.\n");
   printf("-N|-number/-U|-unnumber\n");
@@ -105,7 +107,8 @@ main_help(void)
   printf("-l|-line|-line_mode\n");
   printf("  is like|-c without column alignments.\n");
   printf("-t|-tab_mode|-tabulate_mode\n");
-  printf("  tabulates the items. The number of columns can be limited with\n");
+  printf("  tabulates the items. The number of columns can be limited "
+         "with\n");
   printf("  an optional number.\n");
   printf("-T|-tm|-tag_mode/-P|-pm|-pin_mode\n");
   printf("  enables the tagging (multi-selections) mode. ");
@@ -162,7 +165,7 @@ columns_help(void)
   printf("  sets columns restrictions for selections.\n");
   printf("-R|-rs|-row_select\n");
   printf("  sets rows restrictions for selections.\n");
-  printf("-w|-wt|-wide_tab_mode\n");
+  printf("-w|-wide_mode\n");
   printf("  uses all the terminal width for the columns if their numbers "
          "is given.\n");
   printf("-g|-gutter\n");
@@ -236,7 +239,7 @@ tabulations_help(void)
   printf("Short description of allowed parameters:\n\n");
   common_help();
 
-  printf("-w|-wt|-wide_tab_mode\n");
+  printf("-w|-wide_mode\n");
   printf("  uses all the terminal width for the columns if their numbers "
          "is given.\n");
   printf("-g|-gutter\n");
@@ -283,7 +286,8 @@ direct_access_help(void)
   printf("-l|-line|-line_mode\n");
   printf("  is like|-c without column alignments.\n");
   printf("-t|-tab_mode|-tabulate_mode\n");
-  printf("  tabulates the items. The number of columns can be limited with\n");
+  printf("  tabulates the items. The number of columns can be limited "
+         "with\n");
   printf("  an optional number.\n");
   printf("-T|-tm|-tag_mode/-P|-pm|-pin_mode\n");
   printf("  enables the tagging (multi-selections) mode. ");
