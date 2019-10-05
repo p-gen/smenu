@@ -162,6 +162,9 @@ columns_help(void)
   printf("  sets columns restrictions for selections.\n");
   printf("-R|-rs|-row_select\n");
   printf("  sets rows restrictions for selections.\n");
+  printf("-w|-wt|-wide_tab_mode\n");
+  printf("  uses all the terminal width for the columns if their numbers "
+         "is given.\n");
   printf("-g|-gutter\n");
   printf("  separates columns with a character in column or tabulate "
          "mode.\n");

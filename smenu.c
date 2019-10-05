@@ -4775,9 +4775,9 @@ title_action(char * ctx_name, char * opt_name, char * param, int nb_values,
 }
 
 void
-wide_tab_mode_action(char * ctx_name, char * opt_name, char * param,
-                     int nb_values, char ** values, int nb_opt_data,
-                     void ** opt_data, int nb_ctx_data, void ** ctx_data)
+wide_mode_action(char * ctx_name, char * opt_name, char * param, int nb_values,
+                 char ** values, int nb_opt_data, void ** opt_data,
+                 int nb_ctx_data, void ** ctx_data)
 {
   win_t * win = opt_data[0];
 
@@ -6183,7 +6183,8 @@ main(int argc, char * argv[])
                       "[tag_mode>Tagging [delim]] "
                       "[pin_mode>Tagging [delim]]";
 
-  col_spec_options = "[columns_select... selector...] "
+  col_spec_options = "[wide_mode] "
+                     "[columns_select... selector...] "
                      "[rows_select... selector...] "
                      "[gutter [string]] "
                      "[auto_da_number>Direct_access... [regex]] "
@@ -6203,7 +6204,7 @@ main(int argc, char * argv[])
                       "[force_first_column regex] "
                       "[force_last_column regex]";
 
-  tab_spec_options = "[wide_tab_mode] "
+  tab_spec_options = "[wide_mode] "
                      "[gutter [string]] "
                      "[auto_da_number>Direct_access... [regex]] "
                      "[auto_da_unnumber>Direct_access... [regex]] "
@@ -6274,7 +6275,7 @@ main(int argc, char * argv[])
   ctxopt_add_opt_settings(parameters, "line_mode", "-l -line -line_mode");
   ctxopt_add_opt_settings(parameters, "tab_mode",
                           "-t -tab_mode -tabulate_mode");
-  ctxopt_add_opt_settings(parameters, "wide_tab_mode", "-w -wt -wide_tab_mode");
+  ctxopt_add_opt_settings(parameters, "wide_mode", "-w -wt -wide_mode");
   ctxopt_add_opt_settings(parameters, "columns_select", "-C -cs -col_select");
   ctxopt_add_opt_settings(parameters, "rows_select", "-R -rs -row_select");
   ctxopt_add_opt_settings(parameters, "force_first_column",
@@ -6352,8 +6353,7 @@ main(int argc, char * argv[])
                           &toggle, NULL);
   ctxopt_add_opt_settings(actions, "version", version_action, NULL);
   ctxopt_add_opt_settings(actions, "visual_bell", toggle_action, &toggle, NULL);
-  ctxopt_add_opt_settings(actions, "wide_tab_mode", wide_tab_mode_action, &win,
-                          NULL);
+  ctxopt_add_opt_settings(actions, "wide_mode", wide_mode_action, &win, NULL);
   ctxopt_add_opt_settings(actions, "post_subst_all", post_subst_action,
                           &sed_list, &langinfo, NULL);
   ctxopt_add_opt_settings(actions, "post_subst_included", post_subst_action,
