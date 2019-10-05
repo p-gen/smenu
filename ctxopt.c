@@ -152,9 +152,9 @@ strpref(char * s1, char * s2);
 static char *
 xstrtok_r(char * str, const char * delim, char ** end);
 
-/* ************* */
-/* cop interface */
-/* ************* */
+/* **************** */
+/* ctxopt interface */
+/* **************** */
 
 typedef struct opt_s        opt_t;
 typedef struct par_s        par_t;
@@ -986,9 +986,9 @@ str2argv(char * str, char ** args, int max)
   return nb_args;
 }
 
-/* ****************** */
-/* cop implementation */
-/* ****************** */
+/* ********************* */
+/* ctxopt implementation */
+/* ********************* */
 
 static int ctxopt_initialized = 0; /* cap_init has not yet been called */
 
@@ -2042,9 +2042,9 @@ init_opts(char * spec, ctx_t * ctx)
   return 1;
 }
 
-/* ================================================= */
-/* cop initialization function, must be called first */
-/* ================================================= */
+/* ==================================================== */
+/* ctxopt initialization function, must be called first */
+/* ==================================================== */
 void
 ctxopt_init(void)
 {
@@ -2852,9 +2852,9 @@ ctxopt_analyze(int nb_words, char ** words, int * nb_rem_args,
       }
     }
     else if (expect_par && *par_name != '-')
-      break; /* a unexpected non parameter was seen, assume it is      *
-              | The end of parameters and the start of non cop managed *
-              | command line arguments.                                */
+      break; /* a unexpected non parameter was seen, assume it is the end *
+              | of parameters and the start of non ctxopt managed command *
+              | line arguments.                                           */
     else if (expect_arg && *par_name != '-')
     {
       ll_node_t *    cstr_node;

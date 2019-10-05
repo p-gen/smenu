@@ -4686,8 +4686,8 @@ help_action(char * ctx_name, char * opt_name, char * param, int nb_values,
 
 void
 long_help_action(char * ctx_name, char * opt_name, char * param, int nb_values,
-            char ** values, int nb_opt_data, void ** opt_data, int nb_ctx_data,
-            void ** ctx_data)
+                 char ** values, int nb_opt_data, void ** opt_data,
+                 int nb_ctx_data, void ** ctx_data)
 {
   ctxopt_disp_usage(continue_after);
 
@@ -4738,8 +4738,8 @@ tab_mode_action(char * ctx_name, char * opt_name, char * param, int nb_values,
 
   if (nb_values == 1)
   {
-    sscanf(values[0], "%ld", &max_cols); /* Numericity and range were *
-                                          * already checked by cop.   */
+    sscanf(values[0], "%ld", &max_cols); /* Numericity and range were  *
+                                          * already checked by ctxopt. */
     win->max_cols = max_cols;
   }
 
@@ -4870,9 +4870,9 @@ gutter_action(char * ctx_name, char * opt_name, char * param, int nb_values,
   }
   else
   {
-    /* The argument is used to feed the gutter array, ech of its character */
-    /* Will serve as gutter in a round-robin way.                          */
-    /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+    /* The argument is used to feed the gutter array, each of its character */
+    /* Will serve as gutter in a round-robin way.                           */
+    /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
     long      n;
     wchar_t * w;
     long      i, offset;
