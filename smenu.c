@@ -6486,15 +6486,6 @@ main(int argc, char * argv[])
 
   void sig_handler(int s);
 
-  /* Ignore SIGTTIN and SIGINT */
-  /* """"""""""""""""""""""""" */
-  sigset_t sigs, oldsigs;
-
-  sigemptyset(&sigs);
-  sigaddset(&sigs, SIGTTIN);
-  sigaddset(&sigs, SIGINT);
-  sigprocmask(SIG_BLOCK, &sigs, &oldsigs);
-
   sa.sa_handler = sig_handler;
   sa.sa_flags   = 0;
   sigemptyset(&sa.sa_mask);
@@ -7771,6 +7762,15 @@ main(int argc, char * argv[])
   /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""" */
   if (count == 0)
     exit(EXIT_FAILURE);
+
+  /* Ignore SIGTTIN and SIGINT */
+  /* """"""""""""""""""""""""" */
+  sigset_t sigs, oldsigs;
+
+  sigemptyset(&sigs);
+  sigaddset(&sigs, SIGTTIN);
+  sigaddset(&sigs, SIGINT);
+  sigprocmask(SIG_BLOCK, &sigs, &oldsigs);
 
   /* The last word is always the last of its line */
   /* """""""""""""""""""""""""""""""""""""""""""" */
