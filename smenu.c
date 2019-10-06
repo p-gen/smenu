@@ -4711,7 +4711,7 @@ config_action(char * ctx_name, char * opt_name, char * param, int nb_values,
 {
   char ** config = opt_data[0];
 
-  *config = strdup(values[0]);
+  *config = xstrdup(values[0]);
 }
 
 void
