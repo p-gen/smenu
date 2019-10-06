@@ -34,10 +34,11 @@ fatal(errors e, char * opt_par, char * opt_params, char * opt_name,
 static void
 error(const char * format, ...);
 
-static int    user_rc;     /* Used by various callback functions */
-static int    user_value;  /* Used by various callback functions */
-static char * user_string; /* Used by various callback functions */
-static void * user_object; /* Used by various callback functions */
+static int    user_rc;      /* Used by various callback functions */
+static int    user_value;   /* Used by various callback functions */
+static char * user_string;  /* Used by various callback functions */
+static char * user_string2; /* Used by various callback functions */
+static void * user_object;  /* Used by various callback functions */
 
 /* *************************** */
 /* Memory management interface */
@@ -1428,6 +1429,30 @@ bst_print_ctx_cb(const void * node, walk_order_e kind, int level)
 }
 
 static void
+bst_match_par_cb(const void * node, walk_order_e kind, int level)
+{
+  ctx_t * ctx = ((bst_t *)node)->key;
+  par_t * par;
+
+  if (kind == postorder || kind == leaf)
+  {
+    void * par_bst = ctx->par_bst;
+    char * str     = xstrdup(user_string);
+
+    while (*str != '\0')
+    {
+      if ((par = locate_par(str, ctx)) != NULL)
+      {
+        user_string2 = concat(user_string2, " ", ctx->name, NULL);
+        break;
+      }
+      str[strlen(str) - 1] = '\0';
+    }
+    free(str);
+  }
+}
+
+static void
 match_prefix_cb(const void * node, walk_order_e kind, int level)
 {
   par_t * par = ((bst_t *)node)->key;
@@ -2053,9 +2078,10 @@ ctxopt_init(void)
   contexts_bst = NULL;
   options_bst  = NULL;
 
-  user_rc     = 0;
-  user_string = xmalloc(8);
-  user_object = NULL;
+  user_rc      = 0;
+  user_string  = xmalloc(8);
+  user_string2 = xmalloc(8);
+  user_object  = NULL;
 
   ctxopt_initialized = 1;
 
@@ -2653,8 +2679,26 @@ ctxopt_analyze(int nb_words, char ** words, int * nb_rem_args,
           check_for_occurrences_issues(ctx_inst);
 
           if (ctx_inst->prev_ctx_inst == NULL)
+          {
+            par_t * par;
+            char *  errmsg = "Unknown parameter: %s";
+
+            *user_string  = '\0';
+            *user_string2 = '\0';
+
+            user_string = concat(user_string, par_name, NULL);
+            bst_walk(contexts_bst, bst_match_par_cb);
+
+            if (*user_string2 != '\0')
+              errmsg = concat(errmsg,
+                              "\nIt appears to be defined in the context(s):",
+                              user_string2,
+                              "\n'smenu -h' or 'smenu -H' can be helpful here.",
+                              NULL);
+
             fatal(CTXOPTUNKPAR, par_name, NULL, NULL, ctx_inst->par_name,
-                  ctx_inst->ctx->name, "Unknown parameter: %s.", par_name);
+                  ctx_inst->ctx->name, errmsg, par_name);
+          }
           else
           {
             /* Try to backtrack and analyse the same parameter in the */
