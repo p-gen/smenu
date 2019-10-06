@@ -2366,8 +2366,7 @@ ctxopt_build_cmdline_list(int nb_words, char ** words)
 
       /* Interpret its beginning and look for the start of the real word */
       /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-      while (start <= len - 1
-             && (str[start] == '^' || str[start] == '{' || str[start] == '}'))
+      while (start <= len - 1 && (str[start] == '{' || str[start] == '}'))
       {
         ll_append(cmdline_list, xstrndup(str + start, 1));
         start++;
@@ -2375,7 +2374,7 @@ ctxopt_build_cmdline_list(int nb_words, char ** words)
       }
 
       end = len - 1;
-      if (str[end] == '^' || str[end] == '{' || str[end] == '}')
+      if (str[end] == '{' || str[end] == '}')
       {
         if (end > 0 && str[end - 1] != '\\')
         {
@@ -2383,7 +2382,7 @@ ctxopt_build_cmdline_list(int nb_words, char ** words)
           end--;
           node = cmdline_list->tail;
 
-          while (str[end] == '^' || str[end] == '{' || str[end] == '}')
+          while (str[end] == '{' || str[end] == '}')
           {
             if (end > start && str[end - 1] == '\\')
               break;
@@ -2459,24 +2458,10 @@ ctxopt_build_cmdline_list(int nb_words, char ** words)
     if (strcmp(word, "{}") == 0)
       goto next;
 
-    /* Keep only one '^' in sequence */
-    /* """"""""""""""""""""""""""""" */
-    if (strcmp(word, "^") == 0)
-      if (prev_word != NULL && strcmp(prev_word, "^") == 0)
-      {
-        ll_node_t * old_node = node;
-        node                 = node->prev;
-        ll_delete(cmdline_list, old_node);
-        free(old_node->data);
-        free(old_node);
-        goto next;
-      }
-
-    /* Remove a SG if the previous element is SG or '^' */
-    /* """""""""""""""""""""""""""""""""""""""""""""""""" */
+    /* Remove a SG if the previous element is SG */
+    /* """"""""""""""""""""""""""""""""""""""""" */
     if (strcmp(word, "\x1d") == 0)
-      if (prev_word != NULL
-          && (strcmp(prev_word, "\x1d") == 0 || strcmp(prev_word, "^") == 0))
+      if (prev_word != NULL && (strcmp(prev_word, "\x1d") == 0))
       {
         ll_node_t * old_node = node;
         node                 = node->prev;
@@ -2485,31 +2470,14 @@ ctxopt_build_cmdline_list(int nb_words, char ** words)
         free(old_node);
         goto next;
       }
-
-    /* Force a '^' if the previous element is SG */
-    /* """""""""""""""""""""""""""""""""""""""""" */
-    if (strcmp(word, "^") == 0)
-    {
-      if (prev_word != NULL && strcmp(prev_word, "\x1d") == 0)
-      {
-        *prev_word = '^';
-
-        ll_node_t * old_node = node;
-        node                 = node->prev;
-        ll_delete(cmdline_list, old_node);
-        free(old_node->data);
-        free(old_node);
-        goto next;
-      }
-    }
 
   next:
     prev_word = node->data;
     node      = node->next;
   }
 
-  /* Clean useless '^' and SG at the beginning and end of list */
-  /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+  /* Clean useless and SG at the beginning and end of list */
+  /* """"""""""""""""""""""""""""""""""""""""""""""""""""" */
   node = cmdline_list->head;
 
   if (node == NULL)
@@ -2517,7 +2485,7 @@ ctxopt_build_cmdline_list(int nb_words, char ** words)
 
   word = node->data;
 
-  if (strcmp(word, "\x1d") == 0 || strcmp(word, "^") == 0)
+  if (strcmp(word, "\x1d") == 0)
   {
     ll_delete(cmdline_list, node);
     free(word);
@@ -2530,7 +2498,7 @@ ctxopt_build_cmdline_list(int nb_words, char ** words)
 
   word = node->data;
 
-  if (strcmp(word, "\x1d") == 0 || strcmp(word, "^") == 0)
+  if (strcmp(word, "\x1d") == 0)
   {
     ll_delete(cmdline_list, node);
     free(word);
@@ -2622,19 +2590,6 @@ ctxopt_analyze(int nb_words, char ** words, int * nb_rem_args,
       if (ctx_inst->prev_ctx_inst != NULL)
       {
         ctx_inst = ctx_inst->prev_ctx_inst;
-        ctx      = ctx_inst->ctx;
-      }
-    }
-    else if (strcmp(par_name, "^") == 0)
-    {
-      check_for_missing_mandatory_opt(ctx_inst, (char *)(cli_node->prev->data));
-      check_for_occurrences_issues(ctx_inst);
-
-      /* Forced backtracking to the first context instance */
-      /* """"""""""""""""""""""""""""""""""""""""""""""""" */
-      if (ctx_inst->prev_ctx_inst != NULL)
-      {
-        ctx_inst = first_ctx_inst;
         ctx      = ctx_inst->ctx;
       }
     }
