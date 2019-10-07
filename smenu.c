@@ -6450,27 +6450,6 @@ main(int argc, char * argv[])
   if (exclude_pattern != NULL)
     utf8_interpret(exclude_pattern, &langinfo);
 
-  /* Force the right modes when the -C option is given */
-  /* """"""""""""""""""""""""""""""""""""""""""""""""" */
-  if (cols_selector_list)
-  {
-    if (win.tab_mode || win.col_mode || win.line_mode)
-      win.tab_mode = 0;
-
-    win.col_mode = 1;
-  }
-
-  /* Force the right modes when the -R option is given */
-  /* """"""""""""""""""""""""""""""""""""""""""""""""" */
-  if (rows_selector_list)
-  {
-    if (win.tab_mode)
-      win.tab_mode = 0;
-
-    if (!win.col_mode && !win.line_mode)
-      win.line_mode = 1;
-  }
-
   /* If we did not impose the number of columns, use the whole */
   /* terminal width                                            */
   /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""" */
