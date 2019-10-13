@@ -1955,7 +1955,7 @@ success:
 
   *opt = xmalloc(sizeof(opt_t));
 
-  (*opt)->name                  = xstrdup(opt_name);
+  (*opt)->name                  = opt_name;
   (*opt)->optional              = opt_optional;
   (*opt)->multiple              = opt_multiple;
   (*opt)->opt_count_matter      = opt_count_matter;
@@ -2983,6 +2983,7 @@ evaluate_ctx_inst(ctx_inst_t * ctx_inst)
   ll_node_t *  opt_inst_node;
   char **      args;
   int          nb_args;
+  int          i;
 
   if (ctx_inst == NULL)
     return;
@@ -3018,6 +3019,10 @@ evaluate_ctx_inst(ctx_inst_t * ctx_inst)
 
     if (opt_inst->next_ctx_inst != NULL)
       evaluate_ctx_inst(opt_inst->next_ctx_inst);
+
+    for (i = 0; i < nb_args; i++)
+      free(args[i]);
+    free(args);
 
     opt_inst_node = opt_inst_node->next;
   }
@@ -3206,6 +3211,8 @@ ctxopt_format_constraint(int nb_args, char ** args, char * value)
     error("The argument %s does not respect the imposed format: %s", value,
           args[0]);
 
+  free(format);
+
   return rc == 1;
 }
 
@@ -3234,6 +3241,8 @@ ctxopt_re_constraint(int nb_args, char ** args, char * value)
           value, args[0]);
     return 0;
   }
+
+  regfree(&re);
 
   return 1;
 }
