@@ -1436,8 +1436,7 @@ bst_match_par_cb(const void * node, walk_order_e kind, int level)
 
   if (kind == postorder || kind == leaf)
   {
-    void * par_bst = ctx->par_bst;
-    char * str     = xstrdup(user_string);
+    char * str = xstrdup(user_string);
 
     while (*str != '\0')
     {
@@ -2680,8 +2679,7 @@ ctxopt_analyze(int nb_words, char ** words, int * nb_rem_args,
 
           if (ctx_inst->prev_ctx_inst == NULL)
           {
-            par_t * par;
-            char *  errmsg = "Unknown parameter: %s";
+            char * errmsg = "Unknown parameter: %s";
 
             *user_string  = '\0';
             *user_string2 = '\0';
