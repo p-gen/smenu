@@ -3076,6 +3076,12 @@ ctxopt_new_ctx(char * name, char * opts_specs)
     bst_search(ctx, &contexts_bst, ctx_compare);
 }
 
+/* ==================================================== */
+/* Display a usage screen limited to a specific context */
+/* IN: the context name.                                */
+/* IN: what to do after (continue or exit the program)  */
+/*     possible values: continue_after, exit_after.     */
+/* ==================================================== */
 void
 ctxopt_ctx_disp_usage(char * ctx_name, usage_behaviour action)
 {
@@ -3121,6 +3127,11 @@ ctxopt_ctx_disp_usage(char * ctx_name, usage_behaviour action)
     exit(EXIT_FAILURE);
 }
 
+/* ==================================================== */
+/* Display a full usage screen about all contexts.      */
+/* IN: what to do after (continue or exit the program)  */
+/*     possible values: continue_after, exit_after.     */
+/* ==================================================== */
 void
 ctxopt_disp_usage(usage_behaviour action)
 {
