@@ -11,13 +11,13 @@
 #include <string.h>
 #include "ctxopt.h"
 
-errors ctxopterrno = CTXOPTNOERR;
-
 /* *********************** */
 /* Static global variables */
 /* *********************** */
 static void * contexts_bst;
 static void * options_bst;
+
+state_t * cur_state;
 
 /* Prototypes */
 
@@ -25,11 +25,13 @@ static void * options_bst;
 /* Messages interface */
 /* ****************** */
 
-static void (**err_functions)(char *, char *, char *, char *, char *);
+static void (**err_functions)(errors e, state_t * state);
 
 static void
-fatal(errors e, char * opt_par, char * opt_params, char * opt_name,
-      char * ctx_par, char * ctx_name, const char * format, ...);
+fatal_internal(const char * format, ...);
+
+static void
+fatal(errors e, char * errmsg);
 
 static void
 error(const char * format, ...);
@@ -147,7 +149,7 @@ rtrim(char * str, const char * trim_str, size_t min);
 static int
 strchrcount(char * str, char c);
 
-int
+static int
 strpref(char * s1, char * s2);
 
 static char *
@@ -205,7 +207,7 @@ static void
 match_prefix_cb(const void * node, walk_order_e kind, int level);
 
 static int
-has_unseen_mandatory_opt(ctx_inst_t * ctx_inst);
+has_unseen_mandatory_opt(ctx_inst_t * ctx_inst, char ** missing);
 
 static int
 opt_parse(char * s, opt_t ** opt);
@@ -228,32 +230,75 @@ evaluate_ctx_inst(ctx_inst_t * ctx_inst);
 /* ====================== */
 /* Message implementation */
 /* ====================== */
+
 static void
-fatal(errors e, char * opt_par, char * opt_params, char * opt_name,
-      char * ctx_par, char * ctx_name, const char * format, ...)
+fatal_internal(const char * format, ...)
 {
   va_list args;
 
-  ctxopterrno = e;
-
-  if (e == CTXOPTINTERNAL)
-    fprintf(stderr, "ctxopt internal: ");
-
-  if (err_functions[e] != NULL)
-    err_functions[e](opt_par, opt_params, opt_name, ctx_par, ctx_name);
-  else
-  {
-    va_start(args, format);
-    vfprintf(stderr, format, args);
-    fprintf(stderr, "\n");
-  }
-
-  if (ctx_name != NULL)
-    ctxopt_ctx_disp_usage(ctx_name, continue_after);
-
+  va_start(args, format);
+  vfprintf(stderr, format, args);
+  fprintf(stderr, "\n");
   va_end(args);
 
   exit(EXIT_FAILURE);
+}
+
+static void
+fatal(errors e, char * errmsg)
+{
+  if (err_functions[e] != NULL)
+    err_functions[e](e, cur_state);
+  else
+  {
+    switch (e)
+    {
+      case CTXOPTNOERR:
+        break;
+      case CTXOPTMISPAR:
+        if (cur_state->cur_opt_par_name != NULL)
+          fprintf(stderr,
+                  "Mandatory parameter(s): %s are missing in the context "
+                  "introduced by %s.",
+                  errmsg, cur_state->ctx_par_name);
+        else
+          fprintf(
+            stderr,
+            "Mandatory parameter(s): %s are missing in the first context.",
+            errmsg);
+
+        free(errmsg);
+        break;
+      case CTXOPTMISARG:
+        if (cur_state->pre_opt_par_name != NULL)
+          fprintf(stderr, "%s requires argument(s).",
+                  cur_state->pre_opt_par_name);
+        else
+          fprintf(stderr, "%s requires argument(s).",
+                  cur_state->cur_opt_par_name);
+        break;
+      case CTXOPTDUPOPT:
+        fprintf(stderr,
+                "The parameter(s) %s can only appear once in this context.",
+                cur_state->cur_opt_par_name);
+        break;
+      case CTXOPTUNKPAR:
+        fprintf(stderr, "Unknown parameter: %s", cur_state->cur_opt_par_name);
+        fprintf(stderr, errmsg);
+        break;
+      case CTXOPTINCOPT:
+        fprintf(stderr, "%s is incompatible with %s\n",
+                cur_state->cur_opt_par_name, errmsg);
+        break;
+      case CTXOPTERRSIZE:
+        break;
+    }
+  }
+
+  if (cur_state->ctx_name != NULL)
+    ctxopt_ctx_disp_usage(cur_state->ctx_name, continue_after);
+
+  exit(e);
 }
 
 static void
@@ -285,9 +330,8 @@ xmalloc(size_t size)
   real_size = (size > 0) ? size : 1;
   allocated = malloc(real_size);
   if (allocated == NULL)
-    fatal(CTXOPTINTERNAL, NULL, NULL, NULL, NULL, NULL,
-          "Insufficient memory (attempt to malloc %lu bytes)\n",
-          (unsigned long int)size);
+    fatal_internal("Insufficient memory (attempt to malloc %lu bytes)\n",
+                   (unsigned long int)size);
 
   return allocated;
 }
@@ -304,9 +348,8 @@ xcalloc(size_t n, size_t size)
   size      = (size > 0) ? size : 1;
   allocated = calloc(n, size);
   if (allocated == NULL)
-    fatal(CTXOPTINTERNAL, NULL, NULL, NULL, NULL, NULL,
-          "Insufficient memory (attempt to calloc %lu bytes)\n",
-          (unsigned long int)size);
+    fatal_internal("Insufficient memory (attempt to calloc %lu bytes)\n",
+                   (unsigned long int)size);
 
   return allocated;
 }
@@ -321,9 +364,8 @@ xrealloc(void * p, size_t size)
 
   allocated = realloc(p, size);
   if (allocated == NULL && size > 0)
-    fatal(CTXOPTINTERNAL, NULL, NULL, NULL, NULL, NULL,
-          "Insufficient memory (attempt to xrealloc %lu bytes)\n",
-          (unsigned long int)size);
+    fatal_internal("Insufficient memory (attempt to xrealloc %lu bytes)\n",
+                   (unsigned long int)size);
 
   return allocated;
 }
@@ -594,7 +636,7 @@ ll_find(ll_t * const list, void * const data,
 /* IN start_node : The node of the list which will be the first node to */
 /*                 consider to create the array                         */
 /* OUT: count    : The number of elements of the resulting array.       */
-/* OUT: array    : The resulting array.                                 */
+/* OUT: array    : The resulting array or NULL if the list is empty.    */
 /* RC :          : The number of elements of the resulting array.       */
 /* ==================================================================== */
 static int
@@ -608,9 +650,13 @@ ll_strarray(ll_t * list, ll_node_t * start_node, int * count, char *** array)
   node = start_node;
 
   if (list == NULL || node == NULL)
-    return 0;
+  {
+    *array = NULL;
 
-  *array = xmalloc((list->len + 1) * sizeof(char **));
+    return 0;
+  }
+
+  *array = xmalloc((list->len + 1) * sizeof(char *));
   while (node != NULL)
   {
     (*array)[n++] = (char *)(node->data);
@@ -620,7 +666,6 @@ ll_strarray(ll_t * list, ll_node_t * start_node, int * count, char *** array)
   }
 
   (*array)[*count] = NULL;
-  *array           = xrealloc(*array, ((*count) + 1) * sizeof(char **));
 
   return *count;
 }
@@ -852,7 +897,7 @@ strchrcount(char * str, char c)
 /* =============================================== */
 /* Is the string str2 a prefix of the string str1? */
 /* =============================================== */
-int
+static int
 strpref(char * str1, char * str2)
 {
   while (*str1 != '\0' && *str1 == *str2)
@@ -864,56 +909,98 @@ strpref(char * str1, char * str2)
   return *str2 == '\0';
 }
 
-/*===================================================================== */
-/* Allocate memory and safely concatenate strings. Stolen from a public */
-/* domain implementation which can be found here:                       */
-/* http://openwall.info/wiki/people/solar/software/\                    */
-/* public-domain-source-code                                            */
-/* ==================================================================== */
+/* ====================================================================== */
+/* Strings concatenation with dynamic memory allocation                   */
+/* IN : a variable number of char * arguments with NULL terminating       */
+/*      the sequence.                                                     */
+/*                                                                        */
+/* Returns a new allocated string containing the concatenation of all     */
+/* the arguments. It is the caller's responsibility to free the resulting */
+/* string.                                                                */
+/* ====================================================================== */
 static char *
-concat(const char * s1, ...)
+xstrcat(const char * str, ...)
 {
-  va_list      args;
-  const char * s;
-  char *       p, *result;
-  size_t       l, m, n;
+  size_t  l;
+  va_list args;
+  char *  s;
+  char *  result;
 
-  m = n = strlen(s1);
-  va_start(args, s1);
-  while ((s = va_arg(args, char *)))
+  l = 1 + strlen(str);
+  va_start(args, str);
+
+  s = va_arg(args, char *);
+
+  while (s)
   {
-    l = strlen(s);
-    if ((m += l) < l)
-      break;
+    l += strlen(s);
+    s = va_arg(args, char *);
+  }
+
+  va_end(args);
+
+  result    = xmalloc(l);
+  result[0] = '\0';
+
+  strcat(result, str);
+
+  va_start(args, str);
+  s = va_arg(args, char *);
+
+  while (s)
+  {
+    strcat(result, s);
+    s = va_arg(args, char *);
   }
   va_end(args);
-  if (s || m >= INT_MAX)
-    return NULL;
 
-  result = (char *)xmalloc(m + 1);
-
-  memcpy(p = result, s1, n);
-  p += n;
-  va_start(args, s1);
-  while ((s = va_arg(args, char *)))
-  {
-    l = strlen(s);
-    if ((n += l) < l || n > m)
-      break;
-    memcpy(p, s, l);
-    p += l;
-  }
-  va_end(args);
-  if (s || m != n || p != result + n)
-  {
-    free(result);
-    return NULL;
-  }
-
-  *p = 0;
   return result;
 }
 
+/* ======================================================================== */
+/* Strings concatenation with dynamic memory allocation                     */
+/* IN : a variable number of char * arguments with NULL terminating         */
+/*      the sequence.                                                       */
+/*      The first one must have been dynamically allocated and is mandatory */
+/*                                                                          */
+/* Returns a new allocated string containing the concatenation of all       */
+/* the arguments. It is the caller's responsibility to free the resulting   */
+/* string.                                                                  */
+/* ======================================================================== */
+static char *
+strappend(char * str, ...)
+{
+  size_t  l;
+  va_list args;
+  char *  s;
+
+  l = 1 + strlen(str);
+  va_start(args, str);
+
+  s = va_arg(args, char *);
+
+  while (s)
+  {
+    l += strlen(s);
+    s = va_arg(args, char *);
+  }
+
+  va_end(args);
+
+  str = xrealloc(str, l);
+
+  va_start(args, str);
+  s = va_arg(args, char *);
+
+  while (s)
+  {
+    strcat(str, s);
+    s = va_arg(args, char *);
+  }
+  va_end(args);
+
+  return str;
+}
 /* ====================================================================== */
 /*  public domain strtok_r() by Charlie Gordon                            */
 /*   from comp.lang.c  9/14/2007                                          */
@@ -1055,18 +1142,19 @@ struct opt_s
   int  opt_count_matter; /* 1 if we must restrict the count, else 0          */
   int  occurrences;      /* Number of occurrences of the option in a context */
   char opt_count_oper;   /* <, = or >                                        */
-  int  opt_count_mark;   /* Value to be compared to with opt_count_oper      */
-  char * arg;            /* text represent the argument in in description of *
-                          | the option.                                      */
-  int optional_args;     /* 1 of option is optional else 0                   */
-  int multiple_args;     /* 1 is option can appear more than once in a       *
-                          | context instance                                 */
+  unsigned opt_count_mark; /* Value to be compared to with opt_count_oper    */
+  char *   arg;            /* text represent the argument in in description  *
+                            | of the option.                                 */
+  int optional_args; /* 1 of option is optional else 0                       */
+  int multiple_args; /* 1 is option can appear more than once in a | context *
+                      | instance                                             */
 
   int  opt_args_count_matter; /* 1 if we must restrict the count, else 0     */
   char opt_args_count_oper;   /* <, = or >                                   */
-  int  opt_args_count_mark;   /* Value to be compared to with opt_count_oper */
-  int  eval_first;            /* 1 if this option must be evaluated before   *
-                               |the options without this mark                */
+  unsigned
+      opt_args_count_mark; /* Value to be compared to with opt_count_oper    */
+  int eval_first;          /* 1 if this option must be evaluated before      *
+                            |the options without this mark                   */
 
   ll_t * constraints_list; /* List of constraints checking functions         *
                             | pointers. */
@@ -1128,6 +1216,7 @@ struct constraint_s
   char ** args;
 };
 
+state_t *           cur_state = NULL;
 static ll_t *       cmdline_list;
 static ctx_t *      main_ctx       = NULL;
 static ctx_inst_t * first_ctx_inst = NULL; /* Pointer to the fist context *
@@ -1224,7 +1313,7 @@ static ctx_t *
 locate_ctx(char * name)
 {
   bst_t * node;
-  ctx_t   ctx;
+  ctx_t   ctx = { 0 };
 
   ctx.name = name;
 
@@ -1238,7 +1327,7 @@ static opt_t *
 locate_opt(char * name)
 {
   bst_t * node;
-  opt_t   opt;
+  opt_t   opt = { 0 };
 
   opt.name = name;
 
@@ -1252,7 +1341,7 @@ static par_t *
 locate_par(char * name, ctx_t * ctx)
 {
   bst_t * node;
-  par_t   par;
+  par_t   par = { 0 };
   void *  bst = ctx->par_bst;
 
   par.name = name;
@@ -1273,29 +1362,30 @@ print_options(ll_t * list, int * has_optional, int * has_ellipsis,
   char *      line;
   char *      option;
 
-  line = "  ";
+  line = xstrdup("  ");
+
   while (node != NULL)
   {
-    option = "";
+    option = xstrdup("");
     opt    = node->data;
 
     if (opt->optional)
     {
-      option        = concat(option, "[", NULL);
+      option        = strappend(option, "[", NULL);
       *has_optional = 1;
     }
 
     if (opt->eval_first)
     {
-      option          = concat(option, "*", NULL);
+      option          = strappend(option, "*", NULL);
       *has_early_eval = 1;
     }
 
-    option = concat(option, opt->params, NULL);
+    option = strappend(option, opt->params, NULL);
 
     if (opt->next_ctx != NULL)
     {
-      option          = concat(option, ">", opt->next_ctx, NULL);
+      option          = strappend(option, ">", opt->next_ctx, NULL);
       *has_ctx_change = 1;
     }
 
@@ -1308,28 +1398,29 @@ print_options(ll_t * list, int * has_optional, int * has_ellipsis,
         o[0] = opt->opt_count_oper;
         o[1] = '\0';
         snprintf(m, 3, "%u", opt->opt_count_mark);
-        option    = concat(option, "...", o, m, NULL);
+        option    = strappend(option, "...", o, m, NULL);
         *has_rule = 1;
       }
+      else
+        option = strappend(option, "...", NULL);
 
-      option        = concat(option, "...", NULL);
       *has_ellipsis = 1;
     }
 
     if (opt->args)
     {
-
       if (strcmp(opt->arg, "#") == 0)
         *has_generic_arg = 1;
 
-      option = concat(option, " ", NULL);
+      option = strappend(option, " ", NULL);
+
       if (opt->optional_args)
       {
-        option        = concat(option, "[", opt->arg, NULL);
+        option        = strappend(option, "[", opt->arg, NULL);
         *has_optional = 1;
       }
       else
-        option = concat(option, opt->arg, NULL);
+        option = strappend(option, opt->arg, NULL);
 
       if (opt->multiple_args)
       {
@@ -1340,32 +1431,36 @@ print_options(ll_t * list, int * has_optional, int * has_ellipsis,
           o[0] = opt->opt_args_count_oper;
           o[1] = '\0';
           snprintf(m, 3, "%u", opt->opt_args_count_mark);
-          option    = concat(option, "...", o, m, NULL);
+          option    = strappend(option, "...", o, m, NULL);
           *has_rule = 1;
         }
         else
-          option = concat(option, "...", NULL);
+          option = strappend(option, "...", NULL);
+
         *has_ellipsis = 1;
       }
       if (opt->optional_args)
-        option = concat(option, "]", NULL);
+        option = strappend(option, "]", NULL);
     }
     if (opt->optional)
-      option = concat(option, "]", NULL);
+      option = strappend(option, "]", NULL);
 
     if (strlen(line) + 1 + strlen(option) < 80)
-      line = concat(line, option, " ", NULL);
+      line = strappend(line, option, " ", NULL);
     else
     {
       printf("%s\n", line);
       line[2] = '\0';
-      line    = concat(line, option, " ", NULL);
+      line    = strappend(line, option, " ", NULL);
     }
+
     free(option);
 
     node = node->next;
   }
+
   printf("%s\n", line);
+
   free(line);
 }
 
@@ -1384,7 +1479,7 @@ bst_seen_opt_cb(const void * node, walk_order_e kind, int level)
     if ((!seen_opt->opt->optional) && seen_opt->seen == 0)
     {
       user_rc     = 1;
-      user_string = concat(user_string, seen_opt->opt->params, " ", NULL);
+      user_string = strappend(user_string, seen_opt->opt->params, " ", NULL);
     }
   }
 }
@@ -1432,7 +1527,6 @@ static void
 bst_match_par_cb(const void * node, walk_order_e kind, int level)
 {
   ctx_t * ctx = ((bst_t *)node)->key;
-  par_t * par;
 
   if (kind == postorder || kind == leaf)
   {
@@ -1440,9 +1534,9 @@ bst_match_par_cb(const void * node, walk_order_e kind, int level)
 
     while (*str != '\0')
     {
-      if ((par = locate_par(str, ctx)) != NULL)
+      if (locate_par(str, ctx) != NULL)
       {
-        user_string2 = concat(user_string2, " ", ctx->name, NULL);
+        user_string2 = strappend(user_string2, " ", ctx->name, NULL);
         break;
       }
       str[strlen(str) - 1] = '\0';
@@ -1460,7 +1554,7 @@ match_prefix_cb(const void * node, walk_order_e kind, int level)
     if (strpref(par->name, (char *)user_object))
     {
       user_rc++;
-      user_string = concat(user_string, par->name, " ", NULL);
+      user_string = strappend(user_string, par->name, " ", NULL);
     }
 }
 
@@ -1587,22 +1681,10 @@ abbrev_expand(char * par_name, ctx_t * ctx)
 static void
 check_for_missing_mandatory_opt(ctx_inst_t * ctx_inst, char * opt_par)
 {
-  if (has_unseen_mandatory_opt(ctx_inst))
-  {
-    if (ctx_inst->par_name != NULL)
-    {
-      fatal(CTXOPTMISPAR, opt_par, user_string, NULL, ctx_inst->par_name,
-            ctx_inst->ctx->name,
-            "Mandatory parameter(s): %s are missing in the context "
-            "introduced by %s.",
-            user_string, ctx_inst->par_name);
-    }
-    else
-      fatal(CTXOPTMISPAR, opt_par, user_string, NULL, ctx_inst->par_name,
-            ctx_inst->ctx->name,
-            "Mandatory parameter(s): %s are missing in the first context.",
-            user_string);
-  }
+  char * missing;
+
+  if (has_unseen_mandatory_opt(ctx_inst, &missing))
+    fatal(CTXOPTMISPAR, missing);
 }
 
 /* ====================================================== */
@@ -1610,13 +1692,15 @@ check_for_missing_mandatory_opt(ctx_inst_t * ctx_inst, char * opt_par)
 /* when quitting a context, else 0                        */
 /* ====================================================== */
 static int
-has_unseen_mandatory_opt(ctx_inst_t * ctx_inst)
+has_unseen_mandatory_opt(ctx_inst_t * ctx_inst, char ** missing)
 {
   user_rc      = 0;
   *user_string = '\0';
 
   bst_walk(ctx_inst->seen_opt_bst, bst_seen_opt_cb);
   rtrim(user_string, " ", 0);
+
+  *missing = user_string;
 
   return user_rc ? 1 : 0;
 }
@@ -1640,23 +1724,23 @@ check_for_occurrences_issues(ctx_inst_t * ctx_inst)
     {
       case '=':
         if (opt->occurrences > 0 && opt->opt_count_mark != opt->occurrences)
-          fatal(CTXOPTINTERNAL, NULL, NULL, NULL, NULL, NULL,
-                "%s must appear exactly %u times in this context, seen %u.",
-                opt->params, opt->opt_count_mark, opt->occurrences);
+          fatal_internal(
+            "%s must appear exactly %u times in this context, seen %u.",
+            opt->params, opt->opt_count_mark, opt->occurrences);
         break;
 
       case '<':
         if (opt->occurrences > 0 && opt->opt_count_mark <= opt->occurrences)
-          fatal(CTXOPTINTERNAL, NULL, NULL, NULL, NULL, NULL,
-                "%s must appear less than %u times in this context, seen %u.",
-                opt->params, opt->opt_count_mark, opt->occurrences);
+          fatal_internal(
+            "%s must appear less than %u times in this context, seen %u.",
+            opt->params, opt->opt_count_mark, opt->occurrences);
         break;
 
       case '>':
         if (opt->occurrences > 0 && opt->opt_count_mark >= opt->occurrences)
-          fatal(CTXOPTINTERNAL, NULL, NULL, NULL, NULL, NULL,
-                "%s must appear more than %u times in this context, seen %u.",
-                opt->params, opt->opt_count_mark, opt->occurrences);
+          fatal_internal(
+            "%s must appear more than %u times in this context, seen %u.",
+            opt->params, opt->opt_count_mark, opt->occurrences);
         break;
     }
 
@@ -1678,23 +1762,20 @@ check_for_occurrences_issues(ctx_inst_t * ctx_inst)
     {
       case '=':
         if (nb_values > 0 && opt->opt_args_count_mark != nb_values)
-          fatal(CTXOPTINTERNAL, NULL, NULL, NULL, NULL, NULL,
-                "%s must have exactly %u arguments, not %u.", opt->params,
-                opt->opt_args_count_mark, nb_values);
+          fatal_internal("%s must have exactly %u arguments, not %u.",
+                         opt->params, opt->opt_args_count_mark, nb_values);
         break;
 
       case '<':
         if (nb_values > 0 && opt->opt_args_count_mark <= nb_values)
-          fatal(CTXOPTINTERNAL, NULL, NULL, NULL, NULL, NULL,
-                "%s must have less than %u arguments, not %u.", opt->params,
-                opt->opt_args_count_mark, nb_values);
+          fatal_internal("%s must have less than %u arguments, not %u.",
+                         opt->params, opt->opt_args_count_mark, nb_values);
         break;
 
       case '>':
         if (nb_values > 0 && opt->opt_args_count_mark >= nb_values)
-          fatal(CTXOPTINTERNAL, NULL, NULL, NULL, NULL, NULL,
-                "%s must have more than %u arguments, not %u.", opt->params,
-                opt->opt_args_count_mark, nb_values);
+          fatal_internal("%s must have more than %u arguments, not %u.",
+                         opt->params, opt->opt_args_count_mark, nb_values);
         break;
     }
 
@@ -1813,21 +1894,24 @@ opt_parse(char * s, opt_t ** opt)
       s            = p;
       if (*s == '<' || *s == '=' || *s == '>')
       {
-        unsigned count;
+        unsigned value;
         int      offset;
 
-        n = sscanf(s + 1, "%u%n", &count, &offset);
+        n = sscanf(s + 1, "%u%n", &value, &offset);
         if (n == 1)
         {
           opt_count_matter = 1;
           opt_count_oper   = *s;
-          opt_count_mark   = count;
+          opt_count_mark   = value;
         }
         s += offset + 1;
       }
     }
     else
+    {
+      free(opt_name);
       return -(s - s_orig - 1);
+    }
   }
 
   /* A blank separates the option name and the argument tag */
@@ -1854,22 +1938,25 @@ opt_parse(char * s, opt_t ** opt)
 
       if (*s == '<' || *s == '=' || *s == '>')
       {
-        unsigned count;
+        unsigned value;
         int      offset;
 
-        n = sscanf(s + 1, "%u%n", &count, &offset);
+        n = sscanf(s + 1, "%u%n", &value, &offset);
         if (n == 1)
         {
           opt_args_count_matter = 1;
           opt_args_count_oper   = *s;
-          opt_args_count_mark   = count;
+          opt_args_count_mark   = value;
         }
         s += offset + 1;
       }
 
       /* optional arg tag must end with a ] */
       if (*s != ']')
+      {
+        free(opt_name);
         return -(s - s_orig - 1);
+      }
 
       s++; /* skip the ] */
     }
@@ -1886,15 +1973,15 @@ opt_parse(char * s, opt_t ** opt)
 
         if (*s == '<' || *s == '=' || *s == '>')
         {
-          unsigned count;
+          unsigned value;
           int      offset;
 
-          n = sscanf(s + 1, "%u%n", &count, &offset);
+          n = sscanf(s + 1, "%u%n", &value, &offset);
           if (n == 1)
           {
             opt_args_count_matter = 1;
             opt_args_count_oper   = *s;
-            opt_args_count_mark   = count;
+            opt_args_count_mark   = value;
           }
           s += offset + 1;
         }
@@ -1938,8 +2025,7 @@ success:
   next_ctx = NULL;
 
   if (*opt_name == '>')
-    fatal(CTXOPTINTERNAL, NULL, NULL, NULL, NULL, NULL,
-          "%s: option name is missing.", opt_name);
+    fatal_internal("%s: option name is missing.", opt_name);
 
   count = strchrcount(opt_name, '>');
   if (count == 1)
@@ -1949,8 +2035,7 @@ success:
     *tmp       = '\0';
   }
   else if (count > 1)
-    fatal(CTXOPTINTERNAL, NULL, NULL, NULL, NULL, NULL,
-          "%s: only one occurrence of '>' is allowed.", opt_name);
+    fatal_internal("%s: only one occurrence of '>' is allowed.", opt_name);
 
   *opt = xmalloc(sizeof(opt_t));
 
@@ -2084,6 +2169,8 @@ ctxopt_init(void)
 
   ctxopt_initialized = 1;
 
+  cur_state = xcalloc(sizeof(state_t), 0);
+
   /* Initialize custom error function pointers to NULL */
   /* """"""""""""""""""""""""""""""""""""""""""""""""" */
   err_functions = xmalloc(CTXOPTERRSIZE * sizeof(void *));
@@ -2109,8 +2196,7 @@ opt_set_parms(char * opt_name, char * par_str)
   /* """"""""""""""""""""""""""""""""""" */
   opt = locate_opt(opt_name);
   if (opt == NULL)
-    fatal(CTXOPTINTERNAL, NULL, NULL, NULL, NULL, NULL, "Unknown option %s",
-          opt_name);
+    fatal_internal("Unknown option %s", opt_name);
 
   /* For each context using this option */
   /* """""""""""""""""""""""""""""""""" */
@@ -2125,8 +2211,7 @@ opt_set_parms(char * opt_name, char * par_str)
 
     ctx = locate_ctx(ctx_name);
     if (ctx == NULL)
-      fatal(CTXOPTINTERNAL, NULL, NULL, NULL, NULL, NULL, "Unknown context %s",
-            ctx_name);
+      fatal_internal("Unknown context %s", ctx_name);
     else
     {
       void * par_bst = ctx->par_bst;
@@ -2134,8 +2219,7 @@ opt_set_parms(char * opt_name, char * par_str)
       tmp_par_str = xstrdup(par_str);
       par_name    = xstrtok_r(tmp_par_str, " \t,", &end_tmp_par_str);
       if (par_name == NULL)
-        fatal(CTXOPTINTERNAL, NULL, NULL, NULL, NULL, NULL,
-              "Parameters are missing for option %s", opt_name);
+        fatal_internal("Parameters are missing for option %s", opt_name);
 
       /* For each parameter given in par_str, create an par_t object and */
       /* insert it the in the parameters bst of the context.             */
@@ -2175,13 +2259,14 @@ opt_set_parms(char * opt_name, char * par_str)
   return rc;
 }
 
-/* ===================================================================== */
-/* Creation of a new context instance                                    */
-/* IN ctx           : a context pointer to allow this instance to access */
-/*                    the context fields                                 */
-/* IN prev_ctx_inst : the context instance whose option leading to the   */
-/*                    creation of this new context instance is part of   */
-/* ===================================================================== */
+/* ==================================================================== */
+/* Creation of a new context instance                                   */
+/* IN ctx            : a context pointer to allow this instance to      */
+/*                     access the context fields                        */
+/* IN prev_ctx_inst  : the context instance whose option leading to the */
+/*                     creation of this new context instance is part of */
+/* OUT               : The new conxtext (cannot be NULL)                */
+/* ==================================================================== */
 static ctx_inst_t *
 new_ctx_inst(ctx_t * ctx, ctx_inst_t * prev_ctx_inst)
 {
@@ -2198,7 +2283,10 @@ new_ctx_inst(ctx_t * ctx, ctx_inst_t * prev_ctx_inst)
   /* This will serve during the evaluation of the option callbacks        */
   /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
   if (prev_ctx_inst != NULL)
+  {
     gen_opt_inst = (opt_inst_t *)(prev_ctx_inst->opt_inst_list->tail->data);
+    cur_state->opt_name = gen_opt_inst->opt->name;
+  }
   else
     gen_opt_inst = NULL;
 
@@ -2211,6 +2299,8 @@ new_ctx_inst(ctx_t * ctx, ctx_inst_t * prev_ctx_inst)
   ctx_inst->incomp_bst_list = ll_new();
   ctx_inst->opt_inst_list   = ll_new();
   ctx_inst->seen_opt_bst    = NULL;
+
+  cur_state->ctx_name = ctx->name;
 
   ll_node_t * node;
 
@@ -2286,12 +2376,11 @@ new_ctx_inst(ctx_t * ctx, ctx_inst_t * prev_ctx_inst)
           /* context as all options has have a seen_opt structure in  */
           /* seen_opt_bst                                             */
           /* """""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-          fatal(CTXOPTINTERNAL, NULL, NULL, NULL, NULL, NULL,
-                "%s is not known in the context %s", opt->name, ctx->name);
+          fatal_internal("%s is not known in the context %s", opt->name,
+                         ctx->name);
       }
       else
-        fatal(CTXOPTINTERNAL, NULL, NULL, NULL, NULL, NULL,
-              "%s: unknown option.", opt_name);
+        fatal_internal("%s: unknown option.", opt_name);
 
       opt_name = strtok(NULL, " \t");
     }
@@ -2577,12 +2666,11 @@ ctxopt_analyze(int nb_words, char ** words, int * nb_rem_args,
   ll_node_t * node;
 
   if (!ctxopt_build_cmdline_list(nb_words, words))
-    fatal(CTXOPTINTERNAL, NULL, NULL, NULL, NULL, NULL,
-          "The command line could not be parsed: missing { or } detected.");
+    fatal_internal(
+      "The command line could not be parsed: missing { or } detected.");
 
   if (main_ctx == NULL)
-    fatal(CTXOPTINTERNAL, NULL, NULL, NULL, NULL, NULL,
-          "At least one context must have been created.");
+    fatal_internal("At least one context must have been created.");
 
   /* Create the first ctx_inst record */
   /* """""""""""""""""""""""""""""""" */
@@ -2616,12 +2704,17 @@ ctxopt_analyze(int nb_words, char ** words, int * nb_rem_args,
       {
         ctx_inst = ctx_inst->prev_ctx_inst;
         ctx      = ctx_inst->ctx;
+
+        cur_state->ctx_name     = ctx->name;
+        cur_state->ctx_par_name = ctx_inst->par_name;
       }
     }
     else if (expect_par && *par_name == '-')
     {
       int    pos = 0;
       char * prefix;
+
+      cur_state->cur_opt_par_name = par_name;
 
       /* An expected parameter has been seen */
       /* """"""""""""""""""""""""""""""""""" */
@@ -2664,7 +2757,7 @@ ctxopt_analyze(int nb_words, char ** words, int * nb_rem_args,
             /* following word must be a parameter or nothing */
             /* hence prefix it with a dash.                  */
             /* ''''''''''''''''''''''''''''''''''''''''''''' */
-            word = concat("-", par_name + pos, NULL);
+            word = xstrcat("-", par_name + pos, NULL);
 
           /* Insert it after the current node in the list */
           /* """""""""""""""""""""""""""""""""""""""""""" */
@@ -2679,23 +2772,27 @@ ctxopt_analyze(int nb_words, char ** words, int * nb_rem_args,
 
           if (ctx_inst->prev_ctx_inst == NULL)
           {
-            char * errmsg = "Unknown parameter: %s";
+            char * errmsg = xstrdup("");
+            ;
 
             *user_string  = '\0';
             *user_string2 = '\0';
 
-            user_string = concat(user_string, par_name, NULL);
+            user_string = strappend(user_string, par_name, NULL);
+
             bst_walk(contexts_bst, bst_match_par_cb);
 
             if (*user_string2 != '\0')
-              errmsg = concat(errmsg,
-                              "\nIt appears to be defined in the context(s):",
-                              user_string2,
-                              "\n'smenu -h' or 'smenu -H' can be helpful here.",
-                              NULL);
+            {
+              errmsg = strappend(
+                errmsg,
+                "\nIt appears to be defined in the context(s):", user_string2,
+                "\n'smenu -h' or 'smenu -H' can be helpful here.", NULL);
+            }
 
-            fatal(CTXOPTUNKPAR, par_name, NULL, NULL, ctx_inst->par_name,
-                  ctx_inst->ctx->name, errmsg, par_name);
+            // fatal(CTXOPTUNKPAR, par_name, NULL, NULL, ctx_inst->par_name,
+            //      ctx_inst->ctx->name, errmsg, par_name);
+            fatal(CTXOPTUNKPAR, errmsg);
           }
           else
           {
@@ -2704,6 +2801,9 @@ ctxopt_analyze(int nb_words, char ** words, int * nb_rem_args,
             /* """""""""""""""""""""""""""""""""""""""""""""""""""""" */
             ctx_inst = ctx_inst->prev_ctx_inst;
             ctx      = ctx_inst->ctx;
+
+            cur_state->ctx_name     = ctx->name;
+            cur_state->ctx_par_name = ctx_inst->par_name;
 
             cli_node = cli_node->prev;
           }
@@ -2765,10 +2865,7 @@ ctxopt_analyze(int nb_words, char ** words, int * nb_rem_args,
         bst_seen_opt = (seen_opt_t *)(bst_node->key);
 
         if (!opt->multiple && bst_seen_opt->seen == 1)
-          fatal(CTXOPTDUPOPT, par_name, opt->params, opt->name,
-                ctx_inst->par_name, ctx_inst->ctx->name,
-                "The parameter(s) %s can only appear once in this context.",
-                opt->params);
+          fatal(CTXOPTDUPOPT, NULL);
 
         /* Check if this option is compatible with the options already */
         /* seen in this context instance.                              */
@@ -2799,10 +2896,7 @@ ctxopt_analyze(int nb_words, char ** words, int * nb_rem_args,
             {
               bst_seen_opt = (seen_opt_t *)(bst_node->key);
               if (bst_seen_opt->seen == 0)
-                fatal(CTXOPTINCTXOPTT, par_name, (char *)user_object,
-                      bst_seen_opt->opt->name, ctx_inst->par_name,
-                      ctx_inst->ctx->name, "%s is incompatible with %s\n",
-                      par_name, (char *)user_object);
+                fatal(CTXOPTINCOPT, (char *)user_object);
             }
           }
 
@@ -2822,11 +2916,12 @@ ctxopt_analyze(int nb_words, char ** words, int * nb_rem_args,
           ctx = locate_ctx(opt->next_ctx);
 
           if (ctx == NULL)
-            fatal(CTXOPTINTERNAL, NULL, NULL, NULL, NULL, NULL,
-                  "%s: unknown context.", opt->next_ctx);
+            fatal_internal("%s: unknown context.", opt->next_ctx);
 
           opt_inst->next_ctx_inst = ctx_inst = new_ctx_inst(ctx, ctx_inst);
           ctx_inst->par_name                 = xstrdup(par_name);
+
+          cur_state->ctx_par_name = ctx_inst->par_name;
 
           ll_append(ctx_inst_list, ctx_inst);
         }
@@ -2889,8 +2984,7 @@ ctxopt_analyze(int nb_words, char ** words, int * nb_rem_args,
 
       prev_arg = (char *)(cli_node->prev->data);
 
-      fatal(CTXOPTMISARG, prev_arg, opt->params, opt->name, ctx_inst->par_name,
-            ctx_inst->ctx->name, "%s requires argument(s).", prev_arg);
+      fatal(CTXOPTMISARG, NULL);
     }
     else if (expect_par_or_arg)
     {
@@ -2912,8 +3006,7 @@ ctxopt_analyze(int nb_words, char ** words, int * nb_rem_args,
   if (cmdline_list->len > 0 && *par_name == '-')
   {
     if (expect_arg && !opt->optional_args)
-      fatal(CTXOPTMISARG, par_name, opt->params, opt->name, ctx_inst->par_name,
-            ctx_inst->ctx->name, "%s requires argument(s).", par_name);
+      fatal(CTXOPTMISARG, NULL);
   }
 
   /* Look if a context_instance has unseen mandatory options */
@@ -2950,7 +3043,7 @@ ctxopt_analyze(int nb_words, char ** words, int * nb_rem_args,
   }
   else
   {
-    nb_rem_args    = 0;
+    *nb_rem_args   = 0;
     *rem_args      = xmalloc(sizeof(char *));
     (*rem_args)[0] = NULL;
   }
@@ -2981,7 +3074,6 @@ evaluate_ctx_inst(ctx_inst_t * ctx_inst)
   ll_node_t *  opt_inst_node;
   char **      args;
   int          nb_args;
-  int          i;
 
   if (ctx_inst == NULL)
     return;
@@ -3018,9 +3110,8 @@ evaluate_ctx_inst(ctx_inst_t * ctx_inst)
     if (opt_inst->next_ctx_inst != NULL)
       evaluate_ctx_inst(opt_inst->next_ctx_inst);
 
-    for (i = 0; i < nb_args; i++)
-      free(args[i]);
-    free(args);
+    if (args != NULL)
+      free(args);
 
     opt_inst_node = opt_inst_node->next;
   }
@@ -3050,8 +3141,7 @@ ctxopt_new_ctx(char * name, char * opts_specs)
   bst_t * node;
 
   if (!ctxopt_initialized)
-    fatal(CTXOPTINTERNAL, NULL, NULL, NULL, NULL, NULL,
-          "Please call ctxopt_init first.");
+    fatal_internal("Please call ctxopt_init first.");
 
   ctx = xmalloc(sizeof(ctx_t));
 
@@ -3070,8 +3160,7 @@ ctxopt_new_ctx(char * name, char * opts_specs)
   if (init_opts(opts_specs, ctx) == 0)
     exit(EXIT_FAILURE);
   if ((node = bst_find(ctx, &contexts_bst, ctx_compare)) != NULL)
-    fatal(CTXOPTINTERNAL, NULL, NULL, NULL, NULL, NULL,
-          "The context %s already exists", name);
+    fatal_internal("The context %s already exists", name);
   else
     bst_search(ctx, &contexts_bst, ctx_compare);
 }
@@ -3097,8 +3186,7 @@ ctxopt_ctx_disp_usage(char * ctx_name, usage_behaviour action)
 
   ctx = locate_ctx(ctx_name);
   if (ctx == NULL)
-    fatal(CTXOPTINTERNAL, NULL, NULL, NULL, NULL, NULL, "%s: unknown context.",
-          ctx_name);
+    fatal_internal("%s: unknown context.", ctx_name);
 
   printf("\nSynopsis:\n");
   list = ctx->opt_list;
@@ -3144,8 +3232,7 @@ ctxopt_disp_usage(usage_behaviour action)
   int    has_early_eval  = 0;
 
   if (main_ctx == NULL)
-    fatal(CTXOPTINTERNAL, NULL, NULL, NULL, NULL, NULL,
-          "At least one context must have been created.");
+    fatal_internal("At least one context must have been created.");
 
   /* Usage for the first context */
   /* """"""""""""""""""""""""""" */
@@ -3207,13 +3294,12 @@ ctxopt_format_constraint(int nb_args, char ** args, char * value)
   char * format;
 
   if (nb_args != 1)
-    fatal(CTXOPTINTERNAL, NULL, NULL, NULL, NULL, NULL,
-          "Format constraint: invalid number of parameters.");
+    fatal_internal("Format constraint: invalid number of parameters.");
 
   if (strlen(value) > 255)
     value[255] = '\0';
 
-  format = concat(args[0], "%c", NULL);
+  format = xstrcat(args[0], "%c", NULL);
 
   rc = sscanf(value, format, x, &y);
   if (rc != 1)
@@ -3236,12 +3322,11 @@ ctxopt_re_constraint(int nb_args, char ** args, char * value)
   regex_t re;
 
   if (nb_args != 1)
-    fatal(CTXOPTINTERNAL, NULL, NULL, NULL, NULL, NULL,
-          "Regular expression constraint: invalid number of parameters.");
+    fatal_internal(
+      "Regular expression constraint: invalid number of parameters.");
 
   if (regcomp(&re, args[0], REG_EXTENDED) != 0)
-    fatal(CTXOPTINTERNAL, NULL, NULL, NULL, NULL, NULL,
-          "Invalid regular expression %s", args[0]);
+    fatal_internal("Invalid regular expression %s", args[0]);
 
   if (regexec(&re, value, (size_t)0, NULL, 0) != 0)
   {
@@ -3273,8 +3358,7 @@ ctxopt_range_constraint(int nb_args, char ** args, char * value)
   int    max_only = 0;
 
   if (nb_args != 2)
-    fatal(CTXOPTINTERNAL, NULL, NULL, NULL, NULL, NULL,
-          "Range constraint: invalid number of parameters.");
+    fatal_internal("Range constraint: invalid number of parameters.");
 
   if (strcmp(args[0], "-") == 0)
     max_only = 1;
@@ -3282,8 +3366,7 @@ ctxopt_range_constraint(int nb_args, char ** args, char * value)
     n = sscanf(args[0], "%ld%c", &min, &c);
 
   if (!max_only && n != 1)
-    fatal(CTXOPTINTERNAL, NULL, NULL, NULL, NULL, NULL,
-          "Range constraint: min: invalid parameters.");
+    fatal_internal("Range constraint: min: invalid parameters.");
 
   if (strcmp(args[1], "-") == 0)
     min_only = 1;
@@ -3291,15 +3374,14 @@ ctxopt_range_constraint(int nb_args, char ** args, char * value)
     n = sscanf(args[1], "%ld%c", &max, &c);
 
   if (!min_only && n != 1)
-    fatal(CTXOPTINTERNAL, NULL, NULL, NULL, NULL, NULL,
-          "Range constraint: max: invalid parameters.");
+    fatal_internal("Range constraint: max: invalid parameters.");
 
   if (min_only && max_only)
-    fatal(CTXOPTINTERNAL, NULL, NULL, NULL, NULL, NULL,
-          "Range constraint: invalid parameters.");
+    fatal_internal("Range constraint: invalid parameters.");
 
-  v = strtol(value, &ptr, 10);
-  if (ptr == value)
+  errno = 0;
+  v     = strtol(value, &ptr, 10);
+  if (errno || ptr == value)
     return 0;
 
   if (min_only)
@@ -3344,11 +3426,11 @@ ctxopt_add_global_settings(settings s, ...)
   {
     case error_functions:
     {
-      void (*function)(char *, char *, char *, char *, char *);
+      void (*function)(errors e, state_t * state);
 
       errors e;
-      e        = va_arg(args, errors);
-      function = va_arg(args, void (*)(char *, char *, char *, char *, char *));
+      e                = va_arg(args, errors);
+      function         = va_arg(args, void (*)(errors e, state_t * state));
       err_functions[e] = function;
       break;
     }
@@ -3411,21 +3493,21 @@ ctxopt_add_opt_settings(settings s, ...)
           rtrim(params, " \t", 0);
 
           if (!opt_set_parms(opt_name, params))
-            fatal(CTXOPTINTERNAL, NULL, NULL, NULL, NULL, NULL,
-                  "duplicates parameters or bad settings for the option (%s).",
-                  params);
+            fatal_internal(
+              "duplicates parameters or bad settings for the option (%s).",
+              params);
         }
         else
-          fatal(CTXOPTINTERNAL, NULL, NULL, NULL, NULL, NULL,
-                "%s: unknown option.", opt_name);
+          fatal_internal("%s: unknown option.", opt_name);
       }
       else
-        fatal(CTXOPTINTERNAL, NULL, NULL, NULL, NULL, NULL,
-              "ctxopt_opt_add_settings: parameters: not enough arguments.");
+        fatal_internal(
+          "ctxopt_opt_add_settings: parameters: not enough arguments.");
 
+      /* Here opt is a known option */
+      /* """""""""""""""""""""""""" */
       if (opt->params != NULL)
-        fatal(CTXOPTINTERNAL, NULL, NULL, NULL, NULL, NULL,
-              "Parameters are already set for %s", opt_name);
+        fatal_internal("Parameters are already set for %s", opt_name);
       else
       {
         size_t n;
@@ -3473,8 +3555,7 @@ ctxopt_add_opt_settings(settings s, ...)
         opt->nb_data = nb_data;
       }
       else
-        fatal(CTXOPTINTERNAL, NULL, NULL, NULL, NULL, NULL,
-              "%s: unknown option.", ptr);
+        fatal_internal("%s: unknown option.", ptr);
       break;
     }
 
@@ -3514,8 +3595,7 @@ ctxopt_add_opt_settings(settings s, ...)
         ll_append(opt->constraints_list, cstr);
       }
       else
-        fatal(CTXOPTINTERNAL, NULL, NULL, NULL, NULL, NULL,
-              "%s: unknown option.", ptr);
+        fatal_internal("%s: unknown option.", ptr);
       break;
     }
 
@@ -3559,12 +3639,11 @@ ctxopt_add_ctx_settings(settings s, ...)
         if (n > 0 && n < strlen(str))
           ll_append(list, str);
         else
-          fatal(CTXOPTINTERNAL, NULL, NULL, NULL, NULL, NULL,
-                "Not enough incompatibles options in the string: \"%s\"", str);
+          fatal_internal(
+            "Not enough incompatibles options in the string: \"%s\"", str);
       }
       else
-        fatal(CTXOPTINTERNAL, NULL, NULL, NULL, NULL, NULL,
-              "%s: unknown context.", ptr);
+        fatal_internal("%s: unknown context.", ptr);
       break;
     }
     case actions:
@@ -3590,12 +3669,12 @@ ctxopt_add_ctx_settings(settings s, ...)
         ctx->nb_data = nb_data;
       }
       else
-        fatal(CTXOPTINTERNAL, NULL, NULL, NULL, NULL, NULL,
-              "%s: unknown context.", ptr);
+        fatal_internal("%s: unknown context.", ptr);
       break;
     }
 
     default:
       break;
   }
+  va_end(args);
 }

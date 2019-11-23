@@ -4,13 +4,13 @@ typedef enum
   constraints,
   actions,
   incompatibilities,
-  error_functions,
+  error_functions
 } settings;
 
 typedef enum
 {
   entering,
-  exiting,
+  exiting
 } direction;
 
 typedef enum
@@ -20,19 +20,25 @@ typedef enum
   CTXOPTMISARG,
   CTXOPTDUPOPT,
   CTXOPTUNKPAR,
-  CTXOPTINCTXOPTT,
-  CTXOPTINTERNAL,
-  CTXOPTERRSIZE,
+  CTXOPTINCOPT,
+  CTXOPTERRSIZE
 } errors;
 
 typedef enum
 {
   continue_after,
-  exit_after,
+  exit_after
 } usage_behaviour;
 
-char * ctxoptopt;
-errors ctxopterrno;
+typedef struct state_s
+{
+  char * ctx_name;
+  char * ctx_par_name;
+  char * opt_name;
+  char * opt_params;
+  char * pre_opt_par_name;
+  char * cur_opt_par_name;
+} state_t;
 
 void
 ctxopt_init(void);
