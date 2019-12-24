@@ -544,7 +544,7 @@ ll_insert_before(ll_t * const list, ll_node_t * node, void * const data)
 /* ====================================================== */
 /* Insert a new node after the specified node in the list */
 /* ====================================================== */
-void
+static void
 ll_insert_after(ll_t * const list, ll_node_t * node, void * const data)
 {
   ll_node_t * new_node;
@@ -909,54 +909,6 @@ strpref(char * str1, char * str2)
   return *str2 == '\0';
 }
 
-/* ====================================================================== */
-/* Strings concatenation with dynamic memory allocation                   */
-/* IN : a variable number of char * arguments with NULL terminating       */
-/*      the sequence.                                                     */
-/*                                                                        */
-/* Returns a new allocated string containing the concatenation of all     */
-/* the arguments. It is the caller's responsibility to free the resulting */
-/* string.                                                                */
-/* ====================================================================== */
-static char *
-xstrcat(const char * str, ...)
-{
-  size_t  l;
-  va_list args;
-  char *  s;
-  char *  result;
-
-  l = 1 + strlen(str);
-  va_start(args, str);
-
-  s = va_arg(args, char *);
-
-  while (s)
-  {
-    l += strlen(s);
-    s = va_arg(args, char *);
-  }
-
-  va_end(args);
-
-  result    = xmalloc(l);
-  result[0] = '\0';
-
-  strcat(result, str);
-
-  va_start(args, str);
-  s = va_arg(args, char *);
-
-  while (s)
-  {
-    strcat(result, s);
-    s = va_arg(args, char *);
-  }
-  va_end(args);
-
-  return result;
-}
-
 /* ======================================================================== */
 /* Strings concatenation with dynamic memory allocation                     */
 /* IN : a variable number of char * arguments with NULL terminating         */
@@ -1001,6 +953,7 @@ strappend(char * str, ...)
 
   return str;
 }
+
 /* ====================================================================== */
 /*  public domain strtok_r() by Charlie Gordon                            */
 /*   from comp.lang.c  9/14/2007                                          */
@@ -1352,7 +1305,7 @@ locate_par(char * name, ctx_t * ctx)
     return node->key;
 }
 
-void
+static void
 print_options(ll_t * list, int * has_optional, int * has_ellipsis,
               int * has_rule, int * has_generic_arg, int * has_ctx_change,
               int * has_early_eval)
@@ -1558,7 +1511,7 @@ match_prefix_cb(const void * node, walk_order_e kind, int level)
     }
 }
 
-void
+static void
 bst_null_action(void * data)
 {
   ;
@@ -1705,7 +1658,7 @@ has_unseen_mandatory_opt(ctx_inst_t * ctx_inst, char ** missing)
   return user_rc ? 1 : 0;
 }
 
-void
+static void
 check_for_occurrences_issues(ctx_inst_t * ctx_inst)
 {
   ctx_t *      ctx = ctx_inst->ctx;
@@ -2753,11 +2706,14 @@ ctxopt_analyze(int nb_words, char ** words, int * nb_rem_args,
             /* '''''''''''''''''''''''''''''''''''''''''' */
             word = xstrdup(par_name + pos);
           else
+          {
             /* The parameter does not take arguments, the    */
             /* following word must be a parameter or nothing */
             /* hence prefix it with a dash.                  */
             /* ''''''''''''''''''''''''''''''''''''''''''''' */
-            word = xstrcat("-", par_name + pos, NULL);
+            word = xstrdup("-");
+            word = strappend(word, par_name + pos, NULL);
+          }
 
           /* Insert it after the current node in the list */
           /* """""""""""""""""""""""""""""""""""""""""""" */
@@ -3299,7 +3255,8 @@ ctxopt_format_constraint(int nb_args, char ** args, char * value)
   if (strlen(value) > 255)
     value[255] = '\0';
 
-  format = xstrcat(args[0], "%c", NULL);
+  format = xstrdup(args[0]);
+  format = strappend(format, "%c", NULL);
 
   rc = sscanf(value, format, x, &y);
   if (rc != 1)
