@@ -1,4 +1,3 @@
-//#include "config.h"
 #include <errno.h>
 #include <limits.h>
 #include <stdio.h>
@@ -32,9 +31,6 @@ fatal_internal(const char * format, ...);
 
 static void
 fatal(errors e, char * errmsg);
-
-static void
-error(const char * format, ...);
 
 static int    user_rc;      /* Used by various callback functions */
 static int    user_value;   /* Used by various callback functions */
@@ -227,10 +223,17 @@ new_ctx_inst(ctx_t * ctx, ctx_inst_t * prev_ctx_inst);
 static void
 evaluate_ctx_inst(ctx_inst_t * ctx_inst);
 
-/* ====================== */
+/* ********************** */
 /* Message implementation */
-/* ====================== */
+/* ********************** */
 
+/* ================================================================== */
+/* Fatal error function used when an fatal condition was encountered. */
+/* This function is reserved for the ctxopt internal usage.           */
+/*                                                                    */
+/* format : printf like format                                        */
+/* ...    : remaining arguments interpreted using the format argument */
+/* ================================================================== */
 static void
 fatal_internal(const char * format, ...)
 {
@@ -244,6 +247,21 @@ fatal_internal(const char * format, ...)
   exit(EXIT_FAILURE);
 }
 
+/* ====================================================================== */
+/* Generic fatal error function. This one uses the global status ctxopt   */
+/* stored in the cur_state structure and can call custom error functions. */
+/* registered by the users for a given error identifier.                  */
+/*                                                                        */
+/* e      : error identifier responsible of the fatal error               */
+/* errmsg : users's provided string specific to the error e               */
+/*          Note that errmsg is not used in all cases                     */
+/*                                                                        */
+/*          e            errmsg                                           */
+/*          ------------ --------------------------------                 */
+/*          CTXOPTMISPAR Name of the missing parameter                    */
+/*          CTXOPTUNKPAR Name of the unknown parameter                    */
+/*          CTXOPTINCOPT Name of incompatibles parameters                 */
+/* ====================================================================== */
 static void
 fatal(errors e, char * errmsg)
 {
@@ -256,7 +274,7 @@ fatal(errors e, char * errmsg)
       case CTXOPTNOERR:
         break;
       case CTXOPTMISPAR:
-        if (cur_state->cur_opt_par_name != NULL)
+        if (cur_state->ctx_par_name != NULL)
           fprintf(stderr,
                   "Mandatory parameter(s): %s are missing in the context "
                   "introduced by %s.",
@@ -298,20 +316,7 @@ fatal(errors e, char * errmsg)
   if (cur_state->ctx_name != NULL)
     ctxopt_ctx_disp_usage(cur_state->ctx_name, continue_after);
 
-  exit(e);
-}
-
-static void
-error(const char * format, ...)
-{
-  va_list args;
-
-  va_start(args, format);
-  vfprintf(stderr, format, args);
-  va_end(args);
-  fprintf(stderr, "\n");
-
-  exit(EXIT_FAILURE);
+  exit(e); /* Program exist with the error id e as return code */
 }
 
 /* ******************************** */
@@ -1074,43 +1079,53 @@ struct ctx_s
 /* """""""""""""""" */
 struct opt_s
 {
-  char * name;     /* option name                                            */
-  char * next_ctx; /* new context this option may lead to */
-  ll_t * ctx_list; /* list of contexts allowing this option */
-  char * params;   /* string containing all the parameters of the option     */
+  char * name;     /* option name                             */
+  char * next_ctx; /* new context this option may lead to     */
+  ll_t * ctx_list; /* list of contexts allowing this option   */
+  char * params;   /* string containing all the parameters of *
+                    | the option                              */
 
-  void (*action)(char * ctx_name, char * opt_name, char * par, int nb_args,
-                 char ** args, int nb_opt_data, void ** opt_data,
-                 int     nb_ctx_data,
-                 void ** ctx_data); /* The option associated action */
-  int     nb_data; /* number of the data passed as argument to action        */
-  void ** data;    /* void data passed as argument to action                 */
+  void (*action)(                     /* The option associated action     */
+                 char *  ctx_name,    /* context name                     */
+                 char *  opt_name,    /* option name                      */
+                 char *  par,         /* option parameter                 */
+                 int     nb_args,     /* number of arguments              */
+                 char ** args,        /* option arguments                 */
+                 int     nb_opt_data, /* number of option data pointers   */
+                 void ** opt_data,    /* option data pointers             */
+                 int     nb_ctx_data, /* nb of current  context data ptrs */
+                 void ** ctx_data     /* current context data pointers    */
+  );
 
-  int args; /* pointer to the data passed to the action function */
+  int nb_data;  /* number of the data pointers passed as argument to   *
+                 | action                                              */
+  void ** data; /* array of data pointers passed as argument to action */
 
-  int optional; /* 1 if the option is optional, else 0 */
-  int multiple; /* 1 if the option can appear more than one time in a        *
+  int args;     /* 1 if this option takes arguments else 0             */
+  int optional; /* 1 if the option is optional, else 0                 */
+  int multiple; /* 1 if the option can appear more than one time in a  *
                  | context, else 0 */
 
-  int  opt_count_matter; /* 1 if we must restrict the count, else 0          */
-  int  occurrences;      /* Number of occurrences of the option in a context */
-  char opt_count_oper;   /* <, = or >                                        */
-  unsigned opt_count_mark; /* Value to be compared to with opt_count_oper    */
-  char *   arg;            /* text represent the argument in in description  *
-                            | of the option.                                 */
-  int optional_args; /* 1 of option is optional else 0                       */
-  int multiple_args; /* 1 is option can appear more than once in a | context *
-                      | instance                                             */
+  int      opt_count_matter; /* 1 if we must restrict the count, else 0     */
+  int      occurrences;      /* Number of option occurrences in a context   */
+  char     opt_count_oper;   /* <, = or >                                   */
+  unsigned opt_count_mark;   /* Value to be compared to with opt_count_oper */
 
-  int  opt_args_count_matter; /* 1 if we must restrict the count, else 0     */
-  char opt_args_count_oper;   /* <, = or >                                   */
-  unsigned
-      opt_args_count_mark; /* Value to be compared to with opt_count_oper    */
-  int eval_first;          /* 1 if this option must be evaluated before      *
-                            |the options without this mark                   */
+  char * arg; /* symbolic text after # describing the option argument */
 
-  ll_t * constraints_list; /* List of constraints checking functions         *
-                            | pointers. */
+  int optional_args; /* 1 of option is optional else 0                     */
+  int multiple_args; /* 1 is option can appear more than once in a context *
+                      | instance                                           */
+
+  int      opt_args_count_matter; /* 1 if we must restrict the count, else 0 */
+  char     opt_args_count_oper;   /* <, = or >                               */
+  unsigned opt_args_count_mark;   /* Value to be compared to with            *
+                                   | opt_count_oper                          */
+
+  int eval_first; /* 1 if this option must be evaluated before *
+                   | the options without this mark             */
+
+  ll_t * constraints_list; /* List of constraint checking functions pointers. */
 };
 
 /* context instance structure */
@@ -1169,13 +1184,15 @@ struct constraint_s
   char ** args;
 };
 
-state_t *           cur_state = NULL;
-static ll_t *       cmdline_list;
-static ctx_t *      main_ctx       = NULL;
-static ctx_inst_t * first_ctx_inst = NULL; /* Pointer to the fist context *
-                                            | instance which holds the    *
-                                            | options instances           */
-static ll_t * ctx_inst_list;
+state_t *     cur_state = NULL;            /* Current analysis state        */
+static ll_t * cmdline_list;                /* List of interpreted CLI words *
+                                            | serves as the basis for the   *
+                                            | analysis of the parameters    */
+static ctx_t *      main_ctx       = NULL; /* initial context instance      */
+static ctx_inst_t * first_ctx_inst = NULL; /* Pointer to the fist context   *
+                                            | instance which holds the      *
+                                            | options instances             */
+static ll_t * ctx_inst_list;               /* List of the context instances */
 
 /* ====================================================== */
 /* Parse a string for the next matching token.            */
@@ -1362,7 +1379,7 @@ print_options(ll_t * list, int * has_optional, int * has_ellipsis,
 
     if (opt->args)
     {
-      if (strcmp(opt->arg, "#") == 0)
+      if (*(opt->arg) == '#')
         *has_generic_arg = 1;
 
       option = strappend(option, " ", NULL);
@@ -1570,7 +1587,7 @@ look_for_valid_prefix_in_word(char * word, ctx_t * ctx, int * pos, opt_t ** opt)
 }
 
 /* ============================================================= */
-/* is par_name is an unique abbreviation of an exiting parameter */
+/* If par_name is an unique abbreviation of an exiting parameter */
 /* in the context ctx, then return this parameter.               */
 /* ============================================================= */
 static char *
@@ -1618,19 +1635,19 @@ abbrev_expand(char * par_name, ctx_t * ctx)
       bst_destroy(tmp_opt_bst, bst_null_action);
 
     if (opt_count == 1)
-      /* All th abbreviation lead to only one option   */
-      /* We can just continue as in the previous case. */
-      /* """"""""""""""""""""""""""""""""""""""""""""" */
+      /* All the abbreviation lead to only one option   */
+      /* We can just continue as in the previous case.  */
+      /* """""""""""""""""""""""""""""""""""""""""""""" */
       return xstrdup(first_s);
     else
       return NULL;
   }
 }
 
-/* ==================================================== */
-/* Returns 1 if mandatory options required by a context */
-/* are not present, else returns 0.                     */
-/* ==================================================== */
+/* ================================================================= */
+/* Terminates the program if mandatory options required by a context */
+/* are not present.                                                  */
+/* ================================================================= */
 static void
 check_for_missing_mandatory_opt(ctx_inst_t * ctx_inst, char * opt_par)
 {
@@ -1658,6 +1675,12 @@ has_unseen_mandatory_opt(ctx_inst_t * ctx_inst, char ** missing)
   return user_rc ? 1 : 0;
 }
 
+/* ========================================================================= */
+/* This function terminates the program if an option or its arguments do not */
+/* conform to its occurrences constraint.                                    */
+/* There constraints can appear by trailing >, < or = in their definition    */
+/* given in ctxopt_new_ctx.                                                  */
+/* ========================================================================= */
 static void
 check_for_occurrences_issues(ctx_inst_t * ctx_inst)
 {
@@ -1668,7 +1691,6 @@ check_for_occurrences_issues(ctx_inst_t * ctx_inst)
 
   /* Check options */
   /* """"""""""""" */
-
   node = ctx->opt_list->head;
   while (node != NULL)
   {
@@ -1702,7 +1724,6 @@ check_for_occurrences_issues(ctx_inst_t * ctx_inst)
 
   /* Check arguments */
   /* """"""""""""""" */
-
   node = ctx_inst->opt_inst_list->head;
   while (node != NULL)
   {
@@ -1788,6 +1809,10 @@ opt_parse(char * s, opt_t ** opt)
 
   *opt = NULL;
   memset(opt_arg, '\0', 33);
+
+  /* strip the leading blanks */
+  while (isblank(*s))
+    s++;
 
   if (*s == '[') /* Start of an optional option */
   {
@@ -1880,7 +1905,7 @@ opt_parse(char * s, opt_t ** opt)
 
     pos = 0;
     n   = sscanf(s, "[%32[^] .\t]%n%3[.]", opt_arg, &pos, dots);
-    if (pos > 1) /* [# was read */
+    if (pos > 1 && *opt_arg == '#') /* [# has been read */
     {
       opt_args          = 1;
       opt_optional_args = 1;
@@ -1904,7 +1929,7 @@ opt_parse(char * s, opt_t ** opt)
         s += offset + 1;
       }
 
-      /* optional arg tag must end with a ] */
+      /* Optional arg tag must end with a ] */
       if (*s != ']')
       {
         free(opt_name);
@@ -1916,7 +1941,7 @@ opt_parse(char * s, opt_t ** opt)
     else
     {
       n = sscanf(s, "%32[^] .\t]%n%3[.]", opt_arg, &pos, dots);
-      if (pos > 0) /* # was read */
+      if (pos > 0 && *opt_arg == '#') /* # has been read */
       {
         opt_args = 1;
         if (n == 2) /* there were dots */
@@ -1948,7 +1973,7 @@ opt_parse(char * s, opt_t ** opt)
 
       s++; /* skip the ] */
 
-      /* strip the following blanks */
+      /* Strip the following blanks */
       while (isblank(*s))
         s++;
 
@@ -1956,7 +1981,7 @@ opt_parse(char * s, opt_t ** opt)
     }
     else if (opt_optional == 0 && (!*s || isblank(*s)))
     {
-      /* strip the following blanks */
+      /* Strip the following blanks */
       while (isblank(*s))
         s++;
 
@@ -2031,7 +2056,6 @@ init_opts(char * spec, ctx_t * ctx)
   bst_t * node;
   int     offset;
 
-  ltrim(spec, " \n\t");
   while (*spec)
   {
     if ((offset = opt_parse(spec, &opt)) > 0)
@@ -2057,9 +2081,9 @@ init_opts(char * spec, ctx_t * ctx)
             || bst_opt->multiple_args != opt->multiple_args
             || bst_opt->args != opt->args || !same_next_ctx)
         {
-          error("option %s already exists with "
-                "a different arguments signature.\n",
-                opt->name);
+          fatal_internal("option %s already exists with "
+                         "a different arguments signature.\n",
+                         opt->name);
 
           free(opt->name);
           free(opt);
@@ -2101,6 +2125,7 @@ init_opts(char * spec, ctx_t * ctx)
       exit(EXIT_FAILURE);
     }
   }
+
   return 1;
 }
 
@@ -2170,7 +2195,9 @@ opt_set_parms(char * opt_name, char * par_str)
       void * par_bst = ctx->par_bst;
 
       tmp_par_str = xstrdup(par_str);
-      par_name    = xstrtok_r(tmp_par_str, " \t,", &end_tmp_par_str);
+      ltrim(tmp_par_str, " \t");
+      rtrim(tmp_par_str, " \t", 0);
+      par_name = xstrtok_r(tmp_par_str, " \t,", &end_tmp_par_str);
       if (par_name == NULL)
         fatal_internal("Parameters are missing for option %s", opt_name);
 
@@ -2184,8 +2211,8 @@ opt_set_parms(char * opt_name, char * par_str)
         node = bst_find(&tmp_par, &par_bst, par_compare);
         if (node != NULL)
         {
-          error("The parameter %s is already defined in context %s", par_name,
-                ctx->name);
+          fatal_internal("The parameter %s is already defined in context %s",
+                         par_name, ctx->name);
           rc = 0;
         }
         else
@@ -2302,7 +2329,9 @@ new_ctx_inst(ctx_t * ctx, ctx_inst_t * prev_ctx_inst)
     bst = NULL;
     seen_opt_t tmp_seen_opt;
 
-    str      = xstrdup(node->data);
+    str = xstrdup(node->data);
+    ltrim(str, " \t");
+    rtrim(str, " \t", 0);
     opt_name = strtok(str, " \t"); /* extract the first option name */
 
     while (opt_name != NULL) /* for each option name */
@@ -2369,11 +2398,12 @@ ctxopt_build_cmdline_list(int nb_words, char ** words)
   int        i;
   char *     prev_word = NULL;
   char *     word;
+  char *     ptr;
   int        level = 0;
   ll_node_t *node, *start_node;
 
   /* The analysis is divided into three passes, this is not optimal but  */
-  /* must be done only one time ans so we can privilege the readability  */
+  /* must be done only one time. Doing that we privilege readability.    */
   /*                                                                     */
   /* In the following, SG is the ascii character 1d (dec 29)             */
   /*                                                                     */
@@ -2384,8 +2414,9 @@ ctxopt_build_cmdline_list(int nb_words, char ** words)
   /* The second pass transform the '{...}' blocks by a trailing SG       */
   /* ({...} -> ...|)                                                     */
   /*                                                                     */
-  /* The last pass remove the duplicated SG and check for SG, '{' or '}' */
-  /* in the middle in the remaining list elements                        */
+  /* The last pass remove the duplicated SG, check for SG, '{' or '}' in */
+  /* the middle in the remaining list elements and recreate the pseudo   */
+  /* argument: {}                                                        */
   /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
 
   /* If the option list is not empty, clear it before going further */
@@ -2418,13 +2449,13 @@ ctxopt_build_cmdline_list(int nb_words, char ** words)
 
     str = words[i];
 
-    /* the word {} is not a group, do not interpret it. */
-    /* """""""""""""""""""""""""""""""""""""""""""""""" */
-    if (strcmp(str, "{}") == 0)
+    /* Replace each occurrence of the legal word {} by the characters */
+    /* 0x02 and 0x03 to hide them from the following process.         */
+    /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+    while ((ptr = strstr(str, "{}")) != NULL)
     {
-      ll_append(cmdline_list, xstrdup(str));
-      start_node = cmdline_list->tail;
-      continue;
+      *ptr       = 0x02; /* arbitrary values unlikely */
+      *(ptr + 1) = 0x03; /* present in a word         */
     }
 
     if (len > 1) /* The word contains at least 2 characters */
@@ -2520,14 +2551,17 @@ ctxopt_build_cmdline_list(int nb_words, char ** words)
   {
     word = node->data;
 
-    /* {} is a legal word */
-    /* """""""""""""""""" */
-    if (strcmp(word, "{}") == 0)
-      goto next;
+    /* Restore the original { and } characters forming the legal word {} */
+    /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+    while ((ptr = strchr(word, 0x02)) != NULL)
+      *ptr = '{';
+    while ((ptr = strchr(word, 0x03)) != NULL)
+      *ptr = '}';
 
     /* Remove a SG if the previous element is SG */
     /* """"""""""""""""""""""""""""""""""""""""" */
     if (strcmp(word, "\x1d") == 0)
+    {
       if (prev_word != NULL && (strcmp(prev_word, "\x1d") == 0))
       {
         ll_node_t * old_node = node;
@@ -2535,10 +2569,15 @@ ctxopt_build_cmdline_list(int nb_words, char ** words)
         ll_delete(cmdline_list, old_node);
         free(old_node->data);
         free(old_node);
-        goto next;
       }
+    }
+    else if (strcmp(word, "-") == 0) /* a single - is a legal argument, not *
+                                      * a parameter. Protect it             */
+    {
+      free(node->data);
+      node->data = xstrdup("\\-");
+    }
 
-  next:
     prev_word = node->data;
     node      = node->next;
   }
@@ -2702,9 +2741,17 @@ ctxopt_analyze(int nb_words, char ** words, int * nb_rem_args,
                                     | parameter in this context.         */
 
           if (popt->args)
+          {
             /* The parameter may be followed by arguments */
             /* '''''''''''''''''''''''''''''''''''''''''' */
-            word = xstrdup(par_name + pos);
+            if (*(par_name + pos) == '-')
+            {
+              word = xstrdup("\\"); /* Protect the '-' */
+              word = strappend(word, par_name + pos, NULL);
+            }
+            else
+              word = xstrdup(par_name + pos);
+          }
           else
           {
             /* The parameter does not take arguments, the    */
@@ -2729,7 +2776,6 @@ ctxopt_analyze(int nb_words, char ** words, int * nb_rem_args,
           if (ctx_inst->prev_ctx_inst == NULL)
           {
             char * errmsg = xstrdup("");
-            ;
 
             *user_string  = '\0';
             *user_string2 = '\0';
@@ -2743,11 +2789,9 @@ ctxopt_analyze(int nb_words, char ** words, int * nb_rem_args,
               errmsg = strappend(
                 errmsg,
                 "\nIt appears to be defined in the context(s):", user_string2,
-                "\n'smenu -h' or 'smenu -H' can be helpful here.", NULL);
+                "\nAdd -h or -H for more help.", NULL);
             }
 
-            // fatal(CTXOPTUNKPAR, par_name, NULL, NULL, ctx_inst->par_name,
-            //      ctx_inst->ctx->name, errmsg, par_name);
             fatal(CTXOPTUNKPAR, errmsg);
           }
           else
@@ -2923,7 +2967,11 @@ ctxopt_analyze(int nb_words, char ** words, int * nb_rem_args,
 
       /* If the argument is valid, store it */
       /* """""""""""""""""""""""""""""""""" */
-      ll_append(opt_inst->values_list, par_name);
+      if (*par_name == '\\' && *(par_name + 1) != '\0'
+          && *(par_name + 1) == '-')
+        ll_append(opt_inst->values_list, par_name + 1);
+      else
+        ll_append(opt_inst->values_list, par_name);
 
       expect_arg        = 0;
       expect_par        = 0;
@@ -3157,7 +3205,7 @@ ctxopt_ctx_disp_usage(char * ctx_name, usage_behaviour action)
     printf(">            : given after the parameters, sets the next "
            "context to go.\n");
   if (has_generic_arg)
-    printf("#            : generic name for an argument.\n");
+    printf("#tag         : argument tag giving a clue to its meaning.\n");
   if (has_optional)
     printf("[...]        : the object is square brackets is optional.\n");
   if (has_ellipsis)
@@ -3260,8 +3308,8 @@ ctxopt_format_constraint(int nb_args, char ** args, char * value)
 
   rc = sscanf(value, format, x, &y);
   if (rc != 1)
-    error("The argument %s does not respect the imposed format: %s", value,
-          args[0]);
+    fatal_internal("The argument %s does not respect the imposed format: %s",
+                   value, args[0]);
 
   free(format);
 
@@ -3287,9 +3335,9 @@ ctxopt_re_constraint(int nb_args, char ** args, char * value)
 
   if (regexec(&re, value, (size_t)0, NULL, 0) != 0)
   {
-    error("The argument %s doesn't match the constraining "
-          "regular expression %s",
-          value, args[0]);
+    fatal_internal("The argument %s doesn't match the constraining "
+                   "regular expression %s",
+                   value, args[0]);
     return 0;
   }
 
@@ -3317,7 +3365,7 @@ ctxopt_range_constraint(int nb_args, char ** args, char * value)
   if (nb_args != 2)
     fatal_internal("Range constraint: invalid number of parameters.");
 
-  if (strcmp(args[0], "-") == 0)
+  if (strcmp(args[0], ".") == 0)
     max_only = 1;
   else
     n = sscanf(args[0], "%ld%c", &min, &c);
@@ -3325,7 +3373,7 @@ ctxopt_range_constraint(int nb_args, char ** args, char * value)
   if (!max_only && n != 1)
     fatal_internal("Range constraint: min: invalid parameters.");
 
-  if (strcmp(args[1], "-") == 0)
+  if (strcmp(args[1], ".") == 0)
     min_only = 1;
   else
     n = sscanf(args[1], "%ld%c", &max, &c);
@@ -3345,7 +3393,8 @@ ctxopt_range_constraint(int nb_args, char ** args, char * value)
   {
     if (v < min)
     {
-      error("%ld is not greater or equal to %ld as requested.", v, min);
+      fatal_internal("%ld is not greater or equal to %ld as requested.", v,
+                     min);
       return 0;
     }
     else
@@ -3355,7 +3404,7 @@ ctxopt_range_constraint(int nb_args, char ** args, char * value)
   {
     if (v > max)
     {
-      error("%ld is not lower or equal to %ld as requested.", v, max);
+      fatal_internal("%ld is not lower or equal to %ld as requested.", v, max);
       return 0;
     }
     else
@@ -3363,7 +3412,7 @@ ctxopt_range_constraint(int nb_args, char ** args, char * value)
   }
   else if (v < min || v > max)
   {
-    error("%ld is not between %ld and %ld as requested.", v, min, max);
+    fatal_internal("%ld is not between %ld and %ld as requested.", v, min, max);
     return 0;
   }
 
@@ -3446,8 +3495,6 @@ ctxopt_add_opt_settings(settings s, ...)
         {
           ptr    = va_arg(args, char *);
           params = ptr;
-          ltrim(params, " \t");
-          rtrim(params, " \t", 0);
 
           if (!opt_set_parms(opt_name, params))
             fatal_internal(
@@ -3613,8 +3660,8 @@ ctxopt_add_ctx_settings(settings s, ...)
       ptr = va_arg(args, char *);
       if ((ctx = locate_ctx(ptr)) != NULL)
       {
-        function = va_arg(args, int (*)(char *, direction, char *, char *, int,
-                                        void **));
+        function    = va_arg(args,
+                          int (*)(char *, direction, char *, int, void **));
         ctx->action = function;
 
         while ((data = va_arg(args, void *)) != NULL)

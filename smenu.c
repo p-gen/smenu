@@ -6158,75 +6158,75 @@ main(int argc, char * argv[])
   ctxopt_init();
 
   common_options =
-    "[*help] [*usage] [include_re... regex] [exclude_re... regex] "
-    "[title message] [attributes prefix:attr...] [special_level_1 #...<3] "
+    "[*help] [*usage] [include_re... #regex] [exclude_re... #regex] "
+    "[title #message] [attributes #prefix:attr...] [special_level_1 #...<3] "
     "[special_level_2 #...<3] [special_level_3 #...<3] "
     "[special_level_4 #...<3] [special_level_5 #...<3] "
-    "[lines [height]] "
+    "[lines [#height]] "
     "[blank_nonprintable] "
-    "[center_mode] [clean] [keep_spaces] [word_separators bytes] "
-    "[line_separators bytes] [no_scoll_bar] "
-    "[post_subst_all... /regex/repl/opts] "
-    "[post_subst_included... /regex/repl/opts] "
-    "[post_subst_excluded... /regex/repl/opts] "
-    "[search_method prefix|substring|fuzzy] [start_pattern pattern] "
+    "[center_mode] [clean] [keep_spaces] [word_separators #bytes] "
+    "[line_separators #bytes] [no_scoll_bar] "
+    "[post_subst_all... #/regex/repl/opts] "
+    "[post_subst_included... #/regex/repl/opts] "
+    "[post_subst_excluded... #/regex/repl/opts] "
+    "[search_method #prefix|substring|fuzzy] [start_pattern #pattern] "
     "[timeout #...] [hidden_timeout #...] [validate_in_search_mode] "
     "[visual_bell] ";
 
   main_spec_options = "[*version] "
                       "[*long_help] "
-                      "[config file] "
-                      "[auto_da_number>Direct_access... [regex]] "
-                      "[auto_da_unnumber>Direct_access... [regex]] "
+                      "[config #file] "
+                      "[auto_da_number>Direct_access... [#regex]] "
+                      "[auto_da_unnumber>Direct_access... [#regex]] "
                       "[field_da_number>Direct_access] "
                       "[column_mode>Columns] "
                       "[line_mode>Lines] "
-                      "[tab_mode>Tabulations [cols]] "
-                      "[tag_mode>Tagging [delim]] "
-                      "[pin_mode>Tagging [delim]]";
+                      "[tab_mode>Tabulations [#cols]] "
+                      "[tag_mode>Tagging [#delim]] "
+                      "[pin_mode>Tagging [#delim]]";
 
   col_spec_options = "[wide_mode] "
-                     "[columns_select... selector...] "
-                     "[rows_select... selector...] "
-                     "[gutter [string]] "
-                     "[auto_da_number>Direct_access... [regex]] "
-                     "[auto_da_unnumber>Direct_access... [regex]] "
+                     "[columns_select... #selector...] "
+                     "[rows_select... #selector...] "
+                     "[gutter [#string]] "
+                     "[auto_da_number>Direct_access... [#regex]] "
+                     "[auto_da_unnumber>Direct_access... [#regex]] "
                      "[field_da_number>Direct_access] "
-                     "[tag_mode>Tagging [delim]] "
-                     "[pin_mode>Tagging [delim]] "
-                     "[force_first_column regex] "
-                     "[force_last_column regex]";
+                     "[tag_mode>Tagging [#delim]] "
+                     "[pin_mode>Tagging [#delim]] "
+                     "[force_first_column #regex] "
+                     "[force_last_column #regex]";
 
-  line_spec_options = "[rows_select... selector...] "
-                      "[auto_da_number>Direct_access... [regex]] "
-                      "[auto_da_unnumber>Direct_access... [regex]] "
+  line_spec_options = "[rows_select... #selector...] "
+                      "[auto_da_number>Direct_access... [#regex]] "
+                      "[auto_da_unnumber>Direct_access... [#regex]] "
                       "[field_da_number>Direct_access] "
-                      "[tag_mode>Tagging [delim]] "
-                      "[pin_mode>Tagging [delim]] "
-                      "[force_first_column regex] "
-                      "[force_last_column regex]";
+                      "[tag_mode>Tagging [#delim]] "
+                      "[pin_mode>Tagging [#delim]] "
+                      "[force_first_column #regex] "
+                      "[force_last_column #regex]";
 
   tab_spec_options = "[wide_mode] "
-                     "[gutter [string]] "
-                     "[auto_da_number>Direct_access... [regex]] "
-                     "[auto_da_unnumber>Direct_access... [regex]] "
+                     "[gutter [#string]] "
+                     "[auto_da_number>Direct_access... [#regex]] "
+                     "[auto_da_unnumber>Direct_access... [#regex]] "
                      "[field_da_number>Direct_access] "
-                     "[tag_mode>Tagging [delim]] "
-                     "[pin_mode>Tagging [delim]] "
-                     "[force_first_column regex] "
-                     "[force_last_column regex]";
+                     "[tag_mode>Tagging [#delim]] "
+                     "[pin_mode>Tagging [#delim]] "
+                     "[force_first_column #regex] "
+                     "[force_last_column #regex]";
 
   tag_spec_options = "[auto_tag] "
                      "[column_mode>Columns] "
                      "[line_mode>Lines] "
-                     "[tab_mode>Tabulations [cols]]";
+                     "[tab_mode>Tabulations [#cols]]";
 
-  da_spec_options = "[da_options prefix:attr...] "
+  da_spec_options = "[da_options #prefix:attr...] "
                     "[column_mode>Columns] "
                     "[line_mode>Lines] "
-                    "[tab_mode>Tabulations [cols]] "
-                    "[tag_mode>Tagging [delim]] "
-                    "[pin_mode>Tagging [delim]]";
+                    "[tab_mode>Tabulations [#cols]] "
+                    "[tag_mode>Tagging [#delim]] "
+                    "[pin_mode>Tagging [#delim]]";
 
   main_options = concat(common_options, main_spec_options, NULL);
   col_options  = concat(common_options, col_spec_options, NULL);
@@ -6419,7 +6419,7 @@ main(int argc, char * argv[])
   ctxopt_add_opt_settings(constraints, "tab_mode", ctxopt_format_constraint,
                           "%ld");
   ctxopt_add_opt_settings(constraints, "tab_mode", ctxopt_range_constraint,
-                          "1 -");
+                          "1 .");
 
   /* Command line options analysis */
   /* """"""""""""""""""""""""""""" */
