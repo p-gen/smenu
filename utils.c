@@ -13,6 +13,7 @@
 #include <string.h>
 #include <ctype.h>
 #include <stdarg.h>
+#include <wctype.h>
 #include "xmalloc.h"
 #include "list.h"
 #include "utils.h"
@@ -278,4 +279,26 @@ isprint8(int i)
   unsigned char c = i & (unsigned char)0xff;
 
   return (c >= 0x20 && c < 0x7f) || (c >= (unsigned char)0xa0);
+}
+
+/* ================================================= */
+/* Private imementation of wcscasecmp wimming in c99 */
+/* ================================================= */
+int
+xwcscasecmp(const wchar_t * s1, const wchar_t * s2)
+{
+  wchar_t c1, c2;
+
+  while (*s1)
+  {
+    c1 = towlower(*s1);
+    c2 = towlower(*s2);
+
+    if (c1 != c2)
+      return (int)(c1 - c2);
+
+    s1++;
+    s2++;
+  }
+  return (-*s2);
 }

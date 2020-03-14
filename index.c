@@ -8,12 +8,14 @@
 /* *************************************************************** */
 
 #include <stdlib.h>
+#include <stdint.h>
 #include <unistd.h>
 #include <wchar.h>
 #include <string.h>
 
 #include "xmalloc.h"
 #include "list.h"
+#include "utils.h"
 #include "index.h"
 
 /* List of words matching the current search */
@@ -163,7 +165,7 @@ tst_fuzzy_traverse(tst_node_t * p, int (*callback)(void *), int first_call,
   w1s[0] = p->splitchar;
   w2s[0] = w;
 
-  if (wcscasecmp(w1s, w2s) == 0)
+  if (xwcscasecmp(w1s, w2s) == 0)
   {
     ll_node_t * node;
     sub_tst_t * sub_tst_data;
