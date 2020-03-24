@@ -70,9 +70,11 @@ typedef enum
   leaf
 } walk_order_e;
 
+#if 0 /* Unused yet */
 static void *
 bst_delete(const void * vkey, void ** vrootp,
            int (*compar)(const void *, const void *));
+#endif
 
 static void
 bst_destroy_recurse(bst_t * root, void (*free_action)(void *));
@@ -117,8 +119,10 @@ ll_insert_before(ll_t * const list, ll_node_t * node, void * const data);
 static int
 ll_delete(ll_t * const list, ll_node_t * node);
 
+#if 0 /* Unused yet */
 static ll_node_t *
 ll_find(ll_t * const, void * const, int (*)(const void *, const void *));
+#endif
 
 static void
 ll_init(ll_t * list);
@@ -178,9 +182,6 @@ par_compare(const void * a1, const void * a2);
 static int
 seen_opt_compare(const void * so1, const void * so2);
 
-static int
-str_compare(const void * s1, const void * s2);
-
 static ctx_t *
 locate_ctx(char * name);
 
@@ -191,6 +192,13 @@ static par_t *
 locate_par(char * name, ctx_t * ctx);
 
 static void
+print_options(ll_t * list, int * has_optional, int * has_ellipsis,
+              int * has_rule, int * has_generic_arg, int * has_ctx_change,
+              int * has_early_eval);
+static void
+print_explanations(int has_early_eval, int has_ctx_change, int has_generic_arg,
+                   int has_optional, int has_ellipsis, int has_rule);
+static void
 bst_seen_opt_cb(const void * node, walk_order_e kind, int level);
 
 static void
@@ -198,6 +206,12 @@ bst_seen_opt_seen_cb(const void * node, walk_order_e kind, int level);
 
 static void
 bst_print_ctx_cb(const void * node, walk_order_e kind, int level);
+
+static void
+bst_check_opt_cb(const void * node, walk_order_e kind, int level);
+
+static void
+bst_match_par_cb(const void * node, walk_order_e kind, int level);
 
 static void
 match_prefix_cb(const void * node, walk_order_e kind, int level);
@@ -239,6 +253,8 @@ fatal_internal(const char * format, ...)
 {
   va_list args;
 
+  fprintf(stderr, "CTXOPT: ");
+
   va_start(args, format);
   vfprintf(stderr, format, args);
   fprintf(stderr, "\n");
@@ -256,11 +272,17 @@ fatal_internal(const char * format, ...)
 /* errmsg : users's provided string specific to the error e               */
 /*          Note that errmsg is not used in all cases                     */
 /*                                                                        */
-/*          e            errmsg                                           */
-/*          ------------ --------------------------------                 */
-/*          CTXOPTMISPAR Name of the missing parameter                    */
-/*          CTXOPTUNKPAR Name of the unknown parameter                    */
-/*          CTXOPTINCOPT Name of incompatibles parameters                 */
+/*          CTXOPTMISPAR Missing parameter                                */
+/*          CTXOPTMISARG Missing argument                                 */
+/*          CTXOPTDUPOPT Duplicated option                                */
+/*          CTXOPTUNKPAR Unknown parameter                                */
+/*          CTXOPTINCOPT Incompatible option                              */
+/*          CTXOPTCTEOPT Option: bad number of occurrences                */
+/*          CTXOPTCTLOPT Option: not enough occurrences                   */
+/*          CTXOPTCTGOPT Option: too many occurrence of                   */
+/*          CTXOPTCTEARG Arguments: bad number of occurrences             */
+/*          CTXOPTCTLARG Arguments: not enough occurrences                */
+/*          CTXOPTCTGARG Arguments: too many occurrences                  */
 /* ====================================================================== */
 static void
 fatal(errors e, char * errmsg)
@@ -273,42 +295,111 @@ fatal(errors e, char * errmsg)
     {
       case CTXOPTNOERR:
         break;
+
       case CTXOPTMISPAR:
         if (cur_state->ctx_par_name != NULL)
           fprintf(stderr,
                   "Mandatory parameter(s): %s are missing in the context "
-                  "introduced by %s.",
+                  "introduced by %s.\n",
                   errmsg, cur_state->ctx_par_name);
         else
-          fprintf(
-            stderr,
-            "Mandatory parameter(s): %s are missing in the first context.",
-            errmsg);
+          fprintf(stderr,
+                  "Mandatory parameter(s): %s are missing "
+                  "in the main context.\n",
+                  errmsg);
 
         free(errmsg);
         break;
+
       case CTXOPTMISARG:
         if (cur_state->pre_opt_par_name != NULL)
-          fprintf(stderr, "%s requires argument(s).",
+          fprintf(stderr, "%s requires argument(s).\n",
                   cur_state->pre_opt_par_name);
         else
-          fprintf(stderr, "%s requires argument(s).",
+          fprintf(stderr, "%s requires argument(s).\n",
                   cur_state->cur_opt_par_name);
         break;
+
       case CTXOPTDUPOPT:
-        fprintf(stderr,
-                "The parameter(s) %s can only appear once in this context.",
-                cur_state->cur_opt_par_name);
+        if (cur_state->pre_opt_par_name != NULL)
+          fprintf(stderr,
+                  "The parameter(s) %s can only appear once in the context "
+                  "introduced by %s.\n",
+                  cur_state->cur_opt_par_name, cur_state->ctx_par_name);
+        else
+          fprintf(stderr,
+                  "The parameter(s) %s can only appear once "
+                  "in the main context.\n",
+                  cur_state->cur_opt_par_name);
         break;
+
       case CTXOPTUNKPAR:
-        fprintf(stderr, "Unknown parameter: %s", cur_state->cur_opt_par_name);
+        fprintf(stderr, "Unknown parameter: %s.\n",
+                cur_state->cur_opt_par_name);
         fprintf(stderr, errmsg);
         break;
+
       case CTXOPTINCOPT:
-        fprintf(stderr, "%s is incompatible with %s\n",
+        fprintf(stderr, "%s is incompatible with %s.\n",
                 cur_state->cur_opt_par_name, errmsg);
         break;
-      case CTXOPTERRSIZE:
+
+      case CTXOPTCTEOPT:
+        if (cur_state->ctx_par_name)
+          fprintf(stderr,
+                  "%s must appear exactly %u times in the context "
+                  "introduced by %s.\n",
+                  cur_state->cur_opt_par_name, cur_state->opts_count,
+                  cur_state->ctx_par_name);
+        else
+          fprintf(stderr,
+                  "%s must appear exactly %u times in "
+                  "the main context.\n",
+                  cur_state->cur_opt_par_name, cur_state->opts_count);
+        break;
+
+      case CTXOPTCTLOPT:
+        if (cur_state->ctx_par_name)
+          fprintf(stderr,
+                  "%s must appear less than %u times in the context "
+                  "introduced by %s.\n",
+                  cur_state->cur_opt_par_name, cur_state->opts_count,
+                  cur_state->ctx_par_name);
+        else
+          fprintf(stderr,
+                  "%s must appear less than %u times in the main context.\n",
+                  cur_state->cur_opt_par_name, cur_state->opts_count);
+        break;
+
+      case CTXOPTCTGOPT:
+        if (cur_state->ctx_par_name)
+          fprintf(stderr,
+                  "%s must appear more than %u times in the context "
+                  "introduced by %s.\n",
+                  cur_state->cur_opt_par_name, cur_state->opts_count,
+                  cur_state->ctx_par_name);
+        else
+          fprintf(stderr,
+                  "%s must appear more than %u times in the main context.\n",
+                  cur_state->cur_opt_par_name, cur_state->opts_count);
+        break;
+
+      case CTXOPTCTEARG:
+        fprintf(stderr, "%s must have exactly %u arguments.\n",
+                cur_state->cur_opt_par_name, cur_state->opt_args_count);
+        break;
+
+      case CTXOPTCTLARG:
+        fprintf(stderr, "%s must have less than %u arguments.\n",
+                cur_state->cur_opt_par_name, cur_state->opt_args_count);
+        break;
+
+      case CTXOPTCTGARG:
+        fprintf(stderr, "%s must have more than %u arguments.\n",
+                cur_state->cur_opt_par_name, cur_state->opt_args_count);
+        break;
+
+      case CTXOPTERRSIZ:
         break;
     }
   }
@@ -607,6 +698,7 @@ ll_delete(ll_t * const list, ll_node_t * node)
   return 1;
 }
 
+#if 0 /* Unused yet */
 /* =========================================================================*/
 /* Find a node in the list containing data. Return the node pointer or NULL */
 /* if not found.                                                            */
@@ -629,6 +721,7 @@ ll_find(ll_t * const list, void * const data,
 
   return NULL;
 }
+#endif
 
 /* ==================================================================== */
 /* Allocates and fills an array of strings from a list                  */
@@ -693,6 +786,7 @@ struct bst_s
   struct bst_s * rlink;
 };
 
+#if 0 /* Unused yet */
 /* ========================== */
 /* delete node with given key */
 /* ========================== */
@@ -739,6 +833,7 @@ bst_delete(const void * vkey, void ** vrootp,
   *rootp = q;     /* link parent to new node */
   return p;
 }
+#endif
 
 /* ============== */
 /* destroy a tree */
@@ -1268,16 +1363,10 @@ seen_opt_compare(const void * so1, const void * so2)
   return strcmp(o1->name, o2->name);
 }
 
-static int
-str_compare(const void * s1, const void * s2)
-{
-  return strcmp((char *)s1, (char *)s2);
-}
-
-/* ******************************************************************* */
-/* Helper function to locate contexts, options and parameters in a bst */
-/* by their names.                                                     */
-/* ******************************************************************* */
+/* ******************************************************************** */
+/* Helper functions to locate contexts, options and parameters in a bst */
+/* by their names.                                                      */
+/* ******************************************************************** */
 
 static ctx_t *
 locate_ctx(char * name)
@@ -1322,6 +1411,14 @@ locate_par(char * name, ctx_t * ctx)
     return node->key;
 }
 
+/* =================================================================== */
+/* Utility function to format and print the options present in a list. */
+/*                                                                     */
+/* IN  list  : a list of options                                       */
+/* OUT has_* : a set of flags which will determine the content of the  */
+/*             explanation given after the formatted printing of the   */
+/*             options.                                                */
+/* =================================================================== */
 static void
 print_options(ll_t * list, int * has_optional, int * has_ellipsis,
               int * has_rule, int * has_generic_arg, int * has_ctx_change,
@@ -1434,6 +1531,44 @@ print_options(ll_t * list, int * has_optional, int * has_ellipsis,
   free(line);
 }
 
+/* ==================================================== */
+/* Explain the special syntactic symbols present in the */
+/* generated usage messages.                            */
+/* ==================================================== */
+static void
+print_explanations(int has_early_eval, int has_ctx_change, int has_generic_arg,
+                   int has_optional, int has_ellipsis, int has_rule)
+{
+  if (has_early_eval || has_ctx_change || has_generic_arg || has_optional
+      || has_ellipsis || has_rule)
+  {
+    printf("\nSyntactic explanations:\n");
+    printf("Only the parameters (prefixed by -) and the arguments, if any, "
+           "must be entered.\n");
+    printf("The following is just there to explain the other symbols "
+           "displayed.\n\n");
+
+    if (has_early_eval)
+      printf("*            : the parameters for this option will be "
+             "evaluated first.\n");
+    if (has_ctx_change)
+      printf(
+        ">            : The context after this symbol will become the next "
+        "default one.\n");
+    if (has_generic_arg)
+      printf("#tag         : argument tag giving a clue to its meaning.\n");
+    if (has_optional)
+      printf(
+        "[...]        : the object between square brackets is optional.\n");
+    if (has_ellipsis)
+      printf("...          : the previous object can be repeated more "
+             "than one time.\n");
+    if (has_rule)
+      printf("[<|=|>]number: rules constraining the number of "
+             "parameters/arguments.\n");
+  }
+}
+
 /* ******************************************************* */
 /* Various utility and callback function call when walking */
 /* through a bst.                                          */
@@ -1494,6 +1629,21 @@ bst_print_ctx_cb(const void * node, walk_order_e kind, int level)
 }
 
 static void
+bst_check_opt_cb(const void * node, walk_order_e kind, int level)
+{
+  opt_t * opt = ((bst_t *)node)->key;
+
+  if (kind == postorder || kind == leaf)
+  {
+    if (opt->params == NULL) /* opt must have associated parameters */
+      fatal_internal("Option %s has no registered parameter.\n", opt->name);
+
+    if (opt->action == NULL) /* opt must have an action */
+      fatal_internal("Option %s has no registered action.\n", opt->name);
+  }
+}
+
+static void
 bst_match_par_cb(const void * node, walk_order_e kind, int level)
 {
   ctx_t * ctx = ((bst_t *)node)->key;
@@ -1531,7 +1681,7 @@ match_prefix_cb(const void * node, walk_order_e kind, int level)
 static void
 bst_null_action(void * data)
 {
-  ;
+  ; /* nothing to do */
 }
 
 /* ====================================================================== */
@@ -1540,12 +1690,12 @@ bst_null_action(void * data)
 /* the command line queue (eg: "-pa1" -> "-pa" "1" if "-pa" is a valid    */
 /* option)                                                                */
 /*                                                                        */
-/* IN  word : the word to be checked                                      */
-/* IN  ctx  : The context in which the flag indexed by the word is to be  */
+/* IN  word : the word to be checked.                                     */
+/* IN  ctx  : the context in which the flag indexed by the word is to be  */
 /*            checked.                                                    */
-/* OUT pos  : The offset in word pointing just after the matching prefix. */
-/* OUT opt  : A pointer to the option associated with the new parameter   */
-/*            or NULL if none is found                                    */
+/* OUT pos  : the offset in word pointing just after the matching prefix. */
+/* OUT opt  : a pointer to the option associated with the new parameter   */
+/*            or NULL if none is found.                                   */
 /*                                                                        */
 /* The returned pointer must be freed by the caller                       */
 /* ====================================================================== */
@@ -1692,32 +1842,34 @@ check_for_occurrences_issues(ctx_inst_t * ctx_inst)
   /* Check options */
   /* """"""""""""" */
   node = ctx->opt_list->head;
+
   while (node != NULL)
   {
     opt = node->data;
-    switch (opt->opt_count_oper)
-    {
-      case '=':
-        if (opt->occurrences > 0 && opt->opt_count_mark != opt->occurrences)
-          fatal_internal(
-            "%s must appear exactly %u times in this context, seen %u.",
-            opt->params, opt->opt_count_mark, opt->occurrences);
-        break;
 
-      case '<':
-        if (opt->occurrences > 0 && opt->opt_count_mark <= opt->occurrences)
-          fatal_internal(
-            "%s must appear less than %u times in this context, seen %u.",
-            opt->params, opt->opt_count_mark, opt->occurrences);
-        break;
+    /* Update current_state */
+    /* -------------------- */
+    cur_state->opts_count     = opt->opt_count_mark;
+    cur_state->opt_args_count = opt->opt_args_count_mark;
 
-      case '>':
-        if (opt->occurrences > 0 && opt->opt_count_mark >= opt->occurrences)
-          fatal_internal(
-            "%s must appear more than %u times in this context, seen %u.",
-            opt->params, opt->opt_count_mark, opt->occurrences);
-        break;
-    }
+    if (opt->opt_count_matter)
+      switch (opt->opt_count_oper)
+      {
+        case '=':
+          if (opt->occurrences > 0 && opt->opt_count_mark != opt->occurrences)
+            fatal(CTXOPTCTEOPT, "");
+          break;
+
+        case '<':
+          if (opt->occurrences > 0 && opt->opt_count_mark <= opt->occurrences)
+            fatal(CTXOPTCTLOPT, "");
+          break;
+
+        case '>':
+          if (opt->occurrences > 0 && opt->opt_count_mark >= opt->occurrences)
+            fatal(CTXOPTCTGOPT, "");
+          break;
+      }
 
     node = node->next;
   }
@@ -1730,28 +1882,31 @@ check_for_occurrences_issues(ctx_inst_t * ctx_inst)
     opt_inst = node->data;
     opt      = opt_inst->opt;
 
+    /* Update current_state */
+    /* -------------------- */
+    cur_state->opts_count     = opt->opt_count_mark;
+    cur_state->opt_args_count = opt->opt_args_count_mark;
+
     int nb_values = opt_inst->values_list->len; /* Number of arguments of opt */
 
-    switch (opt->opt_args_count_oper)
-    {
-      case '=':
-        if (nb_values > 0 && opt->opt_args_count_mark != nb_values)
-          fatal_internal("%s must have exactly %u arguments, not %u.",
-                         opt->params, opt->opt_args_count_mark, nb_values);
-        break;
+    if (opt->opt_args_count_matter)
+      switch (opt->opt_args_count_oper)
+      {
+        case '=':
+          if (nb_values > 0 && opt->opt_args_count_mark != nb_values)
+            fatal(CTXOPTCTEARG, "");
+          break;
 
-      case '<':
-        if (nb_values > 0 && opt->opt_args_count_mark <= nb_values)
-          fatal_internal("%s must have less than %u arguments, not %u.",
-                         opt->params, opt->opt_args_count_mark, nb_values);
-        break;
+        case '<':
+          if (nb_values > 0 && opt->opt_args_count_mark <= nb_values)
+            fatal(CTXOPTCTLARG, "");
+          break;
 
-      case '>':
-        if (nb_values > 0 && opt->opt_args_count_mark >= nb_values)
-          fatal_internal("%s must have more than %u arguments, not %u.",
-                         opt->params, opt->opt_args_count_mark, nb_values);
-        break;
-    }
+        case '>':
+          if (nb_values > 0 && opt->opt_args_count_mark >= nb_values)
+            fatal(CTXOPTCTGARG, "");
+          break;
+      }
 
     node = node->next;
   }
@@ -2133,29 +2288,58 @@ init_opts(char * spec, ctx_t * ctx)
 /* ctxopt initialization function, must be called first */
 /* ==================================================== */
 void
-ctxopt_init(void)
+ctxopt_init(char * prog_name)
 {
   int n;
 
   contexts_bst = NULL;
   options_bst  = NULL;
+  char * ptr;
 
   user_rc      = 0;
+  user_value   = 0;
   user_string  = xmalloc(8);
   user_string2 = xmalloc(8);
   user_object  = NULL;
 
   ctxopt_initialized = 1;
 
+  /* Update current_state */
+  /* -------------------- */
   cur_state = xcalloc(sizeof(state_t), 0);
 
   /* Initialize custom error function pointers to NULL */
   /* """"""""""""""""""""""""""""""""""""""""""""""""" */
-  err_functions = xmalloc(CTXOPTERRSIZE * sizeof(void *));
-  for (n = 0; n < CTXOPTERRSIZE; n++)
+  err_functions = xmalloc(CTXOPTERRSIZ * sizeof(void *));
+  for (n = 0; n < CTXOPTERRSIZ; n++)
     err_functions[n] = NULL;
+
+  /* Update current_state */
+  /* -------------------- */
+  if (prog_name)
+  {
+    if (*prog_name == '\0')
+      cur_state->prog_name = xstrdup("program_name");
+    else if ((ptr = strrchr(prog_name, '/')))
+      cur_state->prog_name = xstrdup(ptr + 1);
+    else
+      cur_state->prog_name = xstrdup(prog_name);
+  }
+  else
+    cur_state->prog_name = xstrdup("program_name");
 }
 
+/* ========================================================================= */
+/* Utility function which create and register a par_t object in a bst        */
+/* embedded in a context.                                                    */
+/* This object will have a name and a pointer to the option it refers to.    */
+/* These object will be used to quickly find an option from a command        */
+/* line parameter during the analysis phase.                                 */
+/*                                                                           */
+/* IN      : an option name.                                                 */
+/* IN      : a string of command line parameters to associate to the option. */
+/* Returns : 1 is all was fine else 0.                                       */
+/* ========================================================================= */
 static int
 opt_set_parms(char * opt_name, char * par_str)
 {
@@ -2245,7 +2429,7 @@ opt_set_parms(char * opt_name, char * par_str)
 /*                     access the context fields                        */
 /* IN prev_ctx_inst  : the context instance whose option leading to the */
 /*                     creation of this new context instance is part of */
-/* OUT               : The new conxtext (cannot be NULL)                */
+/* Returns           : the new context.                                 */
 /* ==================================================================== */
 static ctx_inst_t *
 new_ctx_inst(ctx_t * ctx, ctx_inst_t * prev_ctx_inst)
@@ -2265,6 +2449,8 @@ new_ctx_inst(ctx_t * ctx, ctx_inst_t * prev_ctx_inst)
   if (prev_ctx_inst != NULL)
   {
     gen_opt_inst = (opt_inst_t *)(prev_ctx_inst->opt_inst_list->tail->data);
+    /* Update current_state */
+    /* -------------------- */
     cur_state->opt_name = gen_opt_inst->opt->name;
   }
   else
@@ -2280,6 +2466,8 @@ new_ctx_inst(ctx_t * ctx, ctx_inst_t * prev_ctx_inst)
   ctx_inst->opt_inst_list   = ll_new();
   ctx_inst->seen_opt_bst    = NULL;
 
+  /* Update current_state */
+  /* -------------------- */
   cur_state->ctx_name = ctx->name;
 
   ll_node_t * node;
@@ -2408,8 +2596,8 @@ ctxopt_build_cmdline_list(int nb_words, char ** words)
   /* In the following, SG is the ascii character 1d (dec 29)             */
   /*                                                                     */
   /* The first pass creates the list, extract the leading an trailing    */
-  /*  SG '{' and '}' of each word * and give them their own place in     */
-  /* the list                                                            */
+  /*  SG '{' and '}' of each word and give them their own place in the   */
+  /* list                                                                */
   /*                                                                     */
   /* The second pass transform the '{...}' blocks by a trailing SG       */
   /* ({...} -> ...|)                                                     */
@@ -2664,6 +2852,10 @@ ctxopt_analyze(int nb_words, char ** words, int * nb_rem_args,
   if (main_ctx == NULL)
     fatal_internal("At least one context must have been created.");
 
+  /* Check that all options has an action and at least one parameter */
+  /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+  bst_walk(options_bst, bst_check_opt_cb);
+
   /* Create the first ctx_inst record */
   /* """""""""""""""""""""""""""""""" */
   ctx = main_ctx;
@@ -2697,6 +2889,8 @@ ctxopt_analyze(int nb_words, char ** words, int * nb_rem_args,
         ctx_inst = ctx_inst->prev_ctx_inst;
         ctx      = ctx_inst->ctx;
 
+        /* Update current_state */
+        /* -------------------- */
         cur_state->ctx_name     = ctx->name;
         cur_state->ctx_par_name = ctx_inst->par_name;
       }
@@ -2706,6 +2900,8 @@ ctxopt_analyze(int nb_words, char ** words, int * nb_rem_args,
       int    pos = 0;
       char * prefix;
 
+      /* Update current_state */
+      /* -------------------- */
       cur_state->cur_opt_par_name = par_name;
 
       /* An expected parameter has been seen */
@@ -2802,6 +2998,8 @@ ctxopt_analyze(int nb_words, char ** words, int * nb_rem_args,
             ctx_inst = ctx_inst->prev_ctx_inst;
             ctx      = ctx_inst->ctx;
 
+            /* Update current_state */
+            /* -------------------- */
             cur_state->ctx_name     = ctx->name;
             cur_state->ctx_par_name = ctx_inst->par_name;
 
@@ -2921,6 +3119,8 @@ ctxopt_analyze(int nb_words, char ** words, int * nb_rem_args,
           opt_inst->next_ctx_inst = ctx_inst = new_ctx_inst(ctx, ctx_inst);
           ctx_inst->par_name                 = xstrdup(par_name);
 
+          /* Update current_state */
+          /* -------------------- */
           cur_state->ctx_par_name = ctx_inst->par_name;
 
           ll_append(ctx_inst_list, ctx_inst);
@@ -2983,13 +3183,7 @@ ctxopt_analyze(int nb_words, char ** words, int * nb_rem_args,
         expect_par = 1; /* Parameter takes only one argument */
     }
     else if (expect_arg && *par_name == '-')
-    {
-      char * prev_arg;
-
-      prev_arg = (char *)(cli_node->prev->data);
-
       fatal(CTXOPTMISARG, NULL);
-    }
     else if (expect_par_or_arg)
     {
       expect_arg        = 0;
@@ -3019,6 +3213,11 @@ ctxopt_analyze(int nb_words, char ** words, int * nb_rem_args,
   while (node != NULL)
   {
     ctx_inst = (ctx_inst_t *)(node->data);
+
+    /* Update current_state */
+    /* -------------------- */
+    cur_state->ctx_name     = ctx_inst->ctx->name;
+    cur_state->ctx_par_name = ctx_inst->par_name;
 
     check_for_missing_mandatory_opt(ctx_inst, par_name);
     check_for_occurrences_issues(ctx_inst);
@@ -3143,6 +3342,7 @@ ctxopt_new_ctx(char * name, char * opts_specs)
 {
   ctx_t * ctx;
   bst_t * node;
+  char *  p;
 
   if (!ctxopt_initialized)
     fatal_internal("Please call ctxopt_init first.");
@@ -3153,6 +3353,23 @@ ctxopt_new_ctx(char * name, char * opts_specs)
   /* """"""""""""""""""""""""""""""""""""""""" */
   if (contexts_bst == NULL)
     main_ctx = ctx;
+
+  /* validate the context name */
+  /* ALPHA+(ALPHANUM|_)*       */
+  /* """"""""""""""""""""""""" */
+  p = name;
+  if (!isalpha(*p))
+    fatal_internal("%s: a context name must start with a letter.", name);
+
+  p++;
+  while (*p)
+  {
+    if (!isalnum(*p) && *p != '_')
+      fatal_internal("%s: a context name must only contain letters, "
+                     "numbers or '_'.",
+                     name);
+    p++;
+  }
 
   ctx->name        = xstrdup(name);
   ctx->opt_list    = ll_new(); /* list of options legit in this context */
@@ -3192,28 +3409,18 @@ ctxopt_ctx_disp_usage(char * ctx_name, usage_behaviour action)
   if (ctx == NULL)
     fatal_internal("%s: unknown context.", ctx_name);
 
-  printf("\nSynopsis:\n");
+  if (cur_state->ctx_par_name == NULL)
+    printf("\nSynopsis:\n%s \\\n", cur_state->prog_name);
+  else
+    printf("\nSynopsis for the context introduced by %s:\n",
+           cur_state->ctx_par_name);
+
   list = ctx->opt_list;
   print_options(list, &has_optional, &has_ellipsis, &has_rule, &has_generic_arg,
                 &has_ctx_change, &has_early_eval);
 
-  printf("\nExplanations:\n");
-  if (has_early_eval)
-    printf("*            : the parameters for this option will be "
-           "evaluated first.\n");
-  if (has_ctx_change)
-    printf(">            : given after the parameters, sets the next "
-           "context to go.\n");
-  if (has_generic_arg)
-    printf("#tag         : argument tag giving a clue to its meaning.\n");
-  if (has_optional)
-    printf("[...]        : the object is square brackets is optional.\n");
-  if (has_ellipsis)
-    printf("...          : the previous object can be repeated more "
-           "than one times.\n");
-  if (has_rule)
-    printf("[<|=|>]number: rules constraining the number of "
-           "parameters/arguments.\n");
+  print_explanations(has_early_eval, has_ctx_change, has_generic_arg,
+                     has_optional, has_ellipsis, has_rule);
 
   if (action == exit_after)
     exit(EXIT_FAILURE);
@@ -3251,29 +3458,8 @@ ctxopt_disp_usage(usage_behaviour action)
 
   /* Contextual syntactic explanations */
   /* """"""""""""""""""""""""""""""""" */
-  printf("\nSyntactic explanations:\n");
-
-  if (has_early_eval)
-    printf("*            : the parameters for this option will be "
-           "evaluated first.\n");
-
-  if (has_ctx_change)
-    printf(">            : given after the parameters, sets the next "
-           "context to go.\n");
-
-  if (has_generic_arg)
-    printf("#            : generic name for an argument.\n");
-
-  if (has_optional)
-    printf("[...]        : the object is square brackets is optional.\n");
-
-  if (has_ellipsis)
-    printf("...          : the previous object can be repeated more "
-           "than one times.\n");
-
-  if (has_rule)
-    printf("[<|=|>]number: rules constraining the number of "
-           "parameters/arguments.\n");
+  print_explanations(has_early_eval, has_ctx_change, has_generic_arg,
+                     has_optional, has_ellipsis, has_rule);
 
   if (action == exit_after)
     exit(EXIT_FAILURE);
@@ -3520,12 +3706,16 @@ ctxopt_add_opt_settings(settings s, ...)
         opt->params = xstrdup(params);
         while ((n = strcspn(opt->params, " \t")) < l)
           opt->params[n] = '|';
+
+        /* Update current_state */
+        /* -------------------- */
+        cur_state->opt_params = xstrdup(opt->params);
       }
 
       break;
     }
 
-    /* This part associates a callback function to an option         */
+    /* This part associates a callback function to an option.        */
     /* This function will be called as when an instance of an option */
     /* is evaluated.                                                 */
     /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
@@ -3622,6 +3812,8 @@ ctxopt_add_ctx_settings(settings s, ...)
 
   switch (s)
   {
+    /* Add a set of mutually incompatibles option in a context. */
+    /* """""""""""""""""""""""""""""""""""""""""""""""""""""""" */
     case incompatibilities:
     {
       void * ptr;
@@ -3644,12 +3836,15 @@ ctxopt_add_ctx_settings(settings s, ...)
           ll_append(list, str);
         else
           fatal_internal(
-            "Not enough incompatibles options in the string: \"%s\"", str);
+            "Not enough incompatible options in the string: \"%s\"", str);
       }
       else
         fatal_internal("%s: unknown context.", ptr);
       break;
     }
+
+    /* Add functions which be call when entering and exiting a context. */
+    /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
     case actions:
     {
       void * ptr;

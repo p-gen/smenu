@@ -21,7 +21,13 @@ typedef enum
   CTXOPTDUPOPT,
   CTXOPTUNKPAR,
   CTXOPTINCOPT,
-  CTXOPTERRSIZE
+  CTXOPTCTEOPT,
+  CTXOPTCTLOPT,
+  CTXOPTCTGOPT,
+  CTXOPTCTEARG,
+  CTXOPTCTLARG,
+  CTXOPTCTGARG,
+  CTXOPTERRSIZ
 } errors;
 
 typedef enum
@@ -32,16 +38,21 @@ typedef enum
 
 typedef struct state_s
 {
-  char * ctx_name;
-  char * ctx_par_name;
-  char * opt_name;
-  char * opt_params;
-  char * pre_opt_par_name;
-  char * cur_opt_par_name;
+  char * prog_name;        /* base name of the program name.        */
+  char * ctx_name;         /* current context name.                 */
+  char * ctx_par_name;     /* parameter which led to this context.  */
+  char * opt_name;         /* current option name.                  */
+  char * opt_params;       /* parameters of the current option.     */
+  int    opts_count;       /* limit of the number of occurrences of *
+                           |  the current option.                   */
+  int opt_args_count;      /* limit of the number of parameters of  *
+                           |  the current option.                   */
+  char * pre_opt_par_name; /* parameter before the current one.     */
+  char * cur_opt_par_name; /* current parameter.                    */
 } state_t;
 
 void
-ctxopt_init(void);
+ctxopt_init(char * prog_name);
 
 void
 ctxopt_analyze(int nb_words, char ** words, int * rem_count, char *** rem_args);
