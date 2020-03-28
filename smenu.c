@@ -4901,14 +4901,6 @@ gutter_action(char * ctx_name, char * opt_name, char * param, int nb_values,
 
       if (n > 1)
       {
-        long j;
-
-        for (j = 0; j <= i; j++)
-          free(win->gutter_a[j]);
-
-        free(win->gutter_a);
-        free(gutter);
-
         fprintf(stderr, "%s: A multi columns gutter is not allowed.\n", param);
         ctxopt_disp_usage(exit_after);
       }
