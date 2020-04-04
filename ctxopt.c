@@ -1,3 +1,8 @@
+/* ########################################################### */
+/* This Software is licensed under the GPL licensed Version 2, */
+/* please read http://www.gnu.org/copyleft/gpl.html            */
+/* ########################################################### */
+
 #include <errno.h>
 #include <limits.h>
 #include <stdio.h>
@@ -274,6 +279,7 @@ fatal_internal(const char * format, ...)
 /*                                                                        */
 /*          CTXOPTMISPAR Missing parameter                                */
 /*          CTXOPTMISARG Missing argument                                 */
+/*          CTXOPTUXPARG Unexpected argument                              */
 /*          CTXOPTDUPOPT Duplicated option                                */
 /*          CTXOPTUNKPAR Unknown parameter                                */
 /*          CTXOPTINCOPT Incompatible option                              */
@@ -309,6 +315,11 @@ fatal(errors e, char * errmsg)
                   errmsg);
 
         free(errmsg);
+        break;
+
+      case CTXOPTUNXARG:
+        fprintf(stderr, "%s only takes one argument.\n",
+                cur_state->cur_opt_par_name);
         break;
 
       case CTXOPTMISARG:
@@ -404,8 +415,7 @@ fatal(errors e, char * errmsg)
     }
   }
 
-  if (cur_state->ctx_name != NULL)
-    ctxopt_ctx_disp_usage(cur_state->ctx_name, continue_after);
+  ctxopt_ctx_disp_usage(cur_state->ctx_name, continue_after);
 
   exit(e); /* Program exist with the error id e as return code */
 }
@@ -1283,7 +1293,7 @@ state_t *     cur_state = NULL;            /* Current analysis state        */
 static ll_t * cmdline_list;                /* List of interpreted CLI words *
                                             | serves as the basis for the   *
                                             | analysis of the parameters    */
-static ctx_t *      main_ctx       = NULL; /* initial context instance      */
+static ctx_t *      main_ctx       = NULL; /* initial context */
 static ctx_inst_t * first_ctx_inst = NULL; /* Pointer to the fist context   *
                                             | instance which holds the      *
                                             | options instances             */
@@ -2466,10 +2476,6 @@ new_ctx_inst(ctx_t * ctx, ctx_inst_t * prev_ctx_inst)
   ctx_inst->opt_inst_list   = ll_new();
   ctx_inst->seen_opt_bst    = NULL;
 
-  /* Update current_state */
-  /* -------------------- */
-  cur_state->ctx_name = ctx->name;
-
   ll_node_t * node;
 
   if (prev_ctx_inst == NULL)
@@ -2864,6 +2870,10 @@ ctxopt_analyze(int nb_words, char ** words, int * nb_rem_args,
   ctx_inst           = new_ctx_inst(ctx, NULL);
   ctx_inst->par_name = NULL;
 
+  /* Update current_state */
+  /* -------------------- */
+  cur_state->ctx_name = ctx->name;
+
   ll_append(ctx_inst_list, ctx_inst);
 
   /* For each node in the command line */
@@ -2894,6 +2904,12 @@ ctxopt_analyze(int nb_words, char ** words, int * nb_rem_args,
         cur_state->ctx_name     = ctx->name;
         cur_state->ctx_par_name = ctx_inst->par_name;
       }
+      else
+      {
+        /* Update current_state */
+        /* -------------------- */
+        cur_state->ctx_par_name = NULL;
+      }
     }
     else if (expect_par && *par_name == '-')
     {
@@ -2903,6 +2919,8 @@ ctxopt_analyze(int nb_words, char ** words, int * nb_rem_args,
       /* Update current_state */
       /* -------------------- */
       cur_state->cur_opt_par_name = par_name;
+      cur_state->ctx_name         = ctx->name;
+      cur_state->ctx_par_name     = ctx_inst->par_name;
 
       /* An expected parameter has been seen */
       /* """"""""""""""""""""""""""""""""""" */
@@ -2973,6 +2991,10 @@ ctxopt_analyze(int nb_words, char ** words, int * nb_rem_args,
           {
             char * errmsg = xstrdup("");
 
+            /* Update current_state */
+            /* -------------------- */
+            cur_state->ctx_par_name = NULL;
+
             *user_string  = '\0';
             *user_string2 = '\0';
 
@@ -2985,7 +3007,7 @@ ctxopt_analyze(int nb_words, char ** words, int * nb_rem_args,
               errmsg = strappend(
                 errmsg,
                 "\nIt appears to be defined in the context(s):", user_string2,
-                "\nAdd -h or -H for more help.", NULL);
+                "\n", NULL);
             }
 
             fatal(CTXOPTUNKPAR, errmsg);
@@ -3119,10 +3141,6 @@ ctxopt_analyze(int nb_words, char ** words, int * nb_rem_args,
           opt_inst->next_ctx_inst = ctx_inst = new_ctx_inst(ctx, ctx_inst);
           ctx_inst->par_name                 = xstrdup(par_name);
 
-          /* Update current_state */
-          /* -------------------- */
-          cur_state->ctx_par_name = ctx_inst->par_name;
-
           ll_append(ctx_inst_list, ctx_inst);
         }
 
@@ -3144,9 +3162,29 @@ ctxopt_analyze(int nb_words, char ** words, int * nb_rem_args,
       }
     }
     else if (expect_par && *par_name != '-')
-      break; /* a unexpected non parameter was seen, assume it is the end *
-              | of parameters and the start of non ctxopt managed command *
-              | line arguments.                                           */
+    {
+      ll_node_t * n = cli_node->next;
+
+      /* Look if potential arguments must still be analyzed until the  */
+      /* end of the context/command line part to analyze/command line. */
+      /* If this is the case we have met an extra argument.            */
+      /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+      while (n != NULL)
+      {
+        if (strcmp(n->data, "--") == 0 || strcmp(n->data, "\x1d") == 0)
+          fatal(CTXOPTUNXARG, NULL);
+
+        if (*(char *)(n->data) == '-')
+          fatal(CTXOPTUNXARG, NULL);
+
+        n = n->next;
+      }
+
+      break; /* an unexpected non parameter was seen, if no Potential *
+              | arguments remain in the command line assume that it   *
+              | is is the first of the non arguments and stop the     *
+              | command line analysis.                                */
+    }
     else if (expect_arg && *par_name != '-')
     {
       ll_node_t *    cstr_node;
@@ -3283,6 +3321,13 @@ evaluate_ctx_inst(ctx_inst_t * ctx_inst)
 
   ctx = ctx_inst->ctx;
 
+  /* Do not evaluate the action attached to this context is there is no */
+  /* option to evaluate.                                                */
+  /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+  opt_inst_node = ctx_inst->opt_inst_list->head;
+  if (opt_inst_node == NULL)
+    return;
+
   /* Call the entering action attached to this context if any */
   /* """""""""""""""""""""""""""""""""""""""""""""""""""""""" */
   if (ctx->action != NULL)
@@ -3296,7 +3341,6 @@ evaluate_ctx_inst(ctx_inst_t * ctx_inst)
 
   /* For each instance of options */
   /* """""""""""""""""""""""""""" */
-  opt_inst_node = ctx_inst->opt_inst_list->head;
   while (opt_inst_node != NULL)
   {
     opt_inst = (opt_inst_t *)(opt_inst_node->data);
@@ -3349,11 +3393,6 @@ ctxopt_new_ctx(char * name, char * opts_specs)
 
   ctx = xmalloc(sizeof(ctx_t));
 
-  /* The first created context is the main one */
-  /* """"""""""""""""""""""""""""""""""""""""" */
-  if (contexts_bst == NULL)
-    main_ctx = ctx;
-
   /* validate the context name */
   /* ALPHA+(ALPHANUM|_)*       */
   /* """"""""""""""""""""""""" */
@@ -3377,6 +3416,15 @@ ctxopt_new_ctx(char * name, char * opts_specs)
   ctx->par_bst     = NULL;
   ctx->data        = NULL;
   ctx->action      = NULL;
+
+  /* The first created context is the main one */
+  /* """"""""""""""""""""""""""""""""""""""""" */
+  if (contexts_bst == NULL)
+  {
+    main_ctx = ctx;
+
+    cur_state->ctx_name = ctx->name;
+  }
 
   if (init_opts(opts_specs, ctx) == 0)
     exit(EXIT_FAILURE);
