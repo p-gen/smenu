@@ -51,7 +51,6 @@ typedef struct state_s
   char * ctx_name;         /* current context name.                 */
   char * ctx_par_name;     /* parameter which led to this context.  */
   char * opt_name;         /* current option name.                  */
-  char * opt_params;       /* parameters of the current option.     */
   int    opts_count;       /* limit of the number of occurrences of *
                            |  the current option.                   */
   int opt_args_count;      /* limit of the number of parameters of  *
@@ -96,4 +95,6 @@ ctxopt_re_constraint(int nb_args, char ** args, char * value);
 int
 ctxopt_range_constraint(int nb_args, char ** args, char * value);
 
+void
+ctxopt_free_memory(void);
 #endif

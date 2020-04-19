@@ -75,24 +75,19 @@ typedef enum
   leaf
 } walk_order_e;
 
-#if 0 /* Unused yet */
 static void *
 bst_delete(const void * vkey, void ** vrootp,
            int (*compar)(const void *, const void *));
-#endif
 
 static void
-bst_destroy_recurse(bst_t * root, void (*free_action)(void *));
-
-static void
-bst_destroy(void * vrootp, void (*freefct)(void *));
+bst_destroy(void * vrootp, void (*clean)(void *));
 
 static void *
 bst_find(const void * vkey, void * const * vrootp,
          int (*compar)(const void *, const void *));
 
 static void *
-bst_search(const void * vkey, void ** vrootp,
+bst_search(void * vkey, void ** vrootp,
            int (*compar)(const void *, const void *));
 
 static void
@@ -138,6 +133,12 @@ ll_new_node(void);
 static ll_t *
 ll_new(void);
 
+static void
+ll_free(ll_t * const list, void (*)(void *));
+
+static void
+ll_destroy(ll_t * const list, void (*)(void *));
+
 static int
 ll_strarray(ll_t * list, ll_node_t * start_node, int * count, char *** array);
 
@@ -178,14 +179,38 @@ strtoken(char * s, char * token, size_t tok_len, char * pattern, int * pos);
 static int
 ctx_compare(const void * c1, const void * c2);
 
+static void
+ctx_free(void * o);
+
+static void
+ctx_inst_free(void * ci);
+
+static void
+opt_inst_free(void * oi);
+
+static int
+seen_opt_compare(const void * so1, const void * so2);
+
+void
+incomp_bst_free(void * b);
+
+static void
+seen_opt_free(void * seen_opt);
+
 static int
 opt_compare(const void * o1, const void * o2);
+
+static void
+opt_free(void * o);
 
 static int
 par_compare(const void * a1, const void * a2);
 
-static int
-seen_opt_compare(const void * so1, const void * so2);
+void
+par_free(void * p);
+
+static void
+constraint_free(void * cstr);
 
 static ctx_t *
 locate_ctx(char * name);
@@ -347,7 +372,6 @@ fatal(errors e, char * errmsg)
       case CTXOPTUNKPAR:
         fprintf(stderr, "Unknown parameter: %s.\n",
                 cur_state->cur_opt_par_name);
-        fprintf(stderr, errmsg);
         break;
 
       case CTXOPTINCOPT:
@@ -545,6 +569,41 @@ ll_new(void)
   return ret;
 }
 
+/* =============================================== */
+/* Free all the elements on a list (make it empty) */
+/* NULL or a custom function may be used to free   */
+/* the sub components of the elements.             */
+/* =============================================== */
+static void
+ll_free(ll_t * const list, void (*clean)(void *))
+{
+  ll_node_t * node;
+
+  if (list)
+    while (list->head)
+    {
+      /* Apply a custom cleaner if not NULL */
+      /* """""""""""""""""""""""""""""""""" */
+      if (clean)
+        clean(list->head->data);
+
+      ll_delete(list, list->head);
+    }
+}
+
+/* =================================== */
+/* Destroy a list and all its elements */
+/* =================================== */
+static void
+ll_destroy(ll_t * list, void (*clean)(void *))
+{
+  if (list)
+  {
+    ll_free(list, clean);
+    free(list);
+  }
+}
+
 /* ======================== */
 /* Initialize a linked list */
 /* ======================== */
@@ -705,6 +764,8 @@ ll_delete(ll_t * const list, ll_node_t * node)
 
   --list->len;
 
+  free(node);
+
   return 1;
 }
 
@@ -849,24 +910,20 @@ bst_delete(const void * vkey, void ** vrootp,
 /* destroy a tree */
 /* ============== */
 static void
-bst_destroy_recurse(bst_t * root, void (*free_action)(void *))
-{
-  if (root->llink != NULL)
-    bst_destroy_recurse(root->llink, free_action);
-  if (root->rlink != NULL)
-    bst_destroy_recurse(root->rlink, free_action);
-
-  (*free_action)((void *)root->key);
-  free(root);
-}
-
-static void
-bst_destroy(void * vrootp, void (*freefct)(void *))
+bst_destroy(void * vrootp, void (*clean)(void *))
 {
   bst_t * root = (bst_t *)vrootp;
 
-  if (root != NULL)
-    bst_destroy_recurse(root, freefct);
+  if (root == NULL)
+    return;
+
+  bst_destroy(root->llink, clean);
+  bst_destroy(root->rlink, clean);
+
+  if (clean)
+    clean((void *)root->key);
+
+  free(root);
 }
 
 /* ======================== */
@@ -897,7 +954,7 @@ bst_find(const void * vkey, void * const * vrootp,
 /* find or insert datum into search tree */
 /* ===================================== */
 static void *
-bst_search(const void * vkey, void ** vrootp,
+bst_search(void * vkey, void ** vrootp,
            int (*compar)(const void *, const void *))
 {
   bst_t *  q;
@@ -919,9 +976,9 @@ bst_search(const void * vkey, void ** vrootp,
 
   q = xmalloc(sizeof(bst_t)); /* T5: key not found */
   if (q != 0)
-  {                          /* make new node */
-    *rootp   = q;            /* link new node to old */
-    q->key   = (void *)vkey; /* initialize new node */
+  {                  /* make new node */
+    *rootp   = q;    /* link new node to old */
+    q->key   = vkey; /* initialize new node */
     q->llink = q->rlink = NULL;
   }
   return q;
@@ -1266,10 +1323,9 @@ struct opt_inst_s
 /* """""""""""""""""""""""""""""""""""""""""""""""""""""""" */
 struct seen_opt_s
 {
-  opt_t * opt;   /* The concerned option                                */
-  char *  par;   /* Parameter which led to the making of this structure */
-  char *  count; /* Number of seen occurrences of this parameter        */
-  int     seen;  /* 1 if seen in the context instances, else 0          */
+  opt_t * opt;  /* The concerned option                                */
+  char *  par;  /* Parameter which led to the making of this structure */
+  int     seen; /* 1 if seen in the context instances, else 0          */
 };
 
 /* parameter structure which links a parameter to the option it belongs to */
@@ -1287,6 +1343,9 @@ struct constraint_s
   int (*constraint)(int nb_args, char ** args, char * value);
   int     nb_args;
   char ** args;
+  char *  to_free; /* pointer to the original string in which the array in *
+                    | args points to. This poinnter is kept there to allow *
+                    | it to be freed.                                      */
 };
 
 state_t *     cur_state = NULL;            /* Current analysis state        */
@@ -1297,7 +1356,7 @@ static ctx_t *      main_ctx       = NULL; /* initial context */
 static ctx_inst_t * first_ctx_inst = NULL; /* Pointer to the fist context   *
                                             | instance which holds the      *
                                             | options instances             */
-static ll_t * ctx_inst_list;               /* List of the context instances */
+static ll_t * ctx_inst_list = NULL;        /* List of the context instances */
 
 /* ====================================================== */
 /* Parse a string for the next matching token.            */
@@ -1340,9 +1399,9 @@ strtoken(char * s, char * token, size_t tok_len, char * pattern, int * pos)
   return s + *pos;
 }
 
-/* **************************** */
-/* Various comparison functions */
-/* **************************** */
+/* ***************************************** */
+/* Various comparison and deletion functions */
+/* ***************************************** */
 
 static int
 ctx_compare(const void * c1, const void * c2)
@@ -1350,18 +1409,56 @@ ctx_compare(const void * c1, const void * c2)
   return strcmp(((ctx_t *)c1)->name, ((ctx_t *)c2)->name);
 }
 
-static int
-opt_compare(const void * o1, const void * o2)
+/* ========================== */
+/* Free a context_bst element */
+/* ========================== */
+static void
+ctx_free(void * c)
 {
-  return strcmp(((opt_t *)o1)->name, ((opt_t *)o2)->name);
+  ctx_t * ctx = c;
+
+  free(ctx->name);
+  free(ctx->data);
+
+  ll_destroy(ctx->opt_list, NULL);
+  ll_destroy(ctx->incomp_list, free);
+  bst_destroy(ctx->par_bst, par_free);
+
+  free(c);
 }
 
-static int
-par_compare(const void * a1, const void * a2)
+/* ============================ */
+/* Free a ctx_inst_list element */
+/* ============================ */
+static void
+ctx_inst_free(void * ci)
 {
-  return strcmp(((par_t *)a1)->name, ((par_t *)a2)->name);
+  ctx_inst_t * ctx_inst = ci;
+
+  free(ctx_inst->par_name);
+  ll_destroy(ctx_inst->incomp_bst_list, incomp_bst_free);
+  bst_destroy(ctx_inst->seen_opt_bst, seen_opt_free);
+  ll_destroy(ctx_inst->opt_inst_list, opt_inst_free);
+
+  free(ci);
 }
 
+/* ============================ */
+/* Free a opt_inst_list element */
+/* ============================ */
+static void
+opt_inst_free(void * oi)
+{
+  opt_inst_t * opt_inst = oi;
+
+  ll_destroy(opt_inst->values_list, NULL);
+
+  free(oi);
+}
+
+/* ================================= */
+/* Compare two seen_opt_bst elements */
+/* ================================= */
 static int
 seen_opt_compare(const void * so1, const void * so2)
 {
@@ -1371,6 +1468,95 @@ seen_opt_compare(const void * so1, const void * so2)
   o2 = ((seen_opt_t *)so2)->opt;
 
   return strcmp(o1->name, o2->name);
+}
+
+/* =========================== */
+/* Free a seen_opt_bst element */
+/* =========================== */
+void
+seen_opt_free(void * so)
+{
+  seen_opt_t * seen_opt = so;
+
+  free(seen_opt->par);
+
+  free(so);
+}
+
+/* ========================= */
+/* Free a incomp_bst element */
+/* ========================= */
+void
+incomp_bst_free(void * b)
+{
+  bst_t * bst = b;
+
+  bst_destroy(bst, NULL);
+}
+
+/* ================================ */
+/* Compare two options_bst elements */
+/* ================================ */
+static int
+opt_compare(const void * o1, const void * o2)
+{
+  return strcmp(((opt_t *)o1)->name, ((opt_t *)o2)->name);
+}
+
+/* ============================ */
+/* Free an options_bst elements */
+/* ============================ */
+void
+opt_free(void * o)
+{
+  opt_t * opt = o;
+
+  free(opt->name);
+  free(opt->next_ctx);
+  free(opt->params);
+  free(opt->arg);
+  free(opt->data);
+
+  ll_destroy(opt->ctx_list, NULL);
+  ll_destroy(opt->constraints_list, constraint_free);
+
+  free(o);
+}
+
+/* ============================ */
+/* Compare two par_bst elements */
+/* ============================ */
+static int
+par_compare(const void * a1, const void * a2)
+{
+  return strcmp(((par_t *)a1)->name, ((par_t *)a2)->name);
+}
+
+/* ====================== */
+/* Free a par_bst element */
+/* ====================== */
+void
+par_free(void * p)
+{
+  par_t * par = p;
+
+  free(par->name);
+
+  free(p);
+}
+
+/* =============================== */
+/* Free a constraints_list element */
+/* =============================== */
+static void
+constraint_free(void * c)
+{
+  constraint_t * cstr = c;
+
+  free(cstr->args);
+  free(cstr->to_free);
+
+  free(c);
 }
 
 /* ******************************************************************** */
@@ -1688,12 +1874,6 @@ match_prefix_cb(const void * node, walk_order_e kind, int level)
     }
 }
 
-static void
-bst_null_action(void * data)
-{
-  ; /* nothing to do */
-}
-
 /* ====================================================================== */
 /* A parameter may not be separated from its first option by spaces, in   */
 /* this case this function looks for a valid flag as a prefix and splits  */
@@ -1760,9 +1940,13 @@ abbrev_expand(char * par_name, ctx_t * ctx)
   bst_walk(ctx->par_bst, match_prefix_cb);
   rtrim(user_string, " ", 0);
 
+  /* The previous bst_walk built a string of blank separated parameters    */
+  /* all having par_name as prefix. This string is put in the user_string  */
+  /* exchange zone. Th number of these words in put in user_rc.            */
+  /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
   if (user_rc == 1) /* The number of matching abbreviations */
     return xstrdup(user_string);
-  else
+  else /* There is at least tho defined parameters starting with par_name */
   {
     char *  s, *first_s;
     par_t * par;
@@ -1770,9 +1954,10 @@ abbrev_expand(char * par_name, ctx_t * ctx)
     int     opt_count   = 0;
     void *  tmp_opt_bst = NULL;
 
-    /* for each word in the matching parameters return by walking the */
-    /* parameter's tree of this context, do:                          */
-    /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+    /* Find all the options corresponding to these words and store the */
+    /* without duplicated in a temporary bst. Only the resulting count */
+    /* matters.                                                        */
+    /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
     s = first_s = strtok(user_string, " "); /* first_s holds a copy of *
                                              | the first word.         */
     while (s != NULL)
@@ -1791,8 +1976,11 @@ abbrev_expand(char * par_name, ctx_t * ctx)
       s = strtok(NULL, " ");
     }
 
+    /* Clean the temporary bst without removing the pointer */
+    /* to the real options.                                 */
+    /* """""""""""""""""""""""""""""""""""""""""""""""""""" */
     if (tmp_opt_bst != NULL)
-      bst_destroy(tmp_opt_bst, bst_null_action);
+      bst_destroy(tmp_opt_bst, NULL);
 
     if (opt_count == 1)
       /* All the abbreviation lead to only one option   */
@@ -1984,7 +2172,7 @@ opt_parse(char * s, opt_t ** opt)
     opt_optional = 1;
     s++;
   }
-  s = strtoken(s, token, sizeof(token), "[^] \n\t.]", &pos);
+  s = strtoken(s, token, sizeof(token) - 1, "[^] \n\t.]", &pos);
   if (s == NULL)
     return -1; /* empty string */
 
@@ -2200,6 +2388,7 @@ success:
   (*opt)->ctx_list              = ll_new();
   (*opt)->constraints_list      = ll_new();
   (*opt)->action                = NULL;
+  (*opt)->params                = NULL;
   (*opt)->data                  = NULL;
 
   return s - s_orig;
@@ -2249,14 +2438,15 @@ init_opts(char * spec, ctx_t * ctx)
           fatal_internal("option %s already exists with "
                          "a different arguments signature.\n",
                          opt->name);
-
-          free(opt->name);
-          free(opt);
-
-          return 0;
         }
+
+        /* the newly created opt is already present in options_bst. */
+        /* We can remove it.                                        */
+        /* """""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+        opt_free(opt);
+
         /* The new occurrence of the option option is legal */
-        /* append the current context ptr in the list       */
+        /* append the current context ptr in the list.      */
         /* """""""""""""""""""""""""""""""""""""""""""""""" */
         ll_append(bst_opt->ctx_list, ctx);
 
@@ -2266,8 +2456,6 @@ init_opts(char * spec, ctx_t * ctx)
       }
       else
       {
-        opt->params = NULL;
-
         /* Initialize the option's context list with the current context */
         /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
         ll_append(opt->ctx_list, ctx);
@@ -2501,6 +2689,7 @@ new_ctx_inst(ctx_t * ctx, ctx_inst_t * prev_ctx_inst)
     opt            = node->data;
     seen_opt       = xmalloc(sizeof(seen_opt_t));
     seen_opt->opt  = opt;
+    seen_opt->par  = NULL;
     seen_opt->seen = 0;
 
     bst_search(seen_opt, &(ctx_inst->seen_opt_bst), seen_opt_compare);
@@ -2542,8 +2731,8 @@ new_ctx_inst(ctx_t * ctx, ctx_inst_t * prev_ctx_inst)
 
         if (bst_node != NULL)
         {
-          /* if found it, is added into the new bst tree */
-          /* """"""""""""""""""""""""""""""""""""""""""" */
+          /* if found then it is added into the new bst tree */
+          /* """"""""""""""""""""""""""""""""""""""""""""""" */
           seen_opt = bst_node->key;
           bst_search(seen_opt, &bst, seen_opt_compare);
         }
@@ -2615,16 +2804,13 @@ ctxopt_build_cmdline_list(int nb_words, char ** words)
 
   /* If the option list is not empty, clear it before going further */
   /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-
   if (cmdline_list != NULL)
   {
     node = cmdline_list->head;
     while (node != NULL)
     {
-      word = node->data;
+      free(node->data);
       ll_delete(cmdline_list, node);
-      free(word);
-      free(node);
       node = cmdline_list->head;
     }
   }
@@ -2717,9 +2903,8 @@ ctxopt_build_cmdline_list(int nb_words, char ** words)
       ll_node_t * old_node = node;
       level++;
       node = node->next;
-      ll_delete(cmdline_list, old_node);
       free(word);
-      free(old_node);
+      ll_delete(cmdline_list, old_node);
     }
     else if (strcmp(word, "}") == 0)
     {
@@ -2760,9 +2945,8 @@ ctxopt_build_cmdline_list(int nb_words, char ** words)
       {
         ll_node_t * old_node = node;
         node                 = node->prev;
-        ll_delete(cmdline_list, old_node);
         free(old_node->data);
-        free(old_node);
+        ll_delete(cmdline_list, old_node);
       }
     }
     else if (strcmp(word, "-") == 0) /* a single - is a legal argument, not *
@@ -2787,9 +2971,8 @@ ctxopt_build_cmdline_list(int nb_words, char ** words)
 
   if (strcmp(word, "\x1d") == 0)
   {
-    ll_delete(cmdline_list, node);
     free(word);
-    free(node);
+    ll_delete(cmdline_list, node);
   }
 
   node = cmdline_list->tail;
@@ -2800,9 +2983,8 @@ ctxopt_build_cmdline_list(int nb_words, char ** words)
 
   if (strcmp(word, "\x1d") == 0)
   {
-    ll_delete(cmdline_list, node);
     free(word);
-    free(node);
+    ll_delete(cmdline_list, node);
   }
 
   return 1;
@@ -3126,7 +3308,8 @@ ctxopt_analyze(int nb_words, char ** words, int * nb_rem_args,
         /* Mark this option seen in the current context instance */
         /* """"""""""""""""""""""""""""""""""""""""""""""""""""" */
         bst_seen_opt->seen = 1;
-        bst_seen_opt->par  = xstrdup(par_name);
+        free(bst_seen_opt->par);
+        bst_seen_opt->par = xstrdup(par_name);
 
         /* If this option leads to a next context, create a new ctx_inst */
         /* and switch to it for the analyse of the future parameter      */
@@ -3205,8 +3388,7 @@ ctxopt_analyze(int nb_words, char ** words, int * nb_rem_args,
 
       /* If the argument is valid, store it */
       /* """""""""""""""""""""""""""""""""" */
-      if (*par_name == '\\' && *(par_name + 1) != '\0'
-          && *(par_name + 1) == '-')
+      if (*par_name == '\\' && *(par_name + 1) == '-')
         ll_append(opt_inst->values_list, par_name + 1);
       else
         ll_append(opt_inst->values_list, par_name);
@@ -3250,7 +3432,7 @@ ctxopt_analyze(int nb_words, char ** words, int * nb_rem_args,
   node = ctx_inst_list->head;
   while (node != NULL)
   {
-    ctx_inst = (ctx_inst_t *)(node->data);
+    ctx_inst = node->data;
 
     /* Update current_state */
     /* -------------------- */
@@ -3288,6 +3470,18 @@ ctxopt_analyze(int nb_words, char ** words, int * nb_rem_args,
     *rem_args      = xmalloc(sizeof(char *));
     (*rem_args)[0] = NULL;
   }
+}
+
+/* ==================================================== */
+/* Free ctxopt memory used for its internal structures. */
+/* ==================================================== */
+void
+ctxopt_free_memory(void)
+{
+  ll_destroy(cmdline_list, NULL);
+  ll_destroy(ctx_inst_list, ctx_inst_free);
+  bst_destroy(options_bst, opt_free);
+  bst_destroy(contexts_bst, ctx_free);
 }
 
 /* ===================================================================== */
@@ -3428,7 +3622,7 @@ ctxopt_new_ctx(char * name, char * opts_specs)
 
   if (init_opts(opts_specs, ctx) == 0)
     exit(EXIT_FAILURE);
-  if ((node = bst_find(ctx, &contexts_bst, ctx_compare)) != NULL)
+  if (bst_find(ctx, &contexts_bst, ctx_compare) != NULL)
     fatal_internal("The context %s already exists", name);
   else
     bst_search(ctx, &contexts_bst, ctx_compare);
@@ -3754,10 +3948,6 @@ ctxopt_add_opt_settings(settings s, ...)
         opt->params = xstrdup(params);
         while ((n = strcspn(opt->params, " \t")) < l)
           opt->params[n] = '|';
-
-        /* Update current_state */
-        /* -------------------- */
-        cur_state->opt_params = xstrdup(opt->params);
       }
 
       break;
@@ -3832,6 +4022,7 @@ ctxopt_add_opt_settings(settings s, ...)
         /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
         value = xstrdup(va_arg(args, char *));
 
+        cstr->to_free = value;
         cstr->args    = xcalloc(sizeof(char *), 32);
         cstr->nb_args = str2argv(value, cstr->args, 32);
         ll_append(opt->constraints_list, cstr);
