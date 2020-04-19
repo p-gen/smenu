@@ -8211,7 +8211,7 @@ main(int argc, char * argv[])
       /* Store the new max number of bytes in a word      */
       /* and update the size of the longest expanded word */
       /* """""""""""""""""""""""""""""""""""""""""""""""" */
-      if ((size = (long)word_len) > tab_real_max_size)
+      if ((long)word_len > tab_real_max_size)
         word_real_max_size = tab_real_max_size = (long)word_len;
 
       /* Store the new max word width */
