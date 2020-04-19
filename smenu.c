@@ -6442,6 +6442,10 @@ main(int argc, char * argv[])
   else
     ctxopt_disp_usage(exit_after);
 
+  /* Free the memory used internally by ctxopt */
+  /* """"""""""""""""""""""""""""""""""""""""" */
+  ctxopt_free_memory();
+
   /* Replace the UTF-8 ASCII representations by their binary values in */
   /* the inclusion and exclusion patterns.                             */
   /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
