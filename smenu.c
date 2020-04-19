@@ -5138,8 +5138,8 @@ attributes_action(char * ctx_name, char * opt_name, char * param, int nb_values,
         if (*attr_infos[i].flag)
         {
           fprintf(stderr, "%s: ", param);
-          fprintf(stderr, attr_infos[i].msg);
-          fprintf(stderr, "\n");
+          fputs(attr_infos[i].msg, stderr);
+          fputs("\n", stderr);
           ctxopt_disp_usage(exit_after);
         }
 
