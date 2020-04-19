@@ -6234,6 +6234,13 @@ main(int argc, char * argv[])
   ctxopt_new_ctx("Tagging", tag_options);
   ctxopt_new_ctx("Direct_access", da_options);
 
+  free(main_options);
+  free(col_options);
+  free(line_options);
+  free(tab_options);
+  free(tag_options);
+  free(da_options);
+
   /* ctxopt parameters */
   /* """"""""""""""""" */
 
