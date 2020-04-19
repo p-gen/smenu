@@ -5892,9 +5892,9 @@ main(int argc, char * argv[])
                          * used  in column mode                              */
   long cols_number = 0; /* Number of columns in column mode */
 
-  char * pre_selection_index = NULL;    /* pattern used to set the initial   *
-                                         * cursor position                   */
-  unsigned char * buffer = xmalloc(16); /* Input buffer */
+  char * pre_selection_index = NULL; /* pattern used to set the initial   *
+                                      * cursor position                   */
+  unsigned char buffer[16];          /* Input buffer */
 
   search_data_t search_data;
   search_data.buf = NULL;   /* Search buffer                                 */
