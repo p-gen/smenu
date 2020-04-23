@@ -302,3 +302,18 @@ xwcscasecmp(const wchar_t * s1, const wchar_t * s2)
   }
   return (-*s2);
 }
+
+/* ====================================== */
+/* Returns 1 if s represents an integer   */
+/* else 0.                                */
+/* s != NULL is assumed.                  */
+/* 0 and 0x prefixes are not understood.  */
+/* ====================================== */
+int
+is_integer(const char * const s)
+{
+  char * end;
+
+  strtol(s, &end, 10);
+  return (*end == '\0');
+}

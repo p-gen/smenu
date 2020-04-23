@@ -215,6 +215,9 @@ void
 disp_message(ll_t * message_lines_list, long width, long max_len, term_t * term,
              win_t * win);
 
+int
+check_integer_constraint(int nb_args, char ** args, char * value, char * par);
+
 void
 update_bitmaps(search_mode_t search_mode, search_data_t * search_data,
                bitmap_affinity_t affinity);

@@ -849,6 +849,20 @@ beep(toggle_t * toggle)
   }
 }
 
+/* ========================================== */
+/* Integer verification constraint for ctxopt */
+/* ========================================== */
+int
+check_integer_constraint(int nb_args, char ** args, char * value, char * par)
+{
+  if (!is_integer(value))
+  {
+    fprintf(stderr, "This argument of %s is not an integer: %s", par, value);
+    return 0;
+  }
+  return 1;
+}
+
 /* ======================================================================== */
 /* Update the bitmap associated with a word. This bitmap indicates the      */
 /* positions of the UFT-8 glyphs of the search buffer in each word.         */
@@ -6413,7 +6427,7 @@ main(int argc, char * argv[])
                           "[^:]+:.+");
   ctxopt_add_opt_settings(constraints, "da_options", ctxopt_re_constraint,
                           "[^:]+:.+");
-  ctxopt_add_opt_settings(constraints, "lines", ctxopt_format_constraint, "%u");
+  ctxopt_add_opt_settings(constraints, "lines", check_integer_constraint, "");
 
   ctxopt_add_opt_settings(constraints, "tab_mode", ctxopt_format_constraint,
                           "%ld");

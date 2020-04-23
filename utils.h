@@ -62,4 +62,7 @@ isprint8(int i);
 int
 xwcscasecmp(const wchar_t * w1s, const wchar_t * w2s);
 
+int
+is_integer(const char * const s);
+
 #endif
