@@ -87,13 +87,13 @@ void
 ctxopt_add_opt_settings(settings s, ...);
 
 int
-ctxopt_format_constraint(int nb_args, char ** args, char * value);
+ctxopt_format_constraint(int nb_args, char ** args, char * value, char * par);
 
 int
-ctxopt_re_constraint(int nb_args, char ** args, char * value);
+ctxopt_re_constraint(int nb_args, char ** args, char * value, char * par);
 
 int
-ctxopt_range_constraint(int nb_args, char ** args, char * value);
+ctxopt_range_constraint(int nb_args, char ** args, char * value, char * par);
 
 void
 ctxopt_free_memory(void);

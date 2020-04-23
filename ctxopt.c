@@ -1340,7 +1340,7 @@ struct par_s
 /* """""""""""""""""""" */
 struct constraint_s
 {
-  int (*constraint)(int nb_args, char ** args, char * value);
+  int (*constraint)(int nb_args, char ** args, char * value, char * parameter);
   int     nb_args;
   char ** args;
   char *  to_free; /* pointer to the original string in which the array in *
@@ -3380,8 +3380,12 @@ ctxopt_analyze(int nb_words, char ** words, int * nb_rem_args,
       while (cstr_node != NULL)
       {
         cstr = cstr_node->data;
-        if (!cstr->constraint(cstr->nb_args, cstr->args, par_name))
-          exit(EXIT_FAILURE);
+        if (!cstr->constraint(cstr->nb_args, cstr->args, par_name,
+                              cur_state->cur_opt_par_name))
+        {
+          fputs("\n", stderr);
+          ctxopt_ctx_disp_usage(cur_state->ctx_name, exit_after);
+        }
 
         cstr_node = cstr_node->next;
       }
@@ -3717,7 +3721,7 @@ ctxopt_disp_usage(usage_behaviour action)
 /* return 1 if yes and 0 if no                                      */
 /* ================================================================ */
 int
-ctxopt_format_constraint(int nb_args, char ** args, char * value)
+ctxopt_format_constraint(int nb_args, char ** args, char * value, char * par)
 {
   int rc = 0;
 
@@ -3736,8 +3740,9 @@ ctxopt_format_constraint(int nb_args, char ** args, char * value)
 
   rc = sscanf(value, format, x, &y);
   if (rc != 1)
-    fatal_internal("The argument %s does not respect the imposed format: %s",
-                   value, args[0]);
+    fprintf(stderr,
+            "The argument %s of %s does not respect the imposed format: %s.",
+            value, par, args[0]);
 
   free(format);
 
@@ -3750,7 +3755,7 @@ ctxopt_format_constraint(int nb_args, char ** args, char * value)
 /* return 1 if yes and 0 if no                                        */
 /* ================================================================== */
 int
-ctxopt_re_constraint(int nb_args, char ** args, char * value)
+ctxopt_re_constraint(int nb_args, char ** args, char * value, char * par)
 {
   regex_t re;
 
@@ -3759,13 +3764,14 @@ ctxopt_re_constraint(int nb_args, char ** args, char * value)
       "Regular expression constraint: invalid number of parameters.");
 
   if (regcomp(&re, args[0], REG_EXTENDED) != 0)
-    fatal_internal("Invalid regular expression %s", args[0]);
+    fatal_internal("Invalid regular expression %s.", args[0]);
 
   if (regexec(&re, value, (size_t)0, NULL, 0) != 0)
   {
-    fatal_internal("The argument %s doesn't match the constraining "
-                   "regular expression %s",
-                   value, args[0]);
+    fprintf(stderr,
+            "The argument %s of %s doesn't match the constraining "
+            "regular expression %s.",
+            value, par, args[0]);
     return 0;
   }
 
@@ -3780,7 +3786,7 @@ ctxopt_re_constraint(int nb_args, char ** args, char * value)
 /* return 1 if yes and 0 if no                                        */
 /* ================================================================== */
 int
-ctxopt_range_constraint(int nb_args, char ** args, char * value)
+ctxopt_range_constraint(int nb_args, char ** args, char * value, char * par)
 {
   long   min, max;
   char   c;
@@ -3821,8 +3827,10 @@ ctxopt_range_constraint(int nb_args, char ** args, char * value)
   {
     if (v < min)
     {
-      fatal_internal("%ld is not greater or equal to %ld as requested.", v,
-                     min);
+      fprintf(stderr,
+              "The argument %ld of %s is not greater than or equal to "
+              "%ld as requested.",
+              v, par, min);
       return 0;
     }
     else
@@ -3832,7 +3840,10 @@ ctxopt_range_constraint(int nb_args, char ** args, char * value)
   {
     if (v > max)
     {
-      fatal_internal("%ld is not lower or equal to %ld as requested.", v, max);
+      fprintf(stderr,
+              "The argument %ld of %s is not less than or equal to "
+              "%ld as requested.",
+              v, par, max);
       return 0;
     }
     else
@@ -3840,7 +3851,9 @@ ctxopt_range_constraint(int nb_args, char ** args, char * value)
   }
   else if (v < min || v > max)
   {
-    fatal_internal("%ld is not between %ld and %ld as requested.", v, min, max);
+    fprintf(stderr,
+            "The argument %ld of %s is not between %ld and %ld as requested.",
+            v, par, min, max);
     return 0;
   }
 
