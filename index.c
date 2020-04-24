@@ -100,9 +100,9 @@ tst_traverse(tst_node_t * p, int (*callback)(void *), int first_call)
 }
 
 /* ======================================================================= */
-/* Traverse the word tst looking for a wchar and build a list of pointers  */
-/* containing all the sub-tst * nodes after these node potentially leading */
-/* to words containing the next wchar os the search string                 */
+/* Traverses the word tst looking for a wchar and build a list of pointers */
+/* containing all the sub-tst potentially leading to words containing the  */
+/* next wchar os the search string.                                        */
 /* ======================================================================= */
 int
 tst_substring_traverse(tst_node_t * p, int (*callback)(void *), int first_call,
@@ -141,11 +141,11 @@ tst_substring_traverse(tst_node_t * p, int (*callback)(void *), int first_call,
   return !!rc;
 }
 
-/* ======================================================================= */
-/* Traverse the word tst looking for a wchar and build a list of pointers  */
-/* containing all the sub-tst * nodes after these node potentially leading */
-/* to words containing the next wchar os the search string                 */
-/* ======================================================================= */
+/* ======================================================================== */
+/* Traverses the word tst looking for a wchar and build a list of pointers  */
+/* containing all the sub-tst nodes potentially leading to words containing */
+/* the next wchar os the search string.                                     */
+/* ======================================================================== */
 int
 tst_fuzzy_traverse(tst_node_t * p, int (*callback)(void *), int first_call,
                    wchar_t w)
@@ -190,9 +190,9 @@ tst_fuzzy_traverse(tst_node_t * p, int (*callback)(void *), int first_call,
   return !!rc;
 }
 
-/* ==================================================================== */
-/* Search a complete string in a ternary tree starting from a root node */
-/* ==================================================================== */
+/* ====================================================================== */
+/* Searches a complete string in a ternary tree starting from a root node */
+/* ====================================================================== */
 void *
 tst_search(tst_node_t * root, wchar_t * w)
 {
@@ -217,11 +217,11 @@ tst_search(tst_node_t * root, wchar_t * w)
   return NULL;
 }
 
-/* =============================================================== */
-/* Search all strings beginning with the same prefix               */
-/* the callback function will be applied to each of theses strings */
-/* returns NULL if no string matched the prefix                    */
-/* =============================================================== */
+/* ================================================================= */
+/* Searches all strings beginning with the same prefix.              */
+/* the callback function will be applied to each of theses strings   */
+/* returns NULL if no string matched the prefix                      */
+/* ================================================================= */
 void *
 tst_prefix_search(tst_node_t * root, wchar_t * w, int (*callback)(void *))
 {

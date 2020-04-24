@@ -22,9 +22,9 @@
 /* Interval functions */
 /* ****************** */
 
-/* ===================== */
-/* Create a new interval */
-/* ===================== */
+/* ====================== */
+/* Creates a new interval */
+/* ====================== */
 interval_t *
 interval_new(void)
 {
@@ -33,10 +33,10 @@ interval_new(void)
   return ret;
 }
 
-/* ====================================== */
-/* Compare 2 intervals as integer couples */
-/* same return values as for strcmp       */
-/* ====================================== */
+/* ======================================= */
+/* Compares 2 intervals as integer couples */
+/* same return values as for strcmp        */
+/* ======================================= */
 int
 interval_comp(void * a, void * b)
 {
@@ -44,20 +44,28 @@ interval_comp(void * a, void * b)
   interval_t * ib = (interval_t *)b;
 
   if (ia->low < ib->low)
+    /* ia: [...      */
+    /* ib:      [... */
     return -1;
   if (ia->low > ib->low)
+    /* ia:      [... */
+    /* ib: [...      */
     return 1;
   if (ia->high < ib->high)
+    /* ia: ...]      */
+    /* ib:      ...] */
     return -1;
   if (ia->high > ib->high)
+    /* ia:      ...] */
+    /* ib: ...]      */
     return 1;
 
   return 0;
 }
 
-/* ================================ */
-/* Swap the values of two intervals */
-/* ================================ */
+/* ================================= */
+/* Swaps the values of two intervals */
+/* ================================= */
 void
 interval_swap(void * a, void * b)
 {
@@ -74,10 +82,10 @@ interval_swap(void * a, void * b)
   ib->high = tmp;
 }
 
-/* ===================================================================== */
-/* Merge the intervals from an interval list in order to get the minimum */
-/* number of intervals to consider.                                      */
-/* ===================================================================== */
+/* ====================================================================== */
+/* Merges the intervals from an interval list in order to get the minimum */
+/* number of intervals to consider.                                       */
+/* ====================================================================== */
 void
 merge_intervals(ll_t * list)
 {
@@ -128,7 +136,7 @@ merge_intervals(ll_t * list)
 /* ***************** */
 
 /* ========================================================================= */
-/* Allocate memory and safely concatenate strings. Stolen from a public      */
+/* Allocates memory and safely concatenate strings. Stolen from a public     */
 /* domain implementation which can be found here:                            */
 /* http://openwall.info/wiki/people/solar/software/public-domain-source-code */
 /* ========================================================================= */
@@ -191,9 +199,9 @@ strprefix(char * str1, char * str2)
   return *str2 == '\0';
 }
 
-/* ======================= */
-/* Trim leading characters */
-/* ======================= */
+/* ======================== */
+/* Trims leading characters */
+/* ======================== */
 void
 ltrim(char * str, const char * trim_str)
 {
@@ -207,7 +215,7 @@ ltrim(char * str, const char * trim_str)
 }
 
 /* ================================================= */
-/* Trim trailing characters                          */
+/* Trims trailing characters                         */
 /* The resulting string will have at least min bytes */
 /* even if trailing spaces remain.                   */
 /* ================================================= */
@@ -281,9 +289,9 @@ isprint8(int i)
   return (c >= 0x20 && c < 0x7f) || (c >= (unsigned char)0xa0);
 }
 
-/* ================================================= */
-/* Private imementation of wcscasecmp wimming in c99 */
-/* ================================================= */
+/* =================================================== */
+/* Private implementation of wcscasecmp wimming in c99 */
+/* =================================================== */
 int
 xwcscasecmp(const wchar_t * s1, const wchar_t * s2)
 {

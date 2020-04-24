@@ -26,9 +26,9 @@ static ll_node_t *
 ll_partition(ll_node_t * l, ll_node_t * h, int (*comp)(void *, void *),
              void (*swap)(void *, void *));
 
-/* ======================== */
-/* Create a new linked list */
-/* ======================== */
+/* ========================= */
+/* Creates a new linked list */
+/* ========================= */
 ll_t *
 ll_new(void)
 {
@@ -38,9 +38,9 @@ ll_new(void)
   return ret;
 }
 
-/* ======================== */
-/* Initialize a linked list */
-/* ======================== */
+/* ========================= */
+/* Initializes a linked list */
+/* ========================= */
 void
 ll_init(ll_t * list)
 {
@@ -49,9 +49,9 @@ ll_init(ll_t * list)
   list->len  = 0;
 }
 
-/* ==================================================== */
-/* Allocate the space for a new node in the linked list */
-/* ==================================================== */
+/* ===================================================== */
+/* Allocates the space for a new node in the linked list */
+/* ===================================================== */
 ll_node_t *
 ll_new_node(void)
 {
@@ -60,12 +60,12 @@ ll_new_node(void)
   return ret;
 }
 
-/* ==================================================================== */
-/* Append a new node filled with its data at the end of the linked list */
-/* The user is responsible for the memory management of the data        */
-/*                                                                      */
-/* Note: list is assumed to be initialized by ll_new()                  */
-/* ==================================================================== */
+/* ===================================================================== */
+/* Appends a new node filled with its data at the end of the linked list */
+/* The user is responsible for the memory management of the data.        */
+/*                                                                       */
+/* Note: list is assumed to be initialized by ll_new().                  */
+/* ===================================================================== */
 void
 ll_append(ll_t * const list, void * const data)
 {
@@ -90,12 +90,12 @@ ll_append(ll_t * const list, void * const data)
 }
 
 #if 0
-/* =================================================================== */
-/* Put a new node filled with its data at the beginning of the linked  */
-/* list. The user is responsible for the memory management of the data */
-/*                                                                     */
-/* Note: list is assumed to be initialized by ll_new()                 */
-/* =================================================================== */
+/* ==================================================================== */
+/* Puts a new node filled with its data at the beginning of the linked  */
+/* list. The user is responsible for the memory management of the data. */
+/*                                                                      */
+/* Note: list is assumed to be initialized by ll_new().                 */
+/* ==================================================================== */
 void
 ll_prepend(ll_t * const list, void * const data)
 {
@@ -121,9 +121,9 @@ ll_prepend(ll_t * const list, void * const data)
 #endif
 
 #if 0
-/* ======================================================= */
-/* Insert a new node before the specified node in the list */
-/* ======================================================= */
+/* ======================================================== */
+/* Inserts a new node before the specified node in the list */
+/* ======================================================== */
 void
 ll_insert_before(ll_t * const list, ll_node_t * node, void * const data)
 {
@@ -149,9 +149,9 @@ ll_insert_before(ll_t * const list, ll_node_t * node, void * const data)
 #endif
 
 #if 0
-/* ====================================================== */
-/* Insert a new node after the specified node in the list */
-/* ====================================================== */
+/* ======================================================= */
+/* Inserts a new node after the specified node in the list */
+/* ======================================================= */
 void
 ll_insert_after(ll_t * const list, ll_node_t * node, void * const data)
 {
@@ -240,9 +240,9 @@ ll_sort(ll_t * list, int (*comp)(void *, void *),
   ll_quicksort(list->head, list->tail, comp, swap);
 }
 
-/* ================================ */
-/* Remove a node from a linked list */
-/* ================================ */
+/* ================================= */
+/* Removes a node from a linked list */
+/* ================================= */
 int
 ll_delete(ll_t * const list, ll_node_t * node)
 {
@@ -276,11 +276,11 @@ ll_delete(ll_t * const list, ll_node_t * node)
   return 1;
 }
 
-/* =========================================================================*/
-/* Find a node in the list containing data. Return the node pointer or NULL */
-/* if not found.                                                            */
-/* A comparison function must be provided to compare a and b (strcmp like). */
-/* =========================================================================*/
+/* ==========================================================================*/
+/* Finds a node in the list containing data. Return the node pointer or NULL */
+/* if not found.                                                             */
+/* A comparison function must be provided to compare a and b (strcmp like).  */
+/* ==========================================================================*/
 ll_node_t *
 ll_find(ll_t * const list, void * const data,
         int (*cmpfunc)(const void * a, const void * b))

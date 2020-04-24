@@ -17,12 +17,12 @@
 #include "xmalloc.h"
 #include "utf8.h"
 
-/* ======================================================================== */
-/* Unicode (UTF-8) ascii representation interpreter.                        */
-/* The string passed will be altered but will not move in memory            */
-/* All sequence of \uxx, \uxxxx, \uxxxxxx and \uxxxxxxxx will be replace by */
-/* the corresponding UTF-8 character.                                       */
-/* ======================================================================== */
+/* ======================================================================= */
+/* Unicode (UTF-8) ascii representation interpreter.                       */
+/* The string passed will be altered but its address will not change.      */
+/* All hexadecimal sequences of \uxx, \uxxxx, \uxxxxxx and \uxxxxxxxx will */
+/* be replace by the corresponding UTF-8 character.                        */
+/* ======================================================================= */
 void
 utf8_interpret(char * s, langinfo_t * langinfo)
 {
@@ -150,9 +150,9 @@ utf8_interpret(char * s, langinfo_t * langinfo)
 }
 
 /* ========================================================= */
-/* Decode the number of bytes taken by a character (UTF-8)   */
+/* Decodes the number of bytes taken by a UTF-8 glyph.       */
 /* It is the length of the leading sequence of bits set to 1 */
-/* (Count Leading Ones)                                      */
+/* in the first byte.                                        */
 /* ========================================================= */
 int
 utf8_get_length(unsigned char c)
@@ -167,9 +167,9 @@ utf8_get_length(unsigned char c)
     return 4;
 }
 
-/* ================================================== */
-/* Return the byte offset of the nth UTF-8 glyph in s */
-/* ================================================== */
+/* =================================================== */
+/* Returns the byte offset of the nth UTF-8 glyph in s */
+/* =================================================== */
 size_t
 utf8_offset(char * s, size_t n)
 {
@@ -220,7 +220,7 @@ utf8_next(char * p)
 }
 
 /* ============================================================ */
-/* Replace any UTF-8 glyph present in s by a dot in-place       */
+/* Replaces any UTF-8 glyph present in s by a dot in-place      */
 /* s will be modified but its address in memory will not change */
 /* ============================================================ */
 void
@@ -391,9 +391,9 @@ utf8_strprefix(char * d, char * s, long n, long * pos)
   return d;
 }
 
-/* ================================================ */
-/* Convert a UTF-8 glyph string to a wchar_t string */
-/* ================================================ */
+/* ================================================= */
+/* Converts a UTF-8 glyph string to a wchar_t string */
+/* ================================================= */
 wchar_t *
 utf8_strtowcs(char * s)
 {
@@ -424,8 +424,8 @@ utf8_strtowcs(char * s)
 }
 
 /* ============================================================== */
-/* Fill dst whi a lowercase ocopy of src whar the character is an */
-/* ascci one. dsk must be preallocated before the call.           */
+/* Replaces all ASCII characters in src by its lowercase version. */
+/* dst must be preallocated before the call.                      */
 /* ============================================================== */
 void
 utf8_strtolower(char * dst, char * src)
@@ -442,5 +442,6 @@ utf8_strtolower(char * dst, char * src)
     src++;
     dst++;
   }
+
   *dst = '\0';
 }

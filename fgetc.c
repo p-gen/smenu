@@ -19,18 +19,18 @@ static char getc_buffer[GETC_BUFF_SIZE] = { '\0' };
 
 static long next_buffer_pos = 0; /* next free position in the getc buffer */
 
-/* ====================================== */
-/* Get a (possibly pushed-back) character */
-/* ====================================== */
+/* ======================================= */
+/* Gets a (possibly pushed-back) character */
+/* ======================================= */
 int
 my_fgetc(FILE * input)
 {
   return (next_buffer_pos > 0) ? getc_buffer[--next_buffer_pos] : fgetc(input);
 }
 
-/* ============================ */
-/* Push character back on input */
-/* ============================ */
+/* ============================== */
+/* Pushes character back on input */
+/* ============================== */
 void
 my_ungetc(int c)
 {
