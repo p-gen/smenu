@@ -18,6 +18,7 @@
 /* *********************** */
 /* Static global variables */
 /* *********************** */
+
 static void * contexts_bst;
 static void * options_bst;
 
@@ -25,9 +26,9 @@ state_t * cur_state;
 
 /* Prototypes */
 
-/* ****************** */
-/* Messages interface */
-/* ****************** */
+/* ************************* */
+/* Fatal messages prototypes */
+/* ************************* */
 
 static void (**err_functions)(errors e, state_t * state);
 
@@ -43,9 +44,9 @@ static char * user_string;  /* Used by various callback functions */
 static char * user_string2; /* Used by various callback functions */
 static void * user_object;  /* Used by various callback functions */
 
-/* *************************** */
-/* Memory management interface */
-/* *************************** */
+/* *********************************** */
+/* Memory management static prototypes */
+/* *********************************** */
 
 static void *
 xmalloc(size_t size);
@@ -62,9 +63,10 @@ xstrdup(const char * p);
 static char *
 xstrndup(const char * str, size_t len);
 
-/* ************* */
-/* BST interface */
-/* ************* */
+/* ********************* */
+/* BST static prototypes */
+/* ********************* */
+
 typedef struct bst_s bst_t;
 
 typedef enum
@@ -97,9 +99,9 @@ bst_walk_recurse(const bst_t * root,
 static void
 bst_walk(const void * vroot, void (*action)(const void *, walk_order_e, int));
 
-/* ********************* */
-/* Linked list Interface */
-/* ********************* */
+/* ***************************** */
+/* Linked list static prototypes */
+/* ***************************** */
 
 typedef struct ll_node_s ll_node_t;
 typedef struct ll_s      ll_t;
@@ -142,9 +144,9 @@ ll_destroy(ll_t * const list, void (*)(void *));
 static int
 ll_strarray(ll_t * list, ll_node_t * start_node, int * count, char *** array);
 
-/* ****************** */
-/* various interfaces */
-/* ****************** */
+/* ************************* */
+/* Various static prototypes */
+/* ************************* */
 
 static void
 ltrim(char * str, const char * trim_str);
@@ -161,9 +163,9 @@ strpref(char * s1, char * s2);
 static char *
 xstrtok_r(char * str, const char * delim, char ** end);
 
-/* **************** */
-/* ctxopt interface */
-/* **************** */
+/* ************************ */
+/* ctxopt static prototypes */
+/* ************************ */
 
 typedef struct opt_s        opt_t;
 typedef struct par_s        par_t;
@@ -191,7 +193,7 @@ opt_inst_free(void * oi);
 static int
 seen_opt_compare(const void * so1, const void * so2);
 
-void
+static void
 incomp_bst_free(void * b);
 
 static void
@@ -206,7 +208,7 @@ opt_free(void * o);
 static int
 par_compare(const void * a1, const void * a2);
 
-void
+static void
 par_free(void * p);
 
 static void
@@ -267,9 +269,9 @@ new_ctx_inst(ctx_t * ctx, ctx_inst_t * prev_ctx_inst);
 static void
 evaluate_ctx_inst(ctx_inst_t * ctx_inst);
 
-/* ********************** */
-/* Message implementation */
-/* ********************** */
+/* ***************************** */
+/* Fatal messages implementation */
+/* ***************************** */
 
 /* ================================================================== */
 /* Fatal error function used when an fatal condition was encountered. */
@@ -1013,7 +1015,7 @@ bst_walk(const void * vroot, void (*action)(const void *, walk_order_e, int))
 }
 
 /* *********************** */
-/* various implementations */
+/* Various implementations */
 /* *********************** */
 
 /* ======================= */
@@ -1237,7 +1239,7 @@ struct ctx_s
 /*        | ... |                                                */
 /*        +-----+                                                */
 
-/* option structure */
+/* Option structure */
 /* """""""""""""""" */
 struct opt_s
 {
@@ -1290,7 +1292,7 @@ struct opt_s
   ll_t * constraints_list; /* List of constraint checking functions pointers. */
 };
 
-/* context instance structure */
+/* Context instance structure */
 /* """""""""""""""""""""""""" */
 struct ctx_inst_s
 {
@@ -1328,7 +1330,7 @@ struct seen_opt_s
   int     seen; /* 1 if seen in the context instances, else 0          */
 };
 
-/* parameter structure which links a parameter to the option it belongs to */
+/* Parameter structure which links a parameter to the option it belongs to */
 /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
 struct par_s
 {
@@ -1359,7 +1361,7 @@ static ctx_inst_t * first_ctx_inst = NULL; /* Pointer to the fist context   *
 static ll_t * ctx_inst_list = NULL;        /* List of the context instances */
 
 /* ====================================================== */
-/* Parse a string for the next matching token.            */
+/* Parses a string for the next matching token.           */
 /*                                                        */
 /* s:       string to parse.                              */
 /* token:   pre_allocated array of max tok_len characters */
@@ -1409,9 +1411,9 @@ ctx_compare(const void * c1, const void * c2)
   return strcmp(((ctx_t *)c1)->name, ((ctx_t *)c2)->name);
 }
 
-/* ========================== */
-/* Free a context_bst element */
-/* ========================== */
+/* =========================== */
+/* Frees a context_bst element */
+/* =========================== */
 static void
 ctx_free(void * c)
 {
@@ -1427,9 +1429,9 @@ ctx_free(void * c)
   free(c);
 }
 
-/* ============================ */
-/* Free a ctx_inst_list element */
-/* ============================ */
+/* ============================= */
+/* Frees a ctx_inst_list element */
+/* ============================= */
 static void
 ctx_inst_free(void * ci)
 {
@@ -1443,9 +1445,9 @@ ctx_inst_free(void * ci)
   free(ci);
 }
 
-/* ============================ */
-/* Free a opt_inst_list element */
-/* ============================ */
+/* ============================= */
+/* Frees a opt_inst_list element */
+/* ============================= */
 static void
 opt_inst_free(void * oi)
 {
@@ -1456,9 +1458,9 @@ opt_inst_free(void * oi)
   free(oi);
 }
 
-/* ================================= */
-/* Compare two seen_opt_bst elements */
-/* ================================= */
+/* ================================== */
+/* Compares two seen_opt_bst elements */
+/* ================================== */
 static int
 seen_opt_compare(const void * so1, const void * so2)
 {
@@ -1470,9 +1472,9 @@ seen_opt_compare(const void * so1, const void * so2)
   return strcmp(o1->name, o2->name);
 }
 
-/* =========================== */
-/* Free a seen_opt_bst element */
-/* =========================== */
+/* ============================ */
+/* Frees a seen_opt_bst element */
+/* ============================ */
 void
 seen_opt_free(void * so)
 {
@@ -1483,10 +1485,10 @@ seen_opt_free(void * so)
   free(so);
 }
 
-/* ========================= */
-/* Free a incomp_bst element */
-/* ========================= */
-void
+/* =========================== */
+/* Frees an incomp_bst element */
+/* =========================== */
+static void
 incomp_bst_free(void * b)
 {
   bst_t * bst = b;
@@ -1494,18 +1496,18 @@ incomp_bst_free(void * b)
   bst_destroy(bst, NULL);
 }
 
-/* ================================ */
-/* Compare two options_bst elements */
-/* ================================ */
+/* ================================= */
+/* Compares two options_bst elements */
+/* ================================= */
 static int
 opt_compare(const void * o1, const void * o2)
 {
   return strcmp(((opt_t *)o1)->name, ((opt_t *)o2)->name);
 }
 
-/* ============================ */
-/* Free an options_bst elements */
-/* ============================ */
+/* ============================= */
+/* Frees an options_bst elements */
+/* ============================= */
 void
 opt_free(void * o)
 {
@@ -1523,19 +1525,19 @@ opt_free(void * o)
   free(o);
 }
 
-/* ============================ */
-/* Compare two par_bst elements */
-/* ============================ */
+/* ============================= */
+/* Compares two par_bst elements */
+/* ============================= */
 static int
 par_compare(const void * a1, const void * a2)
 {
   return strcmp(((par_t *)a1)->name, ((par_t *)a2)->name);
 }
 
-/* ====================== */
-/* Free a par_bst element */
-/* ====================== */
-void
+/* ======================= */
+/* Frees a par_bst element */
+/* ======================= */
+static void
 par_free(void * p)
 {
   par_t * par = p;
@@ -1545,9 +1547,9 @@ par_free(void * p)
   free(p);
 }
 
-/* =============================== */
-/* Free a constraints_list element */
-/* =============================== */
+/* ================================ */
+/* Frees a constraints_list element */
+/* ================================ */
 static void
 constraint_free(void * c)
 {
@@ -1727,10 +1729,10 @@ print_options(ll_t * list, int * has_optional, int * has_ellipsis,
   free(line);
 }
 
-/* ==================================================== */
-/* Explain the special syntactic symbols present in the */
-/* generated usage messages.                            */
-/* ==================================================== */
+/* ===================================================== */
+/* Explains the special syntactic symbols present in the */
+/* generated usage messages.                             */
+/* ===================================================== */
 static void
 print_explanations(int has_early_eval, int has_ctx_change, int has_generic_arg,
                    int has_optional, int has_ellipsis, int has_rule)
@@ -1765,10 +1767,10 @@ print_explanations(int has_early_eval, int has_ctx_change, int has_generic_arg,
   }
 }
 
-/* ******************************************************* */
-/* Various utility and callback function call when walking */
-/* through a bst.                                          */
-/* ******************************************************* */
+/* ************************************************************ */
+/* Various utilities and callback functions called when walking */
+/* through a bst.                                               */
+/* ************************************************************ */
 
 static void
 bst_seen_opt_cb(const void * node, walk_order_e kind, int level)
@@ -2005,10 +2007,10 @@ check_for_missing_mandatory_opt(ctx_inst_t * ctx_inst, char * opt_par)
     fatal(CTXOPTMISPAR, missing);
 }
 
-/* ====================================================== */
-/* Return 1 if at least one mandatory option was not seen */
-/* when quitting a context, else 0                        */
-/* ====================================================== */
+/* ======================================================= */
+/* Returns 1 if at least one mandatory option was not seen */
+/* when quitting a context, else 0.                        */
+/* ======================================================= */
 static int
 has_unseen_mandatory_opt(ctx_inst_t * ctx_inst, char ** missing)
 {
@@ -2111,7 +2113,7 @@ check_for_occurrences_issues(ctx_inst_t * ctx_inst)
 }
 
 /* ======================================================================== */
-/* Parse a strings describing options and some of their characteristics     */
+/* Parses a strings describing options and some of their characteristics    */
 /* The input string must have follow some rules like in the examples below: */
 /*                                                                          */
 /* "opt_name1 opt_name2"                                                    */
@@ -2395,7 +2397,7 @@ success:
 }
 
 /* ===================================================================== */
-/* Try to initialize all the option in a given string                    */
+/* Tries to initialize all the option in a given string                  */
 /* Each parsed option are put in a bst tree with its name as index       */
 /*                                                                       */
 /* On collision, the arguments only the signature are required to be     */
@@ -2622,7 +2624,7 @@ opt_set_parms(char * opt_name, char * par_str)
 }
 
 /* ==================================================================== */
-/* Creation of a new context instance                                   */
+/* Creates a new context instance.                                      */
 /* IN ctx            : a context pointer to allow this instance to      */
 /*                     access the context fields                        */
 /* IN prev_ctx_inst  : the context instance whose option leading to the */
@@ -2760,7 +2762,7 @@ new_ctx_inst(ctx_t * ctx, ctx_inst_t * prev_ctx_inst)
 }
 
 /* ======================================================================== */
-/* Create a list formed by all the significant command line words           */
+/* Creates a list formed by all the significant command line words          */
 /* Words beginning or ending with ^,{ or } are split. Each of these         */
 /* symbols will get their own place in the list                             */
 /*                                                                          */
@@ -2991,7 +2993,7 @@ ctxopt_build_cmdline_list(int nb_words, char ** words)
 }
 
 /* ===================================================================== */
-/* Build and analyze the command line list                               */
+/* Builds and analyzes the command line list                             */
 /* function and create the linked data structures whose data will be     */
 /* evaluated later by ctxopt_evaluate.                                   */
 /* This function identifies the following errors and creates an array of */
@@ -3476,9 +3478,9 @@ ctxopt_analyze(int nb_words, char ** words, int * nb_rem_args,
   }
 }
 
-/* ==================================================== */
-/* Free ctxopt memory used for its internal structures. */
-/* ==================================================== */
+/* ===================================================== */
+/* Frees ctxopt memory used for its internal structures. */
+/* ===================================================== */
 void
 ctxopt_free_memory(void)
 {
@@ -3574,7 +3576,7 @@ evaluate_ctx_inst(ctx_inst_t * ctx_inst)
 }
 
 /* =========================================================== */
-/* Create and initialize a new context                         */
+/* Creates and initializes a new context                       */
 /* - allocate space                                            */
 /* - name it                                                   */
 /* - initialize its option with a few of their characteristics */
@@ -3632,12 +3634,12 @@ ctxopt_new_ctx(char * name, char * opts_specs)
     bst_search(ctx, &contexts_bst, ctx_compare);
 }
 
-/* ==================================================== */
-/* Display a usage screen limited to a specific context */
-/* IN: the context name.                                */
-/* IN: what to do after (continue or exit the program)  */
-/*     possible values: continue_after, exit_after.     */
-/* ==================================================== */
+/* ===================================================== */
+/* Displays a usage screen limited to a specific context */
+/* IN: the context name.                                 */
+/* IN: what to do after (continue or exit the program)   */
+/*     possible values: continue_after, exit_after.      */
+/* ===================================================== */
 void
 ctxopt_ctx_disp_usage(char * ctx_name, usage_behaviour action)
 {
@@ -3672,11 +3674,11 @@ ctxopt_ctx_disp_usage(char * ctx_name, usage_behaviour action)
     exit(EXIT_FAILURE);
 }
 
-/* ==================================================== */
-/* Display a full usage screen about all contexts.      */
-/* IN: what to do after (continue or exit the program)  */
-/*     possible values: continue_after, exit_after.     */
-/* ==================================================== */
+/* =================================================== */
+/* Displays a full usage screen about all contexts.    */
+/* IN: what to do after (continue or exit the program) */
+/*     possible values: continue_after, exit_after.    */
+/* =================================================== */
 void
 ctxopt_disp_usage(usage_behaviour action)
 {
@@ -3711,9 +3713,9 @@ ctxopt_disp_usage(usage_behaviour action)
     exit(EXIT_FAILURE);
 }
 
-/* ************************************** */
-/* Built-in constraint checking functions */
-/* ************************************** */
+/* *********************************** */
+/* Built-in constraint check functions */
+/* *********************************** */
 
 /* ================================================================ */
 /* This constraint checks if each arguments respects a format as    */
@@ -3873,11 +3875,13 @@ ctxopt_add_global_settings(settings s, ...)
   {
     case error_functions:
     {
+      typedef void fn(errors e, state_t * state);
+
       void (*function)(errors e, state_t * state);
 
       errors e;
       e                = va_arg(args, errors);
-      function         = va_arg(args, void (*)(errors e, state_t * state));
+      function         = va_arg(args, fn *);
       err_functions[e] = function;
       break;
     }
@@ -3982,10 +3986,12 @@ ctxopt_add_opt_settings(settings s, ...)
 
       if ((opt = locate_opt(ptr)) != NULL)
       {
+        typedef void fn(char *, char *, char *, int, char **, int, void *, int,
+                        void **);
+
         /* The third argument must be the callback function */
         /* """""""""""""""""""""""""""""""""""""""""""""""" */
-        function = va_arg(args, void (*)(char *, char *, char *, int, char **,
-                                         int, void *, int, void **));
+        function    = va_arg(args, fn *);
         opt->action = function;
 
         /* The fourth argument must be a pointer to an user's defined  */
@@ -4021,9 +4027,11 @@ ctxopt_add_opt_settings(settings s, ...)
 
       if ((opt = locate_opt(ptr)) != NULL)
       {
+        typedef int fn(int, char **, char *);
+
         /* The third argument must be a function */
         /* """"""""""""""""""""""""""""""""""""" */
-        function = va_arg(args, int (*)(int, char **, char *));
+        function = va_arg(args, fn *);
 
         cstr             = xmalloc(sizeof(constraint_t));
         cstr->constraint = function;
@@ -4107,8 +4115,9 @@ ctxopt_add_ctx_settings(settings s, ...)
       ptr = va_arg(args, char *);
       if ((ctx = locate_ctx(ptr)) != NULL)
       {
-        function    = va_arg(args,
-                          int (*)(char *, direction, char *, int, void **));
+        typedef int fn(char *, direction, char *, int, void **);
+
+        function    = va_arg(args, fn *);
         ctx->action = function;
 
         while ((data = va_arg(args, void *)) != NULL)
