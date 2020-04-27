@@ -6429,8 +6429,8 @@ main(int argc, char * argv[])
                           "[^:]+:.+");
   ctxopt_add_opt_settings(constraints, "lines", check_integer_constraint, "");
 
-  ctxopt_add_opt_settings(constraints, "tab_mode", ctxopt_format_constraint,
-                          "%ld");
+  ctxopt_add_opt_settings(constraints, "tab_mode", check_integer_constraint,
+                          "");
   ctxopt_add_opt_settings(constraints, "tab_mode", ctxopt_range_constraint,
                           "1 .");
 
