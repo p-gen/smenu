@@ -6475,11 +6475,6 @@ main(int argc, char * argv[])
   if (win.tab_mode && !win.max_cols)
     win.wide = 1;
 
-  /* Disable the wide mode if not in column mode and not in tab mode */
-  /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-  if (!win.tab_mode && !win.col_mode)
-    win.wide = 0;
-
   win.start = 0;
 
   void sig_handler(int s);
