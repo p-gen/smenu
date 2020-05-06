@@ -1,7 +1,7 @@
 $ OUT=$(smenu -c -g '|: ' t0004.in)
 
-←efgh:ijkl mnop qrst vwxy zabc defg hijk lmno pqrs tuvw xyza bcde efgh jklm→
-0:01 1:07 2:07 3:07 4:07 75:01 
+◂efgh:ijkl mnop qrst vwxy zabc defg hijk lmno pqrs tuvw xyza bcde efgh jklm▸
+0:20 1:07 2:07 3:07 4:07 75:20 
 $ 
 
 $ echo ":$OUT:"

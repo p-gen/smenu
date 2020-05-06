@@ -85,8 +85,8 @@ char * up_arrow        = "\xe2\x86\x91";
 char * right_arrow     = "\xe2\x86\x92";
 char * down_arrow      = "\xe2\x86\x93";
 char * vertical_bar    = "\xe2\x94\x82"; /* box drawings light vertical    */
-char * shift_left_sym  = "\xe2\x86\x90"; /* leftwards_arrow                */
-char * shift_right_sym = "\xe2\x86\x92"; /* rightwards_arrow               */
+char * shift_left_sym  = "\xe2\x97\x82"; /* leftwards_arrow                */
+char * shift_right_sym = "\xe2\x96\xb8"; /* rightwards_arrow               */
 char * sbar_line       = "\xe2\x94\x82"; /* box_drawings_light_vertical      */
 char * sbar_top        = "\xe2\x94\x90"; /* box_drawings_light_down_and_left */
 char * sbar_down       = "\xe2\x94\x98"; /* box_drawings_light_up_and_left   */
@@ -6619,11 +6619,7 @@ main(int argc, char * argv[])
 
     if (!win.shift_attr.is_set)
     {
-      if (term.has_bold)
-        win.shift_attr.bold = 1;
-      else
-        win.shift_attr.fg = 4;
-
+      win.shift_attr.fg     = 2;
       win.shift_attr.is_set = SET;
     }
 
