@@ -6161,7 +6161,8 @@ main(int argc, char * argv[])
 
   /* Command line options setting */
   /* """""""""""""""""""""""""""" */
-  ctxopt_init(argv[0]);
+  ctxopt_init(argv[0], "stop_if_non_option=No "
+                       "allow_abbreviations=Yes ");
 
   common_options =
     "[*help] [*usage] [include_re... #regex] [exclude_re... #regex] "

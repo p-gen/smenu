@@ -60,7 +60,7 @@ typedef struct state_s
 } state_t;
 
 void
-ctxopt_init(char * prog_name);
+ctxopt_init(char * prog_name, char * flags);
 
 void
 ctxopt_analyze(int nb_words, char ** words, int * rem_count, char *** rem_args);
