@@ -51,6 +51,10 @@ typedef struct output_s      output_t;
 typedef struct daccess_s     daccess_t;
 typedef struct search_data_s search_data_t;
 
+/* ***** */
+/* Enums */
+/* ***** */
+
 /* Various filter pseudo constants */
 /* """"""""""""""""""""""""""""""" */
 typedef enum filter_types
@@ -128,202 +132,8 @@ enum
                           * but can be excluded later                   */
 };
 
-/* ********** */
-/* Prototypes */
-/* ********** */
-
-void
-help(win_t * win, term_t * term, long last_line, toggle_t * toggle);
-
-int
-tag_comp(void * a, void * b);
-
-void
-tag_swap(void * a, void * b);
-
-int
-isempty(const char * s);
-
-void
-beep(toggle_t * toggle);
-
-int
-get_cursor_position(int * const r, int * const c);
-
-void
-get_terminal_size(int * const r, int * const c);
-
-int
-#ifdef __sun
-outch(char c);
-#else
-outch(int c);
-#endif
-
-void
-restore_term(int const fd);
-
-void
-setup_term(int const fd);
-
-void
-strip_ansi_color(char * s, toggle_t * toggle);
-
-int
-tst_cb(void * elem);
-
-int
-tst_cb_cli(void * elem);
-
-int
-ini_load(const char * filename, win_t * win, term_t * term, limits_t * limits,
-         timers_t * timers, misc_t * misc,
-         int (*report)(win_t * win, term_t * term, limits_t * limits,
-                       timers_t * timers, misc_t * misc, const char * section,
-                       const char * name, char * value));
-
-int
-ini_cb(win_t * win, term_t * term, limits_t * limits, timers_t * timers,
-       misc_t * misc, const char * section, const char * name, char * value);
-
-char *
-make_ini_path(char * name, char * base);
-
-void
-set_foreground_color(term_t * term, short color);
-
-void
-set_background_color(term_t * term, short color);
-
-void
-set_win_start_end(win_t * win, long current, long last);
-
-long
-build_metadata(term_t * term, long count, win_t * win);
-
-long
-disp_lines(win_t * win, toggle_t * toggle, long current, long count,
-           search_mode_t search_mode, search_data_t * search_data,
-           term_t * term, long last_line, char * tmp_word,
-           langinfo_t * langinfo);
-
-void
-get_message_lines(char * message, ll_t * message_lines_list,
-                  long * message_max_width, long * message_max_len);
-
-void
-disp_message(ll_t * message_lines_list, long width, long max_len, term_t * term,
-             win_t * win);
-
-int
-check_integer_constraint(int nb_args, char ** args, char * value, char * par);
-
-void
-update_bitmaps(search_mode_t search_mode, search_data_t * search_data,
-               bitmap_affinity_t affinity);
-
-long
-find_next_matching_word(long * array, long nb, long value, long * index);
-
-long
-find_prev_matching_word(long * array, long nb, long value, long * index);
-
-void
-clean_matches(search_data_t * search_data, long size);
-
-void
-disp_cursor_word(long pos, win_t * win, term_t * term, int err);
-
-void
-disp_matching_word(long pos, win_t * win, term_t * term, int is_cursor,
-                   int err);
-
-void
-disp_word(long pos, search_mode_t search_mode, search_data_t * search_data,
-          term_t * term, win_t * win, char * tmp_word);
-
-size_t
-expand(char * src, char * dest, langinfo_t * langinfo, toggle_t * toggle);
-
-int
-get_bytes(FILE * input, char * utf8_buffer, langinfo_t * langinfo);
-
-int
-get_scancode(unsigned char * s, size_t max);
-
-char *
-get_word(FILE * input, ll_t * word_delims_list, ll_t * record_delims_list,
-         char * utf8_buffer, unsigned char * is_last, toggle_t * toggle,
-         langinfo_t * langinfo, win_t * win, limits_t * limits);
-
-void
-left_margin_putp(char * s, term_t * term, win_t * win);
-
-void
-right_margin_putp(char * s1, char * s2, langinfo_t * langinfo, term_t * term,
-                  win_t * win, long line, long offset);
-
-void
-sig_handler(int s);
-
-void
-set_new_first_column(win_t * win, term_t * term);
-
-int
-parse_sed_like_string(sed_t * sed);
-
-void
-parse_selectors(char * str, filters_t * filter, char * unparsed,
-                ll_t ** inc_interval_list, ll_t ** inc_regex_list,
-                ll_t ** exc_interval_list, ll_t ** exc_regex_list,
-                langinfo_t * langinfo);
-
-int
-replace(char * orig, sed_t * sed);
-
-int
-decode_attr_toggles(char * s, attr_t * attr);
-
-int
-parse_attr(char * str, attr_t * attr, short max_color);
-
-void
-apply_attr(term_t * term, attr_t attr);
-
-int
-delims_cmp(const void * a, const void * b);
-
-long
-get_line_last_word(long line, long last_line);
-
-void
-move_left(win_t * win, term_t * term, toggle_t * toggle,
-          search_data_t * search_data, langinfo_t * langinfo, long * nl,
-          long last_line, char * tmp_word);
-
-void
-move_right(win_t * win, term_t * term, toggle_t * toggle,
-           search_data_t * search_data, langinfo_t * langinfo, long * nl,
-           long last_line, char * tmp_word);
-
-int
-find_best_word_upward(long last_word, long s, long e);
-
-int
-find_best_word_downward(long last_word, long s, long e);
-
-void
-move_up(win_t * win, term_t * term, toggle_t * toggle,
-        search_data_t * search_data, langinfo_t * langinfo, long * nl,
-        long page, long first_selectable, long last_line, char * tmp_word);
-
-void
-move_down(win_t * win, term_t * term, toggle_t * toggle,
-          search_data_t * search_data, langinfo_t * langinfo, long * nl,
-          long page, long last_selectable, long last_line, char * tmp_word);
-
 /* ******* */
-/* structs */
+/* Structs */
 /* ******* */
 
 /* Used to store the different allowed charsets data */
@@ -590,5 +400,199 @@ struct search_data_s
                       * selected                                 */
   int only_starting; /* same with the pattern at the beginning   */
 };
+
+/* ********** */
+/* Prototypes */
+/* ********** */
+
+void
+help(win_t * win, term_t * term, long last_line, toggle_t * toggle);
+
+int
+tag_comp(void * a, void * b);
+
+void
+tag_swap(void * a, void * b);
+
+int
+isempty(const char * s);
+
+void
+beep(toggle_t * toggle);
+
+int
+get_cursor_position(int * const r, int * const c);
+
+void
+get_terminal_size(int * const r, int * const c);
+
+int
+#ifdef __sun
+outch(char c);
+#else
+outch(int c);
+#endif
+
+void
+restore_term(int const fd);
+
+void
+setup_term(int const fd);
+
+void
+strip_ansi_color(char * s, toggle_t * toggle);
+
+int
+tst_cb(void * elem);
+
+int
+tst_cb_cli(void * elem);
+
+int
+ini_load(const char * filename, win_t * win, term_t * term, limits_t * limits,
+         timers_t * timers, misc_t * misc,
+         int (*report)(win_t * win, term_t * term, limits_t * limits,
+                       timers_t * timers, misc_t * misc, const char * section,
+                       const char * name, char * value));
+
+int
+ini_cb(win_t * win, term_t * term, limits_t * limits, timers_t * timers,
+       misc_t * misc, const char * section, const char * name, char * value);
+
+char *
+make_ini_path(char * name, char * base);
+
+void
+set_foreground_color(term_t * term, short color);
+
+void
+set_background_color(term_t * term, short color);
+
+void
+set_win_start_end(win_t * win, long current, long last);
+
+long
+build_metadata(term_t * term, long count, win_t * win);
+
+long
+disp_lines(win_t * win, toggle_t * toggle, long current, long count,
+           search_mode_t search_mode, search_data_t * search_data,
+           term_t * term, long last_line, char * tmp_word,
+           langinfo_t * langinfo);
+
+void
+get_message_lines(char * message, ll_t * message_lines_list,
+                  long * message_max_width, long * message_max_len);
+
+void
+disp_message(ll_t * message_lines_list, long width, long max_len, term_t * term,
+             win_t * win);
+
+int
+check_integer_constraint(int nb_args, char ** args, char * value, char * par);
+
+void
+update_bitmaps(search_mode_t search_mode, search_data_t * search_data,
+               bitmap_affinity_t affinity);
+
+long
+find_next_matching_word(long * array, long nb, long value, long * index);
+
+long
+find_prev_matching_word(long * array, long nb, long value, long * index);
+
+void
+clean_matches(search_data_t * search_data, long size);
+
+void
+disp_cursor_word(long pos, win_t * win, term_t * term, int err);
+
+void
+disp_matching_word(long pos, win_t * win, term_t * term, int is_cursor,
+                   int err);
+
+void
+disp_word(long pos, search_mode_t search_mode, search_data_t * search_data,
+          term_t * term, win_t * win, char * tmp_word);
+
+size_t
+expand(char * src, char * dest, langinfo_t * langinfo, toggle_t * toggle);
+
+int
+get_bytes(FILE * input, char * utf8_buffer, langinfo_t * langinfo);
+
+int
+get_scancode(unsigned char * s, size_t max);
+
+char *
+get_word(FILE * input, ll_t * word_delims_list, ll_t * record_delims_list,
+         char * utf8_buffer, unsigned char * is_last, toggle_t * toggle,
+         langinfo_t * langinfo, win_t * win, limits_t * limits);
+
+void
+left_margin_putp(char * s, term_t * term, win_t * win);
+
+void
+right_margin_putp(char * s1, char * s2, langinfo_t * langinfo, term_t * term,
+                  win_t * win, long line, long offset);
+
+void
+sig_handler(int s);
+
+void
+set_new_first_column(win_t * win, term_t * term);
+
+int
+parse_sed_like_string(sed_t * sed);
+
+void
+parse_selectors(char * str, filters_t * filter, char * unparsed,
+                ll_t ** inc_interval_list, ll_t ** inc_regex_list,
+                ll_t ** exc_interval_list, ll_t ** exc_regex_list,
+                langinfo_t * langinfo);
+
+int
+replace(char * orig, sed_t * sed);
+
+int
+decode_attr_toggles(char * s, attr_t * attr);
+
+int
+parse_attr(char * str, attr_t * attr, short max_color);
+
+void
+apply_attr(term_t * term, attr_t attr);
+
+int
+delims_cmp(const void * a, const void * b);
+
+long
+get_line_last_word(long line, long last_line);
+
+void
+move_left(win_t * win, term_t * term, toggle_t * toggle,
+          search_data_t * search_data, langinfo_t * langinfo, long * nl,
+          long last_line, char * tmp_word);
+
+void
+move_right(win_t * win, term_t * term, toggle_t * toggle,
+           search_data_t * search_data, langinfo_t * langinfo, long * nl,
+           long last_line, char * tmp_word);
+
+int
+find_best_word_upward(long last_word, long s, long e);
+
+int
+find_best_word_downward(long last_word, long s, long e);
+
+void
+move_up(win_t * win, term_t * term, toggle_t * toggle,
+        search_data_t * search_data, langinfo_t * langinfo, long * nl,
+        long page, long first_selectable, long last_line, char * tmp_word);
+
+void
+move_down(win_t * win, term_t * term, toggle_t * toggle,
+          search_data_t * search_data, langinfo_t * langinfo, long * nl,
+          long page, long last_selectable, long last_line, char * tmp_word);
 
 #endif
