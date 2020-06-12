@@ -1,7 +1,8 @@
-/* ########################################################### */
-/* This Software is licensed under the GPL licensed Version 2, */
-/* please read http://www.gnu.org/copyleft/gpl.html            */
-/* ########################################################### */
+/* ################################################################### */
+/* This Source Code Form is subject to the terms of the Mozilla Public */
+/* License, v. 2.0. If a copy of the MPL was not distributed with this */
+/* file, You can obtain one at https://mozilla.org/MPL/2.0/.           */
+/* ################################################################### */
 
 #include <errno.h>
 #include <limits.h>
@@ -77,9 +78,11 @@ typedef enum
   leaf
 } walk_order_e;
 
+#if 0 /* Unused yet */
 static void *
 bst_delete(const void * vkey, void ** vrootp,
            int (*compar)(const void *, const void *));
+#endif
 
 static void
 bst_destroy(void * vrootp, void (*clean)(void *));
@@ -3200,6 +3203,11 @@ ctxopt_analyze(int nb_words, char ** words, int * nb_rem_args,
       break; /* No new parameter will be analyzed after this point. */
 
     par_name = cli_node->data;
+
+    /* Replace a leading -- by a single - */
+    /* """""""""""""""""""""""""""""""""" */
+    if (strncmp(cli_node->data, "--", 2) == 0)
+      par_name += 1; /* Ignore the first dash */
 
     if (strcmp(par_name, "\x1d") == 0)
     {
