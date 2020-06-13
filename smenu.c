@@ -6162,7 +6162,7 @@ main(int argc, char * argv[])
   /* Command line options setting */
   /* """""""""""""""""""""""""""" */
   ctxopt_init(argv[0], "stop_if_non_option=No "
-                       "allow_abbreviations=Yes ");
+                       "allow_abbreviations=No ");
 
   common_options =
     "[*help] [*usage] [include_re... #regex] [exclude_re... #regex] "
@@ -6264,18 +6264,20 @@ main(int argc, char * argv[])
   ctxopt_add_opt_settings(parameters, "usage", "-? -u -usage");
   ctxopt_add_opt_settings(parameters, "version", "-V -version");
   ctxopt_add_opt_settings(parameters, "config", "-f -cfg -config_file");
-  ctxopt_add_opt_settings(parameters, "include_re", "-i -include");
-  ctxopt_add_opt_settings(parameters, "exclude_re", "-e -exclude");
+  ctxopt_add_opt_settings(parameters, "include_re",
+                          "-i -in -inc -incl -include");
+  ctxopt_add_opt_settings(parameters, "exclude_re",
+                          "-e -ex -exc -excl -exclude");
   ctxopt_add_opt_settings(parameters, "lines", "-n -lines -height");
   ctxopt_add_opt_settings(parameters, "title", "-m -msg -message -title");
-  ctxopt_add_opt_settings(parameters, "attributes", "-a -attributes");
+  ctxopt_add_opt_settings(parameters, "attributes", "-a -attr -attributes");
   ctxopt_add_opt_settings(parameters, "special_level_1", "-1 -l1 -level1");
   ctxopt_add_opt_settings(parameters, "special_level_2", "-2 -l2 -level2");
   ctxopt_add_opt_settings(parameters, "special_level_3", "-3 -l3 -level3");
   ctxopt_add_opt_settings(parameters, "special_level_4", "-4 -l4 -level4");
   ctxopt_add_opt_settings(parameters, "special_level_5", "-5 -l5 -level5");
-  ctxopt_add_opt_settings(parameters, "tag_mode", "-T -tm -tag_mode");
-  ctxopt_add_opt_settings(parameters, "pin_mode", "-P -pm -pin_mode");
+  ctxopt_add_opt_settings(parameters, "tag_mode", "-T -tm -tag -tag_mode");
+  ctxopt_add_opt_settings(parameters, "pin_mode", "-P -pm -pin -pin_mode");
   ctxopt_add_opt_settings(parameters, "auto_tag", "-p -at -auto_tag");
   ctxopt_add_opt_settings(parameters, "auto_da_number", "-N -number");
   ctxopt_add_opt_settings(parameters, "auto_da_unnumber", "-U -unnumber");
@@ -6285,15 +6287,18 @@ main(int argc, char * argv[])
   ctxopt_add_opt_settings(parameters, "blank_nonprintable", "-b -blank");
   ctxopt_add_opt_settings(parameters, "center_mode", "-M -middle -center");
   ctxopt_add_opt_settings(parameters, "clean",
-                          "-d -delete_window -clean_window");
+                          "-d -restore -delete -clean "
+                          "-delete_window -clean_window");
   ctxopt_add_opt_settings(parameters, "column_mode",
                           "-c -col -col_mode -column");
   ctxopt_add_opt_settings(parameters, "line_mode", "-l -line -line_mode");
   ctxopt_add_opt_settings(parameters, "tab_mode",
-                          "-t -tab_mode -tabulate_mode");
-  ctxopt_add_opt_settings(parameters, "wide_mode", "-w -wide_mode");
-  ctxopt_add_opt_settings(parameters, "columns_select", "-C -cs -col_select");
-  ctxopt_add_opt_settings(parameters, "rows_select", "-R -rs -row_select");
+                          "-t -tab -tab_mode -tabulate_mode");
+  ctxopt_add_opt_settings(parameters, "wide_mode", "-w -wide -wide_mode");
+  ctxopt_add_opt_settings(parameters, "columns_select",
+                          "-C -cs -cols -cols_select");
+  ctxopt_add_opt_settings(parameters, "rows_select",
+                          "-R -rs -rows -rows_select");
   ctxopt_add_opt_settings(parameters, "force_first_column",
                           "-A -fc -first_column");
   ctxopt_add_opt_settings(parameters, "force_last_column",
@@ -6314,8 +6319,9 @@ main(int argc, char * argv[])
   ctxopt_add_opt_settings(parameters, "search_method", "-/ -search_method");
   ctxopt_add_opt_settings(parameters, "start_pattern",
                           "-s -sp -start -start_pattern");
-  ctxopt_add_opt_settings(parameters, "timeout", "-x -timeout");
-  ctxopt_add_opt_settings(parameters, "hidden_timeout", "-X -hidden_timeout");
+  ctxopt_add_opt_settings(parameters, "timeout", "-x -tmout -timeout");
+  ctxopt_add_opt_settings(parameters, "hidden_timeout",
+                          "-X -htmout -hidden_timeout");
   ctxopt_add_opt_settings(parameters, "validate_in_search_mode",
                           "-r -auto_validate");
   ctxopt_add_opt_settings(parameters, "visual_bell", "-v -vb -visual_bell");

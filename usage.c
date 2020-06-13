@@ -22,14 +22,14 @@ common_help(void)
   printf("  displays this help.\n");
   printf("-u|-usage\n");
   printf("  displays the synopsis of the current context.\n");
-  printf("-i|-include\n");
+  printf("-i|-in|-inc|-incl|-include\n");
   printf("  sets the regex input filter to match the selectable words.\n");
-  printf("-e|-exclude\n");
+  printf("-e|-ex|-exc|-excl|-exclude\n");
   printf("  sets the regex input filter to match the non-selectable "
          "words.\n");
   printf("-m|-msg|-message|-title\n");
   printf("  displays a one-line message above the window.\n");
-  printf("-a|-attributes\n");
+  printf("-a|-attr|-attributes\n");
   printf("  sets the attributes for the various displayed elements.\n");
   printf("-1|-l1|-level1,-2|-l2|-level2,...,-5|-l5|-level5\n");
   printf("  gives specific colors to up to 5 classes of "
@@ -40,6 +40,8 @@ common_help(void)
   printf("  displays non printable characters as space.\n");
   printf("-M|-middle|-center\n");
   printf("  centers the display if possible.\n");
+  printf("-d|-restore|-delete|-clean|-delete_window|-clean_window\n");
+  printf("  Clears the lines used by the selection window on exit.\n");
   printf("-k|-ks|-keep_spaces\n");
   printf("  does not trim spaces surrounding the output string if any.\n");
   printf("-W|-ws|-wd|-word_delimiters|-word_separators\n");
@@ -61,7 +63,7 @@ common_help(void)
   printf("-s|-sp|-start|-start_pattern\n");
   printf("  sets the initial cursor position (read the manual for "
          "more details).\n");
-  printf("-x|-timeout/-X|-hidden_timeout\n");
+  printf("-x|-tmout|-timeout/-X|-htmout|-hidden_timeout\n");
   printf("  sets a timeout and specifies what to do when it expires.\n");
   printf("-r|-auto_validate\n");
   printf("  enables ENTER to validate the selection even in search mode.\n");
@@ -106,11 +108,11 @@ main_help(void)
   printf("  is like|-t without argument but respects end of lines.\n");
   printf("-l|-line|-line_mode\n");
   printf("  is like|-c without column alignments.\n");
-  printf("-t|-tab_mode|-tabulate_mode\n");
+  printf("-t|-tab|-tab_mode|-tabulate_mode\n");
   printf("  tabulates the items. The number of columns can be limited "
          "with\n");
   printf("  an optional number.\n");
-  printf("-T|-tm|-tag_mode/-P|-pm|-pin_mode\n");
+  printf("-T|-tm|-tag|-tag_mode/-P|-pm|-pin|-pin_mode\n");
   printf("  enables the tagging (multi-selections) mode. ");
   printf("An optional parameter\n");
   printf("  sets the separator string between the selected words ");
@@ -161,11 +163,11 @@ columns_help(void)
   printf("Short description of allowed parameters:\n\n");
   common_help();
 
-  printf("-C|-cs|-col_select\n");
+  printf("-C|-cs|-cols|-cols_select\n");
   printf("  sets columns restrictions for selections.\n");
-  printf("-R|-rs|-row_select\n");
+  printf("-R|-rs|-rows|-rows_select\n");
   printf("  sets rows restrictions for selections.\n");
-  printf("-w|-wide_mode\n");
+  printf("-w|-wide|-wide_mode\n");
   printf("  uses all the terminal width for the columns if their numbers "
          "is given.\n");
   printf("-g|-gutter\n");
@@ -178,7 +180,7 @@ columns_help(void)
   printf("-F|-en|-embedded_number\n");
   printf("  numbers and provides a direct access to words by extracting the "
          "number\n");
-  printf("-T|-tm|-tag_mode/-P|-pm|-pin_mode\n");
+  printf("-T|-tm|-tag|-tag_mode/-P|-pm|-pin|-pin_mode\n");
   printf("  enables the tagging (multi-selections) mode. ");
   printf("An optional parameter\n");
   printf("  sets the separator string between the selected words ");
@@ -204,7 +206,7 @@ lines_help(void)
   printf("Short description of allowed parameters:\n\n");
   common_help();
 
-  printf("-R|-rs|-row_select\n");
+  printf("-R|-rs|-rows|-row_select\n");
   printf("  sets rows restrictions for selections.\n");
   printf("-N|-number/-U|-unnumber\n");
   printf("  numbers/un-numbers and provides a direct access to words "
@@ -213,7 +215,7 @@ lines_help(void)
   printf("-F|-en|-embedded_number\n");
   printf("  numbers and provides a direct access to words by extracting the "
          "number\n");
-  printf("-T|-tm|-tag_mode/-P|-pm|-pin_mode\n");
+  printf("-T|-tm|-tag|-tag_mode/-P|-pm|-pin|-pin_mode\n");
   printf("  enables the tagging (multi-selections) mode. ");
   printf("An optional parameter\n");
   printf("  sets the separator string between the selected words ");
@@ -239,7 +241,7 @@ tabulations_help(void)
   printf("Short description of allowed parameters:\n\n");
   common_help();
 
-  printf("-w|-wide_mode\n");
+  printf("-w|-wide|-wide_mode\n");
   printf("  uses all the terminal width for the columns if their numbers "
          "is given.\n");
   printf("-g|-gutter\n");
@@ -252,7 +254,7 @@ tabulations_help(void)
   printf("-F|-en|-embedded_number\n");
   printf("  numbers and provides a direct access to words by extracting the "
          "number\n");
-  printf("-T|-tm|-tag_mode/-P|-pm|-pin_mode\n");
+  printf("-T|-tm|-tag|-tag_mode/-P|-pm|-pin|-pin_mode\n");
   printf("  enables the tagging (multi-selections) mode. ");
   printf("An optional parameter\n");
   printf("  sets the separator string between the selected words ");
@@ -285,11 +287,11 @@ direct_access_help(void)
   printf("  is like|-t without argument but respects end of lines.\n");
   printf("-l|-line|-line_mode\n");
   printf("  is like|-c without column alignments.\n");
-  printf("-t|-tab_mode|-tabulate_mode\n");
+  printf("-t|-tab|-tab_mode|-tabulate_mode\n");
   printf("  tabulates the items. The number of columns can be limited "
          "with\n");
   printf("  an optional number.\n");
-  printf("-T|-tm|-tag_mode/-P|-pm|-pin_mode\n");
+  printf("-T|-tm|-tag|-tag_mode/-P|-pm|-pin|-pin_mode\n");
   printf("  enables the tagging (multi-selections) mode. ");
   printf("An optional parameter\n");
   printf("  sets the separator string between the selected words ");
