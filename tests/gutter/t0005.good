@@ -1,6 +1,6 @@
 $ OUT=$(smenu -c -g '|: ' t0005.in)
 
- abcd|efgh:ijkl mnop qrst vwxy zabc defg hijk lmno pqrs tuvw xyza bcde efgh▸
+ abcd|efgh:ijkl mnop qrst vwxy zabc defg hijk lmno pqrs tuvw xyza bcde efgh▶
 0:20 1:07 2:07 3:07 4:07 75:20 
 $ 
 
