@@ -345,12 +345,12 @@ fatal(errors e, char * errmsg)
       case CTXOPTMISPAR:
         if (cur_state->ctx_par_name != NULL)
           fprintf(stderr,
-                  "Mandatory parameter(s): %s are missing in the context "
+                  "the mandatory parameter(s) %s are missing in the context "
                   "introduced by %s.\n",
                   errmsg, cur_state->ctx_par_name);
         else
           fprintf(stderr,
-                  "Mandatory parameter(s): %s are missing "
+                  "The mandatory parameter(s) %s are missing "
                   "in the main context.\n",
                   errmsg);
 
@@ -358,7 +358,9 @@ fatal(errors e, char * errmsg)
         break;
 
       case CTXOPTUNXARG:
-        fprintf(stderr, "%s only takes one argument.\n",
+        fprintf(stderr,
+                "The parameter %s takes no arguments "
+                "or has too many arguments.\n",
                 cur_state->cur_opt_par_name);
         break;
 
@@ -374,78 +376,79 @@ fatal(errors e, char * errmsg)
       case CTXOPTDUPOPT:
         if (cur_state->pre_opt_par_name != NULL)
           fprintf(stderr,
-                  "The parameter(s) %s can only appear once in the context "
+                  "The parameter %s can only appear once in the context "
                   "introduced by %s.\n",
                   cur_state->cur_opt_par_name, cur_state->ctx_par_name);
         else
           fprintf(stderr,
-                  "The parameter(s) %s can only appear once "
+                  "The parameter %s can only appear once "
                   "in the main context.\n",
                   cur_state->cur_opt_par_name);
         break;
 
       case CTXOPTUNKPAR:
-        fprintf(stderr, "Unknown parameter: %s.\n",
-                cur_state->cur_opt_par_name);
+        fprintf(stderr, "Unknown parameter %s.\n", cur_state->cur_opt_par_name);
         break;
 
       case CTXOPTINCOPT:
-        fprintf(stderr, "%s is incompatible with %s.\n",
+        fprintf(stderr, "The parameter %s is incompatible with %s.\n",
                 cur_state->cur_opt_par_name, errmsg);
         break;
 
       case CTXOPTCTEOPT:
         if (cur_state->ctx_par_name)
           fprintf(stderr,
-                  "%s must appear exactly %d times in the context "
-                  "introduced by %s.\n",
+                  "The parameter %s must appear exactly %d times "
+                  "in the context introduced by %s.\n",
                   cur_state->cur_opt_par_name, cur_state->opts_count,
                   cur_state->ctx_par_name);
         else
           fprintf(stderr,
-                  "%s must appear exactly %d times in "
-                  "the main context.\n",
+                  "The parameter %s must appear exactly %d times "
+                  "in the main context.\n",
                   cur_state->cur_opt_par_name, cur_state->opts_count);
         break;
 
       case CTXOPTCTLOPT:
         if (cur_state->ctx_par_name)
           fprintf(stderr,
-                  "%s must appear less than %d times in the context "
-                  "introduced by %s.\n",
+                  "The parameter %s must appear less than %d times "
+                  "in the context introduced by %s.\n",
                   cur_state->cur_opt_par_name, cur_state->opts_count,
                   cur_state->ctx_par_name);
         else
           fprintf(stderr,
-                  "%s must appear less than %d times in the main context.\n",
+                  "The parameter %s must appear less than %d times "
+                  "in the main context.\n",
                   cur_state->cur_opt_par_name, cur_state->opts_count);
         break;
 
       case CTXOPTCTGOPT:
         if (cur_state->ctx_par_name)
           fprintf(stderr,
-                  "%s must appear more than %d times in the context "
-                  "introduced by %s.\n",
+                  "The parameter %s must appear more than %d times "
+                  "in the context introduced by %s.\n",
                   cur_state->cur_opt_par_name, cur_state->opts_count,
                   cur_state->ctx_par_name);
         else
           fprintf(stderr,
-                  "%s must appear more than %d times in the main context.\n",
+                  "The parameter %s must appear more than %d times "
+                  "in the main context.\n",
                   cur_state->cur_opt_par_name, cur_state->opts_count);
         break;
 
       case CTXOPTCTEARG:
-        fprintf(stderr, "%s must have exactly %d arguments.\n",
+        fprintf(stderr, "The parameter %s must have exactly %d arguments.\n",
                 cur_state->cur_opt_par_name, cur_state->opt_args_count);
         break;
 
       case CTXOPTCTLARG:
-        fprintf(stderr, "%s must have less than %d arguments.\n",
+        fprintf(stderr, "The parameter %s must have less than %d arguments.\n",
                 cur_state->cur_opt_par_name, cur_state->opt_args_count);
         break;
 
       case CTXOPTCTGARG:
-        fprintf(stderr, "%s must have more than %d arguments.\n",
+        fprintf(stderr, "The parameter %s must have more than %d arguments.\n",
                 cur_state->cur_opt_par_name, cur_state->opt_args_count);
         break;
 
@@ -475,7 +478,7 @@ xmalloc(size_t size)
   real_size = (size > 0) ? size : 1;
   allocated = malloc(real_size);
   if (allocated == NULL)
-    fatal_internal("Insufficient memory (attempt to malloc %lu bytes)\n",
+    fatal_internal("Insufficient memory (attempt to malloc %lu bytes).\n",
                    (unsigned long int)size);
 
   return allocated;
@@ -493,7 +496,7 @@ xcalloc(size_t n, size_t size)
   size      = (size > 0) ? size : 1;
   allocated = calloc(n, size);
   if (allocated == NULL)
-    fatal_internal("Insufficient memory (attempt to calloc %lu bytes)\n",
+    fatal_internal("Insufficient memory (attempt to calloc %lu bytes).\n",
                    (unsigned long int)size);
 
   return allocated;
@@ -509,7 +512,7 @@ xrealloc(void * p, size_t size)
 
   allocated = realloc(p, size);
   if (allocated == NULL && size > 0)
-    fatal_internal("Insufficient memory (attempt to xrealloc %lu bytes)\n",
+    fatal_internal("Insufficient memory (attempt to xrealloc %lu bytes).\n",
                    (unsigned long int)size);
 
   return allocated;
@@ -1832,7 +1835,7 @@ print_explanations(int has_early_eval, int has_ctx_change, int has_generic_arg,
   if (has_early_eval || has_ctx_change || has_generic_arg || has_optional
       || has_ellipsis || has_rule)
   {
-    printf("\nSyntactic explanations:\n");
+    printf("\nExplanation of the syntax used above:\n");
     printf("Only the parameters (prefixed by -) and the arguments, if any, "
            "must be entered.\n");
     printf("The following is just there to explain the other symbols "
@@ -1851,8 +1854,8 @@ print_explanations(int has_early_eval, int has_ctx_change, int has_generic_arg,
       printf(
         "[...]        : the object between square brackets is optional.\n");
     if (has_ellipsis)
-      printf("...          : the previous object can be repeated more "
-             "than one time.\n");
+      printf("...          : several occurrences of the previous object "
+             "are possible.\n");
     if (has_rule)
       printf("[<|=|>]number: rules constraining the number of "
              "parameters/arguments.\n");
@@ -2149,17 +2152,17 @@ check_for_occurrences_issues(ctx_inst_t * ctx_inst)
       {
         case '=':
           if (opt->occurrences > 0 && opt->opt_count_mark != opt->occurrences)
-            fatal(CTXOPTCTEOPT, "");
+            fatal(CTXOPTCTEOPT, NULL);
           break;
 
         case '<':
           if (opt->occurrences > 0 && opt->opt_count_mark <= opt->occurrences)
-            fatal(CTXOPTCTLOPT, "");
+            fatal(CTXOPTCTLOPT, NULL);
           break;
 
         case '>':
           if (opt->occurrences > 0 && opt->opt_count_mark >= opt->occurrences)
-            fatal(CTXOPTCTGOPT, "");
+            fatal(CTXOPTCTGOPT, NULL);
           break;
       }
 
@@ -2186,17 +2189,17 @@ check_for_occurrences_issues(ctx_inst_t * ctx_inst)
       {
         case '=':
           if (nb_values > 0 && opt->opt_args_count_mark != nb_values)
-            fatal(CTXOPTCTEARG, "");
+            fatal(CTXOPTCTEARG, NULL);
           break;
 
         case '<':
           if (nb_values > 0 && opt->opt_args_count_mark <= nb_values)
-            fatal(CTXOPTCTLARG, "");
+            fatal(CTXOPTCTLARG, NULL);
           break;
 
         case '>':
           if (nb_values > 0 && opt->opt_args_count_mark >= nb_values)
-            fatal(CTXOPTCTGARG, "");
+            fatal(CTXOPTCTGARG, NULL);
           break;
       }
 
@@ -2458,7 +2461,7 @@ success:
   next_ctx = NULL;
 
   if (*opt_name == '>')
-    fatal_internal("%s: option name is missing.", opt_name);
+    fatal_internal("The option name is missing in %s.", opt_name);
 
   count = strchrcount(opt_name, '>');
   if (count == 1)
@@ -2468,7 +2471,7 @@ success:
     *tmp       = '\0';
   }
   else if (count > 1)
-    fatal_internal("%s: only one occurrence of '>' is allowed.", opt_name);
+    fatal_internal("Only one occurrence of '>' is allowed in %s.", opt_name);
 
   *opt = xmalloc(sizeof(opt_t));
 
@@ -2537,7 +2540,7 @@ init_opts(char * spec, ctx_t * ctx)
             || bst_opt->multiple_args != opt->multiple_args
             || bst_opt->args != opt->args || !same_next_ctx)
         {
-          fatal_internal("option %s already exists with "
+          fatal_internal("The option %s already exists with "
                          "a different arguments signature.\n",
                          opt->name);
         }
@@ -2623,7 +2626,7 @@ ctxopt_init(char * prog_name, char * init_flags)
     if (*flag)
     {
       if (sscanf(flag, "%30[^=]=%30[^=]", fname, vname) != 2)
-        fatal_internal("Invalid flag assignment: %s", flag);
+        fatal_internal("Invalid flag assignment: %s.", flag);
 
       if (strcmp(fname, "stop_if_non_option") == 0)
       {
@@ -2632,7 +2635,7 @@ ctxopt_init(char * prog_name, char * init_flags)
         else if (!invalid)
           flags.stop_if_non_option = 0;
         else
-          fatal_internal("Invalid flag value for %s: %s", fname, vname);
+          fatal_internal("Invalid flag value for %s: %s.", fname, vname);
       }
       else if (strcmp(fname, "allow_abbreviations") == 0)
       {
@@ -2641,10 +2644,10 @@ ctxopt_init(char * prog_name, char * init_flags)
         else if (!invalid)
           flags.allow_abbreviations = 0;
         else
-          fatal_internal("Invalid flag value for %s: %s", fname, vname);
+          fatal_internal("Invalid flag value for %s: %s.", fname, vname);
       }
       else
-        fatal_internal("Invalid flag name: %s", fname);
+        fatal_internal("Invalid flag name: %s.", fname);
     }
   }
 
@@ -2692,7 +2695,7 @@ opt_set_parms(char * opt_name, char * par_str)
   /* """""""""""""""""""""""""""""""""""" */
   opt = locate_opt(opt_name);
   if (opt == NULL)
-    fatal_internal("Unknown option %s", opt_name);
+    fatal_internal("Unknown option %s.", opt_name);
 
   /* For each context using this option. */
   /* """"""""""""""""""""""""""""""""""" */
@@ -2707,7 +2710,7 @@ opt_set_parms(char * opt_name, char * par_str)
 
     ctx = locate_ctx(ctx_name);
     if (ctx == NULL)
-      fatal_internal("Unknown context %s", ctx_name);
+      fatal_internal("Unknown context %s.", ctx_name);
     else
     {
       void * par_bst = ctx->par_bst;
@@ -2717,7 +2720,7 @@ opt_set_parms(char * opt_name, char * par_str)
       rtrim(tmp_par_str, " \t", 0);
       par_name = xstrtok_r(tmp_par_str, " \t,", &end_tmp_par_str);
       if (par_name == NULL)
-        fatal_internal("Parameters are missing for option %s", opt_name);
+        fatal_internal("Parameters are missing for option %s.", opt_name);
 
       /* For each parameter given in par_str, creates a par_t object and */
       /* insert it the in the parameters BST of the context.             */
@@ -2729,7 +2732,7 @@ opt_set_parms(char * opt_name, char * par_str)
         node = bst_find(&tmp_par, &par_bst, par_compare);
         if (node != NULL)
         {
-          fatal_internal("The parameter %s is already defined in context %s",
+          fatal_internal("The parameter %s is already defined in context %s.",
                          par_name, ctx->name);
           rc = 0;
         }
@@ -2878,11 +2881,11 @@ new_ctx_inst(ctx_t * ctx, ctx_inst_t * prev_ctx_inst)
           /* context as all options has have a seen_opt structure in  */
           /* seen_opt_bst.                                            */
           /* """""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-          fatal_internal("%s is not known in the context %s", opt->name,
+          fatal_internal("%s is not known in the context %s.", opt->name,
                          ctx->name);
       }
       else
-        fatal_internal("%s: unknown option.", opt_name);
+        fatal_internal("Unknown option %s.", opt_name);
 
       opt_name = strtok(NULL, " \t");
     }
@@ -3169,8 +3172,8 @@ ctxopt_analyze(int nb_words, char ** words, int * nb_rem_args,
   ll_node_t * node;
 
   if (!ctxopt_build_cmdline_list(nb_words, words))
-    fatal_internal(
-      "The command line could not be parsed: missing { or } detected.");
+    fatal_internal("The command line could not be parsed: "
+                   "missing '{' or '}' detected.");
 
   if (main_ctx == NULL)
     fatal_internal("At least one context must have been created.");
@@ -3461,7 +3464,7 @@ ctxopt_analyze(int nb_words, char ** words, int * nb_rem_args,
           ctx = locate_ctx(opt->next_ctx);
 
           if (ctx == NULL)
-            fatal_internal("%s: unknown context.", opt->next_ctx);
+            fatal_internal("Unknown context %s.", opt->next_ctx);
 
           opt_inst->next_ctx_inst = ctx_inst = new_ctx_inst(ctx, ctx_inst);
           ctx_inst->par_name                 = xstrdup(par_name);
@@ -3739,14 +3742,14 @@ ctxopt_new_ctx(char * name, char * opts_specs)
   /* """"""""""""""""""""""""""" */
   p = name;
   if (!isalpha(*p))
-    fatal_internal("%s: a context name must start with a letter.", name);
+    fatal_internal("A context name must start with a letter: %s.", name);
 
   p++;
   while (*p)
   {
     if (!isalnum(*p) && *p != '_')
-      fatal_internal("%s: a context name must only contain letters, "
-                     "numbers or '_'.",
+      fatal_internal("A context name must only contain letters, "
+                     "numbers or '_': %s.",
                      name);
     p++;
   }
@@ -3770,7 +3773,7 @@ ctxopt_new_ctx(char * name, char * opts_specs)
   if (init_opts(opts_specs, ctx) == 0)
     exit(EXIT_FAILURE);
   if (bst_find(ctx, &contexts_bst, ctx_compare) != NULL)
-    fatal_internal("The context %s already exists", name);
+    fatal_internal("The context %s already exists.", name);
   else
     bst_search(ctx, &contexts_bst, ctx_compare);
 }
@@ -3796,7 +3799,7 @@ ctxopt_ctx_disp_usage(char * ctx_name, usage_behaviour action)
 
   ctx = locate_ctx(ctx_name);
   if (ctx == NULL)
-    fatal_internal("%s: unknown context.", ctx_name);
+    fatal_internal("Unknown context %s.", ctx_name);
 
   if (cur_state->ctx_par_name == NULL)
     printf("\nSynopsis:\n%s \\\n", cur_state->prog_name);
@@ -3873,7 +3876,7 @@ ctxopt_format_constraint(int nb_args, char ** args, char * value, char * par)
   char * format;
 
   if (nb_args != 1)
-    fatal_internal("Format constraint: invalid number of parameters.");
+    fatal_internal("Format constraint, invalid number of parameters.");
 
   if (strlen(value) > 255)
     value[255] = '\0';
@@ -3884,7 +3887,7 @@ ctxopt_format_constraint(int nb_args, char ** args, char * value, char * par)
   rc = sscanf(value, format, x, &y);
   if (rc != 1)
     fprintf(stderr,
-            "The argument %s of %s does not respect the imposed format: %s.",
+            "The argument %s of %s does not respect the imposed format %s.",
             value, par, args[0]);
 
   free(format);
@@ -3904,7 +3907,7 @@ ctxopt_re_constraint(int nb_args, char ** args, char * value, char * par)
 
   if (nb_args != 1)
     fatal_internal(
-      "Regular expression constraint: invalid number of parameters.");
+      "Regular expression constraint, invalid number of parameters.");
 
   if (regcomp(&re, args[0], REG_EXTENDED) != 0)
     fatal_internal("Invalid regular expression %s.", args[0]);
@@ -3940,7 +3943,7 @@ ctxopt_range_constraint(int nb_args, char ** args, char * value, char * par)
   int    max_only = 0;
 
   if (nb_args != 2)
-    fatal_internal("Range constraint: invalid number of parameters.");
+    fatal_internal("Range constraint, invalid number of parameters.");
 
   if (strcmp(args[0], ".") == 0)
     max_only = 1;
@@ -3948,7 +3951,7 @@ ctxopt_range_constraint(int nb_args, char ** args, char * value, char * par)
     n = sscanf(args[0], "%ld%c", &min, &c);
 
   if (!max_only && n != 1)
-    fatal_internal("Range constraint: min: invalid parameters.");
+    fatal_internal("Range constraint, min: invalid parameters.");
 
   if (strcmp(args[1], ".") == 0)
     min_only = 1;
@@ -3956,10 +3959,10 @@ ctxopt_range_constraint(int nb_args, char ** args, char * value, char * par)
     n = sscanf(args[1], "%ld%c", &max, &c);
 
   if (!min_only && n != 1)
-    fatal_internal("Range constraint: max: invalid parameters.");
+    fatal_internal("Range constraint, max: invalid parameters.");
 
   if (min_only && max_only)
-    fatal_internal("Range constraint: invalid parameters.");
+    fatal_internal("Range constraint, invalid parameters.");
 
   errno = 0;
   v     = strtol(value, &ptr, 10);
@@ -4081,11 +4084,11 @@ ctxopt_add_opt_settings(settings s, ...)
 
           if (!opt_set_parms(opt_name, params))
             fatal_internal(
-              "duplicates parameters or bad settings for the option (%s).",
+              "Duplicated parameters or bad settings for the option %s.",
               params);
         }
         else
-          fatal_internal("%s: unknown option.", opt_name);
+          fatal_internal("Unknown option %s.", opt_name);
       }
       else
         fatal_internal(
@@ -4094,7 +4097,7 @@ ctxopt_add_opt_settings(settings s, ...)
       /* Here opt is a known option. */
       /* """"""""""""""""""""""""""" */
       if (opt->params != NULL)
-        fatal_internal("Parameters are already set for %s", opt_name);
+        fatal_internal("Parameters are already set for %s.", opt_name);
       else
       {
         size_t n;
@@ -4144,7 +4147,7 @@ ctxopt_add_opt_settings(settings s, ...)
         opt->nb_data = nb_data;
       }
       else
-        fatal_internal("%s: unknown option.", ptr);
+        fatal_internal("Unknown option %s.", ptr);
       break;
     }
 
@@ -4187,7 +4190,7 @@ ctxopt_add_opt_settings(settings s, ...)
         ll_append(opt->constraints_list, cstr);
       }
       else
-        fatal_internal("%s: unknown option.", ptr);
+        fatal_internal("Unknown option %s.", ptr);
       break;
     }
 
@@ -4234,10 +4237,10 @@ ctxopt_add_ctx_settings(settings s, ...)
           ll_append(list, str);
         else
           fatal_internal(
-            "Not enough incompatible options in the string: \"%s\"", str);
+            "Not enough incompatible options in the string: \"%s\".", str);
       }
       else
-        fatal_internal("%s: unknown context.", ptr);
+        fatal_internal("Unknown context %s.", ptr);
       break;
     }
 
@@ -4268,7 +4271,7 @@ ctxopt_add_ctx_settings(settings s, ...)
         ctx->nb_data = nb_data;
       }
       else
-        fatal_internal("%s: unknown context.", ptr);
+        fatal_internal("Unknown context %s.", ptr);
       break;
     }
 
