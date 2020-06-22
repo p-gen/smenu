@@ -18,7 +18,7 @@ database.
 Please use the included man page to learn more about this little program.
 
 The wiki (https://github.com/p-gen/smenu/wiki) contains screenshots and
-animations that detail some of the concepts and features of **smenu**.
+animations that detail some concepts and features of **smenu**.
 
 How to build it?
 ================
@@ -37,7 +37,7 @@ GNU **autotools** will need to be installed for this script to work.
 How to install it?
 ==================
 Once the build process has finished, a simple ``make install`` with the
-appropriate privileges will do it
+appropriate privileges will do it.
 
 Some examples.
 ==============
@@ -111,8 +111,8 @@ The included testing system is relatively young, please be indulgent.
 **IMPORTANT** the testing system has some dependencies, please read the
 ``test/README.rst`` before going further.
 
-**WARNING** running all the tests by running ``./tests.sh`` in the
-``tests`` directory will take some time (around 15 min for now).
+**NOTE** running all the tests by running ``./tests.sh`` in the
+``tests`` directory will take some time (around 21 min for now).
 
 **NOTE** on some systems like \*BSD some tests may fail. This can be
 explained by differences in posix/libc/... implementations.  This can
@@ -128,8 +128,13 @@ test in the ``tests`` directory in an existing or new directory: read the
 ``.in`` file and a ``.tst`` file and send them to me as well as the
 produced files.
 
+**WARNING** this release uses a new options system called ctxopt which
+may have remaining bugs.
+Please report them so they can be fixed in the next release of smenu
+or ctxopt (https://github.com/p-gen/ctxopt).
+
 Special thanks.
 ---------------
-I want to thank everyone who took the time to pack *smenu* for an easy
-installation in their operating system or distributions. Look here to
-find their names: https://repology.org/project/smenu/packages
+I want to thank those who took the time to package **smenu** for their
+preferred operating system or distribution.
+You will find their names here: https://repology.org/project/smenu/packages
