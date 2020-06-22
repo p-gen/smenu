@@ -4014,6 +4014,9 @@ move_left(win_t * win, term_t * term, toggle_t * toggle,
   {
     if (current > 0)
     {
+      /* Sets the new win->start and win->end if the cursor */
+      /* is at the beginning of the windows.                */
+      /* """""""""""""""""""""""""""""""""""""""""""""""""" */
       if (current == win->start)
         if (win->start > 0)
         {
@@ -4066,6 +4069,9 @@ move_left(win_t * win, term_t * term, toggle_t * toggle,
       break;
   } while (current != old_current && !word_a[current].is_selectable);
 
+  /* The old settings need to be restored if the */
+  /* new current word is not selectable.         */
+  /* """"""""""""""""""""""""""""""""""""""""""" */
   if (!word_a[current].is_selectable)
   {
     current    = old_current;
@@ -4096,6 +4102,9 @@ move_right(win_t * win, term_t * term, toggle_t * toggle,
   {
     if (current < count - 1)
     {
+      /* Sets the new win->start and win->end if the cursor */
+      /* is at the end of the windows.                      */
+      /* """""""""""""""""""""""""""""""""""""""""""""""""" */
       if (current == win->end)
         if (win->start < count - 1 && win->end != count - 1)
         {
@@ -4161,6 +4170,9 @@ move_right(win_t * win, term_t * term, toggle_t * toggle,
       break;
   } while (current != old_current && !word_a[current].is_selectable);
 
+  /* The old settings need to be restored if the */
+  /* new current word is not selectable.         */
+  /* """"""""""""""""""""""""""""""""""""""""""" */
   if (!word_a[current].is_selectable)
   {
     current    = old_current;
