@@ -41,7 +41,7 @@ common_help(void)
   printf("-M|-middle|-center\n");
   printf("  centers the display if possible.\n");
   printf("-d|-restore|-delete|-clean|-delete_window|-clean_window\n");
-  printf("  Clears the lines used by the selection window on exit.\n");
+  printf("  clears the lines used by the selection window on exit.\n");
   printf("-k|-ks|-keep_spaces\n");
   printf("  does not trim spaces surrounding the output string if any.\n");
   printf("-W|-ws|-wd|-word_delimiters|-word_separators\n");
@@ -187,12 +187,9 @@ columns_help(void)
   printf("on the output.\n");
   printf("  A single space is the default separator.\n");
   printf("-A|-fc|-first_column\n");
-  printf("  forces a class of words to be the first of the line they "
-         "appear in.\n");
+  printf("  forces the specified word pattern to start a line.\n");
   printf("-Z|-lc|-last_column\n");
-  printf("  forces a class of words to be the latest of the line they "
-         "appear in.\n");
-  printf("  from the words.\n");
+  printf("  forces the specified word pattern to end a line.\n");
 }
 
 void
@@ -222,12 +219,9 @@ lines_help(void)
   printf("on the output.\n");
   printf("  A single space is the default separator.\n");
   printf("-A|-fc|-first_column\n");
-  printf("  forces a class of words to be the first of the line they "
-         "appear in.\n");
+  printf("  forces the specified word pattern to start a line.\n");
   printf("-Z|-lc|-last_column\n");
-  printf("  forces a class of words to be the latest of the line they "
-         "appear in.\n");
-  printf("  from the words.\n");
+  printf("  forces the specified word pattern to end a line.\n");
 }
 
 void
@@ -261,12 +255,9 @@ tabulations_help(void)
   printf("on the output.\n");
   printf("  A single space is the default separator.\n");
   printf("-A|-fc|-first_column\n");
-  printf("  forces a class of words to be the first of the line they "
-         "appear in.\n");
+  printf("  forces the specified word pattern to start a line.\n");
   printf("-Z|-lc|-last_column\n");
-  printf("  forces a class of words to be the latest of the line they "
-         "appear in.\n");
-  printf("  from the words.\n");
+  printf("  forces the specified word pattern to end a line.\n");
 }
 
 void
