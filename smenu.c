@@ -5234,7 +5234,7 @@ timeout_action(char * ctx_name, char * opt_name, char * param, int nb_values,
     if (nb_values == 3)
     {
       timeout.mode = WORD;
-      timeout_word = values[1];
+      timeout_word = xstrdup(values[1]);
       utf8_interpret(timeout_word, langinfo);
     }
     else
