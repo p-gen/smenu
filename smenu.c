@@ -6184,7 +6184,7 @@ main(int argc, char * argv[])
     "[lines [#height]] "
     "[blank_nonprintable] "
     "[center_mode] [clean] [keep_spaces] [word_separators #bytes] "
-    "[line_separators #bytes] [no_scoll_bar] "
+    "[no_scoll_bar] "
     "[post_subst_all... #/regex/repl/opts] "
     "[post_subst_included... #/regex/repl/opts] "
     "[post_subst_excluded... #/regex/repl/opts] "
@@ -6208,6 +6208,7 @@ main(int argc, char * argv[])
                      "[columns_select... #selector...] "
                      "[rows_select... #selector...] "
                      "[gutter [#string]] "
+                     "[line_separators #bytes] "
                      "[auto_da_number>Direct_access... [#regex]] "
                      "[auto_da_unnumber>Direct_access... [#regex]] "
                      "[field_da_number>Direct_access] "
@@ -6217,6 +6218,7 @@ main(int argc, char * argv[])
                      "[force_last_column #regex]";
 
   line_spec_options = "[rows_select... #selector...] "
+                      "[line_separators #bytes] "
                       "[auto_da_number>Direct_access... [#regex]] "
                       "[auto_da_unnumber>Direct_access... [#regex]] "
                       "[field_da_number>Direct_access] "
