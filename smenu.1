@@ -68,13 +68,17 @@ and outputs the selection to stdout.
   RE        ::= \fB<char>\fIregex\fB<char>\fR
 
   selectors and RE can be freely mixed.
+
+Note that some parameters require that others have been previously
+entered in the command line to be accepted.
 .fi
 .SH DESCRIPTION
 This small utility acts as a filter when no input file is given
 (reads from stdin and writes to stdout) or takes its inputs from that file.
 
-All read words are presented in a scrolling window on the terminal
-\fBat\fP the current cursor position without clearing the screen before.
+All the words read are presented in a scrolling window on the terminal
+\fbat the current cursor position\fP and  without previously clearing
+the screen.
 .PP
 The selection cursor is initially positioned on the first selectable word
 by default.
@@ -561,13 +565,20 @@ the usage should be intuitive.
 You may nevertheless have to adjust some scripts using the old smenu
 releases as I did in the lvm_menu example.
 .PP
-The benefits of this new option system are:
+Some of the advantages of this new system of options are:
 .IP * 2
-Long option names can be used (one or two leading dashes are allowed for them).
+Long parameter names are allowed. One dash is enough, but two are also
+allowed for compatibility reasons.
 .IP * 2
-Auto checking of missing mandatory options, duplicate option,...
+An option can be referenced by any number of parameters with short or
+long names.
 .IP * 2
-Only the relevant parameters are available in a context.
+Auto checking of missing mandatory options, duplicated option,...
+.IP * 2
+Only options usable in the current context are allowed.
+.PP
+This option management system is explained in more detail at
+https://github.com/p-gen/ctxopt.
 .PP
 The description of each command line parameter is as follows:
 .IP "\fB-h\fP|\fB-help\fP"
