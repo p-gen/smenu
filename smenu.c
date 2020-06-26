@@ -4928,7 +4928,7 @@ gutter_action(char * ctx_name, char * opt_name, char * param, int nb_values,
       if (n > 1)
       {
         fprintf(stderr, "%s: A multi columns gutter is not allowed.\n", param);
-        ctxopt_disp_usage(exit_after);
+        ctxopt_ctx_disp_usage(ctx_name, exit_after);
       }
       offset += mblen;
     }
@@ -5166,7 +5166,7 @@ attributes_action(char * ctx_name, char * opt_name, char * param, int nb_values,
           fprintf(stderr, "%s: ", param);
           fputs(attr_infos[i].msg, stderr);
           fputs("\n", stderr);
-          ctxopt_disp_usage(exit_after);
+          ctxopt_ctx_disp_usage(ctx_name, exit_after);
         }
 
         attr_to_set         = attr_infos[i].attr;
@@ -5180,7 +5180,7 @@ attributes_action(char * ctx_name, char * opt_name, char * param, int nb_values,
     if (attr_infos[i].flag == NULL)
     {
       fprintf(stderr, "%s: Bad attribute prefix in %s\n", param, values[a]);
-      ctxopt_disp_usage(exit_after);
+      ctxopt_ctx_disp_usage(ctx_name, exit_after);
     }
 
     /* Attributes must respect the format: */
@@ -5201,7 +5201,7 @@ attributes_action(char * ctx_name, char * opt_name, char * param, int nb_values,
     else
     {
       fprintf(stderr, "%s: Bad attribute settings %s\n", param, values[a]);
-      ctxopt_disp_usage(exit_after);
+      ctxopt_ctx_disp_usage(ctx_name, exit_after);
     }
   }
 }
@@ -5240,7 +5240,7 @@ timeout_action(char * ctx_name, char * opt_name, char * param, int nb_values,
     else
     {
       fprintf(stderr, "%s: Missing timeout selected word or delay.\n", param);
-      ctxopt_disp_usage(exit_after);
+      ctxopt_ctx_disp_usage(ctx_name, exit_after);
     }
   }
 
@@ -5252,7 +5252,7 @@ timeout_action(char * ctx_name, char * opt_name, char * param, int nb_values,
   else
   {
     fprintf(stderr, "%s: Invalid timeout delay.\n", param);
-    ctxopt_disp_usage(exit_after);
+    ctxopt_ctx_disp_usage(ctx_name, exit_after);
   }
 }
 
@@ -5345,7 +5345,7 @@ search_method_action(char * ctx_name, char * opt_name, char * param,
   else
   {
     fprintf(stderr, "%s: Bad search method: %s\n", param, values[0]);
-    ctxopt_disp_usage(exit_after);
+    ctxopt_ctx_disp_usage(ctx_name, exit_after);
   }
 }
 
@@ -5419,7 +5419,7 @@ da_options_action(char * ctx_name, char * opt_name, char * param, int nb_values,
         if (utf8_strlen(daccess.left) != 1)
         {
           fprintf(stderr, "%s: Too many characters after l:\n", param);
-          ctxopt_disp_usage(exit_after);
+          ctxopt_ctx_disp_usage(ctx_name, exit_after);
         }
 
         n = wcswidth((w = utf8_strtowcs(daccess.left)), 1);
@@ -5431,7 +5431,7 @@ da_options_action(char * ctx_name, char * opt_name, char * param, int nb_values,
                   "%s: A multi columns character is not allowed "
                   "after l:\n",
                   param);
-          ctxopt_disp_usage(exit_after);
+          ctxopt_ctx_disp_usage(ctx_name, exit_after);
         }
         break;
 
@@ -5444,7 +5444,7 @@ da_options_action(char * ctx_name, char * opt_name, char * param, int nb_values,
         if (utf8_strlen(daccess.right) != 1)
         {
           fprintf(stderr, "%s: Too many characters after r:\n", param);
-          ctxopt_disp_usage(exit_after);
+          ctxopt_ctx_disp_usage(ctx_name, exit_after);
         }
 
         n = wcswidth((w = utf8_strtowcs(daccess.right)), 1);
@@ -5456,7 +5456,7 @@ da_options_action(char * ctx_name, char * opt_name, char * param, int nb_values,
                   "%s: A multi columns character is not allowed "
                   "after r:\n",
                   param);
-          ctxopt_disp_usage(exit_after);
+          ctxopt_ctx_disp_usage(ctx_name, exit_after);
         }
         break;
 
@@ -5471,7 +5471,7 @@ da_options_action(char * ctx_name, char * opt_name, char * param, int nb_values,
                   "%s: The value after a: must be "
                   "l(eft) or r(ight)\n",
                   param);
-          ctxopt_disp_usage(exit_after);
+          ctxopt_ctx_disp_usage(ctx_name, exit_after);
         }
         break;
 
@@ -5483,7 +5483,7 @@ da_options_action(char * ctx_name, char * opt_name, char * param, int nb_values,
         else
         {
           fprintf(stderr, "%s: Bad value after p:\n", param);
-          ctxopt_disp_usage(exit_after);
+          ctxopt_ctx_disp_usage(ctx_name, exit_after);
         }
         break;
 
@@ -5491,17 +5491,17 @@ da_options_action(char * ctx_name, char * opt_name, char * param, int nb_values,
         if (sscanf(value + 2, "%d%n", &daccess.length, &pos) != 1)
         {
           fprintf(stderr, "%s: Bad value after w:\n", param);
-          ctxopt_disp_usage(exit_after);
+          ctxopt_ctx_disp_usage(ctx_name, exit_after);
         }
         if (value[pos + 2] != '\0')
         {
           fprintf(stderr, "%s: Bad value after w:\n", param);
-          ctxopt_disp_usage(exit_after);
+          ctxopt_ctx_disp_usage(ctx_name, exit_after);
         }
         if (daccess.length <= 0 || daccess.length > 5)
         {
           fprintf(stderr, "%s: w sub-option must be between 1 and 5\n", param);
-          ctxopt_disp_usage(exit_after);
+          ctxopt_ctx_disp_usage(ctx_name, exit_after);
         }
         break;
 
@@ -5515,19 +5515,19 @@ da_options_action(char * ctx_name, char * opt_name, char * param, int nb_values,
             if (value[pos + 3] != '\0')
             {
               fprintf(stderr, "%s: Bad value after o:\n", param);
-              ctxopt_disp_usage(exit_after);
+              ctxopt_ctx_disp_usage(ctx_name, exit_after);
             }
           }
           else if (value[pos + 2] != '\0')
           {
             fprintf(stderr, "%s: Bad value after o:\n", param);
-            ctxopt_disp_usage(exit_after);
+            ctxopt_ctx_disp_usage(ctx_name, exit_after);
           }
         }
         else
         {
           fprintf(stderr, "%s: Bad value after o:\n", param);
-          ctxopt_disp_usage(exit_after);
+          ctxopt_ctx_disp_usage(ctx_name, exit_after);
         }
 
         break;
@@ -5536,17 +5536,17 @@ da_options_action(char * ctx_name, char * opt_name, char * param, int nb_values,
         if (sscanf(value + 2, "%d%n", &daccess.size, &pos) != 1)
         {
           fprintf(stderr, "%s: Bad value after n:\n", param);
-          ctxopt_disp_usage(exit_after);
+          ctxopt_ctx_disp_usage(ctx_name, exit_after);
         }
         if (value[pos + 2] != '\0')
         {
           fprintf(stderr, "%s: Bad value after n:\n", param);
-          ctxopt_disp_usage(exit_after);
+          ctxopt_ctx_disp_usage(ctx_name, exit_after);
         }
         if (daccess.size <= 0 || daccess.size > 5)
         {
           fprintf(stderr, "n sub-option must have a value between 1 and 5.\n");
-          ctxopt_disp_usage(exit_after);
+          ctxopt_ctx_disp_usage(ctx_name, exit_after);
         }
         break;
 
@@ -5555,12 +5555,12 @@ da_options_action(char * ctx_name, char * opt_name, char * param, int nb_values,
         if (sscanf(value + 2, "%zu%n", &daccess.ignore, &pos) != 1)
         {
           fprintf(stderr, "%s: Bad value after i:\n", param);
-          ctxopt_disp_usage(exit_after);
+          ctxopt_ctx_disp_usage(ctx_name, exit_after);
         }
         if (value[pos + 2] != '\0')
         {
           fprintf(stderr, "%s: Bad value after i:\n", param);
-          ctxopt_disp_usage(exit_after);
+          ctxopt_ctx_disp_usage(ctx_name, exit_after);
         }
         break;
 
@@ -5572,7 +5572,7 @@ da_options_action(char * ctx_name, char * opt_name, char * param, int nb_values,
         else
         {
           fprintf(stderr, "%s: Bad value after f:\n", param);
-          ctxopt_disp_usage(exit_after);
+          ctxopt_ctx_disp_usage(ctx_name, exit_after);
         }
         break;
 
@@ -5585,7 +5585,7 @@ da_options_action(char * ctx_name, char * opt_name, char * param, int nb_values,
         if (utf8_strlen(daccess.num_sep) != 1)
         {
           fprintf(stderr, "%s: Too many characters after d:\n", param);
-          ctxopt_disp_usage(exit_after);
+          ctxopt_ctx_disp_usage(ctx_name, exit_after);
         }
 
         n = wcswidth((w = utf8_strtowcs(daccess.num_sep)), 1);
@@ -5597,7 +5597,7 @@ da_options_action(char * ctx_name, char * opt_name, char * param, int nb_values,
                   "%s: A multi columns separator is not allowed "
                   "after d:\n",
                   param);
-          ctxopt_disp_usage(exit_after);
+          ctxopt_ctx_disp_usage(ctx_name, exit_after);
         }
         break;
 
@@ -5613,7 +5613,7 @@ da_options_action(char * ctx_name, char * opt_name, char * param, int nb_values,
         else
         {
           fprintf(stderr, "%s: Invalid first index after s:\n", param);
-          ctxopt_disp_usage(exit_after);
+          ctxopt_ctx_disp_usage(ctx_name, exit_after);
         }
       }
       break;
@@ -5628,14 +5628,14 @@ da_options_action(char * ctx_name, char * opt_name, char * param, int nb_values,
         else
         {
           fprintf(stderr, "%s: Bad value after :h\n", param);
-          ctxopt_disp_usage(exit_after);
+          ctxopt_ctx_disp_usage(ctx_name, exit_after);
         }
         break;
 
       default:
       {
         fprintf(stderr, "%s: Bad sub-command: %s\n", param, value);
-        ctxopt_disp_usage(exit_after);
+        ctxopt_ctx_disp_usage(ctx_name, exit_after);
       }
     }
 
