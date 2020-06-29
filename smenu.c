@@ -6487,7 +6487,16 @@ main(int argc, char * argv[])
   else if (nb_rem_args == 0)
     input_file = stdin;
   else
+  {
+    fprintf(stderr, "Extra arguments detected:\n");
+
+    fprintf(stderr, "%s", rem_args[1]);
+    for (int i = 2; i < nb_rem_args; i++)
+      fprintf(stderr, ", %s", rem_args[i]);
+    fprintf(stderr, ".\n");
+
     ctxopt_disp_usage(exit_after);
+  }
 
   /* Free the memory used internally by ctxopt */
   /* """"""""""""""""""""""""""""""""""""""""" */
