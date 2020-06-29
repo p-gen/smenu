@@ -378,12 +378,12 @@ fatal(errors e, char * errmsg)
           fprintf(stderr,
                   "The parameter %s can only appear once in the context "
                   "introduced by %s.\n",
-                  cur_state->cur_opt_par_name, cur_state->ctx_par_name);
+                  cur_state->cur_opt_params, cur_state->ctx_par_name);
         else
           fprintf(stderr,
                   "The parameter %s can only appear once "
                   "in the main context.\n",
-                  cur_state->cur_opt_par_name);
+                  cur_state->cur_opt_params);
         break;
 
       case CTXOPTUNKPAR:
@@ -400,13 +400,13 @@ fatal(errors e, char * errmsg)
           fprintf(stderr,
                   "The parameter %s must appear exactly %d times "
                   "in the context introduced by %s.\n",
-                  cur_state->cur_opt_par_name, cur_state->opts_count,
+                  cur_state->cur_opt_params, cur_state->opts_count,
                   cur_state->ctx_par_name);
         else
           fprintf(stderr,
                   "The parameter %s must appear exactly %d times "
                   "in the main context.\n",
-                  cur_state->cur_opt_par_name, cur_state->opts_count);
+                  cur_state->cur_opt_params, cur_state->opts_count);
         break;
 
       case CTXOPTCTLOPT:
@@ -414,13 +414,13 @@ fatal(errors e, char * errmsg)
           fprintf(stderr,
                   "The parameter %s must appear less than %d times "
                   "in the context introduced by %s.\n",
-                  cur_state->cur_opt_par_name, cur_state->opts_count,
+                  cur_state->cur_opt_params, cur_state->opts_count,
                   cur_state->ctx_par_name);
         else
           fprintf(stderr,
                   "The parameter %s must appear less than %d times "
                   "in the main context.\n",
-                  cur_state->cur_opt_par_name, cur_state->opts_count);
+                  cur_state->cur_opt_params, cur_state->opts_count);
         break;
 
       case CTXOPTCTGOPT:
@@ -428,13 +428,13 @@ fatal(errors e, char * errmsg)
           fprintf(stderr,
                   "The parameter %s must appear more than %d times "
                   "in the context introduced by %s.\n",
-                  cur_state->cur_opt_par_name, cur_state->opts_count,
+                  cur_state->cur_opt_params, cur_state->opts_count,
                   cur_state->ctx_par_name);
         else
           fprintf(stderr,
                   "The parameter %s must appear more than %d times "
                   "in the main context.\n",
-                  cur_state->cur_opt_par_name, cur_state->opts_count);
+                  cur_state->cur_opt_params, cur_state->opts_count);
         break;
 
       case CTXOPTCTEARG:
@@ -2133,6 +2133,8 @@ check_for_occurrences_issues(ctx_inst_t * ctx_inst)
   opt_t *      opt;
   ll_node_t *  node;
   opt_inst_t * opt_inst;
+  char *       cur_opt_params   = cur_state->cur_opt_params;
+  char *       cur_opt_par_name = cur_state->cur_opt_par_name;
 
   /* Checks options. */
   /* """"""""""""""" */
@@ -2144,6 +2146,7 @@ check_for_occurrences_issues(ctx_inst_t * ctx_inst)
 
     /* Update current_state. */
     /* """"""""""""""""""""" */
+    cur_state->cur_opt_params = opt->params;
     cur_state->opts_count     = opt->opt_count_mark;
     cur_state->opt_args_count = opt->opt_args_count_mark;
 
@@ -2179,8 +2182,9 @@ check_for_occurrences_issues(ctx_inst_t * ctx_inst)
 
     /* Update current_state. */
     /* """"""""""""""""""""" */
-    cur_state->opts_count     = opt->opt_count_mark;
-    cur_state->opt_args_count = opt->opt_args_count_mark;
+    cur_state->cur_opt_par_name = opt_inst->par;
+    cur_state->opts_count       = opt->opt_count_mark;
+    cur_state->opt_args_count   = opt->opt_args_count_mark;
 
     int nb_values = opt_inst->values_list->len; /* Number of arguments of opt */
 
@@ -2205,6 +2209,8 @@ check_for_occurrences_issues(ctx_inst_t * ctx_inst)
 
     node = node->next;
   }
+  cur_state->cur_opt_params   = cur_opt_params;
+  cur_state->cur_opt_par_name = cur_opt_par_name;
 }
 
 /* ======================================================================== */
@@ -3372,6 +3378,10 @@ ctxopt_analyze(int nb_words, char ** words, int * nb_rem_args,
         opt_inst->values_list   = ll_new();
         opt_inst->next_ctx_inst = NULL;
 
+        /* Update current_state. */
+        /* """"""""""""""""""""" */
+        cur_state->cur_opt_params = opt->params;
+
         /* Priority option are inserted at the start of the opt_inst list */
         /* but their order of appearance in the context definition must   */
         /* be preserver so each new priority option will be placed after  */
@@ -3629,7 +3639,7 @@ ctxopt_analyze(int nb_words, char ** words, int * nb_rem_args,
 void
 ctxopt_free_memory(void)
 {
-  ll_destroy(cmdline_list, NULL);
+  ll_destroy(cmdline_list, free);
   ll_destroy(ctx_inst_list, ctx_inst_free);
   bst_destroy(options_bst, opt_free);
   bst_destroy(contexts_bst, ctx_free);

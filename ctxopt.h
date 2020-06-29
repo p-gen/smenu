@@ -58,6 +58,7 @@ typedef struct state_s
                            |  the current option.                   */
   char * pre_opt_par_name; /* parameter before the current one.     */
   char * cur_opt_par_name; /* current parameter.                    */
+  char * cur_opt_params;   /* All the option's parameters.          */
 } state_t;
 
 void
