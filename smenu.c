@@ -2655,10 +2655,10 @@ get_word(FILE * input, ll_t * word_delims_list, ll_t * record_delims_list,
   }
 
   /* Mark it as the last word of a record if its sequence matches a */
-  /* record delimiter except in tab mode                            */
+  /* record delimiter.                                              */
   /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
   if (byte == EOF
-      || ((win->col_mode || win->line_mode)
+      || ((win->col_mode || win->line_mode || win->tab_mode)
           && ll_find(record_delims_list, utf8_buffer, delims_cmp) != NULL))
     *is_last = 1;
   else
@@ -6240,6 +6240,7 @@ main(int argc, char * argv[])
 
   tab_spec_options = "[wide_mode] "
                      "[gutter [#string]] "
+                     "[line_separators #bytes] "
                      "[auto_da_number>Direct_access... [#regex]] "
                      "[auto_da_unnumber>Direct_access... [#regex]] "
                      "[field_da_number>Direct_access] "
@@ -7032,7 +7033,10 @@ main(int argc, char * argv[])
   /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
   record_delims_list = ll_new();
 
-  if (ils == NULL)
+  /* A default line separator is set to '\n' except in tab_mode */
+  /* where it should be explicitly set.                         */
+  /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+  if (ils == NULL && !win.tab_mode)
     ll_append(record_delims_list, "\n");
   else
   {

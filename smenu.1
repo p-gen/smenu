@@ -1025,8 +1025,10 @@ This mode is the same as column mode but without any column alignment.
 context)
 
 This option sets the tabulation mode and, if a number is specified,
-attents to set the number of displayed columns to that number.
-In this mode, embedded line separators are ignored.
+attempts to set the number of displayed columns to that number.
+
+In this mode, embedded line separators are ignored if not explicitly set
+with \fB-L\fP|\fB-ls\fP|\fB-ld\fP|\fB-line-delimiters\fP|\fB-line_separators\fP.
 The options \fB-A\fP|\fB-fc\fP|\fB-first_column\fP and
 \fB-Z\fP|\fB-lc\fP|\fB-last_column\fP can nevertheless be used to
 force words to appear in the first (respectively last) position of the
