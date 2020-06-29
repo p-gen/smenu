@@ -6176,21 +6176,32 @@ main(int argc, char * argv[])
   ctxopt_init(argv[0], "stop_if_non_option=No "
                        "allow_abbreviations=No ");
 
-  common_options =
-    "[*help] [*usage] [include_re... #regex] [exclude_re... #regex] "
-    "[title #message] [attributes #prefix:attr...] [special_level_1 #...<3] "
-    "[special_level_2 #...<3] [special_level_3 #...<3] "
-    "[special_level_4 #...<3] [special_level_5 #...<3] "
-    "[lines [#height]] "
-    "[blank_nonprintable] "
-    "[center_mode] [clean] [keep_spaces] [word_separators #bytes] "
-    "[no_scoll_bar] "
-    "[post_subst_all... #/regex/repl/opts] "
-    "[post_subst_included... #/regex/repl/opts] "
-    "[post_subst_excluded... #/regex/repl/opts] "
-    "[search_method #prefix|substring|fuzzy] [start_pattern #pattern] "
-    "[timeout #...] [hidden_timeout #...] [validate_in_search_mode] "
-    "[visual_bell] ";
+  common_options = "[*help] [*usage] "
+                   "[include_re... #regex] "
+                   "[exclude_re... #regex] "
+                   "[title #message] "
+                   "[attributes #prefix:attr...] "
+                   "[special_level_1 #...<3] "
+                   "[special_level_2 #...<3] "
+                   "[special_level_3 #...<3] "
+                   "[special_level_4 #...<3] "
+                   "[special_level_5 #...<3] "
+                   "[lines [#height]] "
+                   "[blank_nonprintable] "
+                   "[center_mode] "
+                   "[clean] "
+                   "[keep_spaces] "
+                   "[word_separators #bytes] "
+                   "[no_scoll_bar] "
+                   "[post_subst_all... #/regex/repl/opts] "
+                   "[post_subst_included... #/regex/repl/opts] "
+                   "[post_subst_excluded... #/regex/repl/opts] "
+                   "[search_method #prefix|substring|fuzzy] "
+                   "[start_pattern #pattern] "
+                   "[timeout #...] "
+                   "[hidden_timeout #...] "
+                   "[validate_in_search_mode] "
+                   "[visual_bell] "; /* Do not remove the last space. */
 
   main_spec_options = "[*version] "
                       "[*long_help] "
@@ -6601,7 +6612,7 @@ main(int argc, char * argv[])
   /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""" */
   if (term.colors > 7)
   {
-    int def_attr[5] = { 1, 2, 3, 5, 6 };
+    int special_def_attr[5] = { 1, 2, 3, 5, 6 };
 
     if (!win.cursor_attr.is_set)
     {
@@ -6742,7 +6753,7 @@ main(int argc, char * argv[])
     {
       if (!win.special_attr[index].is_set)
       {
-        win.special_attr[index].fg     = def_attr[index];
+        win.special_attr[index].fg     = special_def_attr[index];
         win.special_attr[index].is_set = SET;
       }
     }
