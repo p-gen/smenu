@@ -1,5 +1,5 @@
 /* ################################################################### */
-/* Copyright 2015 - Pierre Gentile                                     */
+/* Copyright 2015-present, Pierre Gentile (p.gen.progs@gmail.com)      */
 /*                                                                     */
 /* This Software is licensed under the GPL licensed Version 2,         */
 /* please read http://www.gnu.org/copyleft/gpl.html                    */
