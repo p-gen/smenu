@@ -1,4 +1,4 @@
-$ OUT=$(LC_ALL=en_US.UTF-8 smenu -t -L$'\n' t0007.in)
+$ OUT=$(LC_ALL=en_US.UTF-8 smenu -t -L'\u0a' t0007.in)
 
 1  2  3  4  5  
 
