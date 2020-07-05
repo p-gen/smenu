@@ -1,0 +1,13 @@
+$ OUT=$(smenu -c -L, -z '\u0a\u0d ' t0005.in)
+
+abcde 
+
+fghi  
+0:07 1:07 2:07 3:07 4:07 
+$ 
+
+$ echo ":$OUT:"
+
+:fghi:
+
+$ exit 0

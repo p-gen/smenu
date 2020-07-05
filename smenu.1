@@ -20,6 +20,7 @@ and outputs the selection to stdout.
   [\fB-4\fP|\fB-l4\fP|\fB-level4\fP \fIregex\fP [\fIattr\fP]]
   [\fB-5\fP|\fB-l5\fP|\fB-level5\fP \fIregex\fP [\fIattr\fP]]
   [\fB-T\fP|\fB-tm\fP|\fB-tag\fP|\fB-tag_mode\fP [\fIdelim\fP]]
+  [\fB-z\fP|\fB-zap\fP|\fB-zap_glyphs\fP \fIbytes\fP]
   [\fB-P\fP|\fB-pm\fP|\fB-pin\fP|\fB-pin_mode\fP [\fIdelim\fP]]
   [\fB-p\fP|\fB-at\fP|\fB-auto_tag\fP]
   [\fB-N\fP|\fB-number\fP... [\fIregex\fP]]
@@ -115,6 +116,10 @@ Example: \fI\\uc3a9\fP means latin small letter e with acute.
 Note that with most shells, the \fI\\\fP before the \fIu\fP need to be
 protected or escaped.
 .PP
+Note also that a dot, which is the consequence of an invalid UTF-8
+sequence, will not be distinguished from a dot normally present in the
+input stream.
+.PP
 Quotations (single and double) in the input stream can be used to ignore
 the word separators so that a group of words are taken as a single entity.
 .PP
@@ -131,6 +136,16 @@ These words are also kept in column mode, selectable or not.
 \fBWarning\fP, \fBUTF-8\fP encoded codepoints are quietly converted
 into dots (\fI.\fP) when the user locale is not \fBUTF-8\fP aware like
 \fBPOSIX\fP or \fBC\fP by example.
+.PP
+smenu has an option to define a set of characters or UTF-8 sequences
+wich should be ignored when reading words from the input.
+This can be very useful when dealing with inputs where the EOL sequence
+consists in more than one character.
+.PP
+A typical example is DOS or Windows files with lines ending with
+\fICRLF\fI.
+In such a case one might decide to ignore all \fICR\fP characters from
+the input.
 .PP
 .SS "Moving among words"
 The cursor can be moved in every direction by using the
@@ -745,6 +760,17 @@ Examples of possible attributes are:
 .fi
 
 \fI\\u\fP sequences can be used in the pattern.
+.IP "\fB-z\fP|\fB-zap\fP|\fB-zap_glyphs\fP \fIbytes\fP"
+(Allowed in all contexts)
+
+Initializes a set of UTF-8 characters to be ignored when reading words from
+stdin or a file.
+
+Example: The argument \f(CW'\\u0d\\ue282ac,'\fP means: ignore all commas,
+Euro signs and carriage return characters when reading from stdin or
+a file.
+
+As shown above \fI\\u\fP sequences can be used in the bytes set.
 .IP "\fB-T\fP|\fB-tm\fP|\fB-tag\fP|\fB-tag_mode\fP [\fIdelim\fP]"
 (Allowed in Main, Columns, Lines, Direct_access, Tabulations contexts,
 leads to Tagging context)

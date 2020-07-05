@@ -1,0 +1,11 @@
+$ OUT=$(smenu -zap '×\uc2bf«»' t0004.in)
+
+a±bc a x 
+7:07 
+$ 
+
+$ echo ":$OUT:"
+
+:x:
+
+$ exit 0

@@ -2284,6 +2284,15 @@ get_scancode(unsigned char * s, size_t max)
   return i;
 }
 
+/* =========================================================== */
+/* Helper function to compare to delimiters for use by ll_find */
+/* =========================================================== */
+int
+buffer_cmp(const void * a, const void * b)
+{
+  return strcmp((const char *)a, (const char *)b);
+}
+
 /* ===================================================================== */
 /* Get bytes from stdin. If the first byte is the leading character of a */
 /* UTF-8 glyph, the following ones are also read.                        */
@@ -2291,44 +2300,51 @@ get_scancode(unsigned char * s, size_t max)
 /* the character.                                                        */
 /* ===================================================================== */
 int
-get_bytes(FILE * input, char * utf8_buffer, langinfo_t * langinfo)
+get_bytes(FILE * input, char * utf8_buffer, ll_t * zapped_glyphs_list,
+          langinfo_t * langinfo)
 {
   int byte;
-  int last = 0;
+  int last;
   int n;
 
-  /* Read the first byte */
-  /* """"""""""""""""""" */
-  byte = my_fgetc(input);
-
-  if (byte == EOF)
-    return EOF;
-
-  utf8_buffer[last++] = byte;
-
-  /* Check if we need to read more bytes to form a sequence */
-  /* and put the number of bytes of the sequence in last.   */
-  /* """""""""""""""""""""""""""""""""""""""""""""""""""""" */
-  if (langinfo->utf8 && ((n = utf8_get_length(byte)) > 1))
+  do
   {
-    while (last < n && (byte = my_fgetc(input)) != EOF && (byte & 0xc0) == 0x80)
-      utf8_buffer[last++] = byte;
+    last = 0;
+
+    /* Read the first byte */
+    /* """"""""""""""""""" */
+    byte = my_fgetc(input);
 
     if (byte == EOF)
       return EOF;
-  }
 
-  utf8_buffer[last] = '\0';
+    utf8_buffer[last++] = byte;
 
-  /* Replace an invalid UTF-8 byte sequence by a single dot.  */
-  /* In this case the original sequence is lost (unsupported  */
-  /* encoding).                                               */
-  /* """""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-  if (langinfo->utf8 && !utf8_validate(utf8_buffer, last))
-  {
-    byte = utf8_buffer[0] = '.';
-    utf8_buffer[1]        = '\0';
-  }
+    /* Check if we need to read more bytes to form a sequence */
+    /* and put the number of bytes of the sequence in last.   */
+    /* """""""""""""""""""""""""""""""""""""""""""""""""""""" */
+    if (langinfo->utf8 && ((n = utf8_get_length(byte)) > 1))
+    {
+      while (last < n && (byte = my_fgetc(input)) != EOF
+             && (byte & 0xc0) == 0x80)
+        utf8_buffer[last++] = byte;
+
+      if (byte == EOF)
+        return EOF;
+    }
+
+    utf8_buffer[last] = '\0';
+
+    /* Replace an invalid UTF-8 byte sequence by a single dot.  */
+    /* In this case the original sequence is lost (unsupported  */
+    /* encoding).                                               */
+    /* """""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+    if (langinfo->utf8 && !utf8_validate(utf8_buffer, last))
+    {
+      byte = utf8_buffer[0] = '.';
+      utf8_buffer[1]        = '\0';
+    }
+  } while (ll_find(zapped_glyphs_list, utf8_buffer, buffer_cmp) != NULL);
 
   return byte;
 }
@@ -2471,8 +2487,9 @@ expand(char * src, char * dest, langinfo_t * langinfo, toggle_t * toggle)
 /* ===================================================================== */
 char *
 get_word(FILE * input, ll_t * word_delims_list, ll_t * record_delims_list,
-         char * utf8_buffer, unsigned char * is_last, toggle_t * toggle,
-         langinfo_t * langinfo, win_t * win, limits_t * limits)
+         ll_t * zapped_glyphs_list, char * utf8_buffer, unsigned char * is_last,
+         toggle_t * toggle, langinfo_t * langinfo, win_t * win,
+         limits_t * limits)
 {
   char * temp = NULL;
   int    byte;
@@ -2484,15 +2501,15 @@ get_word(FILE * input, ll_t * word_delims_list, ll_t * record_delims_list,
 
   /* Skip leading delimiters */
   /* """"""""""""""""""""""" */
-  byte = get_bytes(input, utf8_buffer, langinfo);
+  byte = get_bytes(input, utf8_buffer, zapped_glyphs_list, langinfo);
 
   while (byte == EOF
-         || ll_find(word_delims_list, utf8_buffer, delims_cmp) != NULL)
+         || ll_find(word_delims_list, utf8_buffer, buffer_cmp) != NULL)
   {
     if (byte == EOF)
       return NULL;
 
-    byte = get_bytes(input, utf8_buffer, langinfo);
+    byte = get_bytes(input, utf8_buffer, zapped_glyphs_list, langinfo);
   }
 
   /* Allocate initial word storage space */
@@ -2593,7 +2610,7 @@ get_word(FILE * input, ll_t * word_delims_list, ll_t * record_delims_list,
     /* Only consider delimiters when outside quotations */
     /* """""""""""""""""""""""""""""""""""""""""""""""" */
     if ((!is_dquote && !is_squote)
-        && ll_find(word_delims_list, utf8_buffer, delims_cmp) != NULL)
+        && ll_find(word_delims_list, utf8_buffer, buffer_cmp) != NULL)
       break;
 
     /* We no dot count the significant quotes */
@@ -2620,7 +2637,7 @@ get_word(FILE * input, ll_t * word_delims_list, ll_t * record_delims_list,
     is_special = 0;
 
   next:
-    byte = get_bytes(input, utf8_buffer, langinfo);
+    byte = get_bytes(input, utf8_buffer, zapped_glyphs_list, langinfo);
   }
 
   /* Nul-terminate the word to make it a string */
@@ -2634,13 +2651,14 @@ get_word(FILE * input, ll_t * word_delims_list, ll_t * record_delims_list,
 
   /* Skip all field delimiters before a record delimiter */
   /* """"""""""""""""""""""""""""""""""""""""""""""""""" */
-  if (ll_find(record_delims_list, utf8_buffer, delims_cmp) == NULL)
+  if (ll_find(record_delims_list, utf8_buffer, buffer_cmp) == NULL)
   {
-    byte = get_bytes(input, utf8_buffer, langinfo);
+    byte = get_bytes(input, utf8_buffer, zapped_glyphs_list, langinfo);
+
     while (byte != EOF
-           && ll_find(word_delims_list, utf8_buffer, delims_cmp) != NULL
-           && ll_find(record_delims_list, utf8_buffer, delims_cmp) == NULL)
-      byte = get_bytes(input, utf8_buffer, langinfo);
+           && ll_find(word_delims_list, utf8_buffer, buffer_cmp) != NULL
+           && ll_find(record_delims_list, utf8_buffer, buffer_cmp) == NULL)
+      byte = get_bytes(input, utf8_buffer, zapped_glyphs_list, langinfo);
 
     if (langinfo->utf8 && utf8_get_length(utf8_buffer[0]) > 1)
     {
@@ -2659,7 +2677,7 @@ get_word(FILE * input, ll_t * word_delims_list, ll_t * record_delims_list,
   /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
   if (byte == EOF
       || ((win->col_mode || win->line_mode || win->tab_mode)
-          && ll_find(record_delims_list, utf8_buffer, delims_cmp) != NULL))
+          && ll_find(record_delims_list, utf8_buffer, buffer_cmp) != NULL))
     *is_last = 1;
   else
     *is_last = 0;
@@ -3759,15 +3777,6 @@ sig_handler(int s)
 
       break;
   }
-}
-
-/* =========================================================== */
-/* Helper function to compare to delimiters for use by ll_find */
-/* =========================================================== */
-int
-delims_cmp(const void * a, const void * b)
-{
-  return strcmp((const char *)a, (const char *)b);
 }
 
 /* ========================================================= */
@@ -5281,6 +5290,18 @@ force_last_column_action(char * ctx_name, char * opt_name, char * param,
 }
 
 void
+zapped_glyphs_action(char * ctx_name, char * opt_name, char * param,
+                     int nb_values, char ** values, int nb_opt_data,
+                     void ** opt_data, int nb_ctx_data, void ** ctx_data)
+{
+  char **      glyph    = opt_data[0];
+  langinfo_t * langinfo = opt_data[1];
+
+  *glyph = xstrdup(values[0]);
+  utf8_interpret(*glyph, langinfo);
+}
+
+void
 separators_action(char * ctx_name, char * opt_name, char * param, int nb_values,
                   char ** values, int nb_opt_data, void ** opt_data,
                   int nb_ctx_data, void ** ctx_data)
@@ -5935,8 +5956,9 @@ main(int argc, char * argv[])
 
   struct sigaction sa; /* Signal structure */
 
-  char * iws = NULL, *ils = NULL;
+  char * iws = NULL, *ils = NULL, *zg = NULL;
   ll_t * word_delims_list   = NULL;
+  ll_t * zapped_glyphs_list = NULL;
   ll_t * record_delims_list = NULL;
 
   char utf8_buffer[5]; /* buffer to store the bytes of a UTF-8 glyph         *
@@ -6186,6 +6208,7 @@ main(int argc, char * argv[])
                    "[special_level_3 #...<3] "
                    "[special_level_4 #...<3] "
                    "[special_level_5 #...<3] "
+                   "[zapped_glyphs #bytes] "
                    "[lines [#height]] "
                    "[blank_nonprintable] "
                    "[center_mode] "
@@ -6335,6 +6358,7 @@ main(int argc, char * argv[])
                           "-W -ws -wd -word_delimiters -word_separators");
   ctxopt_add_opt_settings(parameters, "line_separators",
                           "-L -ls -ld -line-delimiters -line_separators");
+  ctxopt_add_opt_settings(parameters, "zapped_glyphs", "-z -zap -zap-glyphs");
   ctxopt_add_opt_settings(parameters, "no_scoll_bar",
                           "-q -no_bar -no-scroll_bar");
   ctxopt_add_opt_settings(parameters, "post_subst_all", "-S -subst");
@@ -6437,6 +6461,8 @@ main(int argc, char * argv[])
   ctxopt_add_opt_settings(actions, "word_separators", separators_action, &iws,
                           &langinfo, NULL);
   ctxopt_add_opt_settings(actions, "line_separators", separators_action, &ils,
+                          &langinfo, NULL);
+  ctxopt_add_opt_settings(actions, "zapped_glyphs", zapped_glyphs_action, &zg,
                           &langinfo, NULL);
   ctxopt_add_opt_settings(actions, "tag_mode", tag_mode_action, &toggle, &win,
                           &langinfo, NULL);
@@ -7004,6 +7030,29 @@ main(int argc, char * argv[])
   tab_max_size      = 0;
   min_size          = 0;
 
+  /* Parse the list of glyphs to be zapped (option -z). */
+  /* """""""""""""""""""""""""""""""""""""""""""""""""" */
+  zapped_glyphs_list = ll_new();
+  if (zg != NULL)
+  {
+    int    utf8_len;
+    char * zg_ptr = zg;
+    char * tmp;
+
+    utf8_len = mblen(zg_ptr, 4);
+
+    while (utf8_len != 0)
+    {
+      tmp = xmalloc(utf8_len + 1);
+      memcpy(tmp, zg_ptr, utf8_len);
+      tmp[utf8_len] = '\0';
+      ll_append(zapped_glyphs_list, tmp);
+
+      zg_ptr += utf8_len;
+      utf8_len = mblen(zg_ptr, 4);
+    }
+  }
+
   /* Parse the word separators string (option -W). If it is empty then  */
   /* the standard delimiters (space, tab and EOL) are used. Each of its */
   /* UTF-8 sequences are stored in a linked list.                       */
@@ -7064,7 +7113,7 @@ main(int argc, char * argv[])
 
       /* Add this record delimiter as a word delimiter */
       /* """"""""""""""""""""""""""""""""""""""""""""" */
-      if (ll_find(word_delims_list, tmp, delims_cmp) == NULL)
+      if (ll_find(word_delims_list, tmp, buffer_cmp) == NULL)
         ll_append(word_delims_list, tmp);
 
       ils_ptr += utf8_len;
@@ -7383,10 +7432,10 @@ main(int argc, char * argv[])
   /* - The -R is taken into account                               */
   /* - The first part of the -C option is done                    */
   /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-  while (
-    (word = get_word(input_file, word_delims_list, record_delims_list,
-                     utf8_buffer, &is_last, &toggle, &langinfo, &win, &limits))
-    != NULL)
+  while ((word = get_word(input_file, word_delims_list, record_delims_list,
+                          zapped_glyphs_list, utf8_buffer, &is_last, &toggle,
+                          &langinfo, &win, &limits))
+         != NULL)
   {
     int selectable;
     int is_first = 0;

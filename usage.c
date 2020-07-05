@@ -34,6 +34,8 @@ common_help(void)
   printf("-1|-l1|-level1,-2|-l2|-level2,...,-5|-l5|-level5\n");
   printf("  gives specific colors to up to 5 classes of "
          "selectable words.\n");
+  printf("-z|-zap|-zap_glyphs bytes\n");
+  printf("  defines a set of glyphs to ignore as input.\n");
   printf("-n|-lines|-height\n");
   printf("  sets the number of lines in the selection window.\n");
   printf("-b|-blank\n");

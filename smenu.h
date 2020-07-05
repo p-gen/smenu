@@ -519,15 +519,17 @@ size_t
 expand(char * src, char * dest, langinfo_t * langinfo, toggle_t * toggle);
 
 int
-get_bytes(FILE * input, char * utf8_buffer, langinfo_t * langinfo);
+get_bytes(FILE * input, char * utf8_buffer, ll_t * ignored_glyphs_list,
+          langinfo_t * langinfo);
 
 int
 get_scancode(unsigned char * s, size_t max);
 
 char *
 get_word(FILE * input, ll_t * word_delims_list, ll_t * record_delims_list,
-         char * utf8_buffer, unsigned char * is_last, toggle_t * toggle,
-         langinfo_t * langinfo, win_t * win, limits_t * limits);
+         ll_t * ignored_glyphs_list, char * utf8_buffer,
+         unsigned char * is_last, toggle_t * toggle, langinfo_t * langinfo,
+         win_t * win, limits_t * limits);
 
 void
 left_margin_putp(char * s, term_t * term, win_t * win);
