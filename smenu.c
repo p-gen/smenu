@@ -6506,7 +6506,8 @@ main(int argc, char * argv[])
     input_file = fopen(rem_args[0], "r");
     if (input_file == NULL)
     {
-      fprintf(stderr, "Cannot open \"%s\"\n", rem_args[0]);
+      fprintf(stderr, "The file \"%s\" does not exist or cannot be read.\n",
+              rem_args[0]);
       ctxopt_disp_usage(exit_after);
     }
   }
