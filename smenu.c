@@ -667,12 +667,12 @@ ini_load(const char * filename, win_t * win, term_t * term, limits_t * limits,
 
   while (!feof(f))
   {
-    if (fscanf(f, "[%127[^];\n]]", section) == 1)
+    if (fscanf(f, " [%127[^];\n]]", section) == 1)
     {
       /* Do nothing */
       /* """""""""" */
     }
-    else if ((cnt = fscanf(f, " %63[^=;\n] = %255[^;\n]", name, value)))
+    if ((cnt = fscanf(f, " %63[^=;\n] = %255[^;\n]", name, value)))
     {
       if (cnt == 1)
         *value = 0;
