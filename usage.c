@@ -40,6 +40,9 @@ common_help(void)
   printf("  sets the number of lines in the selection window.\n");
   printf("-b|-blank\n");
   printf("  displays non printable characters as space.\n");
+  printf("-.|-dot|-invalid\n");
+  printf("  defines the substitution character for a non-printable "
+         "character.\n");
   printf("-M|-middle|-center\n");
   printf("  centers the display if possible.\n");
   printf("-d|-restore|-delete|-clean|-delete_window|-clean_window\n");

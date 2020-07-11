@@ -23,21 +23,23 @@
 /* All hexadecimal sequences of \uxx, \uxxxx, \uxxxxxx and \uxxxxxxxx will */
 /* be replace by the corresponding UTF-8 character.                        */
 /* ======================================================================= */
-void
-utf8_interpret(char * s, langinfo_t * langinfo)
+int
+utf8_interpret(char * s, langinfo_t * langinfo, char substitute)
 {
-  char * utf8_str;          /* \uxx...                                        */
-  size_t utf8_to_eos_len;   /* bytes in s starting from the first             *
-                             * occurrence of \u                               */
-  size_t init_len;          /* initial lengths of the string to interpret     */
-  size_t utf8_ascii_len;    /* 2,4,6 or 8 bytes                               */
-  size_t len_to_remove = 0; /* number of bytes to remove after the conversion */
-  char   tmp[9];            /* temporary string                               */
+  char * utf8_str;          /* \uxx...                                     */
+  size_t utf8_to_eos_len;   /* bytes in s starting from the first          *
+                             * occurrence of \u.                           */
+  size_t init_len;          /* initial lengths of the string to interpret  */
+  size_t utf8_ascii_len;    /* 2,4,6 or 8 bytes.                           */
+  size_t len_to_remove = 0; /* number of bytes to remove after the         *
+                             | conversion.                                 */
+  char tmp[9];              /* temporary string.                           */
+  int  rc = 1;              /* return code, 0: error, 1: fine.             */
 
-  /* Guard against the case where s is NULL */
-  /* """""""""""""""""""""""""""""""""""""" */
+  /* Guard against the case where s is NULL. */
+  /* """"""""""""""""""""""""""""""""""""""" */
   if (s == NULL)
-    return;
+    return 0;
 
   init_len = strlen(s);
 
@@ -45,12 +47,13 @@ utf8_interpret(char * s, langinfo_t * langinfo)
   {
     utf8_to_eos_len = strlen(utf8_str);
     if (utf8_to_eos_len < 4) /* string too short to contain *
-                              * a valid UTF-8 char          */
+                              | a valid UTF-8 char.         */
     {
-      *utf8_str       = '.';
+      *utf8_str       = substitute;
       *(utf8_str + 1) = '\0';
+      rc              = 0;
     }
-    else /* s is long enough */
+    else /* s is long enough. */
     {
       unsigned byte;
       char *   utf8_seq_offset = utf8_str + 2;
@@ -60,78 +63,80 @@ utf8_interpret(char * s, langinfo_t * langinfo)
       *(tmp + 1) = *(utf8_seq_offset + 1);
       *(tmp + 2) = '\0';
 
-      /* If they are invalid, replace the \u sequence by a dot */
-      /* """"""""""""""""""""""""""""""""""""""""""""""""""""" */
+      /* If they are invalid, replace the \u sequence by the */
+      /* substitute character.                               */
+      /* """"""""""""""""""""""""""""""""""""""""""""""""""" */
       if (!isxdigit(tmp[0]) || !isxdigit(tmp[1]))
       {
-        *utf8_str = '.';
+        *utf8_str = substitute;
         if (4 >= utf8_to_eos_len)
           *(utf8_str + 1) = '\0';
         else
-          memmove(utf8_str, utf8_str + 4, utf8_to_eos_len - 4);
-        return;
+        {
+          /* Do not forget the training \0 */
+          /* ''''''''''''''''''''''''''''' */
+          memmove(utf8_str + 1, utf8_str + 4, utf8_to_eos_len - 4 + 1);
+        }
+        rc = 0;
       }
       else
       {
+        int    n;
+        size_t i;
+
         /* They are valid, deduce from them the length of the sequence */
         /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
         sscanf(tmp, "%2x", &byte);
+
         utf8_ascii_len = utf8_get_length(byte) * 2;
 
-        /* Check again if the inputs string is long enough */
-        /* """"""""""""""""""""""""""""""""""""""""""""""" */
-        if (utf8_to_eos_len - 2 < utf8_ascii_len)
+        /* replace the \u sequence by the bytes forming the UTF-8 char */
+        /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+
+        *tmp = byte;
+
+        /* Put the bytes in the tmp string */
+        /* ''''''''''''''''''''''''''''''' */
+        for (i = 1; i < utf8_ascii_len / 2; i++)
         {
-          *utf8_str       = '.';
-          *(utf8_str + 1) = '\0';
+          n = sscanf(utf8_seq_offset + 2 * i, "%2x", &byte);
+          if (n == 0 || (byte & 0xc0) != 0x80)
+            utf8_ascii_len = 2 * i; /* Force the new length according to the *
+                                     | number of valid UTF-8 bytes read.     */
+          else
+            *(tmp + i) = byte;
+        }
+        tmp[utf8_ascii_len / 2] = '\0';
+
+        /* Does they form a valid UTF-8 char? */
+        /* '''''''''''''''''''''''''''''''''' */
+        if (langinfo->utf8 && utf8_validate(tmp, utf8_ascii_len / 2))
+        {
+          /* Put them back in the original string and move */
+          /* the remaining bytes after them                */
+          /* ''''''''''''''''''''''''''''''''''''''''''''' */
+          memmove(utf8_str, tmp, utf8_ascii_len / 2);
+
+          if (utf8_to_eos_len < utf8_ascii_len)
+            *(utf8_str + utf8_ascii_len / 2 + 1) = '\0';
+          else
+            memmove(utf8_str + utf8_ascii_len / 2,
+                    utf8_seq_offset + utf8_ascii_len,
+                    utf8_to_eos_len - utf8_ascii_len - 2 + 1);
         }
         else
         {
-          /* replace the \u sequence by the bytes forming the UTF-8 char */
-          /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-          size_t i;
-          *tmp = byte;
-
-          /* Put the bytes in the tmp string */
-          /* ''''''''''''''''''''''''''''''' */
-          if (langinfo->utf8)
-          {
-            for (i = 1; i < utf8_ascii_len / 2; i++)
-            {
-              sscanf(utf8_seq_offset + 2 * i, "%2x", &byte);
-              *(tmp + i) = byte;
-            }
-            tmp[utf8_ascii_len / 2] = '\0';
-          }
-
-          /* Does they form a valid UTF-8 char? */
-          /* '''''''''''''''''''''''''''''''''' */
-          if (langinfo->utf8 && utf8_validate(tmp, utf8_ascii_len / 2))
-          {
-            /* Put them back in the original string and move */
-            /* the remaining bytes after them                */
-            /* ''''''''''''''''''''''''''''''''''''''''''''' */
-            memmove(utf8_str, tmp, utf8_ascii_len / 2);
-
-            if (utf8_to_eos_len < utf8_ascii_len)
-              *(utf8_str + utf8_ascii_len / 2 + 1) = '\0';
-            else
-              memmove(utf8_str + utf8_ascii_len / 2,
-                      utf8_seq_offset + utf8_ascii_len,
-                      utf8_to_eos_len - utf8_ascii_len - 2 + 1);
-          }
+          /* The invalid sequence is replaced by a */
+          /* substitution character.               */
+          /* ''''''''''''''''''''''''''''''''''''' */
+          *utf8_str = substitute;
+          if (utf8_to_eos_len < utf8_ascii_len)
+            *(utf8_str + 1) = '\0';
           else
-          {
-            /* The invalid sequence is replaced by a dot */
-            /* ''''''''''''''''''''''''''''''''''''''''' */
-            *utf8_str = '.';
-            if (utf8_to_eos_len < utf8_ascii_len)
-              *(utf8_str + 1) = '\0';
-            else
-              memmove(utf8_str + 1, utf8_seq_offset + utf8_ascii_len,
-                      utf8_to_eos_len - utf8_ascii_len - 2 + 1);
-            utf8_ascii_len = 2;
-          }
+            memmove(utf8_str + 1, utf8_seq_offset + utf8_ascii_len,
+                    utf8_to_eos_len - utf8_ascii_len - 2 + 1);
+          utf8_ascii_len = 2;
+          rc             = 0;
         }
 
         /* Update the number of bytes to remove at the end */
@@ -146,7 +151,7 @@ utf8_interpret(char * s, langinfo_t * langinfo)
   /* """""""""""""""""""""""""""""""""""""""""""" */
   *(s + init_len - len_to_remove) = '\0';
 
-  return;
+  return rc;
 }
 
 /* ========================================================= */
@@ -220,11 +225,12 @@ utf8_next(char * p)
 }
 
 /* ============================================================ */
-/* Replaces any UTF-8 glyph present in s by a dot in-place      */
+/* Replaces any UTF-8 glyph present in s by a substitution      */
+/* character in-place.                                          */
 /* s will be modified but its address in memory will not change */
 /* ============================================================ */
 void
-utf8_sanitize(char * s)
+utf8_sanitize(char * s, char substitute)
 {
   char * p = s;
   int    n;
@@ -236,7 +242,7 @@ utf8_sanitize(char * s)
     n = utf8_get_length(*p);
     if (n > 1)
     {
-      *p = '.';
+      *p = substitute;
       memmove(p + 1, p + n, len - (p - s) - n + 1);
       len -= (n - 1);
     }

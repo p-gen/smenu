@@ -187,6 +187,7 @@ struct timers_s
 struct misc_s
 {
   search_mode_t default_search_method;
+  char          invalid_char_substitute;
 };
 
 /* Terminal setting variables */
@@ -440,7 +441,7 @@ void
 setup_term(int const fd);
 
 void
-strip_ansi_color(char * s, toggle_t * toggle);
+strip_ansi_color(char * s, toggle_t * toggle, misc_t * misc);
 
 int
 tst_cb(void * elem);
@@ -450,14 +451,15 @@ tst_cb_cli(void * elem);
 
 int
 ini_load(const char * filename, win_t * win, term_t * term, limits_t * limits,
-         timers_t * timers, misc_t * misc,
+         timers_t * timers, misc_t * misc, langinfo_t * langinfo,
          int (*report)(win_t * win, term_t * term, limits_t * limits,
-                       timers_t * timers, misc_t * misc, const char * section,
-                       const char * name, char * value));
+                       timers_t * timers, misc_t * misc, langinfo_t * langinfo,
+                       const char * section, const char * name, char * value));
 
 int
 ini_cb(win_t * win, term_t * term, limits_t * limits, timers_t * timers,
-       misc_t * misc, const char * section, const char * name, char * value);
+       misc_t * misc, langinfo_t * langinfo, const char * section,
+       const char * name, char * value);
 
 char *
 make_ini_path(char * name, char * base);
@@ -516,11 +518,12 @@ disp_word(long pos, search_mode_t search_mode, search_data_t * search_data,
           term_t * term, win_t * win, char * tmp_word);
 
 size_t
-expand(char * src, char * dest, langinfo_t * langinfo, toggle_t * toggle);
+expand(char * src, char * dest, langinfo_t * langinfo, toggle_t * toggle,
+       misc_t * misc);
 
 int
 get_bytes(FILE * input, char * utf8_buffer, ll_t * ignored_glyphs_list,
-          langinfo_t * langinfo);
+          langinfo_t * langinfo, misc_t * misc);
 
 int
 get_scancode(unsigned char * s, size_t max);
@@ -529,7 +532,7 @@ char *
 get_word(FILE * input, ll_t * word_delims_list, ll_t * record_delims_list,
          ll_t * ignored_glyphs_list, char * utf8_buffer,
          unsigned char * is_last, toggle_t * toggle, langinfo_t * langinfo,
-         win_t * win, limits_t * limits);
+         win_t * win, limits_t * limits, misc_t * misc);
 
 void
 left_margin_putp(char * s, term_t * term, win_t * win);
@@ -551,7 +554,7 @@ void
 parse_selectors(char * str, filters_t * filter, char * unparsed,
                 ll_t ** inc_interval_list, ll_t ** inc_regex_list,
                 ll_t ** exc_interval_list, ll_t ** exc_regex_list,
-                langinfo_t * langinfo);
+                langinfo_t * langinfo, misc_t * misc);
 
 int
 replace(char * orig, sed_t * sed);

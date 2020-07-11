@@ -32,10 +32,10 @@ wchar_t *
 utf8_strtowcs(char * s);
 
 void
-utf8_sanitize(char * s);
+utf8_sanitize(char * s, char sc);
 
-void
-utf8_interpret(char * s, langinfo_t * langinfo);
+int
+utf8_interpret(char * s, langinfo_t * langinfo, char sc);
 
 int
 utf8_validate(const char * str, size_t length);

@@ -108,17 +108,11 @@ characters \fIa\fP \fIb\fP \fIt\fP \fIn\fP \fIv\fP \fIf\fP \fIr\fP and
 
 UTF-8 sequences introduced by \fI\\u\fP are also understood.
 \fI\\u\fP can be followed by 2,4,6 or 8 hexadecimal characters.
-An invalid UTF-8 sequence will be replaced by a dot  (\fI.\fP), see
-also below.
-
-Example: \fI\\uc3a9\fP means latin small letter e with acute.
+Here is an example of using \fI\\u\fP to represent a lowercase latin
+e with acute: \fI\\uc3a9\fP.
 .PP
 Note that with most shells, the \fI\\\fP before the \fIu\fP need to be
 protected or escaped.
-.PP
-Note also that a dot, which is the consequence of an invalid UTF-8
-sequence, will not be distinguished from a dot normally present in the
-input stream.
 .PP
 Quotations (single and double) in the input stream can be used to ignore
 the word separators so that a group of words are taken as a single entity.
@@ -126,7 +120,13 @@ the word separators so that a group of words are taken as a single entity.
 Non printable characters in words that are not delimiters are
 converted to their traditional form (\fI\\n\fP for end-of-line,
 \fI\\t\fP for tabulation...) by default.
-A single dot (\fI.\fP) is also used as a placeholder otherwise.
+.PP
+An invalid UTF-8 sequence or other non-printable character will be
+replaced by a dot (\fI.\fP) by default.
+.PP
+There are nevertheless a possibilities to change this substitution
+character with another \fBASCII\fP printable one with the help of the
+command line option \fB-.\fP|\fB-dot\fP|\fB-invalid\fP.
 .PP
 Words containing only spaces, entered directly or resulting from a
 substitution, are also rejected unless they are not selectable.
@@ -134,16 +134,16 @@ This allows special effects like creating blank lines for example.
 These words are also kept in column mode, selectable or not.
 .PP
 \fBWarning\fP, \fBUTF-8\fP encoded codepoints are quietly converted
-into dots (\fI.\fP) when the user locale is not \fBUTF-8\fP aware like
-\fBPOSIX\fP or \fBC\fP by example.
+into the substitution character when the user locale is not \fBUTF-8\fP
+aware like \fBPOSIX\fP or \fBC\fP by example.
 .PP
 smenu has an option to define a set of characters or UTF-8 sequences
-wich should be ignored when reading words from the input.
+which should be ignored when reading words.
 This can be very useful when dealing with inputs where the EOL sequence
 consists in more than one character.
 .PP
 A typical example is DOS or Windows files with lines ending with
-\fICRLF\fI.
+\fICRLF\fP.
 In such a case one might decide to ignore all \fICR\fP characters from
 the input.
 .PP
@@ -670,7 +670,7 @@ by \fB-I\fP|\fB-si\fP|\fB-subst_included\fP or
 
 Displays a message above the window.
 If the current locale is not \fIUTF-8\fP, then all \fIUTF-8\fP characters
-in it will be converted into a dot.
+will be replaced by the substitution character.
 
 \fI\\u\fP sequences can be used in the message.
 
@@ -1017,6 +1017,12 @@ value is used.
 
 Replaces all non-printable characters by a blank.
 If this results in a blank word, it will be potentially deleted.
+.IP "\fB-.\fP|\fB-dot\fP|\fB-invalid\fP"
+(Allowed in all contexts)
+
+Sets the substitution character for non-printable characters.
+When this parameter is not used, the default substitution character is
+a single dot.
 .IP "\fB-M\fP|\fB-middle\fP|\fB-center\fP"
 (Allowed in all contexts)
 

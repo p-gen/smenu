@@ -418,7 +418,8 @@ apply_attr(term_t * term, attr_t attr)
 /* ===================================================== */
 int
 ini_cb(win_t * win, term_t * term, limits_t * limits, timers_t * timers,
-       misc_t * misc, const char * section, const char * name, char * value)
+       misc_t * misc, langinfo_t * langinfo, const char * section,
+       const char * name, char * value)
 {
   int error      = 0;
   int has_colors = (term->colors > 7);
@@ -605,6 +606,7 @@ ini_cb(win_t * win, term_t * term, limits_t * limits, timers_t * timers,
     /* [misc] section */
     /* """""""""""""""" */
     if (strcmp(name, "default_search_method") == 0)
+    {
       if (misc->default_search_method == NONE)
       {
         if (strcmp(value, "prefix") == 0)
@@ -614,6 +616,7 @@ ini_cb(win_t * win, term_t * term, limits_t * limits, timers_t * timers,
         else if (strcmp(value, "substring") == 0)
           misc->default_search_method = SUBSTRING;
       }
+    }
   }
 
 out:
@@ -633,10 +636,10 @@ out:
 /* ======================================================================== */
 int
 ini_load(const char * filename, win_t * win, term_t * term, limits_t * limits,
-         timers_t * timers, misc_t * misc,
+         timers_t * timers, misc_t * misc, langinfo_t * langinfo,
          int (*report)(win_t * win, term_t * term, limits_t * limits,
-                       timers_t * timers, misc_t * misc, const char * section,
-                       const char * name, char * value))
+                       timers_t * timers, misc_t * misc, langinfo_t * langinfo,
+                       const char * section, const char * name, char * value))
 {
   char   name[64]     = "";
   char   value[256]   = "";
@@ -685,7 +688,8 @@ ini_load(const char * filename, win_t * win, term_t * term, limits_t * limits,
 
       /* Callback function calling */
       /* """"""""""""""""""""""""" */
-      error = report(win, term, limits, timers, misc, section, name, value);
+      error = report(win, term, limits, timers, misc, langinfo, section, name,
+                     value);
 
       if (error)
         goto out;
@@ -1502,7 +1506,7 @@ void
 parse_selectors(char * str, filters_t * filter, char * unparsed,
                 ll_t ** inc_interval_list, ll_t ** inc_regex_list,
                 ll_t ** exc_interval_list, ll_t ** exc_regex_list,
-                langinfo_t * langinfo)
+                langinfo_t * langinfo, misc_t * misc)
 {
   char         mark; /* Value to set */
   char         c;
@@ -1514,7 +1518,7 @@ parse_selectors(char * str, filters_t * filter, char * unparsed,
   /* Replace the UTF-8 ascii representation in the selector by */
   /* their binary values.                                      */
   /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-  utf8_interpret(str, langinfo);
+  utf8_interpret(str, langinfo, misc->invalid_char_substitute);
 
   /* Get the first character to see if this is */
   /* an additive or restrictive operation.     */
@@ -2063,7 +2067,7 @@ fail:
 /* Memory space for d must have been allocated before.          */
 /* ============================================================ */
 void
-strip_ansi_color(char * s, toggle_t * toggle)
+strip_ansi_color(char * s, toggle_t * toggle, misc_t * misc)
 {
   char * p   = s;
   long   len = strlen(s);
@@ -2075,18 +2079,16 @@ strip_ansi_color(char * s, toggle_t * toggle)
     if ((*s == 0x1b) && (*(s + 1) == '['))
     {
       while ((*s != '\0') && (*s++ != 'm'))
-      {
-        /* Do nothing */
-      }
+        ;
     }
-    /* Convert a single \x1b in '.' */
-    /* """""""""""""""""""""""""""" */
+    /* Convert a single \x1b in the invalid substitute character */
+    /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""" */
     else if (*s == 0x1b)
     {
       if (toggle->blank_nonprintable && len > 1)
         *s++ = ' ';
       else
-        *s++ = '.';
+        *s++ = misc->invalid_char_substitute;
       p++;
     }
     /* No ESC char, we can move on */
@@ -2301,7 +2303,7 @@ buffer_cmp(const void * a, const void * b)
 /* ===================================================================== */
 int
 get_bytes(FILE * input, char * utf8_buffer, ll_t * zapped_glyphs_list,
-          langinfo_t * langinfo)
+          langinfo_t * langinfo, misc_t * misc)
 {
   int byte;
   int last;
@@ -2341,7 +2343,7 @@ get_bytes(FILE * input, char * utf8_buffer, ll_t * zapped_glyphs_list,
     /* """""""""""""""""""""""""""""""""""""""""""""""""""""""" */
     if (langinfo->utf8 && !utf8_validate(utf8_buffer, last))
     {
-      byte = utf8_buffer[0] = '.';
+      byte = utf8_buffer[0] = misc->invalid_char_substitute;
       utf8_buffer[1]        = '\0';
     }
   } while (ll_find(zapped_glyphs_list, utf8_buffer, buffer_cmp) != NULL);
@@ -2355,7 +2357,8 @@ get_bytes(FILE * input, char * utf8_buffer, ll_t * zapped_glyphs_list,
 /* dest must be long enough to contain the expanded string                */
 /* ====================================================================== */
 size_t
-expand(char * src, char * dest, langinfo_t * langinfo, toggle_t * toggle)
+expand(char * src, char * dest, langinfo_t * langinfo, toggle_t * toggle,
+       misc_t * misc)
 {
   char   c;
   int    n;
@@ -2390,7 +2393,7 @@ expand(char * src, char * dest, langinfo_t * langinfo, toggle_t * toggle)
           /* ''''''''''''''' */
         } while (--n && ('\0' != *(src++)));
 
-        *(ptr++) = '.';
+        *(ptr++) = misc->invalid_char_substitute;
         len++;
       }
     }
@@ -2459,7 +2462,7 @@ expand(char * src, char * dest, langinfo_t * langinfo, toggle_t * toggle)
               *(ptr++) = ' ';
             else
             {
-              *(ptr++)   = '.';
+              *(ptr++)   = misc->invalid_char_substitute;
               all_spaces = 0;
             }
           }
@@ -2489,7 +2492,7 @@ char *
 get_word(FILE * input, ll_t * word_delims_list, ll_t * record_delims_list,
          ll_t * zapped_glyphs_list, char * utf8_buffer, unsigned char * is_last,
          toggle_t * toggle, langinfo_t * langinfo, win_t * win,
-         limits_t * limits)
+         limits_t * limits, misc_t * misc)
 {
   char * temp = NULL;
   int    byte;
@@ -2501,7 +2504,7 @@ get_word(FILE * input, ll_t * word_delims_list, ll_t * record_delims_list,
 
   /* Skip leading delimiters */
   /* """"""""""""""""""""""" */
-  byte = get_bytes(input, utf8_buffer, zapped_glyphs_list, langinfo);
+  byte = get_bytes(input, utf8_buffer, zapped_glyphs_list, langinfo, misc);
 
   while (byte == EOF
          || ll_find(word_delims_list, utf8_buffer, buffer_cmp) != NULL)
@@ -2509,7 +2512,7 @@ get_word(FILE * input, ll_t * word_delims_list, ll_t * record_delims_list,
     if (byte == EOF)
       return NULL;
 
-    byte = get_bytes(input, utf8_buffer, zapped_glyphs_list, langinfo);
+    byte = get_bytes(input, utf8_buffer, zapped_glyphs_list, langinfo, misc);
   }
 
   /* Allocate initial word storage space */
@@ -2637,7 +2640,7 @@ get_word(FILE * input, ll_t * word_delims_list, ll_t * record_delims_list,
     is_special = 0;
 
   next:
-    byte = get_bytes(input, utf8_buffer, zapped_glyphs_list, langinfo);
+    byte = get_bytes(input, utf8_buffer, zapped_glyphs_list, langinfo, misc);
   }
 
   /* Nul-terminate the word to make it a string */
@@ -2647,18 +2650,18 @@ get_word(FILE * input, ll_t * word_delims_list, ll_t * record_delims_list,
   /* Replace the UTF-8 ASCII representations in the word just */
   /* read by their binary values.                             */
   /* """""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-  utf8_interpret(temp, langinfo);
+  utf8_interpret(temp, langinfo, misc->invalid_char_substitute);
 
   /* Skip all field delimiters before a record delimiter */
   /* """"""""""""""""""""""""""""""""""""""""""""""""""" */
   if (ll_find(record_delims_list, utf8_buffer, buffer_cmp) == NULL)
   {
-    byte = get_bytes(input, utf8_buffer, zapped_glyphs_list, langinfo);
+    byte = get_bytes(input, utf8_buffer, zapped_glyphs_list, langinfo, misc);
 
     while (byte != EOF
            && ll_find(word_delims_list, utf8_buffer, buffer_cmp) != NULL
            && ll_find(record_delims_list, utf8_buffer, buffer_cmp) == NULL)
-      byte = get_bytes(input, utf8_buffer, zapped_glyphs_list, langinfo);
+      byte = get_bytes(input, utf8_buffer, zapped_glyphs_list, langinfo, misc);
 
     if (langinfo->utf8 && utf8_get_length(utf8_buffer[0]) > 1)
     {
@@ -2684,7 +2687,7 @@ get_word(FILE * input, ll_t * word_delims_list, ll_t * record_delims_list,
 
   /* Remove the ANSI color escape sequences from the word */
   /* """""""""""""""""""""""""""""""""""""""""""""""""""" */
-  strip_ansi_color(temp, toggle);
+  strip_ansi_color(temp, toggle, misc);
 
   return temp;
 }
@@ -4791,9 +4794,10 @@ start_pattern_action(char * ctx_name, char * opt_name, char * param,
 {
   char **      pre_selection_index = opt_data[0];
   langinfo_t * langinfo            = opt_data[1];
+  misc_t *     misc                = opt_data[2];
 
   *pre_selection_index = xstrdup(values[0]);
-  utf8_interpret(*pre_selection_index, langinfo);
+  utf8_interpret(*pre_selection_index, langinfo, misc->invalid_char_substitute);
 }
 
 void
@@ -4803,11 +4807,12 @@ title_action(char * ctx_name, char * opt_name, char * param, int nb_values,
 {
   char **      message  = opt_data[0];
   langinfo_t * langinfo = opt_data[1];
+  misc_t *     misc     = opt_data[2];
 
   *message = xstrdup(values[0]);
   if (!langinfo->utf8)
-    utf8_sanitize(*message);
-  utf8_interpret(*message, langinfo);
+    utf8_sanitize(*message, misc->invalid_char_substitute);
+  utf8_interpret(*message, langinfo, misc->invalid_char_substitute);
 }
 
 void
@@ -4883,12 +4888,28 @@ toggle_action(char * ctx_name, char * opt_name, char * param, int nb_values,
 }
 
 void
+invalid_char_action(char * ctx_name, char * opt_name, char * param,
+                    int nb_values, char ** values, int nb_opt_data,
+                    void ** opt_data, int nb_ctx_data, void ** ctx_data)
+{
+  misc_t * misc = opt_data[0];
+
+  char ic = *values[0];
+
+  if (isprint(ic))
+    misc->invalid_char_substitute = ic;
+  else
+    misc->invalid_char_substitute = '.';
+}
+
+void
 gutter_action(char * ctx_name, char * opt_name, char * param, int nb_values,
               char ** values, int nb_opt_data, void ** opt_data,
               int nb_ctx_data, void ** ctx_data)
 {
   win_t *      win      = opt_data[0];
   langinfo_t * langinfo = opt_data[1];
+  misc_t *     misc     = opt_data[2];
 
   if (nb_values == 0)
   {
@@ -4917,8 +4938,9 @@ gutter_action(char * ctx_name, char * opt_name, char * param, int nb_values,
 
     gutter = xstrdup(values[0]);
 
-    utf8_interpret(gutter, langinfo); /* Guarantees a well formed *
-                                       * UTF-8 string             */
+    utf8_interpret(gutter, langinfo,
+                   misc->invalid_char_substitute); /* Guarantees a well formed *
+                                                    * UTF-8 string */
 
     win->gutter_nb = utf8_strlen(gutter);
     win->gutter_a  = xmalloc(win->gutter_nb * sizeof(char *));
@@ -5017,6 +5039,7 @@ post_subst_action(char * ctx_name, char * opt_name, char * param, int nb_values,
 {
   ll_t **      list     = opt_data[0];
   langinfo_t * langinfo = opt_data[1];
+  misc_t *     misc     = opt_data[2];
 
   sed_t * sed_node;
   int     i;
@@ -5028,7 +5051,7 @@ post_subst_action(char * ctx_name, char * opt_name, char * param, int nb_values,
   {
     sed_node          = xmalloc(sizeof(sed_t));
     sed_node->pattern = xstrdup(values[i]);
-    utf8_interpret(sed_node->pattern, langinfo);
+    utf8_interpret(sed_node->pattern, langinfo, misc->invalid_char_substitute);
     sed_node->stop = 0;
     ll_append(*list, sed_node);
   }
@@ -5044,13 +5067,15 @@ special_level_action(char * ctx_name, char * opt_name, char * param,
   term_t *     term            = opt_data[2];
   langinfo_t * langinfo        = opt_data[3];
   attr_t *     init_attr       = opt_data[4];
+  misc_t *     misc            = opt_data[5];
 
   attr_t attr = *init_attr;
   char   opt  = param[strlen(param) - 1]; /* last character of param */
   int    i;
 
   special_pattern[opt - '1'] = xstrdup(values[0]);
-  utf8_interpret(special_pattern[opt - '1'], langinfo);
+  utf8_interpret(special_pattern[opt - '1'], langinfo,
+                 misc->invalid_char_substitute);
 
   /* Parse optional additional arguments */
   /* """"""""""""""""""""""""""""""""""" */
@@ -5230,6 +5255,7 @@ timeout_action(char * ctx_name, char * opt_name, char * param, int nb_values,
                int nb_ctx_data, void ** ctx_data)
 {
   langinfo_t * langinfo = opt_data[0];
+  misc_t *     misc     = opt_data[1];
 
   if (strcmp(opt_name, "hidden_timeout") == 0)
     quiet_timeout = 1;
@@ -5244,7 +5270,7 @@ timeout_action(char * ctx_name, char * opt_name, char * param, int nb_values,
     {
       timeout.mode = WORD;
       timeout_word = xstrdup(values[1]);
-      utf8_interpret(timeout_word, langinfo);
+      utf8_interpret(timeout_word, langinfo, misc->invalid_char_substitute);
     }
     else
     {
@@ -5272,9 +5298,10 @@ force_first_column_action(char * ctx_name, char * opt_name, char * param,
 {
   char **      first_word_pattern = opt_data[0];
   langinfo_t * langinfo           = opt_data[1];
+  misc_t *     misc               = opt_data[2];
 
   *first_word_pattern = xstrdup(values[0]);
-  utf8_interpret(*first_word_pattern, langinfo);
+  utf8_interpret(*first_word_pattern, langinfo, misc->invalid_char_substitute);
 }
 
 void
@@ -5284,9 +5311,10 @@ force_last_column_action(char * ctx_name, char * opt_name, char * param,
 {
   char **      last_word_pattern = opt_data[0];
   langinfo_t * langinfo          = opt_data[1];
+  misc_t *     misc              = opt_data[2];
 
   *last_word_pattern = xstrdup(values[0]);
-  utf8_interpret(*last_word_pattern, langinfo);
+  utf8_interpret(*last_word_pattern, langinfo, misc->invalid_char_substitute);
 }
 
 void
@@ -5296,9 +5324,10 @@ zapped_glyphs_action(char * ctx_name, char * opt_name, char * param,
 {
   char **      glyph    = opt_data[0];
   langinfo_t * langinfo = opt_data[1];
+  misc_t *     misc     = opt_data[2];
 
   *glyph = xstrdup(values[0]);
-  utf8_interpret(*glyph, langinfo);
+  utf8_interpret(*glyph, langinfo, misc->invalid_char_substitute);
 }
 
 void
@@ -5308,9 +5337,10 @@ separators_action(char * ctx_name, char * opt_name, char * param, int nb_values,
 {
   char **      sep      = opt_data[0];
   langinfo_t * langinfo = opt_data[1];
+  misc_t *     misc     = opt_data[2];
 
   *sep = xstrdup(values[0]);
-  utf8_interpret(*sep, langinfo);
+  utf8_interpret(*sep, langinfo, misc->invalid_char_substitute);
 }
 
 void
@@ -5321,13 +5351,14 @@ tag_mode_action(char * ctx_name, char * opt_name, char * param, int nb_values,
   toggle_t *   toggle   = opt_data[0];
   win_t *      win      = opt_data[1];
   langinfo_t * langinfo = opt_data[2];
+  misc_t *     misc     = opt_data[3];
 
   toggle->taggable = 1;
 
   if (nb_values == 1)
   {
     win->sel_sep = xstrdup(values[0]);
-    utf8_interpret(win->sel_sep, langinfo);
+    utf8_interpret(win->sel_sep, langinfo, misc->invalid_char_substitute);
   }
 }
 
@@ -5339,6 +5370,7 @@ pin_mode_action(char * ctx_name, char * opt_name, char * param, int nb_values,
   toggle_t *   toggle   = opt_data[0];
   win_t *      win      = opt_data[1];
   langinfo_t * langinfo = opt_data[2];
+  misc_t *     misc     = opt_data[3];
 
   toggle->taggable = 1;
   toggle->pinable  = 1;
@@ -5346,7 +5378,7 @@ pin_mode_action(char * ctx_name, char * opt_name, char * param, int nb_values,
   if (nb_values == 1)
   {
     win->sel_sep = xstrdup(values[0]);
-    utf8_interpret(win->sel_sep, langinfo);
+    utf8_interpret(win->sel_sep, langinfo, misc->invalid_char_substitute);
   }
 }
 
@@ -5417,6 +5449,7 @@ da_options_action(char * ctx_name, char * opt_name, char * param, int nb_values,
 {
   langinfo_t * langinfo      = opt_data[0];
   long *       daccess_index = opt_data[1];
+  misc_t *     misc          = opt_data[2];
 
   int       pos;
   wchar_t * w;
@@ -5435,7 +5468,7 @@ da_options_action(char * ctx_name, char * opt_name, char * param, int nb_values,
         free(daccess.left);
 
         daccess.left = xstrdup(value + 2);
-        utf8_interpret(daccess.left, langinfo);
+        utf8_interpret(daccess.left, langinfo, misc->invalid_char_substitute);
 
         if (utf8_strlen(daccess.left) != 1)
         {
@@ -5460,7 +5493,7 @@ da_options_action(char * ctx_name, char * opt_name, char * param, int nb_values,
         free(daccess.right);
 
         daccess.right = xstrdup(value + 2);
-        utf8_interpret(daccess.right, langinfo);
+        utf8_interpret(daccess.right, langinfo, misc->invalid_char_substitute);
 
         if (utf8_strlen(daccess.right) != 1)
         {
@@ -5601,7 +5634,8 @@ da_options_action(char * ctx_name, char * opt_name, char * param, int nb_values,
         free(daccess.num_sep);
 
         daccess.num_sep = xstrdup(value + 2);
-        utf8_interpret(daccess.num_sep, langinfo);
+        utf8_interpret(daccess.num_sep, langinfo,
+                       misc->invalid_char_substitute);
 
         if (utf8_strlen(daccess.num_sep) != 1)
         {
@@ -6193,6 +6227,10 @@ main(int argc, char * argv[])
   /* """"""""""""""""""""""""""""""""""""""""""""""" */
   get_terminal_size(&term.nlines, &term.ncolumns);
 
+  /* Default substitution character on invalid input. */
+  /* """""""""""""""""""""""""""""""""""""""""""""""" */
+  misc.invalid_char_substitute = '.';
+
   /* Command line options setting */
   /* """""""""""""""""""""""""""" */
   ctxopt_init(argv[0], "stop_if_non_option=No "
@@ -6211,6 +6249,7 @@ main(int argc, char * argv[])
                    "[zapped_glyphs #bytes] "
                    "[lines [#height]] "
                    "[blank_nonprintable] "
+                   "[*invalid_character #invalid_char_subst] "
                    "[center_mode] "
                    "[clean] "
                    "[keep_spaces] "
@@ -6333,6 +6372,7 @@ main(int argc, char * argv[])
   ctxopt_add_opt_settings(parameters, "field_da_number",
                           "-F -en -embedded_number");
   ctxopt_add_opt_settings(parameters, "da_options", "-D -data -options");
+  ctxopt_add_opt_settings(parameters, "invalid_character", "-. -dot -invalid");
   ctxopt_add_opt_settings(parameters, "blank_nonprintable", "-b -blank");
   ctxopt_add_opt_settings(parameters, "center_mode", "-M -middle -center");
   ctxopt_add_opt_settings(parameters, "clean",
@@ -6389,6 +6429,8 @@ main(int argc, char * argv[])
   /* """""""""""""" */
 
   ctxopt_add_opt_settings(actions, "auto_tag", toggle_action, &toggle, NULL);
+  ctxopt_add_opt_settings(actions, "invalid_character", invalid_char_action,
+                          &misc, NULL);
   ctxopt_add_opt_settings(actions, "blank_nonprintable", toggle_action, &toggle,
                           NULL);
   ctxopt_add_opt_settings(actions, "center_mode", center_mode_action, &win,
@@ -6407,7 +6449,7 @@ main(int argc, char * argv[])
   ctxopt_add_opt_settings(actions, "exclude_re", exclude_re_action,
                           &pattern_def_include, &exclude_pattern, NULL);
   ctxopt_add_opt_settings(actions, "gutter", gutter_action, &win, &langinfo,
-                          NULL);
+                          &misc, NULL);
   ctxopt_add_opt_settings(actions, "help", help_action, NULL);
   ctxopt_add_opt_settings(actions, "long_help", long_help_action, NULL);
   ctxopt_add_opt_settings(actions, "usage", usage_action, NULL);
@@ -6418,56 +6460,57 @@ main(int argc, char * argv[])
   ctxopt_add_opt_settings(actions, "no_scoll_bar", toggle_action, &toggle,
                           NULL);
   ctxopt_add_opt_settings(actions, "start_pattern", start_pattern_action,
-                          &pre_selection_index, &langinfo, NULL);
+                          &pre_selection_index, &langinfo, &misc, NULL);
   ctxopt_add_opt_settings(actions, "title", title_action, &message, &langinfo,
-                          NULL);
+                          &misc, NULL);
   ctxopt_add_opt_settings(actions, "validate_in_search_mode", toggle_action,
                           &toggle, NULL);
   ctxopt_add_opt_settings(actions, "version", version_action, NULL);
   ctxopt_add_opt_settings(actions, "visual_bell", toggle_action, &toggle, NULL);
   ctxopt_add_opt_settings(actions, "wide_mode", wide_mode_action, &win, NULL);
   ctxopt_add_opt_settings(actions, "post_subst_all", post_subst_action,
-                          &sed_list, &langinfo, NULL);
+                          &sed_list, &langinfo, &misc, NULL);
   ctxopt_add_opt_settings(actions, "post_subst_included", post_subst_action,
-                          &include_sed_list, &langinfo, NULL);
+                          &include_sed_list, &langinfo, &misc, NULL);
   ctxopt_add_opt_settings(actions, "post_subst_excluded", post_subst_action,
-                          &exclude_sed_list, &langinfo, NULL);
+                          &exclude_sed_list, &langinfo, &misc, NULL);
   ctxopt_add_opt_settings(actions, "special_level_1", special_level_action,
                           special_pattern, &win, &term, &langinfo, &init_attr,
-                          NULL);
+                          &misc, NULL);
   ctxopt_add_opt_settings(actions, "special_level_2", special_level_action,
                           special_pattern, &win, &term, &langinfo, &init_attr,
-                          NULL);
+                          &misc, NULL);
   ctxopt_add_opt_settings(actions, "special_level_3", special_level_action,
                           special_pattern, &win, &term, &langinfo, &init_attr,
-                          NULL);
+                          &misc, NULL);
   ctxopt_add_opt_settings(actions, "special_level_4", special_level_action,
                           special_pattern, &win, &term, &langinfo, &init_attr,
-                          NULL);
+                          &misc, NULL);
   ctxopt_add_opt_settings(actions, "special_level_5", special_level_action,
                           special_pattern, &win, &term, &langinfo, &init_attr,
-                          NULL);
+                          &misc, NULL);
   ctxopt_add_opt_settings(actions, "attributes", attributes_action, &win, &term,
                           &init_attr, NULL);
-  ctxopt_add_opt_settings(actions, "timeout", timeout_action, &langinfo, NULL);
+  ctxopt_add_opt_settings(actions, "timeout", timeout_action, &langinfo, &misc,
+                          NULL);
   ctxopt_add_opt_settings(actions, "hidden_timeout", timeout_action, &langinfo,
                           NULL);
   ctxopt_add_opt_settings(actions, "force_first_column",
                           force_first_column_action, &first_word_pattern,
-                          &langinfo, NULL);
+                          &langinfo, &misc, NULL);
   ctxopt_add_opt_settings(actions, "force_last_column",
                           force_last_column_action, &last_word_pattern,
-                          &langinfo, NULL);
+                          &langinfo, &misc, NULL);
   ctxopt_add_opt_settings(actions, "word_separators", separators_action, &iws,
-                          &langinfo, NULL);
+                          &langinfo, &misc, NULL);
   ctxopt_add_opt_settings(actions, "line_separators", separators_action, &ils,
-                          &langinfo, NULL);
+                          &langinfo, &misc, NULL);
   ctxopt_add_opt_settings(actions, "zapped_glyphs", zapped_glyphs_action, &zg,
-                          &langinfo, NULL);
+                          &langinfo, &misc, NULL);
   ctxopt_add_opt_settings(actions, "tag_mode", tag_mode_action, &toggle, &win,
-                          &langinfo, NULL);
+                          &langinfo, &misc, NULL);
   ctxopt_add_opt_settings(actions, "pin_mode", pin_mode_action, &toggle, &win,
-                          &langinfo, NULL);
+                          &langinfo, &misc, NULL);
   ctxopt_add_opt_settings(actions, "search_method", search_method_action, &misc,
                           NULL);
   ctxopt_add_opt_settings(actions, "auto_da_number", auto_da_action,
@@ -6477,7 +6520,7 @@ main(int argc, char * argv[])
   ctxopt_add_opt_settings(actions, "field_da_number", field_da_number_action,
                           NULL);
   ctxopt_add_opt_settings(actions, "da_options", da_options_action, &langinfo,
-                          &daccess_index, NULL);
+                          &daccess_index, &misc, NULL);
 
   /* ctxopt constraints */
   /* """""""""""""""""" */
@@ -6533,10 +6576,10 @@ main(int argc, char * argv[])
   /* the inclusion and exclusion patterns.                             */
   /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
   if (include_pattern != NULL)
-    utf8_interpret(include_pattern, &langinfo);
+    utf8_interpret(include_pattern, &langinfo, misc.invalid_char_substitute);
 
   if (exclude_pattern != NULL)
-    utf8_interpret(exclude_pattern, &langinfo);
+    utf8_interpret(exclude_pattern, &langinfo, misc.invalid_char_substitute);
 
   /* If we did not impose the number of columns, use the whole */
   /* terminal width                                            */
@@ -6615,7 +6658,8 @@ main(int argc, char * argv[])
 
   if (custom_ini_file != NULL)
   {
-    if (ini_load(custom_ini_file, &win, &term, &limits, &timers, &misc, ini_cb))
+    if (ini_load(custom_ini_file, &win, &term, &limits, &timers, &misc,
+                 &langinfo, ini_cb))
       exit(EXIT_FAILURE);
   }
   else
@@ -6627,10 +6671,12 @@ main(int argc, char * argv[])
 
     /* Set the attributes from the configuration file if possible */
     /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-    if (ini_load(home_ini_file, &win, &term, &limits, &timers, &misc, ini_cb))
+    if (ini_load(home_ini_file, &win, &term, &limits, &timers, &misc, &langinfo,
+                 ini_cb))
       exit(EXIT_FAILURE);
 
-    if (ini_load(local_ini_file, &win, &term, &limits, &timers, &misc, ini_cb))
+    if (ini_load(local_ini_file, &win, &term, &limits, &timers, &misc,
+                 &langinfo, ini_cb))
       exit(EXIT_FAILURE);
 
     free(home_ini_file);
@@ -7284,7 +7330,8 @@ main(int argc, char * argv[])
 
       parse_selectors(rows_selector, &filter_type, unparsed,
                       &inc_row_interval_list, &inc_row_regex_list,
-                      &exc_row_interval_list, &exc_row_regex_list, &langinfo);
+                      &exc_row_interval_list, &exc_row_regex_list, &langinfo,
+                      &misc);
 
       if (*unparsed != '\0')
       {
@@ -7323,7 +7370,8 @@ main(int argc, char * argv[])
 
       parse_selectors(cols_selector, &filter_type, unparsed,
                       &inc_col_interval_list, &inc_col_regex_list,
-                      &exc_col_interval_list, &exc_col_regex_list, &langinfo);
+                      &exc_col_interval_list, &exc_col_regex_list, &langinfo,
+                      &misc);
 
       if (*unparsed != '\0')
       {
@@ -7435,7 +7483,7 @@ main(int argc, char * argv[])
   /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
   while ((word = get_word(input_file, word_delims_list, record_delims_list,
                           zapped_glyphs_list, utf8_buffer, &is_last, &toggle,
-                          &langinfo, &win, &limits))
+                          &langinfo, &win, &limits, &misc))
          != NULL)
   {
     int selectable;
@@ -8261,7 +8309,7 @@ main(int argc, char * argv[])
     word_len = strlen(word->str);
 
     expanded_word = xmalloc(5 * word_len + 1);
-    len           = expand(word->str, expanded_word, &langinfo, &toggle);
+    len           = expand(word->str, expanded_word, &langinfo, &toggle, &misc);
 
     /* Update it if needed */
     /* ''''''''''''''''''' */
