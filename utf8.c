@@ -21,7 +21,9 @@
 /* Unicode (UTF-8) ascii representation interpreter.                       */
 /* The string passed will be altered but its address will not change.      */
 /* All hexadecimal sequences of \uxx, \uxxxx, \uxxxxxx and \uxxxxxxxx will */
-/* be replace by the corresponding UTF-8 character.                        */
+/* be replace by the corresponding UTF-8 character when possible.          */
+/* When not possible the substitution character is substituted in place.   */
+/* Returns 0 if the conversion has faild else 1.                           */
 /* ======================================================================= */
 int
 utf8_interpret(char * s, langinfo_t * langinfo, char substitute)
@@ -83,6 +85,7 @@ utf8_interpret(char * s, langinfo_t * langinfo, char substitute)
       {
         int    n;
         size_t i;
+        char   b[2] = { ' ', ' ' };
 
         /* They are valid, deduce from them the length of the sequence */
         /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
@@ -93,14 +96,16 @@ utf8_interpret(char * s, langinfo_t * langinfo, char substitute)
         /* replace the \u sequence by the bytes forming the UTF-8 char */
         /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
 
-        *tmp = byte;
-
         /* Put the bytes in the tmp string */
         /* ''''''''''''''''''''''''''''''' */
+        *tmp = byte; /* Reuse the tmp array. */
+
         for (i = 1; i < utf8_ascii_len / 2; i++)
         {
-          n = sscanf(utf8_seq_offset + 2 * i, "%2x", &byte);
-          if (n == 0 || (byte & 0xc0) != 0x80)
+          n = sscanf(utf8_seq_offset + 2 * i, "%c%c", &b[0], &b[1]);
+          sscanf(b, "%x", &byte);
+
+          if (n < 2 || (byte & 0xc0) != 0x80)
             utf8_ascii_len = 2 * i; /* Force the new length according to the *
                                      | number of valid UTF-8 bytes read.     */
           else
@@ -110,7 +115,7 @@ utf8_interpret(char * s, langinfo_t * langinfo, char substitute)
 
         /* Does they form a valid UTF-8 char? */
         /* '''''''''''''''''''''''''''''''''' */
-        if (langinfo->utf8 && utf8_validate(tmp, utf8_ascii_len / 2))
+        if (utf8_validate(tmp, utf8_ascii_len / 2))
         {
           /* Put them back in the original string and move */
           /* the remaining bytes after them                */
@@ -130,11 +135,13 @@ utf8_interpret(char * s, langinfo_t * langinfo, char substitute)
           /* substitution character.               */
           /* ''''''''''''''''''''''''''''''''''''' */
           *utf8_str = substitute;
+
           if (utf8_to_eos_len < utf8_ascii_len)
             *(utf8_str + 1) = '\0';
           else
             memmove(utf8_str + 1, utf8_seq_offset + utf8_ascii_len,
                     utf8_to_eos_len - utf8_ascii_len - 2 + 1);
+
           utf8_ascii_len = 2;
           rc             = 0;
         }

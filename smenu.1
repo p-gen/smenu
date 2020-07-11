@@ -128,14 +128,14 @@ There are nevertheless a possibilities to change this substitution
 character with another \fBASCII\fP printable one with the help of the
 command line option \fB-.\fP|\fB-dot\fP|\fB-invalid\fP.
 .PP
+\fBWarning\fP, \fBUTF-8\fP encoded codepoints are quietly converted
+into the substitution character when the user locale is not \fBUTF-8\fP
+aware like \fBPOSIX\fP or \fBC\fP by example.
+.PP
 Words containing only spaces, entered directly or resulting from a
 substitution, are also rejected unless they are not selectable.
 This allows special effects like creating blank lines for example.
 These words are also kept in column mode, selectable or not.
-.PP
-\fBWarning\fP, \fBUTF-8\fP encoded codepoints are quietly converted
-into the substitution character when the user locale is not \fBUTF-8\fP
-aware like \fBPOSIX\fP or \fBC\fP by example.
 .PP
 smenu has an option to define a set of characters or UTF-8 sequences
 which should be ignored when reading words.
