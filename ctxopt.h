@@ -13,7 +13,9 @@ typedef enum
   constraints,
   actions,
   incompatibilities,
-  error_functions
+  error_functions,
+  before,
+  after,
 } settings;
 
 typedef enum

@@ -1382,6 +1382,9 @@ struct opt_s
   int eval_first; /* 1 if this option must be evaluated before the options   *
                    | without this mark.                                      */
 
+  ll_t * eval_before_list; /* List of pointers on options which must be      *
+                            | evaluated before this option.                  */
+
   ll_t * constraints_list; /* List of constraint check functions pointers.   */
 };
 
@@ -2350,6 +2353,21 @@ opt_parse(char * s, opt_t ** opt)
     }
   }
 
+  if (*s == ']')
+  {
+    /* Abort on extraneous ] if the option is mandatory. */
+    /* """"""""""""""""""""""""""""""""""""""""""""""""" */
+    if (!opt_optional)
+      return -(s - s_orig - 1);
+
+    s++; /* skip the ] */
+
+    if (!*s || isblank(*s))
+      goto success;
+    else
+      return -(s - s_orig - 1);
+  }
+
   /* A blank separates the option name and the argument tag. */
   /* """"""""""""""""""""""""""""""""""""""""""""""""""""""" */
   if (isblank(*s))
@@ -2498,6 +2516,7 @@ success:
   (*opt)->next_ctx              = next_ctx;
   (*opt)->ctx_list              = ll_new();
   (*opt)->constraints_list      = ll_new();
+  (*opt)->eval_before_list      = ll_new();
   (*opt)->action                = NULL;
   (*opt)->params                = NULL;
   (*opt)->data                  = NULL;
@@ -3388,7 +3407,56 @@ ctxopt_analyze(int nb_words, char ** words, int * nb_rem_args,
         /* the previous ones at the start of the opt_inst list.           */
         /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
         if (!opt->eval_first)
-          ll_append(ctx_inst->opt_inst_list, opt_inst);
+        {
+          /* Look if we have a registered dependency in the order of the */
+          /* evaluation of two options.                                  */
+          /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+          if (opt->eval_before_list->len > 0)
+          {
+            ll_t *      list = ctx_inst->opt_inst_list;
+            ll_node_t * opt_inst_node;
+
+            ll_t *      before_list = opt->eval_before_list;
+            ll_node_t * before_node = before_list->head;
+
+            ll_node_t * target_node = NULL; /* If not NULL, the new node   *
+                                            |  will be inserted before it. */
+
+            /* For each entry in eval_before_list, try to find if it       */
+            /* refers to an option already entered in the context. If this */
+            /* is the case, insert it just before it instead of putting it */
+            /* at the end.                                                 */
+            /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+            while (before_node != NULL)
+            {
+              opt_inst_node = list->head;
+
+              while (opt_inst_node != target_node)
+              {
+                opt_t * tmp_opt = (((opt_inst_t *)opt_inst_node->data))->opt;
+
+                /* We have found an option mentioned if the before_list  */
+                /* of the option we want to add. We can stop searching.  */
+                /* """"""""""""""""""""""""""""""""""""""""""""""""""""" */
+                if (strcmp(tmp_opt->name, ((opt_t *)before_node->data)->name))
+                  opt_inst_node = opt_inst_node->next;
+                else
+                  target_node = opt_inst_node; /* Set the target node. */
+              }
+
+              before_node = before_node->next;
+            }
+
+            /* Insert or append ? */
+            /* """""""""""""""""" */
+            if (target_node != NULL)
+              ll_insert_before(ctx_inst->opt_inst_list, target_node, opt_inst);
+            else
+              ll_append(ctx_inst->opt_inst_list, opt_inst);
+          }
+          else
+            ll_append(ctx_inst->opt_inst_list, opt_inst);
+        }
         else
         {
           ll_node_t *  opt_inst_node = ctx_inst->opt_inst_list->head;
@@ -4201,6 +4269,118 @@ ctxopt_add_opt_settings(settings s, ...)
       }
       else
         fatal_internal("Unknown option %s.", ptr);
+      break;
+    }
+
+    /* This part allows to indicate that an option must be evaluated */
+    /* after a list of other options.                                */
+    /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+    case after:
+    {
+      char * str;
+      ll_t * list;
+
+      /* The second argument must be a string. */
+      /* """"""""""""""""""""""""""""""""""""" */
+      ptr = va_arg(args, char *);
+
+      if ((opt = locate_opt(ptr)) != NULL)
+      {
+        char *  end_str;
+        char *  opt_name;
+        opt_t * opt_before;
+
+        ptr = va_arg(args, char *);
+
+        str = xstrdup(ptr);
+        ltrim(str, " \t");
+        rtrim(str, " \t", 0);
+
+        /* Feed the list of options to be evaluated after the given option. */
+        /* This list will contain pointers to options.                      */
+        /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+        opt_name = xstrtok_r(str, " \t,", &end_str);
+        if (opt_name != NULL)
+        {
+          if ((opt_before = locate_opt(opt_name)) != NULL)
+          {
+            ll_append(opt->eval_before_list, opt_before);
+            while ((opt_name = xstrtok_r(NULL, " \t,", &end_str)) != NULL)
+            {
+              if ((opt_before = locate_opt(opt_name)) != NULL)
+                ll_append(opt->eval_before_list, opt_before);
+              else
+                fatal_internal("Unknown option %s.", opt_name);
+            }
+          }
+          else
+            fatal_internal("Unknown option %s.", opt_name);
+        }
+        else
+          fatal_internal("Not enough options to be evaluated after %s.",
+                         opt->name);
+
+        free(str);
+      }
+      else
+        fatal_internal("Unknown option %s.", ptr);
+
+      break;
+    }
+
+    /* This part allows to indicate that an option must be evaluated */
+    /* before a list of other options.                               */
+    /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+    case before:
+    {
+      char * str;
+      ll_t * list;
+
+      /* The second argument must be a string. */
+      /* """"""""""""""""""""""""""""""""""""" */
+      ptr = va_arg(args, char *);
+
+      if ((opt = locate_opt(ptr)) != NULL)
+      {
+        char *  end_str;
+        char *  opt_name;
+        opt_t * opt_before;
+
+        ptr = va_arg(args, char *);
+
+        str = xstrdup(ptr);
+        ltrim(str, " \t");
+        rtrim(str, " \t", 0);
+
+        /* Feed the list of options to be evaluated before the given option. */
+        /* This list will contain pointers to options.                       */
+        /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+        opt_name = xstrtok_r(str, " \t,", &end_str);
+        if (opt_name != NULL)
+        {
+          if ((opt_before = locate_opt(opt_name)) != NULL)
+          {
+            ll_append(opt_before->eval_before_list, opt);
+            while ((opt_name = xstrtok_r(NULL, " \t,", &end_str)) != NULL)
+            {
+              if ((opt_before = locate_opt(opt_name)) != NULL)
+                ll_append(opt_before->eval_before_list, opt);
+              else
+                fatal_internal("Unknown option %s.", opt_name);
+            }
+          }
+          else
+            fatal_internal("Unknown option %s.", opt_name);
+        }
+        else
+          fatal_internal("Not enough options to be evaluated before %s.",
+                         opt->name);
+
+        free(str);
+      }
+      else
+        fatal_internal("Unknown option %s.", ptr);
+
       break;
     }
 
