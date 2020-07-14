@@ -6236,7 +6236,8 @@ main(int argc, char * argv[])
   ctxopt_init(argv[0], "stop_if_non_option=No "
                        "allow_abbreviations=No ");
 
-  common_options = "[*help] [*usage] "
+  common_options = "[*help] "
+                   "[*usage] "
                    "[include_re... #regex] "
                    "[exclude_re... #regex] "
                    "[title #message] "
