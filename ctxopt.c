@@ -387,7 +387,8 @@ fatal(errors e, char * errmsg)
         break;
 
       case CTXOPTUNKPAR:
-        fprintf(stderr, "Unknown parameter %s.\n", cur_state->cur_opt_par_name);
+        fprintf(stderr, "Unknown parameter %s.\n%s",
+                cur_state->cur_opt_par_name, errmsg);
         break;
 
       case CTXOPTINCOPT:
@@ -457,7 +458,15 @@ fatal(errors e, char * errmsg)
     }
   }
 
-  ctxopt_ctx_disp_usage(cur_state->ctx_name, continue_after);
+  /* CTXOPTUNKPAR should display the full usage to help the user follow   */
+  /* the chaining of contexts when several possible contexts have been    */
+  /* identified. Otherwise, errmsg is the empty string and the display of */
+  /* the current usage is enough.                                         */
+  /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+  if (e == CTXOPTUNKPAR && *errmsg != '\0')
+    ctxopt_disp_usage(continue_after);
+  else
+    ctxopt_ctx_disp_usage(cur_state->ctx_name, continue_after);
 
   exit(e); /* Exit with the error id e as return code. */
 }
@@ -1952,7 +1961,10 @@ bst_match_par_cb(const void * node, walk_order_e kind, int level)
     {
       if (locate_par(str, ctx) != NULL)
       {
-        user_string2 = strappend(user_string2, " ", ctx->name, NULL);
+        if (*user_string2 == '\0')
+          user_string2 = strappend(user_string2, "- ", ctx->name, NULL);
+        else
+          user_string2 = strappend(user_string2, "\n- ", ctx->name, NULL);
         break;
       }
       str[strlen(str) - 1] = '\0';
@@ -3357,8 +3369,12 @@ ctxopt_analyze(int nb_words, char ** words, int * nb_rem_args,
             {
               errmsg = strappend(
                 errmsg,
-                "\nIt appears to be defined in the context(s):", user_string2,
-                "\n", NULL);
+                "\nThis parameter is only valid in one of the following "
+                "contexts:\n",
+                user_string2,
+                "\n\nSwitch to one of them first using the appropriate "
+                "parameter, see below.\n",
+                NULL);
             }
 
             fatal(CTXOPTUNKPAR, errmsg);
@@ -3917,7 +3933,7 @@ ctxopt_disp_usage(usage_behaviour action)
 
   /* Usage for the first context. */
   /* """""""""""""""""""""""""""" */
-  printf("\nAllowed options in the default context:\n");
+  printf("\nAllowed options in the base context:\n");
   list = main_ctx->opt_list;
   print_options(list, &has_optional, &has_ellipsis, &has_rule, &has_generic_arg,
                 &has_ctx_change, &has_early_eval);
