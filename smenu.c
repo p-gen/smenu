@@ -4840,12 +4840,14 @@ columns_select_action(char * ctx_name, char * opt_name, char * param,
                       int nb_values, char ** values, int nb_opt_data,
                       void ** opt_data, int nb_ctx_data, void ** ctx_data)
 {
+  int     v;
   ll_t ** cols_selector_list = opt_data[0];
 
   if (*cols_selector_list == NULL)
     *cols_selector_list = ll_new();
 
-  ll_append(*cols_selector_list, xstrdup(values[0]));
+  for (v = 0; v < nb_values; v++)
+    ll_append(*cols_selector_list, xstrdup(values[v]));
 }
 
 void
@@ -4853,13 +4855,15 @@ rows_select_action(char * ctx_name, char * opt_name, char * param,
                    int nb_values, char ** values, int nb_opt_data,
                    void ** opt_data, int nb_ctx_data, void ** ctx_data)
 {
+  int     v;
   ll_t ** rows_selector_list = opt_data[0];
   win_t * win                = opt_data[1];
 
   if (*rows_selector_list == NULL)
     *rows_selector_list = ll_new();
 
-  ll_append(*rows_selector_list, xstrdup(values[0]));
+  for (v = 0; v < nb_values; v++)
+    ll_append(*rows_selector_list, xstrdup(values[v]));
 
   win->max_cols = 0; /* Disable the window column restriction */
 }
