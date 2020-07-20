@@ -3191,6 +3191,10 @@ void
 ctxopt_analyze(int nb_words, char ** words, int * nb_rem_args,
                char *** rem_args)
 {
+  char * ctxopt_debug_env; /* Environment variable CTXOPT_DEBUG content.  */
+  int    ctxopt_debug;     /* 1 if ctxopt_debug_env is set and not empty. *
+                            | 0 if ctxopt_debug_env is unset or empty.    */
+
   ctx_t *      ctx;
   opt_t *      opt;
   par_t *      par;
@@ -3218,6 +3222,14 @@ ctxopt_analyze(int nb_words, char ** words, int * nb_rem_args,
   /* Check that all options has an action and at least one parameter. */
   /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
   bst_walk(options_bst, bst_check_opt_cb);
+
+  /* CTXOPT debug setting */
+  /* """""""""""""""""""" */
+  ctxopt_debug_env = getenv("CTXOPT_DEBUG");
+  if (ctxopt_debug_env != NULL && *ctxopt_debug_env != '\0')
+    ctxopt_debug = 1;
+  else
+    ctxopt_debug = 0;
 
   /* Create the first ctx_inst record. */
   /* """"""""""""""""""""""""""""""""" */
@@ -3265,6 +3277,12 @@ ctxopt_analyze(int nb_words, char ** words, int * nb_rem_args,
         /* """""""""""""""""""""  */
         cur_state->ctx_name     = ctx->name;
         cur_state->ctx_par_name = ctx_inst->par_name;
+
+        if (ctxopt_debug)
+          fprintf(stderr,
+                  "CTXOPT_DEBUG: Context forced backtrack, "
+                  "new current context: %s.\n",
+                  ctx->name);
       }
       else
       {
@@ -3283,6 +3301,10 @@ ctxopt_analyze(int nb_words, char ** words, int * nb_rem_args,
       cur_state->cur_opt_par_name = par_name;
       cur_state->ctx_name         = ctx->name;
       cur_state->ctx_par_name     = ctx_inst->par_name;
+
+      if (ctxopt_debug)
+        fprintf(stderr, "CTXOPT_DEBUG: Parameter: %s. Current context: %s.\n",
+                par_name, cur_state->ctx_name);
 
       /* An expected parameter has been seen. */
       /* """""""""""""""""""""""""""""""""""" */
@@ -3314,6 +3336,12 @@ ctxopt_analyze(int nb_words, char ** words, int * nb_rem_args,
         prefix = look_for_valid_prefix_in_word(par_name, ctx, &pos, &popt);
         if (prefix != NULL && pos != 0)
         {
+          if (ctxopt_debug)
+            fprintf(stderr,
+                    "CTXOPT_DEBUG: Found a valid parameter "
+                    "as a prefix of %s: %s.\n",
+                    par_name, prefix);
+
           cli_node->data = prefix; /* prefix contains le name of a valid *
                                     | parameter in this context.         */
 
@@ -3386,6 +3414,12 @@ ctxopt_analyze(int nb_words, char ** words, int * nb_rem_args,
             /* """""""""""""""""""""""""""""""""""""""""""""""""""""""" */
             ctx_inst = ctx_inst->prev_ctx_inst;
             ctx      = ctx_inst->ctx;
+
+            if (ctxopt_debug)
+              fprintf(stderr,
+                      "CTXOPT_DEBUG: Context backtrack, "
+                      "new current context: %s.\n",
+                      ctx->name);
 
             /* Update current_state. */
             /* """"""""""""""""""""" */
@@ -3564,6 +3598,12 @@ ctxopt_analyze(int nb_words, char ** words, int * nb_rem_args,
           ctx_inst->par_name                 = xstrdup(par_name);
 
           ll_append(ctx_inst_list, ctx_inst);
+
+          if (ctxopt_debug)
+            fprintf(stderr,
+                    "CTXOPT_DEBUG: Context change, "
+                    "new current context: %s.\n",
+                    ctx->name);
         }
 
         /* Look is we must expect some arguments. */
@@ -3613,6 +3653,9 @@ ctxopt_analyze(int nb_words, char ** words, int * nb_rem_args,
     {
       ll_node_t *    cstr_node;
       constraint_t * cstr;
+
+      if (ctxopt_debug)
+        fprintf(stderr, "CTXOPT_DEBUG: Argument: %s.\n", par_name);
 
       /* Check if the arguments of the option respects */
       /* the attached constraints if any.              */
