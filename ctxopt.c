@@ -358,10 +358,11 @@ fatal(errors e, char * errmsg)
         break;
 
       case CTXOPTUNXARG:
-        fprintf(stderr,
-                "The parameter %s takes no arguments "
-                "or has too many arguments.\n",
-                cur_state->cur_opt_par_name);
+        if (cur_state->cur_opt_par_name != NULL)
+          fprintf(stderr,
+                  "The parameter %s takes no arguments "
+                  "or has too many arguments.\n",
+                  cur_state->cur_opt_par_name);
         break;
 
       case CTXOPTMISARG:
