@@ -35,8 +35,8 @@ and outputs the selection to stdout.
   [\fB-l\fP|\fB-line\fP|\fB-line_mode\fP]
   [\fB-t\fP|\fB-tab\fP|\fB-tab_mode\fP|\fB-tabulate_mode\fP [\fIcols\fP]]
   [\fB-w\fP|\fB-wide\fP|\fB-wide_mode\fP]
-  [\fB-C\fP|\fB-cs\fP|\fB-cols\fP|\fB-cols_select\fP... \fIselector\fP]
-  [\fB-R\fP|\fB-rs\fP|\fB-rows\fP|\fB-rows_select\fP... \fIselector\fP]
+  [\fB-C\fP|\fB-cs\fP|\fB-cols\fP|\fB-cols_select\fP... \fIselector\fP...]
+  [\fB-R\fP|\fB-rs\fP|\fB-rows\fP|\fB-rows_select\fP... \fIselector\fP...]
   [\fB-A\fP|\fB-fc\fP|\fB-first_column\fP \fIregex\fP]
   [\fB-Z\fP|\fB-lc\fP|\fB-last_column\fP \fIregex\fP]
   [\fB-g\fP|\fB-gutter\fP [\fIstring\fP]]
@@ -53,9 +53,9 @@ and outputs the selection to stdout.
   [\fB-E\fP|\fB-se\fP|\fB-subst_excluded\fP... \fI/regex/repl/opts\fP]
   [\fB-/\fP|\fB-search_method\fP \fIprefix\fP|\fIsubstring\fP|\fIfuzzy\fP]
   [\fB-s\fP|\fB-sp\fP|\fB-start\fP|\fB-start_pattern\fP \fIpattern\fP]
-  [\fB-x\fP|\fB-tmout\fP|\fB-timeout\fP \fItype\fP [\fIword\fP] \fIdelay\fP...]
+  [\fB-x\fP|\fB-tmout\fP|\fB-timeout\fP \fItype\fP [\fIword\fP] \fIdelay\fP]
   [\fB-X\fP|\fB-htmout\fP|\fB-hidden_timeout\fP \fItype\fP [\fIword\fP] \
-\fIdelay\fP...]
+\fIdelay\fP]
   [\fB-r\fP|\fB-auto_validate\fP]
   [\fB-v\fP|\fB-vb\fP|\fB-visual_bell\fP]
 
@@ -69,25 +69,25 @@ and outputs the selection to stdout.
   RE        ::= \fB<char>\fIregex\fB<char>\fR
 
   selectors and RE can be freely mixed.
+  <char> in RE is any non-blank ASCII character except ','.
+.fi
 
 Note that some parameters require that others have been previously
 entered in the command line to be accepted.
-.fi
 .SH DESCRIPTION
 This small utility acts as a filter when no input file is given
 (reads from stdin and writes to stdout) or takes its inputs from that file.
 
 All the words read are presented in a scrolling window on the terminal
-\fbat the current cursor position\fP and  without previously clearing
+\fBat the current cursor position\fP without having previously cleared
 the screen.
 .PP
 The selection cursor is initially positioned on the first selectable word
 by default.
 .PP
-Options exists to explicitly or implicitly include or exclude some words by
+There are options to explicitly or implicitly include or exclude words
 using extended regular expressions.
-
-Notice that when some words are explicitly excluded they can no more be
+Note that when some words are explicitly excluded they can no longer be
 re-included after.
 .PP
 Excluded words are skipped when the selection cursor is moved and cannot
@@ -174,6 +174,7 @@ l l.
 \fBCTRL\ \(<-\fP/\fBH\fP (resp. \fBCTRL\ \(->\fP/\fBL\fP) places the cursor
 so that a maximum number of words (selectable or not) are visible to
 the left (reps. right) side of the window.
+
 If \fB-N\fP|\fB-number\fP, \fB-U\fP|\fB-unnumber\fP or
 \fB-F\fP|\fB-en\fP|\fB-embedded_number\fP are used, then it becomes
 possible to directly access a word by entering its number.
@@ -557,16 +558,50 @@ After the \fB-T\fP|\fB-tm\fP|\fB-tag\fP|\fB-tag_mode\fP or
 .IP \fBDirect_access\fP 2
 After the \fB-N\fP|\fB-number\fP, \fB-U\fP|\fB-unnumber\fP or
 \fB-F\fP|\fB-en\fP|\fB-embedded_number\fP parameter.
-.IP Example: 2
-\fB-cols_select\fP will trigger an error if not in the \fBColumns\fP
-context introduced by \fB-c\fP|\fB-col\fP|\fB-col_mode\fP|\fB-column\fP.
+.PP
+.IP \fBWARNING\fP 2
+Here is a situation that may seem confusing at first glance.
 
-You now have to explicitly enter:
-.
-\f(CBsmenu -c -cols_select e1\fP
-. 
-to be able to make all but the first column of the input selectable as
-\fB-cols_select\fP is only available in the \fBColumns\fP context.
+Imagine the only parameter command line parameter is \fB-cols_select\fP.
+
+Since this is a parameter of an option which is not valid when not in
+the \fBColumns\fP context, it should have raised an error but it still
+seems to be accepted.
+
+The trick is: when not in column mode \fB-cols_select\fP is indeed not
+accepted but its prefix (\fB-col\fP) is valid.
+The options are thus understood as: \fB-col\fP \fB-s_select\fP.
+The same mechanism occurs again as \fB-s\fP is also valid in column
+mode so the final understanding of the command line is: \fB-col\fP
+\fB-s\fP \fB_select\fP.
+
+In such a case, the user can set the environment variable
+\fBCTXOPT_DEBUG\fP which any non-empty content.
+When run again the following output will appear on the standard error:
+.PP
+.nf
+CTXOPT_DEBUG: Parameter: -cols_select. Evaluation context: Main.
+CTXOPT_DEBUG: Found a valid parameter as a prefix of -cols_select: -col.
+CTXOPT_DEBUG: Parameter: -col. Evaluation context: Main.
+CTXOPT_DEBUG: Switch to context Columns.
+CTXOPT_DEBUG: Parameter: -s_select. Evaluation context: Columns.
+CTXOPT_DEBUG: Found a valid parameter as a prefix of -s_select: -s.
+CTXOPT_DEBUG: Parameter: -s. Evaluation context: Columns.
+CTXOPT_DEBUG: Argument: _select.
+.fi
+.PP
+The command line: \fB-col\fP \fB-cols_select\fP \fB1\fP solves the
+issue in this case and indicates that only the first column should be
+selectable.
+Note, however, that at least one argument for \fB-cols_select\fP is
+now required:
+.PP
+.nf
+CTXOPT_DEBUG: Parameter: -col. Evaluation context: Main.
+CTXOPT_DEBUG: Switch to context Columns.
+CTXOPT_DEBUG: Parameter: -cols_select. Evaluation context: Columns.
+CTXOPT_DEBUG: Argument: 1.
+.fi
 .PP
 The \fB-h\fP|\fB-help\fP and \fB-?\fP|\fB-u\fP|\fB-usage\fP options now
 display the help and synopsis of the available options in the current
@@ -582,8 +617,8 @@ releases as I did in the lvm_menu example.
 .PP
 Some of the advantages of this new system of options are:
 .IP * 2
-Long parameter names are allowed. One dash is enough, but two are also
-allowed for compatibility reasons.
+Long parameter names are allowed
+One dash is enough, but two are also allowed for compatibility reasons.
 .IP * 2
 An option can be referenced by any number of parameters with short or
 long names.
@@ -668,7 +703,7 @@ by \fB-I\fP|\fB-si\fP|\fB-subst_included\fP or
 .IP "\fB-m\fP|\fB-msg\fP|\fB-message\fP|\fB-title\fP \fImessage\fP"
 (Allowed in all contexts)
 
-Displays a message above the window.
+Displays a message (title) above the window.
 If the current locale is not \fIUTF-8\fP, then all \fIUTF-8\fP characters
 will be replaced by the substitution character.
 
@@ -720,11 +755,13 @@ matching words text with error.
 .IP \fIda\fP
 direct access tag.
 .RE
+.IP
+If more than one attribute is given, they must be separated by spaces.
 
-If more than one attribute is given, then they must be separated by
-spaces.
+Example: \f(CB-attr i:/5 e:4,br b:7/3,rb c:7/2,b\fP
 
-See the \fB-1\fP|\fB-l1\fP|\fB-level1\fP option for the \fIattr\fP syntax.
+See the the \fB-1\fP|\fB-l1\fP|\fB-level1\fP option below for the
+description of the attributes syntax after the colon and an example.
 .IP "\fB-1\fP|\fB-l1\fP|\fB-level1\fP \fIregex\fP [\fIattr\fP]"
 .IP "\fB-2\fP|\fB-l2\fP|\fB-level2\fP \fIregex\fP [\fIattr\fP]"
 .IP "\fB-3\fP|\fB-l3\fP|\fB-level3\fP \fIregex\fP [\fIattr\fP]"
@@ -766,7 +803,7 @@ Examples of possible attributes are:
 Initializes a set of UTF-8 characters to be ignored when reading words from
 stdin or a file.
 
-Example: The argument \f(CW'\\u0d\\ue282ac,'\fP means: ignore all commas,
+Example: The argument \f(CR'\\u0d\\ue282ac,'\fP means: ignore all commas,
 Euro signs and carriage return characters when reading from stdin or
 a file.
 
@@ -775,7 +812,7 @@ As shown above \fI\\u\fP sequences can be used in the bytes set.
 (Allowed in Main, Columns, Lines, Direct_access, Tabulations contexts,
 leads to Tagging context)
 
-Enables the multiple selections or tag mode.
+Enables multiple selections or tag mode.
 In this mode, several selectable words can be selected without leaving
 the program.
 
@@ -924,8 +961,8 @@ Here \fBy\fP is '\f(CBincluded\fP' (or one of its prefixes)
 or '\f(CBall\fP' (or one of its prefixes) for the initial \fIp\fPadding of
 the non numbered words.
 The keyword '\f(CBincluded\fP' means that only \fIincluded\fP word will
-be padded while '\f(CBall\fP' means pad \fIall\fP words.  The default
-is \f(CBall\fP.
+be padded while '\f(CBall\fP' means pad \fIall\fP words.
+The default is \f(CBall\fP.
 .
 .TP
 \f(CBw\fP (\fB-F\fP|\fB-en\fP|\fB-embedded_number\fP, \
@@ -970,7 +1007,10 @@ Hence, for example, \fB1\fP should appear as \fB01\fP in the input is
 \f(CBn\fP (\fB-F\fP|\fB-en\fP|\fB-embedded_number\fP option)
 Here \fBy\fP is the \fIn\fPumber of multibyte characters to extract
 from the word starting at the offset given by the \f(CBo\fP sub-option.
-.
+
+Example: \f(CRn:2\fP will extract and use the first 2 digits of each
+words from the input stream to number them.
+
 .TP
 \f(CBi\fP (\fB-F\fP|\fB-en\fP|\fB-embedded_number\fP option)
 Here \fBy\fP is number of multibyte characters to \fIi\fPgnore after
@@ -998,11 +1038,11 @@ Here \fBy\fP is the direct access number that will be set for the first
 numbered word.
 Its value is \fB1\fP by default, a value of \fB0\fP is possible.
 .P
-Example: \f(CWr:\\> l:\\< a:l d:_ \fP
+Example: \f(CR-data r:\\> l:\\< a:l d:_ \fP
 
 To number all words with the default parameters, use the
-syntax: "\f(CW-N .\fP" which is a shortcut for:
-"\f(CW-N . -D l:' ' r:')' a:r p:a\fP"
+syntax: "\f(CR-N .\fP" which is a shortcut for:
+"\f(CR-N . -D l:' ' r:')' a:r p:a\fP"
 
 The \fIpadding\fP sub-option specifies whether spaces must also be
 added in front of excluded words or not to improve compactness.
@@ -1092,27 +1132,31 @@ This choice enables a faster display.
 .RE
 .PP
 .IP "\fB-C\fP|\fB-cs\fP|\fB-cols\fP|\fB-cols_select\fP... \
-[\fIi\fP|\fIe\fP]\fIselector\fP"
+[\fIi\fP|\fIe\fP]\fIselectors\fP..."
 (Allowed in Columns context)
 
-These letters are case independent so \fII\fP can be used in place of
-\fIi\fP per example.
+\fII\fP and \fIE\fP have the same meaning as \fIi\fP and \fIe\fP.
 
-In column mode, this option allows one to restrict the previous
-selections or de-selections to some columns.
-If no selection is given via \fB-i\fP and \fB-e\fP this option gives the
-possibility to select entire columns by giving their numbers (1 based)
-of extended regular expressions.
+In column mode, this option is useful to restrict the selections to a
+subset of all columns.
+Either by including (nothing or \fIi\fP) or by excluding (\fIe\fP) them.
 
-\fIi\fP or nothing select the specified ranges of columns.
-\fIe\fP select all but the specified ranges of columns.
+Columns can be designated by their number (1 based) or by a regular
+expression enclosed in delimiter made from any non-blank ASCII character
+excluding the comma.
 
-The words in the selected columns will be considered as \fBi\fPncluded
-And the others \fBe\fPxcluded.
+Range of columns (number or RE) can be given by separated then with
+a dash.
+
+Multiple selectors can be regrouped in one argument using commas to
+separate them.
+This option also accepts multiple arguments, each of them being a
+selector.
 
 A selection by regular expressions means that a column containing a word
-matching one of these expression will be included or excluded according
-to the letter given after the option.
+matching any of these expressions will be included or excluded depending
+on the letter given after the option or before the selector if there is
+more than one argument.
 
 Regular expressions and column numbers can be freely mixed.
 
@@ -1129,14 +1173,14 @@ and those matching the extended regular expression '\f(CBX.\fP'.
 
 Spaces are allowed in the selection string if they are protected.
 
-The column mode is forced when this option is selected.
-.IP "\fB-R\fP|\fB-rs\fP|\fB-rows\fP|\fB-rows_select\fP... \fIselector\fP"
+Other example where multiple selectors are used as multiple arguments:
+\f(CBps | smenu -col -cols e/TTY/ e/CMD/ e3\fP
+.PP
+.IP "\fB-R\fP|\fB-rs\fP|\fB-rows\fP|\fB-rows_select\fP... \fIselectors\fP..."
 (Allowed in Columns, Lines contexts)
 
-Similar to \fB-C\fP|\fB-cs\fP|\fB-cols\fP|\fB-cols_select\fP but for the rows.
-
-One difference though: this is the line mode which is forced by this
-option NOT the column mode.
+Similar to \fB-C\fP|\fB-cs\fP|\fB-cols\fP|\fB-cols_select\fP but for
+the rows.
 
 \fB-C\fP|\fB-cs\fP|\fB-cols\fP|\fB-cols_select\fP and
 \fB-R\fP|\fB-rs\fP|\fB-rows\fP|\fB-rows_select\fP can be used more than
@@ -1145,6 +1189,8 @@ once in a cumulative manner:
 The selection mode (selection or de-selection) is given by the first
 occurrence of the options, the other occurrences will only update the
 selected or de-selected ranges.
+
+Once a column or a row has been excluded, it cannot be re-included.
 .IP "\fB-A\fP|\fB-fc\fP|\fB-first_column\fP \fIregex\fP"
 (Allowed in Columns, Lines, Tabulations contexts)
 
