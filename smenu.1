@@ -23,8 +23,8 @@ and outputs the selection to stdout.
   [\fB-z\fP|\fB-zap\fP|\fB-zap_glyphs\fP \fIbytes\fP]
   [\fB-P\fP|\fB-pm\fP|\fB-pin\fP|\fB-pin_mode\fP [\fIdelim\fP]]
   [\fB-p\fP|\fB-at\fP|\fB-auto_tag\fP]
-  [\fB-N\fP|\fB-number\fP... [\fIregex\fP]]
-  [\fB-U\fP|\fB-unnumber\fP... [\fIregex\fP]]
+  [\fB-N\fP|\fB-number\fP... [\fIregex\fP...]]
+  [\fB-U\fP|\fB-unnumber\fP... [\fIregex\fP...]]
   [\fB-F\fP|\fB-en\fP|\fB-embedded_number\fP]
   [\fB-D\fP|\fB-data\fP|\fB-options\fP [\fIparameter\fP...]
   [\fB-b\fP|\fB-blank\fP]
@@ -855,10 +855,9 @@ An untagged word under the cursor will be automatically tagged when
 (Allowed in Main, Columns, Lines, Tabulation contexts, leads to
 Direct_access context)
 
-This option allows one to number the selectable words matching a
-specific regular expression.
-These numbers are numbered starting from 1 and provides a direct access
-to the words.
+This option allows you to number selectable words that match a specific
+regular expression.
+These numbers are numbered from 1 and allow direct access to the words.
 
 To use this functionality, the user must enter the number which
 corresponds to the desired entry digit per digit.
@@ -873,7 +872,8 @@ The sub-options of the \fB-D\fP|\fB-data\fP|\fB-options\fP option
 described below can change the way \fB-N\fP|\fB-number\fP sets and
 formats the numbers.
 
-This option can be used more than once with cumulative effects.
+This option accepts more than one argument and can be used multiple
+times with cumulative effects.
 
 \fB-N\fP|\fB-number\fP, \fB-U\fP|\fB-unnumber\fP and
 \fB-F\fP|\fB-en\fP|\fB-embedded_number\fP can be mixed.
@@ -881,7 +881,7 @@ This option can be used more than once with cumulative effects.
 (Allowed in Main, Columns, Lines, Tabulation contexts, leads to
 Direct_access context)
 
-This option allows one to un-number words.
+This option allows one to unnumber words.
 If placed after a previous \fB-N\fP|\fB-number\fP, it can be used to
 remove the numbering of selected words.
 If placed before, the word which doesn't match its regular expression
@@ -891,7 +891,8 @@ This mechanism is similar to to the inclusion/exclusion of words by
 \fB-i\fP|\fB-in\fP|\fB-inc\fP|\fB-incl\fP|\fB-include\fP and
 \fB-e\fP|\fB-ex\fP|\fB-exc\fP|\fB-excl\fP|\fB-exclude\fP.
 
-This option can be used more than once with cumulative effects.
+This option accepts more than one argument and can be used multiple
+times with cumulative effects.
 
 \fB-U\fP|\fB-unnumber\fP, \fB-N\fP|\fB-number\fP and
 \fB-F\fP|\fB-en\fP|\fB-embedded_number\fP can be mixed.

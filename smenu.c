@@ -5413,28 +5413,41 @@ auto_da_action(char * ctx_name, char * opt_name, char * param, int nb_values,
 {
   char ** daccess_pattern = opt_data[0];
   char *  value;
+  int     i;
 
   if (nb_values == 0)
-    value = ".";
-  else if (*values[0] == '\0')
-    value = ".";
-  else
-    value = values[0];
-
-  if (*daccess_pattern == NULL)
   {
-    *daccess_pattern = concat("(", value, ")", NULL);
-    daccess.mode |= DA_TYPE_AUTO; /* auto */
+    if (*daccess_pattern == NULL)
+    {
+      *daccess_pattern = xstrdup("(.)");
+      daccess.mode |= DA_TYPE_AUTO; /* auto */
+    }
+    else
+      *daccess_pattern = concat(*daccess_pattern, "|(.)", NULL);
   }
   else
-    *daccess_pattern = concat(*daccess_pattern, "|(", value, ")", NULL);
+    for (i = 0; i < nb_values; i++)
+    {
+      if (*values[i] == '\0')
+        value = ".";
+      else
+        value = values[i];
+
+      if (*daccess_pattern == NULL)
+      {
+        *daccess_pattern = concat("(", value, ")", NULL);
+        daccess.mode |= DA_TYPE_AUTO; /* auto */
+      }
+      else
+        *daccess_pattern = concat(*daccess_pattern, "|(", value, ")", NULL);
+    }
 
   if (daccess.def_number < 0)
   {
     if (strcmp(param, "-N") == 0)
-      daccess.def_number = 0;
+      daccess.def_number = 0; /* Words are unnumbered by default. */
     else
-      daccess.def_number = 1;
+      daccess.def_number = 1; /* Words are numbered by default.   */
   }
 }
 
@@ -6273,8 +6286,8 @@ main(int argc, char * argv[])
   main_spec_options = "[*version] "
                       "[*long_help] "
                       "[config #file] "
-                      "[auto_da_number>Direct_access... [#regex]] "
-                      "[auto_da_unnumber>Direct_access... [#regex]] "
+                      "[auto_da_number>Direct_access... [#regex...]] "
+                      "[auto_da_unnumber>Direct_access... [#regex...]] "
                       "[field_da_number>Direct_access] "
                       "[column_mode>Columns] "
                       "[line_mode>Lines] "
@@ -6287,8 +6300,8 @@ main(int argc, char * argv[])
                      "[rows_select... #selector...] "
                      "[gutter [#string]] "
                      "[line_separators #bytes] "
-                     "[auto_da_number>Direct_access... [#regex]] "
-                     "[auto_da_unnumber>Direct_access... [#regex]] "
+                     "[auto_da_number>Direct_access... [#regex...]] "
+                     "[auto_da_unnumber>Direct_access... [#regex...]] "
                      "[field_da_number>Direct_access] "
                      "[tag_mode>Tagging [#delim]] "
                      "[pin_mode>Tagging [#delim]] "
@@ -6297,8 +6310,8 @@ main(int argc, char * argv[])
 
   line_spec_options = "[rows_select... #selector...] "
                       "[line_separators #bytes] "
-                      "[auto_da_number>Direct_access... [#regex]] "
-                      "[auto_da_unnumber>Direct_access... [#regex]] "
+                      "[auto_da_number>Direct_access... [#regex...]] "
+                      "[auto_da_unnumber>Direct_access... [#regex...]] "
                       "[field_da_number>Direct_access] "
                       "[tag_mode>Tagging [#delim]] "
                       "[pin_mode>Tagging [#delim]] "
@@ -6308,8 +6321,8 @@ main(int argc, char * argv[])
   tab_spec_options = "[wide_mode] "
                      "[gutter [#string]] "
                      "[line_separators #bytes] "
-                     "[auto_da_number>Direct_access... [#regex]] "
-                     "[auto_da_unnumber>Direct_access... [#regex]] "
+                     "[auto_da_number>Direct_access... [#regex...]] "
+                     "[auto_da_unnumber>Direct_access... [#regex...]] "
                      "[field_da_number>Direct_access] "
                      "[tag_mode>Tagging [#delim]] "
                      "[pin_mode>Tagging [#delim]] "

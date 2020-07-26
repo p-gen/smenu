@@ -376,8 +376,8 @@ struct daccess_s
                       * the offset, else 0. (a '+' follows the offset)    */
   int    size;       /* size in bytes of the selector to extract          */
   size_t ignore;     /* number of UTF-8 glyphs to ignore after the number */
-  char   follow;     /* y: the numbering follows the last nuber set       */
-  char * num_sep;    /* character to separate de number and the selection */
+  char   follow;     /* y: the numbering follows the last number set      */
+  char * num_sep;    /* character to separate number and selection        */
   int    def_number; /* 1: the numbering is on by default 0: it is not    */
 };
 
