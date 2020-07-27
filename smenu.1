@@ -926,10 +926,6 @@ This option allows one to change the default behaviour of
 the \fB-N\fP|\fB-number\fP, \fB-U\fP|\fB-unnumber\fP and
 \fB-F\fP|\fB-en\fP|\fB-embedded_number\fP options.
 
-This option must be given just after \fB-N\fP|\fB-number\fP,
-\fB-U\fP|\fB-unnumber\fP or \fB-F\fP|\fB-en\fP|\fB-embedded_number\fP
-to be valid.
-
 Its optional parameters are called sub-options and must respect the
 format \fBx\fP:\fBy\fP where \fBx\fP can be:
 .RS
@@ -958,12 +954,12 @@ The default is \f(CBright\fP.
 .TP
 \f(CBp\fP (\fB-F\fP|\fB-en\fP|\fB-embedded_number\fP, \
 \fB-N\fP|\fB-number\fP and \fB-U\fP|\fB-unnumber\fP options)
-Here \fBy\fP is '\f(CBincluded\fP' (or one of its prefixes)
-or '\f(CBall\fP' (or one of its prefixes) for the initial \fIp\fPadding of
-the non numbered words.
+Here \fBy\fP is '\f(CBincluded\fP' or '\f(CBall\fP' for the initial
+\fIp\fPadding of the non numbered words.
 The keyword '\f(CBincluded\fP' means that only \fIincluded\fP word will
 be padded while '\f(CBall\fP' means pad \fIall\fP words.
-The default is \f(CBall\fP.
+
+The default is \f(CBall\fP. These keywords can be abbreviated.
 .
 .TP
 \f(CBw\fP (\fB-F\fP|\fB-en\fP|\fB-embedded_number\fP, \
@@ -976,6 +972,18 @@ Here \fBy\fP is the \fIw\fPidth of the number between 1 and 5 included.
 Here \fBy\fP controls if the numbering must \fIf\fPollow the last
 extracted number (defaults to \f(CByes\fP) or if it must remain
 independent.
+
+The possible values are \f(CByes\fP and \f(CBno\fP but can be abbreviated.
+.
+.TP
+\f(CBm\fP (\fB-F\fP|\fB-en\fP|\fB-embedded_number\fP option)
+Here \fBy\fP controls if the numbering of word with missing embedded numbers
+must be done or not (defaults to \f(CByes\fP).
+
+When this sub-option is set to \f(CBno\fP, the \f(CBs\fP and \f(CBf\fP
+sub-options are ignored.
+
+The possible values are \f(CByes\fP and \f(CBno\fP but can be abbreviated.
 .
 .TP
 \f(CBh\fP (\fB-F\fP|\fB-en\fP|\fB-embedded_number\fP option)
@@ -987,7 +995,8 @@ form an empty word (only made of spaces and tabulations), '\f(CBcut\fP'
 which unconditionally discards them and '\f(CBkeep\fP' which places them
 at the beginning of the resulting word.
 
-The default value for this directive is '\f(CBkeep\fP'.
+The default value for this directive is '\f(CBkeep\fP', these keywords
+can be abbeviated.
 .
 .TP
 \f(CBo\fP (\fB-F\fP|\fB-en\fP|\fB-embedded_number\fP option)

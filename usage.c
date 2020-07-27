@@ -266,38 +266,6 @@ tabulations_help(void)
 }
 
 void
-direct_access_help(void)
-{
-  ctxopt_ctx_disp_usage("Direct_access", continue_after);
-
-  printf("\n----------------------------------------");
-  printf("----------------------------------------\n");
-
-  printf("Short description of allowed parameters:\n\n");
-  common_help();
-
-  printf("-D|-data|-options:\n");
-  printf("  sets sub-options to modify the behaviour of -N|-number,\n");
-  printf("  -U|-unnumber and -F|-en|-embedded_number.\n");
-  printf("-c|-col|-col_mode|-column\n");
-  printf("  is like|-t without argument but respects end of lines.\n");
-  printf("-l|-line|-line_mode\n");
-  printf("  is like|-c without column alignments.\n");
-  printf("-t|-tab|-tab_mode|-tabulate_mode\n");
-  printf("  tabulates the items. The number of columns can be limited "
-         "with\n");
-  printf("  an optional number.\n");
-  printf("-T|-tm|-tag|-tag_mode/-P|-pm|-pin|-pin_mode\n");
-  printf("  enables the tagging (multi-selections) mode. ");
-  printf("An optional parameter\n");
-  printf("  sets the separator string between the selected words ");
-  printf("on the output.\n");
-  printf("  A single space is the default separator.\n");
-
-  exit(EXIT_FAILURE);
-}
-
-void
 tagging_help(void)
 {
   ctxopt_ctx_disp_usage("Tagging", continue_after);

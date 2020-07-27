@@ -4713,8 +4713,6 @@ help_action(char * ctx_name, char * opt_name, char * param, int nb_values,
     lines_help();
   else if (strcmp(ctx_name, "Tabulations") == 0)
     tabulations_help();
-  else if (strcmp(ctx_name, "Direct_access") == 0)
-    direct_access_help();
   else if (strcmp(ctx_name, "Tagging") == 0)
     tagging_help();
   else
@@ -5417,18 +5415,22 @@ auto_da_action(char * ctx_name, char * opt_name, char * param, int nb_values,
 
   if (nb_values == 0)
   {
-    if (*daccess_pattern == NULL)
+    if (daccess.missing == 'y' || ((daccess.mode & DA_TYPE_POS) == 0))
     {
-      *daccess_pattern = xstrdup("(.)");
-      daccess.mode |= DA_TYPE_AUTO; /* auto */
+      if (*daccess_pattern == NULL)
+      {
+        *daccess_pattern = xstrdup("(.)");
+        daccess.mode |= DA_TYPE_AUTO; /* auto */
+      }
+      else
+        *daccess_pattern = concat(*daccess_pattern, "|(.)", NULL);
     }
-    else
-      *daccess_pattern = concat(*daccess_pattern, "|(.)", NULL);
   }
   else
     for (i = 0; i < nb_values; i++)
     {
-      if (*values[i] == '\0')
+      if (*values[i] == '\0'
+          && (daccess.missing == 'y' || ((daccess.mode & DA_TYPE_POS) == 0)))
         value = ".";
       else
         value = values[i];
@@ -5643,6 +5645,18 @@ da_options_action(char * ctx_name, char * opt_name, char * param, int nb_values,
         else
         {
           fprintf(stderr, "%s: Bad value after f:\n", param);
+          ctxopt_ctx_disp_usage(ctx_name, exit_after);
+        }
+        break;
+
+      case 'm': /* possibly number missing embedded numbers */
+        if (strprefix("yes", value + 2))
+          daccess.missing = 'y';
+        else if (strprefix("no", value + 2))
+          daccess.missing = 'n';
+        else
+        {
+          fprintf(stderr, "%s: Bad value after m:\n", param);
           ctxopt_ctx_disp_usage(ctx_name, exit_after);
         }
         break;
@@ -6047,7 +6061,6 @@ main(int argc, char * argv[])
   char * line_options, *line_spec_options;
   char * tab_options, *tab_spec_options;
   char * tag_options, *tag_spec_options;
-  char * da_options, *da_spec_options;
 
   /* Win fields initialization */
   /* """"""""""""""""""""""""" */
@@ -6237,6 +6250,7 @@ main(int argc, char * argv[])
   daccess.size       = 0;
   daccess.ignore     = 0;
   daccess.follow     = 'y';
+  daccess.missing    = 'y';
   daccess.num_sep    = NULL;
   daccess.def_number = -1;
 
@@ -6286,9 +6300,10 @@ main(int argc, char * argv[])
   main_spec_options = "[*version] "
                       "[*long_help] "
                       "[config #file] "
-                      "[auto_da_number>Direct_access... [#regex...]] "
-                      "[auto_da_unnumber>Direct_access... [#regex...]] "
-                      "[field_da_number>Direct_access] "
+                      "[da_options #prefix:attr...] "
+                      "[auto_da_number... [#regex...]] "
+                      "[auto_da_unnumber... [#regex...]] "
+                      "[field_da_number] "
                       "[column_mode>Columns] "
                       "[line_mode>Lines] "
                       "[tab_mode>Tabulations [#cols]] "
@@ -6300,9 +6315,10 @@ main(int argc, char * argv[])
                      "[rows_select... #selector...] "
                      "[gutter [#string]] "
                      "[line_separators #bytes] "
-                     "[auto_da_number>Direct_access... [#regex...]] "
-                     "[auto_da_unnumber>Direct_access... [#regex...]] "
-                     "[field_da_number>Direct_access] "
+                     "[da_options #prefix:attr...] "
+                     "[auto_da_number... [#regex...]] "
+                     "[auto_da_unnumber... [#regex...]] "
+                     "[field_da_number] "
                      "[tag_mode>Tagging [#delim]] "
                      "[pin_mode>Tagging [#delim]] "
                      "[force_first_column #regex] "
@@ -6310,9 +6326,10 @@ main(int argc, char * argv[])
 
   line_spec_options = "[rows_select... #selector...] "
                       "[line_separators #bytes] "
-                      "[auto_da_number>Direct_access... [#regex...]] "
-                      "[auto_da_unnumber>Direct_access... [#regex...]] "
-                      "[field_da_number>Direct_access] "
+                      "[da_options #prefix:attr...] "
+                      "[auto_da_number... [#regex...]] "
+                      "[auto_da_unnumber... [#regex...]] "
+                      "[field_da_number] "
                       "[tag_mode>Tagging [#delim]] "
                       "[pin_mode>Tagging [#delim]] "
                       "[force_first_column #regex] "
@@ -6321,9 +6338,10 @@ main(int argc, char * argv[])
   tab_spec_options = "[wide_mode] "
                      "[gutter [#string]] "
                      "[line_separators #bytes] "
-                     "[auto_da_number>Direct_access... [#regex...]] "
-                     "[auto_da_unnumber>Direct_access... [#regex...]] "
-                     "[field_da_number>Direct_access] "
+                     "[da_options #prefix:attr...] "
+                     "[auto_da_number... [#regex...]] "
+                     "[auto_da_unnumber... [#regex...]] "
+                     "[field_da_number] "
                      "[tag_mode>Tagging [#delim]] "
                      "[pin_mode>Tagging [#delim]] "
                      "[force_first_column #regex] "
@@ -6334,33 +6352,23 @@ main(int argc, char * argv[])
                      "[line_mode>Lines] "
                      "[tab_mode>Tabulations [#cols]]";
 
-  da_spec_options = "[da_options #prefix:attr...] "
-                    "[column_mode>Columns] "
-                    "[line_mode>Lines] "
-                    "[tab_mode>Tabulations [#cols]] "
-                    "[tag_mode>Tagging [#delim]] "
-                    "[pin_mode>Tagging [#delim]]";
-
   main_options = concat(common_options, main_spec_options, NULL);
   col_options  = concat(common_options, col_spec_options, NULL);
   line_options = concat(common_options, line_spec_options, NULL);
   tab_options  = concat(common_options, tab_spec_options, NULL);
   tag_options  = concat(common_options, tag_spec_options, NULL);
-  da_options   = concat(common_options, da_spec_options, NULL);
 
   ctxopt_new_ctx("Main", main_options);
   ctxopt_new_ctx("Columns", col_options);
   ctxopt_new_ctx("Lines", line_options);
   ctxopt_new_ctx("Tabulations", tab_options);
   ctxopt_new_ctx("Tagging", tag_options);
-  ctxopt_new_ctx("Direct_access", da_options);
 
   free(main_options);
   free(col_options);
   free(line_options);
   free(tab_options);
   free(tag_options);
-  free(da_options);
 
   /* ctxopt parameters */
   /* """"""""""""""""" */
@@ -6553,6 +6561,15 @@ main(int argc, char * argv[])
                           "");
   ctxopt_add_opt_settings(constraints, "tab_mode", ctxopt_range_constraint,
                           "1 .");
+
+  /* Evaluation order */
+  /* """""""""""""""" */
+
+  ctxopt_add_opt_settings(after, "field_da_number",
+                          "auto_da_number auto_da_unnumber");
+
+  ctxopt_add_opt_settings(after, "da_options",
+                          "field_da_number auto_da_number auto_da_unnumber");
 
   /* Command line options analysis */
   /* """"""""""""""""""""""""""""" */

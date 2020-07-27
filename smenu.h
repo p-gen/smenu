@@ -372,6 +372,7 @@ struct daccess_s
   int    length;     /* selector size (5 max)                             */
   int    flength;    /* 0 or length + 3 (full prefix lengh                */
   size_t offset;     /* offset to the start of the selector               */
+  char   missing;    /* y: number missing embedded numbers                */
   int    plus;       /* 1 if we can look for the number to extract after  *
                       * the offset, else 0. (a '+' follows the offset)    */
   int    size;       /* size in bytes of the selector to extract          */
