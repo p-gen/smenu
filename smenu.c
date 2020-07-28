@@ -155,7 +155,8 @@ help(win_t * win, term_t * term, long last_line, toggle_t * toggle)
     int    len;  /* length of one of these objects                        */
   };
 
-  char * arrows = concat(left_arrow, up_arrow, right_arrow, down_arrow, NULL);
+  char *         arrows = concat(left_arrow, up_arrow, right_arrow, down_arrow,
+                         (char *)0);
   struct entry_s entries[] = {
     { 'n', "Move:", 5 }, { 'b', arrows, 4 },   { 'n', "|", 1 },
     { 'b', "h", 1 },     { 'b', "j", 1 },      { 'b', "k", 1 },
@@ -5010,9 +5011,10 @@ include_re_action(char * ctx_name, char * opt_name, char * param, int nb_values,
     *pattern_def_include = 0;
 
   if (*include_pattern == NULL)
-    *include_pattern = concat("(", values[0], ")", NULL);
+    *include_pattern = concat("(", values[0], ")", (char *)0);
   else
-    *include_pattern = concat(*include_pattern, "|(", values[0], ")", NULL);
+    *include_pattern = concat(*include_pattern, "|(", values[0], ")",
+                              (char *)0);
 }
 
 void
@@ -5029,9 +5031,10 @@ exclude_re_action(char * ctx_name, char * opt_name, char * param, int nb_values,
     *pattern_def_exclude = 0;
 
   if (*exclude_pattern == NULL)
-    *exclude_pattern = concat("(", values[0], ")", NULL);
+    *exclude_pattern = concat("(", values[0], ")", (char *)0);
   else
-    *exclude_pattern = concat(*exclude_pattern, "|(", values[0], ")", NULL);
+    *exclude_pattern = concat(*exclude_pattern, "|(", values[0], ")",
+                              (char *)0);
 }
 
 void
@@ -5423,7 +5426,7 @@ auto_da_action(char * ctx_name, char * opt_name, char * param, int nb_values,
         daccess.mode |= DA_TYPE_AUTO; /* auto */
       }
       else
-        *daccess_pattern = concat(*daccess_pattern, "|(.)", NULL);
+        *daccess_pattern = concat(*daccess_pattern, "|(.)", (char *)0);
     }
   }
   else
@@ -5437,11 +5440,12 @@ auto_da_action(char * ctx_name, char * opt_name, char * param, int nb_values,
 
       if (*daccess_pattern == NULL)
       {
-        *daccess_pattern = concat("(", value, ")", NULL);
+        *daccess_pattern = concat("(", value, ")", (char *)0);
         daccess.mode |= DA_TYPE_AUTO; /* auto */
       }
       else
-        *daccess_pattern = concat(*daccess_pattern, "|(", value, ")", NULL);
+        *daccess_pattern = concat(*daccess_pattern, "|(", value, ")",
+                                  (char *)0);
     }
 
   if (daccess.def_number < 0)
@@ -6352,11 +6356,11 @@ main(int argc, char * argv[])
                      "[line_mode>Lines] "
                      "[tab_mode>Tabulations [#cols]]";
 
-  main_options = concat(common_options, main_spec_options, NULL);
-  col_options  = concat(common_options, col_spec_options, NULL);
-  line_options = concat(common_options, line_spec_options, NULL);
-  tab_options  = concat(common_options, tab_spec_options, NULL);
-  tag_options  = concat(common_options, tag_spec_options, NULL);
+  main_options = concat(common_options, main_spec_options, (char *)0);
+  col_options  = concat(common_options, col_spec_options, (char *)0);
+  line_options = concat(common_options, line_spec_options, (char *)0);
+  tab_options  = concat(common_options, tab_spec_options, (char *)0);
+  tag_options  = concat(common_options, tag_spec_options, (char *)0);
 
   ctxopt_new_ctx("Main", main_options);
   ctxopt_new_ctx("Columns", col_options);
@@ -6454,99 +6458,105 @@ main(int argc, char * argv[])
   /* ctxopt actions */
   /* """""""""""""" */
 
-  ctxopt_add_opt_settings(actions, "auto_tag", toggle_action, &toggle, NULL);
+  ctxopt_add_opt_settings(actions, "auto_tag", toggle_action, &toggle,
+                          (char *)0);
   ctxopt_add_opt_settings(actions, "invalid_character", invalid_char_action,
-                          &misc, NULL);
+                          &misc, (char *)0);
   ctxopt_add_opt_settings(actions, "blank_nonprintable", toggle_action, &toggle,
-                          NULL);
+                          (char *)0);
   ctxopt_add_opt_settings(actions, "center_mode", center_mode_action, &win,
-                          NULL);
-  ctxopt_add_opt_settings(actions, "clean", toggle_action, &toggle, NULL);
+                          (char *)0);
+  ctxopt_add_opt_settings(actions, "clean", toggle_action, &toggle, (char *)0);
   ctxopt_add_opt_settings(actions, "column_mode", column_mode_action, &win,
-                          NULL);
-  ctxopt_add_opt_settings(actions, "line_mode", line_mode_action, &win, NULL);
-  ctxopt_add_opt_settings(actions, "tab_mode", tab_mode_action, &win, NULL);
+                          (char *)0);
+  ctxopt_add_opt_settings(actions, "line_mode", line_mode_action, &win,
+                          (char *)0);
+  ctxopt_add_opt_settings(actions, "tab_mode", tab_mode_action, &win,
+                          (char *)0);
   ctxopt_add_opt_settings(actions, "config", config_action, &custom_ini_file,
-                          NULL);
+                          (char *)0);
   ctxopt_add_opt_settings(actions, "columns_select", columns_select_action,
-                          &cols_selector_list, NULL);
+                          &cols_selector_list, (char *)0);
   ctxopt_add_opt_settings(actions, "rows_select", rows_select_action,
-                          &rows_selector_list, &win, NULL);
+                          &rows_selector_list, &win, (char *)0);
   ctxopt_add_opt_settings(actions, "exclude_re", exclude_re_action,
-                          &pattern_def_include, &exclude_pattern, NULL);
+                          &pattern_def_include, &exclude_pattern, (char *)0);
   ctxopt_add_opt_settings(actions, "gutter", gutter_action, &win, &langinfo,
-                          &misc, NULL);
-  ctxopt_add_opt_settings(actions, "help", help_action, NULL);
-  ctxopt_add_opt_settings(actions, "long_help", long_help_action, NULL);
-  ctxopt_add_opt_settings(actions, "usage", usage_action, NULL);
+                          &misc, (char *)0);
+  ctxopt_add_opt_settings(actions, "help", help_action, (char *)0);
+  ctxopt_add_opt_settings(actions, "long_help", long_help_action, (char *)0);
+  ctxopt_add_opt_settings(actions, "usage", usage_action, (char *)0);
   ctxopt_add_opt_settings(actions, "include_re", include_re_action,
-                          &pattern_def_include, &include_pattern, NULL);
-  ctxopt_add_opt_settings(actions, "keep_spaces", toggle_action, &toggle, NULL);
-  ctxopt_add_opt_settings(actions, "lines", lines_action, &win, NULL);
+                          &pattern_def_include, &include_pattern, (char *)0);
+  ctxopt_add_opt_settings(actions, "keep_spaces", toggle_action, &toggle,
+                          (char *)0);
+  ctxopt_add_opt_settings(actions, "lines", lines_action, &win, (char *)0);
   ctxopt_add_opt_settings(actions, "no_scoll_bar", toggle_action, &toggle,
-                          NULL);
+                          (char *)0);
   ctxopt_add_opt_settings(actions, "start_pattern", start_pattern_action,
-                          &pre_selection_index, &langinfo, &misc, NULL);
+                          &pre_selection_index, &langinfo, &misc, (char *)0);
   ctxopt_add_opt_settings(actions, "title", title_action, &message, &langinfo,
-                          &misc, NULL);
+                          &misc, (char *)0);
   ctxopt_add_opt_settings(actions, "validate_in_search_mode", toggle_action,
-                          &toggle, NULL);
-  ctxopt_add_opt_settings(actions, "version", version_action, NULL);
-  ctxopt_add_opt_settings(actions, "visual_bell", toggle_action, &toggle, NULL);
-  ctxopt_add_opt_settings(actions, "wide_mode", wide_mode_action, &win, NULL);
+                          &toggle, (char *)0);
+  ctxopt_add_opt_settings(actions, "version", version_action, (char *)0);
+  ctxopt_add_opt_settings(actions, "visual_bell", toggle_action, &toggle,
+                          (char *)0);
+  ctxopt_add_opt_settings(actions, "wide_mode", wide_mode_action, &win,
+                          (char *)0);
   ctxopt_add_opt_settings(actions, "post_subst_all", post_subst_action,
-                          &sed_list, &langinfo, &misc, NULL);
+                          &sed_list, &langinfo, &misc, (char *)0);
   ctxopt_add_opt_settings(actions, "post_subst_included", post_subst_action,
-                          &include_sed_list, &langinfo, &misc, NULL);
+                          &include_sed_list, &langinfo, &misc, (char *)0);
   ctxopt_add_opt_settings(actions, "post_subst_excluded", post_subst_action,
-                          &exclude_sed_list, &langinfo, &misc, NULL);
+                          &exclude_sed_list, &langinfo, &misc, (char *)0);
   ctxopt_add_opt_settings(actions, "special_level_1", special_level_action,
                           special_pattern, &win, &term, &langinfo, &init_attr,
-                          &misc, NULL);
+                          &misc, (char *)0);
   ctxopt_add_opt_settings(actions, "special_level_2", special_level_action,
                           special_pattern, &win, &term, &langinfo, &init_attr,
-                          &misc, NULL);
+                          &misc, (char *)0);
   ctxopt_add_opt_settings(actions, "special_level_3", special_level_action,
                           special_pattern, &win, &term, &langinfo, &init_attr,
-                          &misc, NULL);
+                          &misc, (char *)0);
   ctxopt_add_opt_settings(actions, "special_level_4", special_level_action,
                           special_pattern, &win, &term, &langinfo, &init_attr,
-                          &misc, NULL);
+                          &misc, (char *)0);
   ctxopt_add_opt_settings(actions, "special_level_5", special_level_action,
                           special_pattern, &win, &term, &langinfo, &init_attr,
-                          &misc, NULL);
+                          &misc, (char *)0);
   ctxopt_add_opt_settings(actions, "attributes", attributes_action, &win, &term,
-                          &init_attr, NULL);
+                          &init_attr, (char *)0);
   ctxopt_add_opt_settings(actions, "timeout", timeout_action, &langinfo, &misc,
-                          NULL);
+                          (char *)0);
   ctxopt_add_opt_settings(actions, "hidden_timeout", timeout_action, &langinfo,
-                          NULL);
+                          (char *)0);
   ctxopt_add_opt_settings(actions, "force_first_column",
                           force_first_column_action, &first_word_pattern,
-                          &langinfo, &misc, NULL);
+                          &langinfo, &misc, (char *)0);
   ctxopt_add_opt_settings(actions, "force_last_column",
                           force_last_column_action, &last_word_pattern,
-                          &langinfo, &misc, NULL);
+                          &langinfo, &misc, (char *)0);
   ctxopt_add_opt_settings(actions, "word_separators", separators_action, &iws,
-                          &langinfo, &misc, NULL);
+                          &langinfo, &misc, (char *)0);
   ctxopt_add_opt_settings(actions, "line_separators", separators_action, &ils,
-                          &langinfo, &misc, NULL);
+                          &langinfo, &misc, (char *)0);
   ctxopt_add_opt_settings(actions, "zapped_glyphs", zapped_glyphs_action, &zg,
-                          &langinfo, &misc, NULL);
+                          &langinfo, &misc, (char *)0);
   ctxopt_add_opt_settings(actions, "tag_mode", tag_mode_action, &toggle, &win,
-                          &langinfo, &misc, NULL);
+                          &langinfo, &misc, (char *)0);
   ctxopt_add_opt_settings(actions, "pin_mode", pin_mode_action, &toggle, &win,
-                          &langinfo, &misc, NULL);
+                          &langinfo, &misc, (char *)0);
   ctxopt_add_opt_settings(actions, "search_method", search_method_action, &misc,
-                          NULL);
+                          (char *)0);
   ctxopt_add_opt_settings(actions, "auto_da_number", auto_da_action,
-                          &daccess_np, NULL);
+                          &daccess_np, (char *)0);
   ctxopt_add_opt_settings(actions, "auto_da_unnumber", auto_da_action,
-                          &daccess_up, NULL);
+                          &daccess_up, (char *)0);
   ctxopt_add_opt_settings(actions, "field_da_number", field_da_number_action,
-                          NULL);
+                          (char *)0);
   ctxopt_add_opt_settings(actions, "da_options", da_options_action, &langinfo,
-                          &daccess_index, &misc, NULL);
+                          &daccess_index, &misc, (char *)0);
 
   /* ctxopt constraints */
   /* """""""""""""""""" */
@@ -9740,7 +9750,7 @@ main(int argc, char * argv[])
 
                     output_node->output_str = concat(num_str, daccess.num_sep,
                                                      str + daccess.flength,
-                                                     NULL);
+                                                     (char *)0);
 
                     free(num_str);
                   }
@@ -9825,7 +9835,7 @@ main(int argc, char * argv[])
                 rtrim(num_str, " ", 0);
 
                 output_str = concat(num_str, daccess.num_sep,
-                                    str + daccess.flength, NULL);
+                                    str + daccess.flength, (char *)0);
 
                 free(num_str);
               }
