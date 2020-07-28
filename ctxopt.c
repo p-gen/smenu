@@ -1744,21 +1744,21 @@ print_options(ll_t * list, int * has_optional, int * has_ellipsis,
 
     if (opt->optional)
     {
-      option        = strappend(option, "[", NULL);
+      option        = strappend(option, "[", (char *)0);
       *has_optional = 1;
     }
 
     if (opt->eval_first)
     {
-      option          = strappend(option, "*", NULL);
+      option          = strappend(option, "*", (char *)0);
       *has_early_eval = 1;
     }
 
-    option = strappend(option, opt->params, NULL);
+    option = strappend(option, opt->params, (char *)0);
 
     if (opt->next_ctx != NULL)
     {
-      option          = strappend(option, ">", opt->next_ctx, NULL);
+      option          = strappend(option, ">", opt->next_ctx, (char *)0);
       *has_ctx_change = 1;
     }
 
@@ -1771,11 +1771,11 @@ print_options(ll_t * list, int * has_optional, int * has_ellipsis,
         o[0] = opt->opt_count_oper;
         o[1] = '\0';
         snprintf(m, 3, "%u", opt->opt_count_mark);
-        option    = strappend(option, "...", o, m, NULL);
+        option    = strappend(option, "...", o, m, (char *)0);
         *has_rule = 1;
       }
       else
-        option = strappend(option, "...", NULL);
+        option = strappend(option, "...", (char *)0);
 
       *has_ellipsis = 1;
     }
@@ -1785,15 +1785,15 @@ print_options(ll_t * list, int * has_optional, int * has_ellipsis,
       if (*(opt->arg) == '#')
         *has_generic_arg = 1;
 
-      option = strappend(option, " ", NULL);
+      option = strappend(option, " ", (char *)0);
 
       if (opt->optional_args)
       {
-        option        = strappend(option, "[", opt->arg, NULL);
+        option        = strappend(option, "[", opt->arg, (char *)0);
         *has_optional = 1;
       }
       else
-        option = strappend(option, opt->arg, NULL);
+        option = strappend(option, opt->arg, (char *)0);
 
       if (opt->multiple_args)
       {
@@ -1804,27 +1804,27 @@ print_options(ll_t * list, int * has_optional, int * has_ellipsis,
           o[0] = opt->opt_args_count_oper;
           o[1] = '\0';
           snprintf(m, 3, "%u", opt->opt_args_count_mark);
-          option    = strappend(option, "...", o, m, NULL);
+          option    = strappend(option, "...", o, m, (char *)0);
           *has_rule = 1;
         }
         else
-          option = strappend(option, "...", NULL);
+          option = strappend(option, "...", (char *)0);
 
         *has_ellipsis = 1;
       }
       if (opt->optional_args)
-        option = strappend(option, "]", NULL);
+        option = strappend(option, "]", (char *)0);
     }
     if (opt->optional)
-      option = strappend(option, "]", NULL);
+      option = strappend(option, "]", (char *)0);
 
     if (strlen(line) + 1 + strlen(option) < 80)
-      line = strappend(line, option, " ", NULL);
+      line = strappend(line, option, " ", (char *)0);
     else
     {
       printf("%s\n", line);
       line[2] = '\0';
-      line    = strappend(line, option, " ", NULL);
+      line    = strappend(line, option, " ", (char *)0);
     }
 
     free(option);
@@ -1890,7 +1890,8 @@ bst_seen_opt_cb(const void * node, walk_order_e kind, int level)
     if ((!seen_opt->opt->optional) && seen_opt->seen == 0)
     {
       user_rc     = 1;
-      user_string = strappend(user_string, seen_opt->opt->params, " ", NULL);
+      user_string = strappend(user_string, seen_opt->opt->params, " ",
+                              (char *)0);
     }
   }
 }
@@ -1963,9 +1964,9 @@ bst_match_par_cb(const void * node, walk_order_e kind, int level)
       if (locate_par(str, ctx) != NULL)
       {
         if (*user_string2 == '\0')
-          user_string2 = strappend(user_string2, "- ", ctx->name, NULL);
+          user_string2 = strappend(user_string2, "- ", ctx->name, (char *)0);
         else
-          user_string2 = strappend(user_string2, "\n- ", ctx->name, NULL);
+          user_string2 = strappend(user_string2, "\n- ", ctx->name, (char *)0);
         break;
       }
       str[strlen(str) - 1] = '\0';
@@ -1983,7 +1984,7 @@ match_prefix_cb(const void * node, walk_order_e kind, int level)
     if (strpref(par->name, (char *)user_object))
     {
       user_rc++;
-      user_string = strappend(user_string, par->name, " ", NULL);
+      user_string = strappend(user_string, par->name, " ", (char *)0);
     }
 }
 
@@ -3353,7 +3354,7 @@ ctxopt_analyze(int nb_words, char ** words, int * nb_rem_args,
             if (*(par_name + pos) == '-')
             {
               word = xstrdup("\\"); /* Protect the '-' */
-              word = strappend(word, par_name + pos, NULL);
+              word = strappend(word, par_name + pos, (char *)0);
             }
             else
               word = xstrdup(par_name + pos);
@@ -3365,7 +3366,7 @@ ctxopt_analyze(int nb_words, char ** words, int * nb_rem_args,
             /* hence prefix it with a dash.                  */
             /* ''''''''''''''''''''''''''''''''''''''''''''' */
             word = xstrdup("-");
-            word = strappend(word, par_name + pos, NULL);
+            word = strappend(word, par_name + pos, (char *)0);
           }
 
           /* Insert it after the current node in the list. */
@@ -3390,7 +3391,7 @@ ctxopt_analyze(int nb_words, char ** words, int * nb_rem_args,
             *user_string  = '\0';
             *user_string2 = '\0';
 
-            user_string = strappend(user_string, par_name, NULL);
+            user_string = strappend(user_string, par_name, (char *)0);
 
             bst_walk(contexts_bst, bst_match_par_cb);
 
@@ -3403,7 +3404,7 @@ ctxopt_analyze(int nb_words, char ** words, int * nb_rem_args,
                 user_string2,
                 "\n\nSwitch to one of them first using the appropriate "
                 "parameter, see below.\n",
-                NULL);
+                (char *)0);
             }
 
             fatal(CTXOPTUNKPAR, errmsg);
@@ -4020,7 +4021,7 @@ ctxopt_format_constraint(int nb_args, char ** args, char * value, char * par)
     value[255] = '\0';
 
   format = xstrdup(args[0]);
-  format = strappend(format, "%c", NULL);
+  format = strappend(format, "%c", (char *)0);
 
   rc = sscanf(value, format, x, &y);
   if (rc != 1)
