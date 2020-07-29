@@ -932,7 +932,7 @@ update_bitmaps(search_mode_t mode, search_data_t * data,
       /* following algorithm                                  */
       /* .len holds the original length in bytes of the word  */
       /* """""""""""""""""""""""""""""""""""""""""""""""""""" */
-      str_orig[word_a[n].len] = '\0';
+      rtrim(str_orig, " \t", 0);
 
       bm_len = (word_a[n].mb - daccess.flength) / CHAR_BIT + 1;
       bm     = word_a[n].bitmap;
@@ -1025,24 +1025,32 @@ update_bitmaps(search_mode_t mode, search_data_t * data,
 
         free(str);
 
-        /* We know that the first glyph is part of the pattern, so        */
-        /* highlight it if it is not and unhighlight the next occurrence  */
-        /* that must be here because this word has already been filtered  */
-        /* by select_starting_pattern()                                   */
-        /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+        /* We know that the first non blank glyph is part of the pattern,   */
+        /* so highlight it if it is not and unhighlight the next occurrence */
+        /* that must be here because this word has already been filtered    */
+        /* by select_starting_pattern().                                    */
+        /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
         if (affinity == START_AFFINITY)
         {
           char *ptr1, *ptr2;
-          long  i = 1;
+          long  i;
           long  utf8_len;
 
-          first_glyph = utf8_strprefix(first_glyph, word_a[n].str, 1,
+          /* Skip leading spaces and tabs. */
+          /* """"""""""""""""""""""""""""" */
+          for (i = 0; i < word_a[n].mb; i++)
+            if (!isblank(*(word_a[n].str + daccess.flength + i)))
+              break;
+
+          first_glyph = utf8_strprefix(first_glyph, word_a[n].str + i, 1,
                                        &utf8_len);
 
-          if (!BIT_ISSET(word_a[n].bitmap, 0))
+          if (!BIT_ISSET(word_a[n].bitmap, i))
           {
-            BIT_ON(word_a[n].bitmap, 0);
-            ptr1 = word_a[n].str;
+            BIT_ON(word_a[n].bitmap, i);
+
+            ptr1 = word_a[n].str + i;
+            i++;
             while ((ptr2 = utf8_next(ptr1)) != NULL)
             {
               if (memcmp(ptr2, first_glyph, utf8_len) == 0)
@@ -3853,7 +3861,7 @@ select_ending_matches(win_t * win, term_t * term, search_data_t * search_data,
 
       nb = 0;
       while ((ptr = utf8_prev(str, ptr)) != NULL && isblank(*ptr))
-        if (ptr - str + 1 > len)
+        if (ptr - str > 0)
           nb++;
         else
           break;
@@ -3937,6 +3945,7 @@ select_starting_matches(win_t * win, term_t * term, search_data_t * search_data,
     long   i;
     long   j = 0;
     long   index;
+    long   nb;
     long * tmp;
     long   pos;
     char * first_glyph;
@@ -3950,15 +3959,21 @@ select_starting_matches(win_t * win, term_t * term, search_data_t * search_data,
     for (i = 0; i < matches_count; i++)
     {
       index = matching_words_a[i];
-      if (BIT_ISSET(word_a[index].bitmap, 0))
+
+      for (nb = 0; nb < word_a[index].mb; nb++)
+        if (!isblank(*(word_a[index].str + daccess.flength + nb)))
+          break;
+
+      if (BIT_ISSET(word_a[index].bitmap, nb))
         alt_matching_words_a[j++] = index;
       else
       {
+
         if (search_mode == FUZZY)
         {
           first_glyph = utf8_strprefix(first_glyph,
-                                       word_a[index].str + daccess.flength, 1,
-                                       &pos);
+                                       word_a[index].str + nb + daccess.flength,
+                                       1, &pos);
           utf8_len    = pos;
 
           /* in fuzzy search mode we only look the first glyph */
@@ -3967,18 +3982,19 @@ select_starting_matches(win_t * win, term_t * term, search_data_t * search_data,
             alt_matching_words_a[j++] = index;
           else
             memset(word_a[index].bitmap, '\0',
-                   (word_a[index].mb - daccess.flength) / CHAR_BIT + 1);
+                   (word_a[index].mb + nb - daccess.flength) / CHAR_BIT + 1);
         }
         else
         {
           /* in not fuzzy search mode use all the pattern */
           /* """""""""""""""""""""""""""""""""""""""""""" */
-          if (memcmp(search_data->buf, word_a[index].str, search_data->len)
+          if (memcmp(search_data->buf, word_a[index].str + nb,
+                     search_data->len - nb)
               == 0)
             alt_matching_words_a[j++] = index;
           else
             memset(word_a[index].bitmap, '\0',
-                   (word_a[index].mb - daccess.flength) / CHAR_BIT + 1);
+                   (word_a[index].mb + nb - daccess.flength) / CHAR_BIT + 1);
         }
       }
     }
