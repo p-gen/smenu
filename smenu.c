@@ -3852,7 +3852,6 @@ select_ending_matches(win_t * win, term_t * term, search_data_t * search_data,
     for (i = 0; i < matches_count; i++)
     {
       index      = matching_words_a[i];
-      long   len = word_a[index].len;
       char * str = word_a[index].str;
 
       /* count the trailing blanks non counted in the bitmap */
