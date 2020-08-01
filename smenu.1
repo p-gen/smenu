@@ -106,13 +106,25 @@ Special character sequences formed by a \fI\\\fP followed by one of the
 characters \fIa\fP \fIb\fP \fIt\fP \fIn\fP \fIv\fP \fIf\fP \fIr\fP and
 \fI\\\fP are understood and have their traditional meanings.
 
-UTF-8 sequences introduced by \fI\\u\fP are also understood.
-\fI\\u\fP can be followed by 2,4,6 or 8 hexadecimal characters.
-Here is an example of using \fI\\u\fP to represent a lowercase latin
-e with acute: \fI\\uc3a9\fP.
+UTF-8 sequences introduced by \fI\\u\fP and \fI\\U\fP are also understood.
+
+\fBWarning\fP, when used together, it is important to know that all
+sequences starting with \fI\\U\fP will be interpreted before the start
+of interpretation of sequences starting with \fI\\u\fP.
+
+\fI\\u\fP can be followed by 2,4,6 or 8 hexadecimal characters composing
+an UTF-8 bytestring.
+Here is an example of using \fI\\u\fP to compose a lowercase latin
+e with acute accent: \fI\\uc3a9\fP.
+
+\fI\\U\fP must be followed by exactly 6 hexadecimal digits, including
+leading zeros, that represent a unicode codepoint according to ISO
+10646 UCS-4.
+The lowercase latin e with acute of the previous example (codepoint
+\fBU+00E9\fP) can then be represented using the notation: \fI\\U0000e9\fP.
 .PP
-Note that with most shells, the \fI\\\fP before the \fIu\fP need to be
-protected or escaped.
+Note that with most shells, the \fI\\\fP before \fIu\fP and \fIU\fP
+need to be protected or escaped.
 .PP
 Quotations (single and double) in the input stream can be used to ignore
 the word separators so that a group of words are taken as a single entity.
@@ -684,7 +696,7 @@ All the other words will become implicitly non-selectable (excluded)
 \fB-i\fP|\fB-in\fP|\fB-inc\fP|\fB-incl\fP|\fB-include\fP can be used more
 than once with cumulative effect.
 
-\fI\\u\fP sequences can also be used in the regexp.
+\fI\\u\fP and \fI\\U\fP sequences can also be used in the regexp.
 .IP "\fB-e\fP|\fB-ex\fP|\fB-exc\fP|\fB-excl\fP|\fB-exclude\fP... \fIregex\fP"
 (Allowed in all contexts)
 
@@ -702,7 +714,7 @@ the possible words alterations made
 by \fB-I\fP|\fB-si\fP|\fB-subst_included\fP or
 \fB-E\fP|\fB-se\fP|\fB-subst_excluded\fP (see below).
 
-\fI\\u\fP sequences can also be used in the regexp.
+\fI\\u\fP and \fI\\U\fP sequences can also be used in the regexp.
 .IP "\fB-m\fP|\fB-msg\fP|\fB-message\fP|\fB-title\fP \fImessage\fP"
 (Allowed in all contexts)
 
@@ -710,7 +722,7 @@ Displays a message (title) above the window.
 If the current locale is not \fIUTF-8\fP, then all \fIUTF-8\fP characters
 will be replaced by the substitution character.
 
-\fI\\u\fP sequences can be used in the message.
+\fI\\u\fP and \fI\\U\fP sequences can be used in the message.
 
 Note that the message will be truncated if it does not fit on a terminal
 line.
@@ -799,7 +811,7 @@ Examples of possible attributes are:
   \f(CBrb     \fPreverse bold
 .fi
 
-\fI\\u\fP sequences can be used in the pattern.
+\fI\\u\fP and \fI\\U\fP sequences can be used in the pattern.
 .IP "\fB-z\fP|\fB-zap\fP|\fB-zap_glyphs\fP \fIbytes\fP"
 (Allowed in all contexts)
 
@@ -810,7 +822,8 @@ Example: The argument \f(CR'\\u0d\\ue282ac,'\fP means: ignore all commas,
 Euro signs and carriage return characters when reading from stdin or
 a file.
 
-As shown above \fI\\u\fP sequences can be used in the bytes set.
+As shown above \fI\\u\fP and \fI\\U\fP sequences can be used in the
+bytes set.
 .IP "\fB-T\fP|\fB-tm\fP|\fB-tag\fP|\fB-tag_mode\fP [\fIdelim\fP]"
 (Allowed in Main, Columns, Lines, Direct_access, Tabulations contexts,
 leads to Tagging context)
@@ -829,8 +842,8 @@ be sent to stdout separated by the optional argument given after the
 option \fB-T\fP|\fB-tm\fP|\fB-tag\fP|\fB-tag_mode\fP.
 
 Note than this \fIseparator\fP can have more than one character, contain
-UTF-8 characters (in native or \fI\\u\fP form) and can even contain
-control character as in \f(CB$'\\n'\fP.
+UTF-8 characters (in native or \fI\\u\fP or \fI\\U\fP form) and can even
+contain control character as in \f(CB$'\\n'\fP.
 
 A space is used as the default separator if none is given.
 
@@ -935,15 +948,15 @@ format \fBx\fP:\fBy\fP where \fBx\fP can be:
 .TP
 \f(CBl\fP (\fB-F\fP|\fB-en\fP|\fB-embedded_number\fP, \
 \fB-N\fP|\fB-number\fP and \fB-U\fP|\fB-unnumber\fP options)
-Here \fBy\fP is the UTF-8 character (in native or \fI\\u\fP form)
-to print before the number.
+Here \fBy\fP is the UTF-8 character (in native or \fI\\u\fP or \fI\\U\fP
+form) to print before the number.
 The default is a single space.
 .
 .TP
 \f(CBr\fP (\fB-F\fP|\fB-en\fP|\fB-embedded_number\fP, \
 \fB-N\fP|\fB-number\fP and \fB-U\fP|\fB-unnumber\fP options)
-Here \fBy\fP is the UTF-8 character (in native or \fI\\u\fP form)
-to print after the number.
+Here \fBy\fP is the UTF-8 character (in native or \fI\\u\fP or \fI\\U\fP
+form) to print after the number.
 The default is \f(CB)\fP.
 .
 .TP
@@ -1175,7 +1188,7 @@ Regular expressions and column numbers can be freely mixed.
 
 Regular expression in \fB-C\fP|\fB-cs\fP|\fB-cols\fP|\fB-cols_select\fP and
 \fB-R\fP|\fB-rs\fP|\fB-rows\fP|\fB-rows_select\fP can contain \fIUTF-8\fP
-characters either directly or by using the \fI\\u\fP notation.
+characters either directly or by using the \fI\\u\fP or \fI\\U\fP notation.
 
 Example of columns selection: \f(CB-Ci2,3,/X./,5-7\fP forces the cursor
 to only navigate in columns \fB2\fP,\fB3\fP,\fB5\fP,\fB6\fP and \fB7\fP
@@ -1214,7 +1227,7 @@ an empty \fBregex\fP to set the end-of-line separator with
 \fB-L\fP|\fB-ls\fP|\fB-ld\fP|\fB-line-delimiters\fP|\fB-line_separators\fP '')
 .PP
 .RS
-\fI\\u\fP sequences can also be used in the regexp after
+\fI\\u\fP and \fI\\U\fP sequences can also be used in the regexp after
 \fB-A\fP|\fB-fc\fP|\fB-first_column\fP.
 .RE
 .IP "\fB-Z\fP|\fB-lc\fP|\fB-last_column\fP \fIregex\fP"
@@ -1227,7 +1240,7 @@ The same trick with
 can also be used.
 .PP
 .RS
-\fI\\u\fP sequences can also be used in the regexp after
+\fI\\u\fP and \fI\\U\fP sequences can also be used in the regexp after
 \fB-Z\fP|\fB-lc\fP|\fB-last_column\fP.
 .RE
 .IP "\fB-g\fP|\fB-gutter\fP [\fIstring\fP]"
@@ -1246,8 +1259,8 @@ is used for the remaining columns.
 When not given, the separator defaults to a vertical bar \fI|\fP (or a
 full height vertical bar if the locale is set to UTF-8).
 
-Each character can be given in normal or \fI\\u\fP form in the
-\fIstring\fP argument.
+Each character can be given in normal or \fI\\u\fP or \fI\\U\fP form in
+the \fIstring\fP argument.
 
 Example: "\f(CB|- \fP" will allow one to separate the first two columns
 with '\f(CB|\fP', then '\f(CB-\fP' will be used and '\f(CB \fP' will
@@ -1265,8 +1278,9 @@ This option can be used to specify the characters (or multibyte
 sequences) which will be used to delimit the input words.
 
 Multibyte sequences (UTF-8) can be natives of using the same ASCII
-representation used in words (a leading \fI\\u\fP following by up to 8
-hexadecimal characters).
+representation used in words (a leading \fI\\u\fP or \fI\\U\fP following
+by up to 8 hexadecimal characters for the former and 6 hexadecimal
+characters for the latter).
 
 Non-printable characters in arguments should be given using the standard
 \fI$''\fP representation.
@@ -1281,8 +1295,9 @@ This option can be used to specify the characters (or multibyte
 sequences) which will be used to delimit the lines in the input stream.
 
 Multibyte sequences (UTF-8) can be natives of using the same ASCII
-representation used in words (a leading \fI\\u\fP following by up to 8
-hexadecimal characters).
+representation used in words (a leading \fI\\u\fP or \fI\\U\fP following
+by up to 8 hexadecimal characters for the former and 6 hexadecimal
+characters for the latter).
 
 Non-printable characters in arguments should be given using the standard
 $'' representation.
@@ -1300,7 +1315,7 @@ automatically added to the list of word delimiters as if
 \fB-W\fP|\fB-ws\fP|\fB-wd\fP|\fB-word_delimiters\fP|\fB-word_separators\fP was
 also used.
 
-\fI\\u\fP sequences can also be used here.
+\fI\\u\fP and \fI\\U\fP sequences can also be used here.
 .TP
 .IP "\fB-q\fP|\fB-no_bar\fP|\fB-no-scroll_bar\fP"
 (Allowed in all contexts)
@@ -1369,7 +1384,8 @@ In the three previous options, \fIregex\fP is a \fBPOSIX\fP
 \fBE\fPxtended \fBR\fPegular \fBE\fPxpression.
 For details, please refer to the \fBregex\fP manual page.
 .PP
-Additionally \fI\\u\fP sequences can also be used in the regexp.
+Additionally \fI\\u\fP and \fI\\U\fP sequences can also be used in
+the regexp.
 .PP
 .RE
 If a post-processing action
@@ -1426,7 +1442,7 @@ the command:
 on \fBa\fP but \f(CBsmenu -I/c/x/v -s/c <<< "a b c d"\fP will find it and
 put the cursor on the \fBx\fP substituting the \fBc\fP on screen only
 
-\fI\\u\fP sequences can be used in the pattern.
+\fI\\u\fP and \fI\\U\fP sequences can be used in the pattern.
 .RE
 .IP "\fB-x\fP|\fB-tmout\fP|\fB-timeout\fP \fItype\fP [\fIword\fP] \fIdelay\fP"
 .IP "\fB-X\fP|\fB-htmout\fP|\fB-hidden_timeout\fP \fItype\fP [\fIword\fP]\

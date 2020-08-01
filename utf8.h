@@ -6,6 +6,8 @@
 #ifndef UTF8_H
 #define UTF8_H
 
+#include <stdint.h>
+
 typedef struct langinfo_s langinfo_t;
 
 /* Locale informations */
@@ -33,6 +35,9 @@ utf8_strtowcs(char * s);
 
 void
 utf8_sanitize(char * s, char sc);
+
+int
+cptoutf8(char * utf8_str, uint32_t c);
 
 int
 utf8_interpret(char * s, langinfo_t * langinfo, char sc);

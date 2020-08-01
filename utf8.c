@@ -17,11 +17,61 @@
 #include "xmalloc.h"
 #include "utf8.h"
 
+/* =========================================================== */
+/* UTF-8 byte sequence generation from a given UCS-4 codepoint */
+/* utf8_str must be preallocated with a size of at least 5     */
+/* bytes.                                                      */
+/* return the length of the generated sequence or 0 if c is    */
+/* not a valid codepoint.                                      */
+/* =========================================================== */
+int
+cptoutf8(char * utf8_str, uint32_t c)
+{
+  int len = 0;
+  int first;
+  int i;
+
+  if (c < 0x80)
+  {
+    first = 0;
+    len   = 1;
+  }
+  else if (c < 0x800)
+  {
+    first = 0xc0;
+    len   = 2;
+  }
+  else if (c < 0x10000)
+  {
+    first = 0xe0;
+    len   = 3;
+  }
+  else if (c < 0x200000)
+  {
+    first = 0xf0;
+    len   = 4;
+  }
+
+  if (utf8_str)
+  {
+    for (i = len - 1; i > 0; --i)
+    {
+      utf8_str[i] = (c & 0x3f) | 0x80;
+      c >>= 6;
+    }
+    utf8_str[0] = c | first;
+  }
+
+  return len;
+}
+
 /* ======================================================================= */
 /* Unicode (UTF-8) ascii representation interpreter.                       */
 /* The string passed will be altered but its address will not change.      */
 /* All hexadecimal sequences of \uxx, \uxxxx, \uxxxxxx and \uxxxxxxxx will */
-/* be replace by the corresponding UTF-8 character when possible.          */
+/* be replaced by the corresponding UTF-8 character when possible.         */
+/* All hexadecimal sequences of \Uxxxxx will be replaced with the UTF-8    */
+/* sequence corresponding to the given UCS-4 codepoint.                    */
 /* When not possible the substitution character is substituted in place.   */
 /* Returns 0 if the conversion has faild else 1.                           */
 /* ======================================================================= */
@@ -45,6 +95,66 @@ utf8_interpret(char * s, langinfo_t * langinfo, char substitute)
 
   init_len = strlen(s);
 
+  /* Manage \U codepoints. */
+  /* """"""""""""""""""""" */
+  while ((utf8_str = strstr(s, "\\U")) != NULL)
+  {
+    char     str[7];
+    int      utf8_str_len;
+    int      len;
+    int      n;
+    uint32_t cp;
+    int      subst; /* 0, the \U sequance is valid, else 1. */
+
+    utf8_to_eos_len = strlen(utf8_str);
+    utf8_str_len    = 0;
+
+    n = sscanf(utf8_str + 2,
+               "%6["
+               "0123456789"
+               "abcdef"
+               "ABCDEF"
+               "]%n",
+               tmp, &utf8_str_len);
+
+    subst = 0;
+
+    if (n == 1 && utf8_str_len == 6)
+    {
+      sscanf(tmp, "%x", &cp);
+      if (cp > 0x10FFFF)
+        subst = 1; /* Invalid range. */
+      else
+      {
+        len             = cptoutf8(str, cp);
+        str[len]        = '\0';
+        *(utf8_str + 1) = 'u';
+        memmove(utf8_str, str, len);
+        memmove(utf8_str + len, utf8_str + 8, utf8_to_eos_len - 8);
+        len_to_remove += 8 - len;
+      }
+    }
+    else
+      subst = 1; /* Invalid sequence. */
+
+    /* In case of invalid \U sequence, replace it with the */
+    /* substitution character.                             */
+    /* ''''''''''''''''''''''''''''''''''''''''''''''''''' */
+    if (subst)
+    {
+      *utf8_str = substitute;
+      memmove(utf8_str + 1, utf8_str + 2 + utf8_str_len,
+              utf8_to_eos_len - (utf8_str_len + 2 - 1));
+      len_to_remove += utf8_str_len + 2 - 1;
+    }
+  }
+
+  /* Make sure that the string is well terminated */
+  /* """""""""""""""""""""""""""""""""""""""""""" */
+  *(s + init_len - len_to_remove) = '\0';
+
+  /* Manage \u UTF-8 byte sequences. */
+  /* """"""""""""""""""""""""""""""" */
   while ((utf8_str = strstr(s, "\\u")) != NULL)
   {
     utf8_to_eos_len = strlen(utf8_str);
