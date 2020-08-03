@@ -70,7 +70,7 @@ cptoutf8(char * utf8_str, uint32_t c)
 /* The string passed will be altered but its address will not change.      */
 /* All hexadecimal sequences of \uxx, \uxxxx, \uxxxxxx and \uxxxxxxxx will */
 /* be replaced by the corresponding UTF-8 character when possible.         */
-/* All hexadecimal sequences of \Uxxxxx will be replaced with the UTF-8    */
+/* All hexadecimal sequences of \Uxxxxxx will be replaced with the UTF-8   */
 /* sequence corresponding to the given UCS-4 codepoint.                    */
 /* When not possible the substitution character is substituted in place.   */
 /* Returns 0 if the conversion has faild else 1.                           */
