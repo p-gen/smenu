@@ -1,8 +1,8 @@
 #! /bin/sh
 # Attempt to guess a canonical system name.
-#   Copyright 1992-2018 Free Software Foundation, Inc.
+#   Copyright 1992-2020 Free Software Foundation, Inc.
 
-timestamp='2018-03-08'
+timestamp='2020-01-01'
 
 # This file is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by
@@ -50,7 +50,7 @@ version="\
 GNU config.guess ($timestamp)
 
 Originally written by Per Bothner.
-Copyright 1992-2018 Free Software Foundation, Inc.
+Copyright 1992-2020 Free Software Foundation, Inc.
 
 This is free software; see the source for copying conditions.  There is NO
 warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE."
@@ -84,8 +84,6 @@ if test $# != 0; then
   exit 1
 fi
 
-trap 'exit 1' 1 2 15
-
 # CC_FOR_BUILD -- compiler used by this script. Note that the use of a
 # compiler to aid in system detection is discouraged as it requires
 # temporary files to be created and, as you can see below, it is a
@@ -96,34 +94,40 @@ trap 'exit 1' 1 2 15
 
 # Portable tmp directory creation inspired by the Autoconf team.
 
-set_cc_for_build='
-trap "exitcode=\$?; (rm -f \$tmpfiles 2>/dev/null; rmdir \$tmp 2>/dev/null) && exit \$exitcode" 0 ;
-trap "rm -f \$tmpfiles 2>/dev/null; rmdir \$tmp 2>/dev/null; exit 1" 1 2 13 15 ;
-: ${TMPDIR=/tmp} ;
- { tmp=`(umask 077 && mktemp -d "$TMPDIR/cgXXXXXX") 2>/dev/null` && test -n "$tmp" && test -d "$tmp" ; } ||
- { test -n "$RANDOM" && tmp=$TMPDIR/cg$$-$RANDOM && (umask 077 && mkdir $tmp) ; } ||
- { tmp=$TMPDIR/cg-$$ && (umask 077 && mkdir $tmp) && echo "Warning: creating insecure temp directory" >&2 ; } ||
- { echo "$me: cannot create a temporary directory in $TMPDIR" >&2 ; exit 1 ; } ;
-dummy=$tmp/dummy ;
-tmpfiles="$dummy.c $dummy.o $dummy.rel $dummy" ;
-case $CC_FOR_BUILD,$HOST_CC,$CC in
- ,,)    echo "int x;" > "$dummy.c" ;
-	for c in cc gcc c89 c99 ; do
-	  if ($c -c -o "$dummy.o" "$dummy.c") >/dev/null 2>&1 ; then
-	     CC_FOR_BUILD="$c"; break ;
-	  fi ;
-	done ;
-	if test x"$CC_FOR_BUILD" = x ; then
-	  CC_FOR_BUILD=no_compiler_found ;
-	fi
-	;;
- ,,*)   CC_FOR_BUILD=$CC ;;
- ,*,*)  CC_FOR_BUILD=$HOST_CC ;;
-esac ; set_cc_for_build= ;'
+tmp=
+# shellcheck disable=SC2172
+trap 'test -z "$tmp" || rm -fr "$tmp"' 0 1 2 13 15
+
+set_cc_for_build() {
+    # prevent multiple calls if $tmp is already set
+    test "$tmp" && return 0
+    : "${TMPDIR=/tmp}"
+    # shellcheck disable=SC2039
+    { tmp=`(umask 077 && mktemp -d "$TMPDIR/cgXXXXXX") 2>/dev/null` && test -n "$tmp" && test -d "$tmp" ; } ||
+	{ test -n "$RANDOM" && tmp=$TMPDIR/cg$$-$RANDOM && (umask 077 && mkdir "$tmp" 2>/dev/null) ; } ||
+	{ tmp=$TMPDIR/cg-$$ && (umask 077 && mkdir "$tmp" 2>/dev/null) && echo "Warning: creating insecure temp directory" >&2 ; } ||
+	{ echo "$me: cannot create a temporary directory in $TMPDIR" >&2 ; exit 1 ; }
+    dummy=$tmp/dummy
+    case ${CC_FOR_BUILD-},${HOST_CC-},${CC-} in
+	,,)    echo "int x;" > "$dummy.c"
+	       for driver in cc gcc c89 c99 ; do
+		   if ($driver -c -o "$dummy.o" "$dummy.c") >/dev/null 2>&1 ; then
+		       CC_FOR_BUILD="$driver"
+		       break
+		   fi
+	       done
+	       if test x"$CC_FOR_BUILD" = x ; then
+		   CC_FOR_BUILD=no_compiler_found
+	       fi
+	       ;;
+	,,*)   CC_FOR_BUILD=$CC ;;
+	,*,*)  CC_FOR_BUILD=$HOST_CC ;;
+    esac
+}
 
 # This is needed to find uname on a Pyramid OSx when run in the BSD universe.
 # (ghazi@noc.rutgers.edu 1994-08-24)
-if (test -f /.attbin/uname) >/dev/null 2>&1 ; then
+if test -f /.attbin/uname ; then
 	PATH=$PATH:/.attbin ; export PATH
 fi
 
@@ -138,7 +142,7 @@ Linux|GNU|GNU/*)
 	# We could probably try harder.
 	LIBC=gnu
 
-	eval "$set_cc_for_build"
+	set_cc_for_build
 	cat <<-EOF > "$dummy.c"
 	#include <features.h>
 	#if defined(__UCLIBC__)
@@ -209,7 +213,7 @@ case "$UNAME_MACHINE:$UNAME_SYSTEM:$UNAME_RELEASE:$UNAME_VERSION" in
 		os=netbsdelf
 		;;
 	    arm*|i386|m68k|ns32k|sh3*|sparc|vax)
-		eval "$set_cc_for_build"
+		set_cc_for_build
 		if echo __ELF__ | $CC_FOR_BUILD -E - 2>/dev/null \
 			| grep -q __ELF__
 		then
@@ -247,7 +251,7 @@ case "$UNAME_MACHINE:$UNAME_SYSTEM:$UNAME_RELEASE:$UNAME_VERSION" in
 	# Since CPU_TYPE-MANUFACTURER-KERNEL-OPERATING_SYSTEM:
 	# contains redundant information, the shorter form:
 	# CPU_TYPE-MANUFACTURER-OPERATING_SYSTEM is used.
-	echo "$machine-${os}${release}${abi}"
+	echo "$machine-${os}${release}${abi-}"
 	exit ;;
     *:Bitrig:*:*)
 	UNAME_MACHINE_ARCH=`arch | sed 's/Bitrig.//'`
@@ -270,6 +274,9 @@ case "$UNAME_MACHINE:$UNAME_SYSTEM:$UNAME_RELEASE:$UNAME_VERSION" in
     *:SolidBSD:*:*)
 	echo "$UNAME_MACHINE"-${VENDOR}-solidbsd"$UNAME_RELEASE"
 	exit ;;
+    *:OS108:*:*)
+	echo "$UNAME_MACHINE"-${VENDOR}-os108_"$UNAME_RELEASE"
+	exit ;;
     macppc:MirBSD:*:*)
 	echo powerpc-${VENDOR}-mirbsd"$UNAME_RELEASE"
 	exit ;;
@@ -279,12 +286,15 @@ case "$UNAME_MACHINE:$UNAME_SYSTEM:$UNAME_RELEASE:$UNAME_VERSION" in
     *:Sortix:*:*)
 	echo "$UNAME_MACHINE"-${VENDOR}-sortix
 	exit ;;
+    *:Twizzler:*:*)
+	echo "$UNAME_MACHINE"-${VENDOR}-twizzler
+	exit ;;
     *:Redox:*:*)
 	echo "$UNAME_MACHINE"-${VENDOR}-redox
 	exit ;;
     mips:OSF1:*.*)
-        echo mips-dec-osf1
-        exit ;;
+	echo mips-dec-osf1
+	exit ;;
     alpha:OSF1:*:*)
 	case $UNAME_RELEASE in
 	*4.0)
@@ -342,13 +352,13 @@ case "$UNAME_MACHINE:$UNAME_SYSTEM:$UNAME_RELEASE:$UNAME_VERSION" in
 	trap '' 0
 	exit $exitcode ;;
     Amiga*:UNIX_System_V:4.0:*)
-	echo m68k-${VENDOR}-sysv4
+	echo m68k-unknown-sysv4
 	exit ;;
     *:[Aa]miga[Oo][Ss]:*:*)
-	echo "$UNAME_MACHINE"-${VENDOR}-amigaos
+	echo "$UNAME_MACHINE"-unknown-amigaos
 	exit ;;
     *:[Mm]orph[Oo][Ss]:*:*)
-	echo "$UNAME_MACHINE"-${VENDOR}-morphos
+	echo "$UNAME_MACHINE"-unknown-morphos
 	exit ;;
     *:OS/390:*:*)
 	echo i370-ibm-openedition
@@ -363,7 +373,7 @@ case "$UNAME_MACHINE:$UNAME_SYSTEM:$UNAME_RELEASE:$UNAME_VERSION" in
 	echo arm-acorn-riscix"$UNAME_RELEASE"
 	exit ;;
     arm*:riscos:*:*|arm*:RISCOS:*:*)
-	echo arm-${VENDOR}-riscos
+	echo arm-unknown-riscos
 	exit ;;
     SR2?01:HI-UX/MPP:*:* | SR8000:HI-UX/MPP:*:*)
 	echo hppa1.1-hitachi-hiuxmpp
@@ -399,7 +409,7 @@ case "$UNAME_MACHINE:$UNAME_SYSTEM:$UNAME_RELEASE:$UNAME_VERSION" in
 	echo i386-pc-auroraux"$UNAME_RELEASE"
 	exit ;;
     i86pc:SunOS:5.*:* | i86xen:SunOS:5.*:*)
-	eval "$set_cc_for_build"
+	set_cc_for_build
 	SUN_ARCH=i386
 	# If there is a compiler, see if it is configured for 64-bit objects.
 	# Note that the Sun cc does not turn __LP64__ into 1 like gcc does.
@@ -471,7 +481,7 @@ case "$UNAME_MACHINE:$UNAME_SYSTEM:$UNAME_RELEASE:$UNAME_VERSION" in
 	echo m68k-hades-mint"$UNAME_RELEASE"
 	exit ;;
     *:*MiNT:*:* | *:*mint:*:* | *:*TOS:*:*)
-	echo m68k-${VENDOR}-mint"$UNAME_RELEASE"
+	echo m68k-unknown-mint"$UNAME_RELEASE"
 	exit ;;
     m68k:machten:*:*)
 	echo m68k-apple-machten"$UNAME_RELEASE"
@@ -492,7 +502,7 @@ case "$UNAME_MACHINE:$UNAME_SYSTEM:$UNAME_RELEASE:$UNAME_VERSION" in
 	echo clipper-intergraph-clix"$UNAME_RELEASE"
 	exit ;;
     mips:*:*:UMIPS | mips:*:*:RISCos)
-	eval "$set_cc_for_build"
+	set_cc_for_build
 	sed 's/^	//' << EOF > "$dummy.c"
 #ifdef __cplusplus
 #include <stdio.h>  /* for printf() prototype */
@@ -589,7 +599,7 @@ EOF
 	exit ;;
     *:AIX:2:3)
 	if grep bos325 /usr/include/stdio.h >/dev/null 2>&1; then
-		eval "$set_cc_for_build"
+		set_cc_for_build
 		sed 's/^		//' << EOF > "$dummy.c"
 		#include <sys/systemcfg.h>
 
@@ -670,7 +680,7 @@ EOF
 		    esac
 		fi
 		if [ "$HP_ARCH" = "" ]; then
-		    eval "$set_cc_for_build"
+		    set_cc_for_build
 		    sed 's/^		//' << EOF > "$dummy.c"
 
 		#define _HPUX_SOURCE
@@ -710,7 +720,7 @@ EOF
 	esac
 	if [ "$HP_ARCH" = hppa2.0w ]
 	then
-	    eval "$set_cc_for_build"
+	    set_cc_for_build
 
 	    # hppa2.0w-hp-hpux* has a 64-bit kernel and a compiler generating
 	    # 32-bit code.  hppa64-hp-hpux* has the same kernel and a compiler
@@ -736,7 +746,7 @@ EOF
 	echo ia64-hp-hpux"$HPUX_REV"
 	exit ;;
     3050*:HI-UX:*:*)
-	eval "$set_cc_for_build"
+	set_cc_for_build
 	sed 's/^	//' << EOF > "$dummy.c"
 	#include <unistd.h>
 	int
@@ -783,9 +793,9 @@ EOF
 	exit ;;
     i*86:OSF1:*:*)
 	if [ -x /usr/sbin/sysversion ] ; then
-	    echo "$UNAME_MACHINE"-${VENDOR}-osf1mk
+	    echo "$UNAME_MACHINE"-unknown-osf1mk
 	else
-	    echo "$UNAME_MACHINE"-${VENDOR}-osf1
+	    echo "$UNAME_MACHINE"-unknown-osf1
 	fi
 	exit ;;
     parisc*:Lites*:*:*)
@@ -845,10 +855,21 @@ EOF
 	echo "$UNAME_MACHINE"-pc-bsdi"$UNAME_RELEASE"
 	exit ;;
     sparc*:BSD/OS:*:*)
-	echo sparc-${VENDOR}-bsdi"$UNAME_RELEASE"
+	echo sparc-unknown-bsdi"$UNAME_RELEASE"
 	exit ;;
     *:BSD/OS:*:*)
-	echo "$UNAME_MACHINE"-${VENDOR}-bsdi"$UNAME_RELEASE"
+	echo "$UNAME_MACHINE"-unknown-bsdi"$UNAME_RELEASE"
+	exit ;;
+    arm:FreeBSD:*:*)
+	UNAME_PROCESSOR=`uname -p`
+	set_cc_for_build
+	if echo __ARM_PCS_VFP | $CC_FOR_BUILD -E - 2>/dev/null \
+	    | grep -q __ARM_PCS_VFP
+	then
+	    echo "${UNAME_PROCESSOR}"-unknown-freebsd"`echo ${UNAME_RELEASE}|sed -e 's/[-(].*//'`"-gnueabi
+	else
+	    echo "${UNAME_PROCESSOR}"-unknown-freebsd"`echo ${UNAME_RELEASE}|sed -e 's/[-(].*//'`"-gnueabihf
+	fi
 	exit ;;
     *:FreeBSD:*:*)
 	UNAME_PROCESSOR=`/usr/bin/uname -p`
@@ -858,7 +879,7 @@ EOF
 	    i386)
 		UNAME_PROCESSOR=i586 ;;
 	esac
-	echo "$UNAME_PROCESSOR"-${VENDOR}-freebsd"`echo "$UNAME_RELEASE"|sed -e 's/[-(].*//'`"
+	echo "$UNAME_PROCESSOR"-unknown-freebsd"`echo "$UNAME_RELEASE"|sed -e 's/[-(].*//'`"
 	exit ;;
     i*:CYGWIN*:*)
 	echo "$UNAME_MACHINE"-pc-cygwin
@@ -881,41 +902,41 @@ EOF
 		echo i586-pc-interix"$UNAME_RELEASE"
 		exit ;;
 	    authenticamd | genuineintel | EM64T)
-		echo x86_64-${VENDOR}-interix"$UNAME_RELEASE"
+		echo x86_64-unknown-interix"$UNAME_RELEASE"
 		exit ;;
 	    IA64)
-		echo ia64-${VENDOR}-interix"$UNAME_RELEASE"
+		echo ia64-unknown-interix"$UNAME_RELEASE"
 		exit ;;
 	esac ;;
     i*:UWIN*:*)
 	echo "$UNAME_MACHINE"-pc-uwin
 	exit ;;
     amd64:CYGWIN*:*:* | x86_64:CYGWIN*:*:*)
-	echo x86_64-${VENDOR}-cygwin
+	echo x86_64-pc-cygwin
 	exit ;;
     prep*:SunOS:5.*:*)
-	echo powerpcle-${VENDOR}-solaris2"`echo "$UNAME_RELEASE"|sed -e 's/[^.]*//'`"
+	echo powerpcle-unknown-solaris2"`echo "$UNAME_RELEASE"|sed -e 's/[^.]*//'`"
 	exit ;;
     *:GNU:*:*)
 	# the GNU system
-	echo "`echo "$UNAME_MACHINE"|sed -e 's,[-/].*$,,'`-${VENDOR}-$LIBC`echo "$UNAME_RELEASE"|sed -e 's,/.*$,,'`"
+	echo "`echo "$UNAME_MACHINE"|sed -e 's,[-/].*$,,'`-unknown-$LIBC`echo "$UNAME_RELEASE"|sed -e 's,/.*$,,'`"
 	exit ;;
     *:GNU/*:*:*)
 	# other systems with GNU libc and userland
-	echo "$UNAME_MACHINE-${VENDOR}-`echo "$UNAME_SYSTEM" | sed 's,^[^/]*/,,' | tr "[:upper:]" "[:lower:]"``echo "$UNAME_RELEASE"|sed -e 's/[-(].*//'`-$LIBC"
+	echo "$UNAME_MACHINE-unknown-`echo "$UNAME_SYSTEM" | sed 's,^[^/]*/,,' | tr "[:upper:]" "[:lower:]"``echo "$UNAME_RELEASE"|sed -e 's/[-(].*//'`-$LIBC"
 	exit ;;
-    i*86:Minix:*:*)
-	echo "$UNAME_MACHINE"-pc-minix
+    *:Minix:*:*)
+	echo "$UNAME_MACHINE"-unknown-minix
 	exit ;;
     aarch64:Linux:*:*)
-	echo "$UNAME_MACHINE"-${VENDOR}-linux-"$LIBC"
+	echo "$UNAME_MACHINE"-unknown-linux-"$LIBC"
 	exit ;;
     aarch64_be:Linux:*:*)
 	UNAME_MACHINE=aarch64_be
-	echo "$UNAME_MACHINE"-${VENDOR}-linux-"$LIBC"
+	echo "$UNAME_MACHINE"-unknown-linux-"$LIBC"
 	exit ;;
     alpha:Linux:*:*)
-	case `sed -n '/^cpu model/s/^.*: \(.*\)/\1/p' < /proc/cpuinfo` in
+	case `sed -n '/^cpu model/s/^.*: \(.*\)/\1/p' /proc/cpuinfo 2>/dev/null` in
 	  EV5)   UNAME_MACHINE=alphaev5 ;;
 	  EV56)  UNAME_MACHINE=alphaev56 ;;
 	  PCA56) UNAME_MACHINE=alphapca56 ;;
@@ -926,29 +947,29 @@ EOF
 	esac
 	objdump --private-headers /bin/sh | grep -q ld.so.1
 	if test "$?" = 0 ; then LIBC=gnulibc1 ; fi
-	echo "$UNAME_MACHINE"-${VENDOR}-linux-"$LIBC"
+	echo "$UNAME_MACHINE"-unknown-linux-"$LIBC"
 	exit ;;
     arc:Linux:*:* | arceb:Linux:*:*)
-	echo "$UNAME_MACHINE"-${VENDOR}-linux-"$LIBC"
+	echo "$UNAME_MACHINE"-unknown-linux-"$LIBC"
 	exit ;;
     arm*:Linux:*:*)
-	eval "$set_cc_for_build"
+	set_cc_for_build
 	if echo __ARM_EABI__ | $CC_FOR_BUILD -E - 2>/dev/null \
 	    | grep -q __ARM_EABI__
 	then
-	    echo "$UNAME_MACHINE"-${VENDOR}-linux-"$LIBC"
+	    echo "$UNAME_MACHINE"-unknown-linux-"$LIBC"
 	else
 	    if echo __ARM_PCS_VFP | $CC_FOR_BUILD -E - 2>/dev/null \
 		| grep -q __ARM_PCS_VFP
 	    then
-		echo "$UNAME_MACHINE"-${VENDOR}-linux-"$LIBC"eabi
+		echo "$UNAME_MACHINE"-unknown-linux-"$LIBC"eabi
 	    else
-		echo "$UNAME_MACHINE"-${VENDOR}-linux-"$LIBC"eabihf
+		echo "$UNAME_MACHINE"-unknown-linux-"$LIBC"eabihf
 	    fi
 	fi
 	exit ;;
     avr32*:Linux:*:*)
-	echo "$UNAME_MACHINE"-${VENDOR}-linux-"$LIBC"
+	echo "$UNAME_MACHINE"-unknown-linux-"$LIBC"
 	exit ;;
     cris:Linux:*:*)
 	echo "$UNAME_MACHINE"-axis-linux-"$LIBC"
@@ -957,100 +978,128 @@ EOF
 	echo "$UNAME_MACHINE"-axis-linux-"$LIBC"
 	exit ;;
     e2k:Linux:*:*)
-	echo "$UNAME_MACHINE"-${VENDOR}-linux-"$LIBC"
+	echo "$UNAME_MACHINE"-unknown-linux-"$LIBC"
 	exit ;;
     frv:Linux:*:*)
-	echo "$UNAME_MACHINE"-${VENDOR}-linux-"$LIBC"
+	echo "$UNAME_MACHINE"-unknown-linux-"$LIBC"
 	exit ;;
     hexagon:Linux:*:*)
-	echo "$UNAME_MACHINE"-${VENDOR}-linux-"$LIBC"
+	echo "$UNAME_MACHINE"-unknown-linux-"$LIBC"
 	exit ;;
     i*86:Linux:*:*)
 	echo "$UNAME_MACHINE"-pc-linux-"$LIBC"
 	exit ;;
     ia64:Linux:*:*)
-	echo "$UNAME_MACHINE"-${VENDOR}-linux-"$LIBC"
+	echo "$UNAME_MACHINE"-unknown-linux-"$LIBC"
 	exit ;;
     k1om:Linux:*:*)
-	echo "$UNAME_MACHINE"-${VENDOR}-linux-"$LIBC"
+	echo "$UNAME_MACHINE"-unknown-linux-"$LIBC"
 	exit ;;
     m32r*:Linux:*:*)
-	echo "$UNAME_MACHINE"-${VENDOR}-linux-"$LIBC"
+	echo "$UNAME_MACHINE"-unknown-linux-"$LIBC"
 	exit ;;
     m68*:Linux:*:*)
-	echo "$UNAME_MACHINE"-${VENDOR}-linux-"$LIBC"
+	echo "$UNAME_MACHINE"-unknown-linux-"$LIBC"
 	exit ;;
     mips:Linux:*:* | mips64:Linux:*:*)
-	eval "$set_cc_for_build"
+	set_cc_for_build
+	IS_GLIBC=0
+	test x"${LIBC}" = xgnu && IS_GLIBC=1
 	sed 's/^	//' << EOF > "$dummy.c"
 	#undef CPU
-	#undef ${UNAME_MACHINE}
-	#undef ${UNAME_MACHINE}el
+	#undef mips
+	#undef mipsel
+	#undef mips64
+	#undef mips64el
+	#if ${IS_GLIBC} && defined(_ABI64)
+	LIBCABI=gnuabi64
+	#else
+	#if ${IS_GLIBC} && defined(_ABIN32)
+	LIBCABI=gnuabin32
+	#else
+	LIBCABI=${LIBC}
+	#endif
+	#endif
+
+	#if ${IS_GLIBC} && defined(__mips64) && defined(__mips_isa_rev) && __mips_isa_rev>=6
+	CPU=mipsisa64r6
+	#else
+	#if ${IS_GLIBC} && !defined(__mips64) && defined(__mips_isa_rev) && __mips_isa_rev>=6
+	CPU=mipsisa32r6
+	#else
+	#if defined(__mips64)
+	CPU=mips64
+	#else
+	CPU=mips
+	#endif
+	#endif
+	#endif
+
 	#if defined(__MIPSEL__) || defined(__MIPSEL) || defined(_MIPSEL) || defined(MIPSEL)
-	CPU=${UNAME_MACHINE}el
+	MIPS_ENDIAN=el
 	#else
 	#if defined(__MIPSEB__) || defined(__MIPSEB) || defined(_MIPSEB) || defined(MIPSEB)
-	CPU=${UNAME_MACHINE}
+	MIPS_ENDIAN=
 	#else
-	CPU=
+	MIPS_ENDIAN=
 	#endif
 	#endif
 EOF
-	eval "`$CC_FOR_BUILD -E "$dummy.c" 2>/dev/null | grep '^CPU'`"
-	test "x$CPU" != x && { echo "$CPU-${VENDOR}-linux-$LIBC"; exit; }
+	eval "`$CC_FOR_BUILD -E "$dummy.c" 2>/dev/null | grep '^CPU\|^MIPS_ENDIAN\|^LIBCABI'`"
+	test "x$CPU" != x && { echo "$CPU${MIPS_ENDIAN}-unknown-linux-$LIBCABI"; exit; }
 	;;
     mips64el:Linux:*:*)
-	echo "$UNAME_MACHINE"-${VENDOR}-linux-"$LIBC"
+	echo "$UNAME_MACHINE"-unknown-linux-"$LIBC"
 	exit ;;
     openrisc*:Linux:*:*)
-	echo or1k-${VENDOR}-linux-"$LIBC"
+	echo or1k-unknown-linux-"$LIBC"
 	exit ;;
     or32:Linux:*:* | or1k*:Linux:*:*)
-	echo "$UNAME_MACHINE"-${VENDOR}-linux-"$LIBC"
+	echo "$UNAME_MACHINE"-unknown-linux-"$LIBC"
 	exit ;;
     padre:Linux:*:*)
-	echo sparc-${VENDOR}-linux-"$LIBC"
+	echo sparc-unknown-linux-"$LIBC"
 	exit ;;
     parisc64:Linux:*:* | hppa64:Linux:*:*)
-	echo hppa64-${VENDOR}-linux-"$LIBC"
+	echo hppa64-unknown-linux-"$LIBC"
 	exit ;;
     parisc:Linux:*:* | hppa:Linux:*:*)
 	# Look for CPU level
 	case `grep '^cpu[^a-z]*:' /proc/cpuinfo 2>/dev/null | cut -d' ' -f2` in
-	  PA7*) echo hppa1.1-${VENDOR}-linux-"$LIBC" ;;
-	  PA8*) echo hppa2.0-${VENDOR}-linux-"$LIBC" ;;
-	  *)    echo hppa-${VENDOR}-linux-"$LIBC" ;;
+	  PA7*) echo hppa1.1-unknown-linux-"$LIBC" ;;
+	  PA8*) echo hppa2.0-unknown-linux-"$LIBC" ;;
+	  *)    echo hppa-unknown-linux-"$LIBC" ;;
 	esac
 	exit ;;
     ppc64:Linux:*:*)
-	echo powerpc64-${VENDOR}-linux-"$LIBC"
+	echo powerpc64-unknown-linux-"$LIBC"
 	exit ;;
     ppc:Linux:*:*)
-	echo powerpc-${VENDOR}-linux-"$LIBC"
+	echo powerpc-unknown-linux-"$LIBC"
 	exit ;;
     ppc64le:Linux:*:*)
-	echo powerpc64le-${VENDOR}-linux-"$LIBC"
+	echo powerpc64le-unknown-linux-"$LIBC"
 	exit ;;
     ppcle:Linux:*:*)
-	echo powerpcle-${VENDOR}-linux-"$LIBC"
+	echo powerpcle-unknown-linux-"$LIBC"
 	exit ;;
     riscv32:Linux:*:* | riscv64:Linux:*:*)
-	echo "$UNAME_MACHINE"-${VENDOR}-linux-"$LIBC"
+	echo "$UNAME_MACHINE"-unknown-linux-"$LIBC"
 	exit ;;
     s390:Linux:*:* | s390x:Linux:*:*)
 	echo "$UNAME_MACHINE"-ibm-linux-"$LIBC"
 	exit ;;
     sh64*:Linux:*:*)
-	echo "$UNAME_MACHINE"-${VENDOR}-linux-"$LIBC"
+	echo "$UNAME_MACHINE"-unknown-linux-"$LIBC"
 	exit ;;
     sh*:Linux:*:*)
-	echo "$UNAME_MACHINE"-${VENDOR}-linux-"$LIBC"
+	echo "$UNAME_MACHINE"-unknown-linux-"$LIBC"
 	exit ;;
     sparc:Linux:*:* | sparc64:Linux:*:*)
-	echo "$UNAME_MACHINE"-${VENDOR}-linux-"$LIBC"
+	echo "$UNAME_MACHINE"-unknown-linux-"$LIBC"
 	exit ;;
     tile*:Linux:*:*)
-	echo "$UNAME_MACHINE"-${VENDOR}-linux-"$LIBC"
+	echo "$UNAME_MACHINE"-unknown-linux-"$LIBC"
 	exit ;;
     vax:Linux:*:*)
 	echo "$UNAME_MACHINE"-dec-linux-"$LIBC"
@@ -1059,7 +1108,7 @@ EOF
 	echo "$UNAME_MACHINE"-pc-linux-"$LIBC"
 	exit ;;
     xtensa*:Linux:*:*)
-	echo "$UNAME_MACHINE"-${VENDOR}-linux-"$LIBC"
+	echo "$UNAME_MACHINE"-unknown-linux-"$LIBC"
 	exit ;;
     i*86:DYNIX/ptx:4*:*)
 	# ptx 4.0 does uname -s correctly, with DYNIX/ptx in there.
@@ -1081,16 +1130,16 @@ EOF
 	echo "$UNAME_MACHINE"-pc-os2-emx
 	exit ;;
     i*86:XTS-300:*:STOP)
-	echo "$UNAME_MACHINE"-${VENDOR}-stop
+	echo "$UNAME_MACHINE"-unknown-stop
 	exit ;;
     i*86:atheos:*:*)
-	echo "$UNAME_MACHINE"-${VENDOR}-atheos
+	echo "$UNAME_MACHINE"-unknown-atheos
 	exit ;;
     i*86:syllable:*:*)
 	echo "$UNAME_MACHINE"-pc-syllable
 	exit ;;
     i*86:LynxOS:2.*:* | i*86:LynxOS:3.[01]*:* | i*86:LynxOS:4.[02]*:*)
-	echo i386-${VENDOR}-lynxos"$UNAME_RELEASE"
+	echo i386-unknown-lynxos"$UNAME_RELEASE"
 	exit ;;
     i*86:*DOS:*:*)
 	echo "$UNAME_MACHINE"-pc-msdosdjgpp
@@ -1110,7 +1159,7 @@ EOF
 	    *Pentium)	     UNAME_MACHINE=i586 ;;
 	    *Pent*|*Celeron) UNAME_MACHINE=i686 ;;
 	esac
-	echo "$UNAME_MACHINE-${VENDOR}-sysv${UNAME_RELEASE}${UNAME_SYSTEM}{$UNAME_VERSION}"
+	echo "$UNAME_MACHINE-unknown-sysv${UNAME_RELEASE}${UNAME_SYSTEM}${UNAME_VERSION}"
 	exit ;;
     i*86:*:3.2:*)
 	if test -f /usr/options/cb.name; then
@@ -1149,7 +1198,7 @@ EOF
 	if grep Stardent /usr/include/sys/uadmin.h >/dev/null 2>&1 ; then
 	  echo i860-stardent-sysv"$UNAME_RELEASE" # Stardent Vistra i860-SVR4
 	else # Add other i860-SVR4 vendors below as they are discovered.
-	  echo i860-${VENDOR}-sysv"$UNAME_RELEASE"  # Unknown i860-SVR4
+	  echo i860-unknown-sysv"$UNAME_RELEASE"  # Unknown i860-SVR4
 	fi
 	exit ;;
     mini*:CTIX:SYS*5:*)
@@ -1186,19 +1235,19 @@ EOF
 	/bin/uname -p 2>/dev/null | /bin/grep pteron >/dev/null \
 	    && { echo i586-ncr-sysv4.3"$OS_REL"; exit; } ;;
     m68*:LynxOS:2.*:* | m68*:LynxOS:3.0*:*)
-	echo m68k-${VENDOR}-lynxos"$UNAME_RELEASE"
+	echo m68k-unknown-lynxos"$UNAME_RELEASE"
 	exit ;;
     mc68030:UNIX_System_V:4.*:*)
 	echo m68k-atari-sysv4
 	exit ;;
     TSUNAMI:LynxOS:2.*:*)
-	echo sparc-${VENDOR}-lynxos"$UNAME_RELEASE"
+	echo sparc-unknown-lynxos"$UNAME_RELEASE"
 	exit ;;
     rs6000:LynxOS:2.*:*)
-	echo rs6000-${VENDOR}-lynxos"$UNAME_RELEASE"
+	echo rs6000-unknown-lynxos"$UNAME_RELEASE"
 	exit ;;
     PowerPC:LynxOS:2.*:* | PowerPC:LynxOS:3.[01]*:* | PowerPC:LynxOS:4.[02]*:*)
-	echo powerpc-${VENDOR}-lynxos"$UNAME_RELEASE"
+	echo powerpc-unknown-lynxos"$UNAME_RELEASE"
 	exit ;;
     SM[BE]S:UNIX_SV:*:*)
 	echo mips-dde-sysv"$UNAME_RELEASE"
@@ -1248,7 +1297,7 @@ EOF
 	if [ -d /usr/nec ]; then
 		echo mips-nec-sysv"$UNAME_RELEASE"
 	else
-		echo mips-${VENDOR}-sysv"$UNAME_RELEASE"
+		echo mips-unknown-sysv"$UNAME_RELEASE"
 	fi
 	exit ;;
     BeBox:BeOS:*:*)	# BeOS running on hardware made by Be, PPC only.
@@ -1264,7 +1313,7 @@ EOF
 	echo i586-pc-haiku
 	exit ;;
     x86_64:Haiku:*:*)
-	echo x86_64-${VENDOR}-haiku
+	echo x86_64-unknown-haiku
 	exit ;;
     SX-4:SUPER-UX:*:*)
 	echo sx4-nec-superux"$UNAME_RELEASE"
@@ -1294,38 +1343,39 @@ EOF
 	echo "$UNAME_MACHINE"-apple-rhapsody"$UNAME_RELEASE"
 	exit ;;
     *:Darwin:*:*)
-	UNAME_PROCESSOR=`uname -p` || UNAME_PROCESSOR=unknown
-	eval "$set_cc_for_build"
-	if test "$UNAME_PROCESSOR" = unknown ; then
-	    UNAME_PROCESSOR=powerpc
+	UNAME_PROCESSOR=`uname -p`
+	case $UNAME_PROCESSOR in
+	    unknown) UNAME_PROCESSOR=powerpc ;;
+	esac
+	if command -v xcode-select > /dev/null 2> /dev/null && \
+		! xcode-select --print-path > /dev/null 2> /dev/null ; then
+	    # Avoid executing cc if there is no toolchain installed as
+	    # cc will be a stub that puts up a graphical alert
+	    # prompting the user to install developer tools.
+	    CC_FOR_BUILD=no_compiler_found
+	else
+	    set_cc_for_build
 	fi
-	if test "`echo "$UNAME_RELEASE" | sed -e 's/\..*//'`" -le 10 ; then
-	    if [ "$CC_FOR_BUILD" != no_compiler_found ]; then
-		if (echo '#ifdef __LP64__'; echo IS_64BIT_ARCH; echo '#endif') | \
-		       (CCOPTS="" $CC_FOR_BUILD -E - 2>/dev/null) | \
-		       grep IS_64BIT_ARCH >/dev/null
-		then
-		    case $UNAME_PROCESSOR in
-			i386) UNAME_PROCESSOR=x86_64 ;;
-			powerpc) UNAME_PROCESSOR=powerpc64 ;;
-		    esac
-		fi
-		# On 10.4-10.6 one might compile for PowerPC via gcc -arch ppc
-		if (echo '#ifdef __POWERPC__'; echo IS_PPC; echo '#endif') | \
-		       (CCOPTS="" $CC_FOR_BUILD -E - 2>/dev/null) | \
-		       grep IS_PPC >/dev/null
-		then
-		    UNAME_PROCESSOR=powerpc
-		fi
+	if [ "$CC_FOR_BUILD" != no_compiler_found ]; then
+	    if (echo '#ifdef __LP64__'; echo IS_64BIT_ARCH; echo '#endif') | \
+		   (CCOPTS="" $CC_FOR_BUILD -E - 2>/dev/null) | \
+		   grep IS_64BIT_ARCH >/dev/null
+	    then
+		case $UNAME_PROCESSOR in
+		    i386) UNAME_PROCESSOR=x86_64 ;;
+		    powerpc) UNAME_PROCESSOR=powerpc64 ;;
+		esac
+	    fi
+	    # On 10.4-10.6 one might compile for PowerPC via gcc -arch ppc
+	    if (echo '#ifdef __POWERPC__'; echo IS_PPC; echo '#endif') | \
+		   (CCOPTS="" $CC_FOR_BUILD -E - 2>/dev/null) | \
+		   grep IS_PPC >/dev/null
+	    then
+		UNAME_PROCESSOR=powerpc
 	    fi
 	elif test "$UNAME_PROCESSOR" = i386 ; then
-	    # Avoid executing cc on OS X 10.9, as it ships with a stub
-	    # that puts up a graphical alert prompting to install
-	    # developer tools.  Any system running Mac OS X 10.7 or
-	    # later (Darwin 11 and later) is required to have a 64-bit
-	    # processor. This is not true of the ARM version of Darwin
-	    # that Apple uses in portable devices.
-	    UNAME_PROCESSOR=x86_64
+	    # uname -m returns i386 or x86_64
+	    UNAME_PROCESSOR=$UNAME_MACHINE
 	fi
 	echo "$UNAME_PROCESSOR"-apple-darwin"$UNAME_RELEASE"
 	exit ;;
@@ -1368,18 +1418,19 @@ EOF
 	# "uname -m" is not consistent, so use $cputype instead. 386
 	# is converted to i386 for consistency with other x86
 	# operating systems.
+	# shellcheck disable=SC2154
 	if test "$cputype" = 386; then
 	    UNAME_MACHINE=i386
 	else
 	    UNAME_MACHINE="$cputype"
 	fi
-	echo "$UNAME_MACHINE"-${VENDOR}-plan9
+	echo "$UNAME_MACHINE"-unknown-plan9
 	exit ;;
     *:TOPS-10:*:*)
-	echo pdp10-${VENDOR}-tops10
+	echo pdp10-unknown-tops10
 	exit ;;
     *:TENEX:*:*)
-	echo pdp10-${VENDOR}-tenex
+	echo pdp10-unknown-tenex
 	exit ;;
     KS10:TOPS-20:*:* | KL10:TOPS-20:*:* | TYPE4:TOPS-20:*:*)
 	echo pdp10-dec-tops20
@@ -1388,16 +1439,16 @@ EOF
 	echo pdp10-xkl-tops20
 	exit ;;
     *:TOPS-20:*:*)
-	echo pdp10-${VENDOR}-tops20
+	echo pdp10-unknown-tops20
 	exit ;;
     *:ITS:*:*)
-	echo pdp10-${VENDOR}-its
+	echo pdp10-unknown-its
 	exit ;;
     SEI:*:*:SEIUX)
 	echo mips-sei-seiux"$UNAME_RELEASE"
 	exit ;;
     *:DragonFly:*:*)
-	echo "$UNAME_MACHINE"-${VENDOR}-dragonfly"`echo "$UNAME_RELEASE"|sed -e 's/[-(].*//'`"
+	echo "$UNAME_MACHINE"-unknown-dragonfly"`echo "$UNAME_RELEASE"|sed -e 's/[-(].*//'`"
 	exit ;;
     *:*VMS:*:*)
 	UNAME_MACHINE=`(uname -p) 2>/dev/null`
@@ -1419,12 +1470,152 @@ EOF
 	echo "$UNAME_MACHINE"-pc-aros
 	exit ;;
     x86_64:VMkernel:*:*)
-	echo "$UNAME_MACHINE"-${VENDOR}-esx
+	echo "$UNAME_MACHINE"-unknown-esx
 	exit ;;
     amd64:Isilon\ OneFS:*:*)
-	echo x86_64-${VENDOR}-onefs
+	echo x86_64-unknown-onefs
+	exit ;;
+    *:Unleashed:*:*)
+	echo "$UNAME_MACHINE"-unknown-unleashed"$UNAME_RELEASE"
 	exit ;;
 esac
+
+# No uname command or uname output not recognized.
+set_cc_for_build
+cat > "$dummy.c" <<EOF
+#ifdef _SEQUENT_
+#include <sys/types.h>
+#include <sys/utsname.h>
+#endif
+#if defined(ultrix) || defined(_ultrix) || defined(__ultrix) || defined(__ultrix__)
+#if defined (vax) || defined (__vax) || defined (__vax__) || defined(mips) || defined(__mips) || defined(__mips__) || defined(MIPS) || defined(__MIPS__)
+#include <signal.h>
+#if defined(_SIZE_T_) || defined(SIGLOST)
+#include <sys/utsname.h>
+#endif
+#endif
+#endif
+main ()
+{
+#if defined (sony)
+#if defined (MIPSEB)
+  /* BFD wants "bsd" instead of "newsos".  Perhaps BFD should be changed,
+     I don't know....  */
+  printf ("mips-sony-bsd\n"); exit (0);
+#else
+#include <sys/param.h>
+  printf ("m68k-sony-newsos%s\n",
+#ifdef NEWSOS4
+  "4"
+#else
+  ""
+#endif
+  ); exit (0);
+#endif
+#endif
+
+#if defined (NeXT)
+#if !defined (__ARCHITECTURE__)
+#define __ARCHITECTURE__ "m68k"
+#endif
+  int version;
+  version=`(hostinfo | sed -n 's/.*NeXT Mach \([0-9]*\).*/\1/p') 2>/dev/null`;
+  if (version < 4)
+    printf ("%s-next-nextstep%d\n", __ARCHITECTURE__, version);
+  else
+    printf ("%s-next-openstep%d\n", __ARCHITECTURE__, version);
+  exit (0);
+#endif
+
+#if defined (MULTIMAX) || defined (n16)
+#if defined (UMAXV)
+  printf ("ns32k-encore-sysv\n"); exit (0);
+#else
+#if defined (CMU)
+  printf ("ns32k-encore-mach\n"); exit (0);
+#else
+  printf ("ns32k-encore-bsd\n"); exit (0);
+#endif
+#endif
+#endif
+
+#if defined (__386BSD__)
+  printf ("i386-pc-bsd\n"); exit (0);
+#endif
+
+#if defined (sequent)
+#if defined (i386)
+  printf ("i386-sequent-dynix\n"); exit (0);
+#endif
+#if defined (ns32000)
+  printf ("ns32k-sequent-dynix\n"); exit (0);
+#endif
+#endif
+
+#if defined (_SEQUENT_)
+  struct utsname un;
+
+  uname(&un);
+  if (strncmp(un.version, "V2", 2) == 0) {
+    printf ("i386-sequent-ptx2\n"); exit (0);
+  }
+  if (strncmp(un.version, "V1", 2) == 0) { /* XXX is V1 correct? */
+    printf ("i386-sequent-ptx1\n"); exit (0);
+  }
+  printf ("i386-sequent-ptx\n"); exit (0);
+#endif
+
+#if defined (vax)
+#if !defined (ultrix)
+#include <sys/param.h>
+#if defined (BSD)
+#if BSD == 43
+  printf ("vax-dec-bsd4.3\n"); exit (0);
+#else
+#if BSD == 199006
+  printf ("vax-dec-bsd4.3reno\n"); exit (0);
+#else
+  printf ("vax-dec-bsd\n"); exit (0);
+#endif
+#endif
+#else
+  printf ("vax-dec-bsd\n"); exit (0);
+#endif
+#else
+#if defined(_SIZE_T_) || defined(SIGLOST)
+  struct utsname un;
+  uname (&un);
+  printf ("vax-dec-ultrix%s\n", un.release); exit (0);
+#else
+  printf ("vax-dec-ultrix\n"); exit (0);
+#endif
+#endif
+#endif
+#if defined(ultrix) || defined(_ultrix) || defined(__ultrix) || defined(__ultrix__)
+#if defined(mips) || defined(__mips) || defined(__mips__) || defined(MIPS) || defined(__MIPS__)
+#if defined(_SIZE_T_) || defined(SIGLOST)
+  struct utsname *un;
+  uname (&un);
+  printf ("mips-dec-ultrix%s\n", un.release); exit (0);
+#else
+  printf ("mips-dec-ultrix\n"); exit (0);
+#endif
+#endif
+#endif
+
+#if defined (alliant) && defined (i860)
+  printf ("i860-alliant-bsd\n"); exit (0);
+#endif
+
+  exit (1);
+}
+EOF
+
+$CC_FOR_BUILD -o "$dummy" "$dummy.c" 2>/dev/null && SYSTEM_NAME=`$dummy` &&
+	{ echo "$SYSTEM_NAME"; exit; }
+
+# Apollos put the system type in the environment.
+test -d /usr/apollo && { echo "$ISP-apollo-$SYSTYPE"; exit; }
 
 echo "$0: unable to guess system type" >&2
 
