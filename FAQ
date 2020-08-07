@@ -19,3 +19,14 @@ A: There is a good chance you have an unbalanced quote, single or double,
 
    You can use something like: sed -e "s/'/\\\'/g" -e 's/"/\\"/g' to
    pre-process the input in such a case.
+--------
+Q: Why does smenu -C... no longer work?
+
+A: smenu uses a new system of options based on the notion of contexts. The
+   -C parameter is only valid in the "Columns" context as indicated in the
+   error message.
+
+   The string '[-c|-col|-col_mode|-column>Columns]' which is printed
+   in the error message tells that to switch to "Columns" mode
+   you have to use the -c parameter or its alternatives.
+   So in this case the correct command line is: smenu -c -C...
