@@ -6470,6 +6470,22 @@ main(int argc, char * argv[])
   ctxopt_add_ctx_settings(incompatibilities, "Main", "help usage");
   ctxopt_add_ctx_settings(incompatibilities, "Main", "timeout hidden_timeout");
 
+  /* ctxopt options requirements */
+  /* """"""""""""""""""""""""""" */
+
+  ctxopt_add_ctx_settings(requirements, "Main",
+                          "da_options "
+                          "field_da_number auto_da_number auto_da_unnumber");
+  ctxopt_add_ctx_settings(requirements, "Columns",
+                          "da_options "
+                          "field_da_number auto_da_number auto_da_unnumber");
+  ctxopt_add_ctx_settings(requirements, "Lines",
+                          "da_options "
+                          "field_da_number auto_da_number auto_da_unnumber");
+  ctxopt_add_ctx_settings(requirements, "Tabulations",
+                          "da_options "
+                          "field_da_number auto_da_number auto_da_unnumber");
+
   /* ctxopt actions */
   /* """""""""""""" */
 
