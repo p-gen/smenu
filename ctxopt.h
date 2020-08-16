@@ -13,6 +13,7 @@ typedef enum
   constraints,
   actions,
   incompatibilities,
+  requirements,
   error_functions,
   before,
   after,
@@ -28,6 +29,7 @@ typedef enum
 {
   CTXOPTNOERR = 0,
   CTXOPTMISPAR,
+  CTXOPTREQPAR,
   CTXOPTMISARG,
   CTXOPTDUPOPT,
   CTXOPTUNKPAR,
@@ -50,17 +52,23 @@ typedef enum
 
 typedef struct state_s
 {
-  char * prog_name;        /* base name of the program name.        */
-  char * ctx_name;         /* current context name.                 */
-  char * ctx_par_name;     /* parameter which led to this context.  */
-  char * opt_name;         /* current option name.                  */
-  int    opts_count;       /* limit of the number of occurrences of *
-                           |  the current option.                   */
-  int opt_args_count;      /* limit of the number of parameters of  *
-                           |  the current option.                   */
-  char * pre_opt_par_name; /* parameter before the current one.     */
-  char * cur_opt_par_name; /* current parameter.                    */
-  char * cur_opt_params;   /* All the option's parameters.          */
+  char * prog_name;          /* base name of the program name.        */
+  char * ctx_name;           /* current context name.                 */
+  char * ctx_par_name;       /* parameter which led to this context.  */
+  char * opt_name;           /* current option name.                  */
+  int    opts_count;         /* limit of the number of occurrences of *
+                             |  the current option.                   */
+  int opt_args_count;        /* limit of the number of parameters of  *
+                             |  the current option.                   */
+  char * pre_opt_par_name;   /* parameter before the current one.     */
+  char * cur_opt_par_name;   /* current parameter.                    */
+  char * cur_opt_params;     /* All the option's parameters.          */
+  char * req_opt_par_needed; /* Option's params in the missing        *
+                             | required group of optrions.            */
+  char * req_opt_par;        /* Option's params of the option which   *
+                             | required one of the parameter in       *
+                             | req_opt_par_needed to also be present  *
+                             | in the current context.                */
 } state_t;
 
 void

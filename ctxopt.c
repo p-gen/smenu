@@ -187,6 +187,7 @@ typedef struct constraint_s constraint_t;
 typedef struct ctx_inst_s   ctx_inst_t;
 typedef struct opt_inst_s   opt_inst_t;
 typedef struct seen_opt_s   seen_opt_t;
+typedef struct req_s        req_t;
 
 static char *
 strtoken(char * s, char * token, size_t tok_len, char * pattern, int * pos);
@@ -235,6 +236,9 @@ locate_opt(char * name);
 
 static par_t *
 locate_par(char * name, ctx_t * ctx);
+
+static void
+print_before_constraints(ll_t * list);
 
 static void
 print_options(ll_t * list, int * has_optional, int * has_ellipsis,
@@ -318,6 +322,8 @@ fatal_internal(const char * format, ...)
 /*          Note that errmsg is not used in all cases                     */
 /*                                                                        */
 /*          CTXOPTMISPAR Missing parameter                                */
+/*          CTXOPTREQPAR Option: all parameters in a required group are   */
+/*                               missing.                                 */
 /*          CTXOPTMISARG Missing argument                                 */
 /*          CTXOPTUXPARG Unexpected argument                              */
 /*          CTXOPTDUPOPT Duplicated option                                */
@@ -355,6 +361,11 @@ fatal(errors e, char * errmsg)
                   errmsg);
 
         free(errmsg);
+        break;
+
+      case CTXOPTREQPAR:
+        fprintf(stderr, errmsg, cur_state->req_opt_par_needed,
+                cur_state->req_opt_par);
         break;
 
       case CTXOPTUNXARG:
@@ -1314,6 +1325,10 @@ struct ctx_s
   ll_t * opt_list;    /* list of options allowed in this context.      */
   ll_t * incomp_list; /* list of strings containing incompatible names *
                        | of options separated by spaces or tabs.       */
+  ll_t * req_list;    /* list of strings containing an option name and *
+                       | all the option names where at least one of    *
+                       | them is required to be also present.          */
+
   int (*action)(char * name, int type, char * new_ctx, int ctx_nb_data,
                 void ** ctx_data);
   void *  par_bst;
@@ -1409,6 +1424,7 @@ struct ctx_inst_s
                                | instance of this structure.               */
   ll_t * incomp_bst_list;     /* list of seen_opt_t BST.                   */
   void * seen_opt_bst;        /* tree of seen_opt_t.                       */
+  ll_t * opt_req_list;        /* list of req_t.                            */
   ll_t * opt_inst_list;       /* The list of option instances in this      *
                                | context instance.                         */
   char * par_name;            /* parameter which created this instance.    */
@@ -1434,6 +1450,17 @@ struct seen_opt_s
   opt_t * opt;  /* The concerned option.                                */
   char *  par;  /* Parameter which led to the making of this structure. */
   int     seen; /* 1 if seen in the context instances, else 0.          */
+};
+
+/* Structure used to check if at least one instance of the options whose */
+/* pointers are in or_opt_list has been seen in the ctx_inst where an    */
+/* instance or opt is also present.                                      */
+/* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+struct req_s
+{
+  opt_t * opt;         /* Option that asks for other options.    */
+  ll_t *  or_opt_list; /* Required options, at least one of them *
+                       |  must be present.                       */
 };
 
 /* Parameter structure which links a parameter to the option it belongs to. */
@@ -1717,6 +1744,51 @@ locate_par(char * name, ctx_t * ctx)
     return node->key;
 }
 
+/* ====================================================================== */
+/* Helper function to display the dependency constraints between options. */
+/* These constraints are set with the ctxopt_add_opt_settings function    */
+/* using the 'before' and 'after' arguments.                              */
+/* IN  list  : a list of options.                                         */
+/* ====================================================================== */
+static void
+print_before_constraints(ll_t * list)
+{
+  ll_node_t * node = list->head;
+  ll_node_t * before_node;
+  opt_t *     opt, *before_opt;
+  int         msg = 0;
+
+  while (node != NULL)
+  {
+    opt = node->data;
+
+    if (opt->eval_before_list->len > 0)
+    {
+      if (!msg)
+      {
+        printf("\n  If present in the command line,");
+        msg = 1; /* Display this message only once. */
+      }
+
+      before_node = opt->eval_before_list->head;
+
+      printf("\n  ");
+      while (before_node != NULL)
+      {
+        before_opt = before_node->data;
+        printf("%s", before_opt->params);
+
+        before_node = before_node->next;
+
+        if (before_node != NULL)
+          printf(" and\n  ");
+      }
+      printf(" will be evaluated after %s\n", opt->params);
+    }
+    node = node->next;
+  }
+}
+
 /* =================================================================== */
 /* Utility function to format and print the options present in a list. */
 /*                                                                     */
@@ -1855,17 +1927,16 @@ print_explanations(int has_early_eval, int has_ctx_change, int has_generic_arg,
            "displayed.\n\n");
 
     if (has_early_eval)
-      printf("*            : the parameters for this option will be "
-             "evaluated first.\n");
+      printf("*            : the parameters defined for this option will "
+             "be evaluated first.\n");
     if (has_ctx_change)
-      printf(
-        ">            : The context after this symbol will become the next "
-        "default one.\n");
+      printf(">            : the context after this symbol will be the new "
+             "default context.\n");
     if (has_generic_arg)
-      printf("#tag         : argument tag giving a clue to its meaning.\n");
+      printf("#tag         : argument with a hint about its meaning.\n");
     if (has_optional)
-      printf(
-        "[...]        : the object between square brackets is optional.\n");
+      printf("[...]        : the object between square brackets is "
+             "optional.\n");
     if (has_ellipsis)
       printf("...          : several occurrences of the previous object "
              "are possible.\n");
@@ -1932,6 +2003,7 @@ bst_print_ctx_cb(const void * node, walk_order_e kind, int level)
       printf("\nAllowed options in the context %s:\n", cur_ctx->name);
       print_options(list, &has_optional, &has_ellipsis, &has_rule,
                     &has_generic_arg, &has_ctx_change, &has_early_eval);
+      print_before_constraints(list);
     }
 }
 
@@ -2144,7 +2216,7 @@ has_unseen_mandatory_opt(ctx_inst_t * ctx_inst, char ** missing)
 /* given in ctxopt_new_ctx.                                                  */
 /* ========================================================================= */
 static void
-check_for_occurrences_issues(ctx_inst_t * ctx_inst)
+check_for_occurrence_issues(ctx_inst_t * ctx_inst)
 {
   ctx_t *      ctx = ctx_inst->ctx;
   opt_t *      opt;
@@ -2228,6 +2300,95 @@ check_for_occurrences_issues(ctx_inst_t * ctx_inst)
   }
   cur_state->cur_opt_params   = cur_opt_params;
   cur_state->cur_opt_par_name = cur_opt_par_name;
+}
+
+/* ====================================================================== */
+/* This function terminates the program if all the options which are part */
+/* of a group of required options by some other option are missing.       */
+/* ====================================================================== */
+static void
+check_for_requirement_issues(ctx_inst_t * ctx_inst)
+{
+  ll_node_t * node;
+  ll_node_t * req_node;
+  req_t *     req;
+  opt_t *     opt;
+  opt_t *     req_opt;
+  bst_t *     bst_node;
+  seen_opt_t  tmp_seen_opt;
+  int         found;
+  char *      needed_params = NULL;
+
+  node = ctx_inst->opt_req_list->head;
+
+  while (node != NULL)
+  {
+    req = node->data;
+
+    opt              = req->opt;
+    tmp_seen_opt.opt = opt;
+
+    bst_node = bst_find(&tmp_seen_opt, &(ctx_inst->seen_opt_bst),
+                        seen_opt_compare);
+
+    if (((seen_opt_t *)(bst_node->key))->seen != 0)
+    {
+      found    = 0;
+      req_node = req->or_opt_list->head;
+
+      /* needed_params accumulates the params of the options in the group. */
+      /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+      free(needed_params); /* free can applied to the NULL pointer. */
+      needed_params = xstrdup("");
+
+      /* Go through the list of the required group of options and */
+      /* succeed when one of them has been seen in the context.   */
+      /* otherwise a fatal error is triggered and the program is  */
+      /* terminated.                                              */
+      /* """""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+      while (req_node != NULL)
+      {
+        req_opt          = req_node->data;
+        tmp_seen_opt.opt = req_opt;
+        needed_params    = strappend(needed_params, req_opt->params, "\n  ",
+                                  (char *)0);
+
+        bst_node = bst_find(&tmp_seen_opt, &(ctx_inst->seen_opt_bst),
+                            seen_opt_compare);
+
+        if (((seen_opt_t *)(bst_node->key))->seen != 0)
+        {
+          found = 1; /* A required option has been seen, */
+          break;     /* accept the group.                */
+        }
+        req_node = req_node->next;
+      }
+
+      rtrim(needed_params, "\n ", 0);
+
+      /* This is a fatal error if none of the options in the required */
+      /* options group has been seen in the context.                  */
+      /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+      if (!found)
+      {
+        char * errmsg;
+
+        if (req->or_opt_list->len > 1)
+          errmsg = xstrdup("At least one of the parameters among:\n  %s\n"
+                           "requested by %s must be present.\n");
+        else
+          errmsg = xstrdup("The parameter %s "
+                           "requested by %s must be present.\n");
+
+        cur_state->req_opt_par_needed = needed_params;
+        cur_state->req_opt_par        = opt->params;
+
+        fatal(CTXOPTREQPAR, errmsg);
+      }
+    }
+
+    node = node->next;
+  }
 }
 
 /* ======================================================================== */
@@ -2841,6 +3002,7 @@ new_ctx_inst(ctx_t * ctx, ctx_inst_t * prev_ctx_inst)
   ctx_inst->gen_opt_inst    = gen_opt_inst;
   ctx_inst->incomp_bst_list = ll_new();
   ctx_inst->opt_inst_list   = ll_new();
+  ctx_inst->opt_req_list    = ll_new();
   ctx_inst->seen_opt_bst    = NULL;
 
   ll_node_t * node;
@@ -2935,6 +3097,37 @@ new_ctx_inst(ctx_t * ctx, ctx_inst_t * prev_ctx_inst)
     node = node->next;
   }
 
+  /* Initialize the list of res_t structures according to the     */
+  /* list set in the context by ctxopt_add_ctx_settings/required. */
+  /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+  node = ctx->req_list->head;
+  while (node != NULL)
+  {
+    req_t * req = xmalloc(sizeof(req_t));
+
+    str = xstrdup(node->data);
+    ltrim(str, " \t");
+    rtrim(str, " \t", 0);
+    opt_name = strtok(str, " \t"); /* Extract the first option name. */
+
+    if ((opt = locate_opt(opt_name)) != NULL)
+    {
+      req->opt         = opt;
+      req->or_opt_list = ll_new();
+      while ((opt_name = strtok(NULL, " \t")) != NULL)
+      {
+        if ((opt = locate_opt(opt_name)) != NULL)
+          ll_append(req->or_opt_list, opt);
+        else
+          fatal_internal("Unknown option %s.", opt_name);
+      }
+      ll_append(ctx_inst->opt_req_list, req);
+    }
+    else
+      fatal_internal("Unknown option %s.", opt_name);
+
+    node = node->next;
+  }
   return ctx_inst;
 }
 
@@ -3266,7 +3459,8 @@ ctxopt_analyze(int nb_words, char ** words, int * nb_rem_args,
     if (strcmp(par_name, "\x1d") == 0)
     {
       check_for_missing_mandatory_opt(ctx_inst, (char *)(cli_node->prev->data));
-      check_for_occurrences_issues(ctx_inst);
+      check_for_occurrence_issues(ctx_inst);
+      check_for_requirement_issues(ctx_inst);
 
       /* Forced backtracking to the previous context instance. */
       /* """"""""""""""""""""""""""""""""""""""""""""""""""""" */
@@ -3378,7 +3572,8 @@ ctxopt_analyze(int nb_words, char ** words, int * nb_rem_args,
         else
         {
           check_for_missing_mandatory_opt(ctx_inst, par_name);
-          check_for_occurrences_issues(ctx_inst);
+          check_for_occurrence_issues(ctx_inst);
+          check_for_requirement_issues(ctx_inst);
 
           if (ctx_inst->prev_ctx_inst == NULL)
           {
@@ -3730,7 +3925,8 @@ ctxopt_analyze(int nb_words, char ** words, int * nb_rem_args,
     cur_state->ctx_par_name = ctx_inst->par_name;
 
     check_for_missing_mandatory_opt(ctx_inst, par_name);
-    check_for_occurrences_issues(ctx_inst);
+    check_for_occurrence_issues(ctx_inst);
+    check_for_requirement_issues(ctx_inst);
 
     node = node->next;
   }
@@ -3894,8 +4090,9 @@ ctxopt_new_ctx(char * name, char * opts_specs)
   }
 
   ctx->name        = xstrdup(name);
-  ctx->opt_list    = ll_new(); /* List of options legit in this context. */
-  ctx->incomp_list = ll_new(); /* List of incompatible options strings.  */
+  ctx->opt_list    = ll_new(); /* List of options legit in this context.   */
+  ctx->incomp_list = ll_new(); /* List of incompatible options strings.    */
+  ctx->req_list    = ll_new(); /* List of opts/required opts tuples (str). */
   ctx->par_bst     = NULL;
   ctx->data        = NULL;
   ctx->action      = NULL;
@@ -3950,6 +4147,8 @@ ctxopt_ctx_disp_usage(char * ctx_name, usage_behaviour action)
   print_options(list, &has_optional, &has_ellipsis, &has_rule, &has_generic_arg,
                 &has_ctx_change, &has_early_eval);
 
+  print_before_constraints(list);
+
   print_explanations(has_early_eval, has_ctx_change, has_generic_arg,
                      has_optional, has_ellipsis, has_rule);
 
@@ -3982,6 +4181,10 @@ ctxopt_disp_usage(usage_behaviour action)
   list = main_ctx->opt_list;
   print_options(list, &has_optional, &has_ellipsis, &has_rule, &has_generic_arg,
                 &has_ctx_change, &has_early_eval);
+
+  /* Dependency constraints between options. */
+  /* """"""""""""""""""""""""""""""""""""""" */
+  print_before_constraints(list);
 
   /* Usage for the other contexts. */
   /* """"""""""""""""""""""""""""" */
@@ -4339,7 +4542,6 @@ ctxopt_add_opt_settings(settings s, ...)
     case after:
     {
       char * str;
-      ll_t * list;
 
       /* The second argument must be a string. */
       /* """"""""""""""""""""""""""""""""""""" */
@@ -4395,7 +4597,6 @@ ctxopt_add_opt_settings(settings s, ...)
     case before:
     {
       char * str;
-      ll_t * list;
 
       /* The second argument must be a string. */
       /* """"""""""""""""""""""""""""""""""""" */
@@ -4489,6 +4690,35 @@ ctxopt_add_ctx_settings(settings s, ...)
         else
           fatal_internal(
             "Not enough incompatible options in the string: \"%s\".", str);
+      }
+      else
+        fatal_internal("Unknown context %s.", ptr);
+      break;
+    }
+
+    case requirements:
+    {
+      void * ptr;
+      ll_t * list;
+      size_t n;
+      char * str;
+
+      ptr = va_arg(args, char *);
+      if ((ctx = locate_ctx(ptr)) != NULL)
+      {
+        ptr  = va_arg(args, char *);
+        list = ctx->req_list;
+
+        str = xstrdup(ptr);
+        ltrim(str, " \t");
+        rtrim(str, " \t", 0);
+
+        n = strcspn(str, " \t");
+        if (n > 0 && n < strlen(str))
+          ll_append(list, str);
+        else
+          fatal_internal("Not enough required options in the string: \"%s\".",
+                         str);
       }
       else
         fatal_internal("Unknown context %s.", ptr);
