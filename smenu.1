@@ -240,11 +240,19 @@ and the word is added to the list of matching words and displayed with
 an error attribute (in red by default).
 
 This special state will persist until all the symbols following the first
-erroneous one are deleted (using backspace) or if \fBESC\fP is pressed.
+erroneous one are deleted (using backspace) or if \fBESC\fP is pressed
+to cancel the search session and clear the search buffer.
 .PP
 During a search session, the cursor changes and each character entered is
 added in (or removed from) the search buffer.
 The display is refreshed after each change in this buffer.
+.PP
+A 10 seconds timeout (by default) automatically ends the current
+search session as if the \fBEnter\fP key had been pressed.
+This timeout is reset each time a new key is hit in search mode.
+This delay can be configured using the \fBsearch\fP entry in the
+\fBtimers\fP section of the configuration file as shown in the example
+in the configuration subsection.
 .PP
 The slash key (\fB/\fP) can also be used instead of any of these keys.
 By default it is is programmed to do a \fIfuzzy\fP search but this can
@@ -262,9 +270,8 @@ matching word "words" will be displayed as \fBw\fP\fIo\fP\fBrd\fP\fIs\fP
 when the \fIfuzzy\fP algorithm is in use depending of the display
 attributes configured.
 .PP
-\fBESC\fP can be used anytime to abort the current search session.
-\fBENTER\fP and all cursor moves also terminate the search
-session but do not clear the list of the matchng words.
+\fBENTER\fP and all cursor moves terminate the search session but do
+not clear the list of the matching words and the search buffer.
 .PP
 The user can then use the \fBn\fP/\fBs\fP/\fBSPACE\fP keys (forward) and
 the \fBN\fP/\fBS\fP keys (backward) to navigate in the list of matching
@@ -500,7 +507,7 @@ allowed:
   columns = 128           ; arbitrary max number of columns (int)
 
 [timers]
-  search = 60             ; search timers in 1/10 s
+  search = 100            ; search timeout in 1/10 s
   help = 150              ; duration of the help message in 1/10 s
   window = 7              ; delay before redrawing if the size of the
                           ; terminal's window change in 1/10 s

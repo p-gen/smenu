@@ -117,6 +117,7 @@ volatile sig_atomic_t got_winch        = 0;
 volatile sig_atomic_t got_winch_alrm   = 0;
 volatile sig_atomic_t got_help_alrm    = 0;
 volatile sig_atomic_t got_daccess_alrm = 0;
+volatile sig_atomic_t got_search_alrm  = 0;
 volatile sig_atomic_t got_timeout_tick = 0;
 volatile sig_atomic_t got_sigsegv      = 0;
 volatile sig_atomic_t got_sigterm      = 0;
@@ -600,6 +601,13 @@ ini_cb(win_t * win, term_t * term, limits_t * limits, timers_t * timers,
         goto out;
       else
         timers->direct_access = v;
+    }
+    else if (strcmp(name, "search") == 0)
+    {
+      if ((error = !(sscanf(value, "%d", &v) == 1 && v > 0)))
+        goto out;
+      else
+        timers->search = v;
     }
   }
   else if (strcmp(section, "misc") == 0)
@@ -3768,11 +3776,11 @@ sig_handler(int s)
       if (help_timer > 0)
         help_timer--;
 
-      if (daccess_timer > 0)
-        daccess_timer--;
-
       if (help_timer == 0 && help_mode)
         got_help_alrm = 1;
+
+      if (daccess_timer > 0)
+        daccess_timer--;
 
       if (daccess_timer == 0)
         got_daccess_alrm = 1;
@@ -3786,6 +3794,12 @@ sig_handler(int s)
         got_help_alrm  = 0;
         got_winch_alrm = 1;
       }
+
+      if (search_timer > 0)
+        search_timer--;
+
+      if (search_timer == 0 && search_mode != NONE)
+        got_search_alrm = 1;
 
       break;
   }
@@ -6137,7 +6151,7 @@ main(int argc, char * argv[])
 
   /* Default timers in 1/10 s */
   /* """""""""""""""""""""""" */
-  timers.search        = 60 * FREQ / 10;
+  timers.search        = 100 * FREQ / 10;
   timers.help          = 150 * FREQ / 10;
   timers.winch         = 7 * FREQ / 10;
   timers.direct_access = 6 * FREQ / 10;
@@ -9020,6 +9034,20 @@ main(int argc, char * argv[])
       daccess_timer = timers.direct_access;
     }
 
+    if (got_search_alrm)
+    {
+      got_search_alrm = 0;
+
+      /* Calculate the new metadata and draw the window again */
+      /* """""""""""""""""""""""""""""""""""""""""""""""""""" */
+      last_line = build_metadata(&term, count, &win);
+
+      search_mode = NONE;
+
+      nl = disp_lines(&win, &toggle, current, count, search_mode, &search_data,
+                      &term, last_line, tmp_word, &langinfo);
+    }
+
     if (got_winch)
     {
       got_winch   = 0;
@@ -9287,7 +9315,6 @@ main(int argc, char * argv[])
             if (search_mode != NONE)
             {
             khome:
-
               search_data.only_starting = 1;
               search_data.only_ending   = 0;
               select_starting_matches(&win, &term, &search_data, &last_line);
@@ -9461,6 +9488,10 @@ main(int argc, char * argv[])
             /* ESC key has been pressed */
             /* """""""""""""""""""""""" */
             search_mode_t old_search_mode = search_mode;
+
+            /* Cancel the search timer */
+            /* """"""""""""""""""""""" */
+            search_timer = 0;
 
             search_data.fuzzy_err     = 0;
             search_data.only_starting = 0;
@@ -9689,6 +9720,10 @@ main(int argc, char * argv[])
 
           if (search_mode != NONE)
           {
+            /* Cancel the search timer */
+            /* """"""""""""""""""""""" */
+            search_timer = 0;
+
             search_mode               = NONE;
             search_data.only_starting = 0;
             search_data.only_ending   = 0;
@@ -10164,6 +10199,10 @@ main(int argc, char * argv[])
         /* """"""""""""""""""""""""""""""""" */
         fuzzy_method:
 
+          /* Set the search timer. */
+          /* """"""""""""""""""""" */
+          search_timer = timers.search; /* default 10 s */
+
           if (search_mode == NONE)
           {
             search_mode = FUZZY;
@@ -10190,6 +10229,10 @@ main(int argc, char * argv[])
         /* """"""""""""""""""""""""""""""""""""" */
         substring_method:
 
+          /* Set the search timer. */
+          /* """"""""""""""""""""" */
+          search_timer = timers.search; /* default 10 s */
+
           if (search_mode == NONE)
           {
             search_mode = SUBSTRING;
@@ -10215,6 +10258,10 @@ main(int argc, char * argv[])
         /* (start of a prefix search session) */
         /* """""""""""""""""""""""""""""""""" */
         prefix_method:
+
+          /* Set the search timer. */
+          /* """"""""""""""""""""" */
+          search_timer = timers.search; /* default 10 s */
 
           if (search_mode == NONE)
           {
@@ -10560,6 +10607,10 @@ main(int argc, char * argv[])
                 search_data.utf8_len++;
               }
             }
+
+            /* Restart the search timer */
+            /* """""""""""""""""""""""" */
+            search_timer = timers.search; /* default 10 s */
 
             if (search_mode == PREFIX)
             {
