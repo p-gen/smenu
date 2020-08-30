@@ -104,6 +104,17 @@ On mine (``LANG`` and ``LC_ALL`` set to ``POSIX``) it displays:
 
 Note the presence of a scrollbar.
 
+Warning for post v0.9.15 versions.
+----------------------------------
+These versions use a new options system called **ctxopt** which
+may contain bugs.
+Please report them so they can be fixed in the next release of **smenu**
+or **ctxopt** (https://github.com/p-gen/ctxopt).
+
+Command line arguments may also need to be rearranged in some cases
+because of this new option management system.
+Sorry for the extra work this might entail.
+
 Testing and reporting.
 ----------------------
 The included testing system is relatively young, please be indulgent.
@@ -127,11 +138,6 @@ test in the ``tests`` directory in an existing or new directory: read the
 ``tests/README.rst`` file, use an existing test as model, create an
 ``.in`` file and a ``.tst`` file and send them to me as well as the
 produced files.
-
-**WARNING** this release uses a new options system called ctxopt which
-may have remaining bugs.
-Please report them so they can be fixed in the next release of smenu
-or ctxopt (https://github.com/p-gen/ctxopt).
 
 Special thanks.
 ---------------
