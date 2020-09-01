@@ -100,8 +100,6 @@ main_help(void)
   printf("-H|-long_help\n");
   printf("  displays a full help and the options available in all "
          "contexts.\n");
-  printf("-f|-cfg|-config_file\n");
-  printf("  selects an alternative configuration file.\n");
   printf("-N|-number/-U|-unnumber\n");
   printf("  numbers/un-numbers and provides a direct access to words "
          "matching\n");

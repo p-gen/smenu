@@ -4764,16 +4764,6 @@ usage_action(char * ctx_name, char * opt_name, char * param, int nb_values,
 }
 
 void
-config_action(char * ctx_name, char * opt_name, char * param, int nb_values,
-              char ** values, int nb_opt_data, void ** opt_data,
-              int nb_ctx_data, void ** ctx_data)
-{
-  char ** config = opt_data[0];
-
-  *config = xstrdup(values[0]);
-}
-
-void
 lines_action(char * ctx_name, char * opt_name, char * param, int nb_values,
              char ** values, int nb_opt_data, void ** opt_data, int nb_ctx_data,
              void ** ctx_data)
@@ -6056,9 +6046,8 @@ main(int argc, char * argv[])
   unsigned char is_last;
   char *        charset;
 
-  char * custom_ini_file = NULL; /* init file full path */
-  char * home_ini_file;          /* init file full path                      */
-  char * local_ini_file;         /* init file full path                      */
+  char * home_ini_file;  /* init file full path                      */
+  char * local_ini_file; /* init file full path                      */
 
   charsetinfo_t * charset_ptr;
   langinfo_t      langinfo;
@@ -6287,6 +6276,24 @@ main(int argc, char * argv[])
   /* """""""""""""""""""""""""""""""""""""""""""""""" */
   misc.invalid_char_substitute = '.';
 
+  /* Build the full path of the .ini file */
+  /* """""""""""""""""""""""""""""""""""" */
+  home_ini_file  = make_ini_path(argv[0], "HOME");
+  local_ini_file = make_ini_path(argv[0], "PWD");
+
+  /* Set the attributes from the configuration file if possible */
+  /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+  if (ini_load(home_ini_file, &win, &term, &limits, &timers, &misc, &langinfo,
+               ini_cb))
+    exit(EXIT_FAILURE);
+
+  if (ini_load(local_ini_file, &win, &term, &limits, &timers, &misc, &langinfo,
+               ini_cb))
+    exit(EXIT_FAILURE);
+
+  free(home_ini_file);
+  free(local_ini_file);
+
   /* Command line options setting */
   /* """""""""""""""""""""""""""" */
   ctxopt_init(argv[0], "stop_if_non_option=No "
@@ -6324,7 +6331,6 @@ main(int argc, char * argv[])
 
   main_spec_options = "[*version] "
                       "[*long_help] "
-                      "[config #file] "
                       "[da_options #prefix:attr...] "
                       "[auto_da_number... [#regex...]] "
                       "[auto_da_unnumber... [#regex...]] "
@@ -6402,7 +6408,6 @@ main(int argc, char * argv[])
   ctxopt_add_opt_settings(parameters, "long_help", "-H -long-help");
   ctxopt_add_opt_settings(parameters, "usage", "-? -u -usage");
   ctxopt_add_opt_settings(parameters, "version", "-V -version");
-  ctxopt_add_opt_settings(parameters, "config", "-f -cfg -config_file");
   ctxopt_add_opt_settings(parameters, "include_re",
                           "-i -in -inc -incl -include");
   ctxopt_add_opt_settings(parameters, "exclude_re",
@@ -6509,8 +6514,6 @@ main(int argc, char * argv[])
   ctxopt_add_opt_settings(actions, "line_mode", line_mode_action, &win,
                           (char *)0);
   ctxopt_add_opt_settings(actions, "tab_mode", tab_mode_action, &win,
-                          (char *)0);
-  ctxopt_add_opt_settings(actions, "config", config_action, &custom_ini_file,
                           (char *)0);
   ctxopt_add_opt_settings(actions, "columns_select", columns_select_action,
                           &cols_selector_list, (char *)0);
@@ -6736,33 +6739,6 @@ main(int argc, char * argv[])
                     "management capabilities.\n");
 
     exit(EXIT_FAILURE);
-  }
-
-  if (custom_ini_file != NULL)
-  {
-    if (ini_load(custom_ini_file, &win, &term, &limits, &timers, &misc,
-                 &langinfo, ini_cb))
-      exit(EXIT_FAILURE);
-  }
-  else
-  {
-    /* Build the full path of the .ini file */
-    /* """""""""""""""""""""""""""""""""""" */
-    home_ini_file  = make_ini_path(argv[0], "HOME");
-    local_ini_file = make_ini_path(argv[0], "PWD");
-
-    /* Set the attributes from the configuration file if possible */
-    /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-    if (ini_load(home_ini_file, &win, &term, &limits, &timers, &misc, &langinfo,
-                 ini_cb))
-      exit(EXIT_FAILURE);
-
-    if (ini_load(local_ini_file, &win, &term, &limits, &timers, &misc,
-                 &langinfo, ini_cb))
-      exit(EXIT_FAILURE);
-
-    free(home_ini_file);
-    free(local_ini_file);
   }
 
   word_buffer = xcalloc(1, daccess.flength + limits.word_length + 1);

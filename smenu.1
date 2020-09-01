@@ -8,7 +8,6 @@ and outputs the selection to stdout.
   [\fB*-H\fP|\fB-long_help\fP]
   [\fB*-?\fP|\fB-u\fP|\fB-usage\fP]
   [\fB*-V\fP|\fB-version\fP]
-  [\fB-f\fP|\fB-cfg\fP|\fB-config_file file\fP]
   [\fB-n\fP|\fB-lines\fP|\fB-height\fP [\fIheight\fP]]
   [\fB-i\fP|\fB-in\fP|\fB-inc\fP|\fB-incl\fP|\fB-include\fP... \fIregex\fP]
   [\fB-e\fP|\fB-ex\fP|\fB-exc\fP|\fB-excl\fP|\fB-exclude\fP... \fIregex\fP]
@@ -664,16 +663,6 @@ Display a long (non context specific) help messages and exits.
 Displays a short help message and exits.
 .IP "\fB-V\fP|\fB-version\fP"
 (Allowed in the "Main" context.)
-
-Displays the current version and quits.
-.IP "\fB-f\fP|\fB-cfg\fP|\fB-config_file file\fP"
-(Allowed in the "Main" context.)
-
-Displays the current version and quits.
-This option gives the possibility to select an alternative configuration
-file.
-If the given file doesn't exist or is not readable then the default
-values will be used.
 
 The \fB.smenu\fP files in the user's home directory and in the current
 directory, if present, will be ignored when this option is used.
