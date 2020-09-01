@@ -197,7 +197,7 @@ struct termios old_in_attrs;
 
 /* Interval timers used */
 /* """""""""""""""""""" */
-struct itimerval periodic_itv; /* refresh rate for the timeout counter */
+struct itimerval periodic_itv; /* refresh rate for the timeout counter. */
 
 int help_timer    = -1;
 int winch_timer   = -1;

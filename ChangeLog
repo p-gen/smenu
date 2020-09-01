@@ -27,6 +27,7 @@
   * -N and -U options can now have multiple arguments.
   * Fuzzy and substring searches now ignore leading and trailing blanks.
   * Unicode codepoints can now be entered using the new \U notation.
+  * smenu has been optimized to support networks with high latency.
 * Misc:
   + A note in the README to thank the packagers has been added.
   + The code has been adjusted to conform to C99.

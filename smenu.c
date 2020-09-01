@@ -3381,17 +3381,17 @@ disp_message(ll_t * message_lines_list, long message_max_width,
   long        offset;
   wchar_t *   w;
 
+  sigset_t mask;
+
   win->message_lines = 0;
 
-  /* Disarm the periodic timer to prevent the interruptions to corrupt */
-  /* screen by altering the timing of the decoding of the terminfo     */
-  /* capabilities de                                                   */
-  /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-  periodic_itv.it_value.tv_sec     = 0;
-  periodic_itv.it_value.tv_usec    = 0;
-  periodic_itv.it_interval.tv_sec  = 0;
-  periodic_itv.it_interval.tv_usec = 0;
-  setitimer(ITIMER_REAL, &periodic_itv, NULL);
+  /* Deactivate the periodic timer to prevent the interruptions to corrupt */
+  /* screen by altering the timing of the decoding of the terminfo         */
+  /* capabilities.                                                         */
+  /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+  sigemptyset(&mask);
+  sigaddset(&mask, SIGALRM);
+  sigprocmask(SIG_BLOCK, &mask, NULL);
 
   /* Do nothing if there is no message to display */
   /* """""""""""""""""""""""""""""""""""""""""""" */
@@ -3464,13 +3464,9 @@ disp_message(ll_t * message_lines_list, long message_max_width,
 
   free(buf);
 
-  /* Re-arm the periodic timer */
-  /* """"""""""""""""""""""""" */
-  periodic_itv.it_value.tv_sec     = 0;
-  periodic_itv.it_value.tv_usec    = TICK;
-  periodic_itv.it_interval.tv_sec  = 0;
-  periodic_itv.it_interval.tv_usec = TICK;
-  setitimer(ITIMER_REAL, &periodic_itv, NULL);
+  /* Re-enable the periodic timer. */
+  /* """"""""""""""""""""""""""""" */
+  sigprocmask(SIG_UNBLOCK, &mask, NULL);
 }
 
 /* ============================ */
@@ -3488,15 +3484,15 @@ disp_lines(win_t * win, toggle_t * toggle, long current, long count,
   long len;
   long display_bar;
 
-  /* Disarm the periodic timer to prevent the interruptions to corrupt */
-  /* screen by altering the timing of the decoding of the terminfo     */
-  /* capabilities de                                                   */
-  /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-  periodic_itv.it_value.tv_sec     = 0;
-  periodic_itv.it_value.tv_usec    = 0;
-  periodic_itv.it_interval.tv_sec  = 0;
-  periodic_itv.it_interval.tv_usec = 0;
-  setitimer(ITIMER_REAL, &periodic_itv, NULL);
+  sigset_t mask;
+
+  /* Disable the periodic timer to prevent the interruptions to corrupt */
+  /* screen by altering the timing of the decoding of the terminfo      */
+  /* capabilities.                                                      */
+  /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+  sigemptyset(&mask);
+  sigaddset(&mask, SIGALRM);
+  sigprocmask(SIG_BLOCK, &mask, NULL);
 
   scroll_symbol[0] = ' ';
   scroll_symbol[1] = '\0';
@@ -3724,13 +3720,9 @@ disp_lines(win_t * win, toggle_t * toggle, long current, long count,
   /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
   tputs(TPARM1(restore_cursor), 1, outch);
 
-  /* Re-arm the periodic timer */
-  /* """"""""""""""""""""""""" */
-  periodic_itv.it_value.tv_sec     = 0;
-  periodic_itv.it_value.tv_usec    = TICK;
-  periodic_itv.it_interval.tv_sec  = 0;
-  periodic_itv.it_interval.tv_usec = TICK;
-  setitimer(ITIMER_REAL, &periodic_itv, NULL);
+  /* Re-enable the periodic timer */
+  /* """""""""""""""""""""""""""" */
+  sigprocmask(SIG_UNBLOCK, &mask, NULL);
 
   return lines_disp;
 }
