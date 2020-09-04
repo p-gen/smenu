@@ -1583,13 +1583,18 @@ with the cursor on \fIQuit\fP and only the numbers and "Quit" selectable.
 \f(CBR=$(smenu -q -d -s/Exit -M -n 30 -c        \\
           -e "@+" -E '/@+/ /'              \\
           -F -D n:1 i:1                    \\
-          -m "Test menu"$'\\n' < sample.mnu)
+          -m "Test menu" < sample.mnu)
 
 The selected entry will be available in \f(CBR\fP
 
 Try to understand it as an exercise.
 .SH ENVIRONMENT
-\fINO_COLOR\fP: force a monochrome terminal when set.
+.TS
+tab(@);
+l l.
+\fINO_COLOR\fP@force a monochrome terminal when set.
+\fICTXOPT_DEBUG\fP@put the option parser in debug mode.
+.TE
 .SH BUGS/LIMITATIONS
 Some terminal emulators, those notably based on VTE version later than
 0.35 (see https://github.com/GNOME/vte/commit/01380d), have a new feature

@@ -26,9 +26,9 @@ How to build it?
 development platform is available. This includes every Unix and
 Unix-like system I am aware of.
 
-Please use the provided ``build.sh`` to build the executable. This
-script accepts the same arguments as ``configure``, type ``build.sh
---help`` to see them.
+Please use the provided ``build.sh`` script to build the executable.
+This script accepts the same arguments as the GNU ``configure`` script,
+type ``build.sh --help`` to see them.
 
 The script ``autogen.sh`` is also provided if you need to generate a
 new ``configure`` script from ``configure.ac`` and ``Makefile.am``. The
