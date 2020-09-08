@@ -139,6 +139,11 @@ test in the ``tests`` directory in an existing or new directory: read the
 ``.in`` file and a ``.tst`` file and send them to me as well as the
 produced files.
 
+Contributions.
+--------------
+Contributions are welcome but discuss your proposal in an issue first,
+or with the maintainer.
+
 Special thanks.
 ---------------
 I want to thank those who took the time to package **smenu** for their
