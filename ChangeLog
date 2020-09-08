@@ -35,51 +35,51 @@
 
 - Version 0.9.15
 * Bug fixes:
-  + An ending pattern search was not correctly highlighted
-  + An highlighting issue when hitting the HOME key during a search
+  * An ending pattern search was not correctly highlighted
+  * An highlighting issue when hitting the HOME key during a search
     in numbered mode has been fixed
-  + The PgUp/PgDn moves have been fixed and improved in the presence of
+  * The PgUp/PgDn moves have been fixed and improved in the presence of
     excluded words
-  + The height of the windows when a message is present is now correctly
+  * The height of the windows when a message is present is now correctly
     calculated
-  + The SIGINT signal handling is working properly now
-  + A vt100 terminal is assumed when the environment variable TERM
+  * The SIGINT signal handling is working properly now
+  * A vt100 terminal is assumed when the environment variable TERM
     is unset
 * Improvements:
-  + The 'o' sub-option of the -D option has been enhanced
-  + The documentation has been improved and enhanced
-  + An example of a hierarchical menu interpreter has been added
-  + The message (title) appearance can now be changed with the -a option
-  + An empty line has been added after the message (title) for clarity
-  + The .spec file has been updated to support older SUSE/RH versions
-  + An issue opening /dev/tty is now clearly signaled
-  + The argument of the -n option is now optional and defaults to 0
+  * The 'o' sub-option of the -D option has been enhanced
+  * The documentation has been improved and enhanced
+  * An example of a hierarchical menu interpreter has been added
+  * The message (title) appearance can now be changed with the -a option
+  * An empty line has been added after the message (title) for clarity
+  * The .spec file has been updated to support older SUSE/RH versions
+  * An issue opening /dev/tty is now clearly signaled
+  * The argument of the -n option is now optional and defaults to 0
     (full height)
-  + It is now possible to directly move the cursor to the start/end of
+  * It is now possible to directly move the cursor to the start/end of
     the current line
 * Misc:
-  + The code has been split into several files
-  + The pull request #15 from sumbach/patch-1 has been merged
-  + The pull request #12 from jonnydubowsky/patch-1 has been merged
-  + More tests for the automatic regressions checking have been added
-  + UTF-8 string length processing has been optimized
-  + Help and usage messages are now printed on stdout
-  + A FAQ has been added
-  + Compiler warnings have been silenced
+  * The code has been split into several files
+  * The pull request #15 from sumbach/patch-1 has been merged
+  * The pull request #12 from jonnydubowsky/patch-1 has been merged
+  * More tests for the automatic regressions checking have been added
+  * UTF-8 string length processing has been optimized
+  * Help and usage messages are now printed on stdout
+  * A FAQ has been added
+  * Compiler warnings have been silenced
 
 - Version 0.9.14
 * Rework the search system (major change)
-  + Add a substring and a fuzzy (fzf inspired) search mode
-  + Enlighten the current search pattern in the matching words
-  + Remove the search mode timeout
-  + Introduce ENTER/ESC as a way to exit search mode
-  + Add the prefix/suffix affinity when searching
-  + Allow to tag/un-tag all the matching words
-  + add a -/ option to affect a search method to the / command
-  + Add 'T' and 'U' commands to tag/un-tag all the matching words
+  * Add a substring and a fuzzy (fzf inspired) search mode
+  * Enlighten the current search pattern in the matching words
+  * Remove the search mode timeout
+  * Introduce ENTER/ESC as a way to exit search mode
+  * Add the prefix/suffix affinity when searching
+  * Allow to tag/un-tag all the matching words
+  * add a -/ option to affect a search method to the / command
+  * Add 'T' and 'U' commands to tag/un-tag all the matching words
 * Improve the direct access mechanism
-  + [-D] Add a 's' (start) sub-option
-  + [-D] Add a 'h' (head) sub-option
+  * [-D] Add a 's' (start) sub-option
+  * [-D] Add a 'h' (head) sub-option
 * Add a "full window" option value to -n
 * Improve the test system and add tests
 * Improve the documentation
@@ -95,7 +95,7 @@
 - Version 0.9.13
 * Add the first roll of an automated testing system
 * Fix a FreeBSD compatibility issue
-* Update the .spec file to create a '-test' RPM subpackage
+* Update the .spec file to create a '-test' RPM sub-package
 * [-a] Add a missing setting for cursor_on_tag (ct)
 * [-b] Fix a bug about non-printable characters
 * [-V] Output the version tag on standard output
@@ -115,7 +115,7 @@ Apr 08 18:32 UTC 2018 - p.gen.progs@gmail.com
 * Fix the cursor restoration
 * Fix a Solaris incompatibility
 * Fix italic handling
-* Fix the replacement of subexpressions (-S,-I,-E)
+* Fix the replacement of sub-expressions (-S,-I,-E)
 * Fix a bug in the columns inclusion logic
 * Fix the impossibility to use the letter 't' in search mode
 * Fix possible display errors when the terminal is resized
@@ -132,7 +132,7 @@ Apr 08 18:32 UTC 2018 - p.gen.progs@gmail.com
 * Exit from search mode when a direction key is hit
 * Adjust some values of timers
 * Remove deprecated directives in -C and -L
-* Various other small fixes and improvments
+* Various other small fixes and improvements
 
 Jan 26 12:35 UTC 2018 - p.gen.progs@gmail.com
 
@@ -151,7 +151,7 @@ Jan 26 12:35 UTC 2018 - p.gen.progs@gmail.com
 Jul 29 16:30:00 UTC 2017 - p.gen.progs@gmail.com
 
 - Bump to version 0.9.10
-* The words acquisition is rewritten and splitted in multiple phases
+* The words acquisition is rewritten and split in multiple phases
 * Add the capacity to (de)select rows an columns containing regexes
 * -i, -e, -C and -R can be used more than once and have a cumulative effect
 * Bugfix: -s is able to jump to non selectable words
@@ -189,8 +189,8 @@ Sun Dec 11 20:00:20 UTC 2016 - p.gen.progs@gmail.com
 * Manage conflicts between -C, -R, -c, -l, and -t
 * Improve and fix the help line display
 * Add a -T option to enable a tagging (multi-selections) mode
-* Add the -? option to only display the synopsys
-* Adjust the code so that it can be compiled with an ansi compiler
+* Add the -? option to only display the synopsis
+* Adjust the code so that it can be compiled with an ANSI compiler
 * Put the searched line in the middle of the displayed window if possible
 * Add a -k option to prevent trimming spaces
 * Fix the -s option
