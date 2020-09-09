@@ -85,8 +85,8 @@ utf8_interpret(char * s, langinfo_t * langinfo, char substitute)
   size_t utf8_ascii_len;    /* 2,4,6 or 8 bytes.                           */
   size_t len_to_remove = 0; /* number of bytes to remove after the         *
                              | conversion.                                 */
-  char tmp[9];              /* temporary string.                           */
-  int  rc = 1;              /* return code, 0: error, 1: fine.             */
+  char   tmp[9];            /* temporary string.                           */
+  int    rc = 1;            /* return code, 0: error, 1: fine.             */
 
   /* Guard against the case where s is NULL. */
   /* """"""""""""""""""""""""""""""""""""""" */

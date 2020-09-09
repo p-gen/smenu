@@ -122,9 +122,9 @@ enum
 /* """""""""""""""""""""""""""""""" */
 enum
 {
-  EXCLUDE_MARK = 0,      /* must be 0 because used in various tests     *
+  EXCLUDE_MARK      = 0, /* must be 0 because used in various tests     *
                           * these words cannot be re-included           */
-  INCLUDE_MARK = 1,      /* to forcibly include a word, these words can *
+  INCLUDE_MARK      = 1, /* to forcibly include a word, these words can *
                           * be excluded later                           */
   SOFT_EXCLUDE_MARK = 2, /* word with this mark are excluded by default *
                           * but can be included later                   */
@@ -255,25 +255,25 @@ struct term_s
 /* """"""""""""""""""""""""""" */
 struct word_s
 {
-  long start, end;      /* start/end absolute horiz. word positions *
-                         * on the screen                            */
-  size_t mb;            /* number of UTF-8 glyphs to display        */
-  long   tag_order;     /* each time a word is tagged, this value   *
-                         * is increased                             */
-  size_t special_level; /* can vary from 0 to 5; 0 meaning normal   */
-  char * str;           /* display string associated with this word */
-  size_t len;           /* number of bytes of str (for trimming)    */
-  char * orig;          /* NULL or original string if is had been   *
-                         * shortened for being displayed or altered *
-                         * by is expansion.                         */
-  char * bitmap;        /* used to store the the position of the    *
-                         * currently searched chars in a word. The  *
-                         * objective is to speed their display      */
+  long          start, end;    /* start/end absolute horiz. word positions *
+                                * on the screen                            */
+  size_t        mb;            /* number of UTF-8 glyphs to display        */
+  long          tag_order;     /* each time a word is tagged, this value   *
+                                * is increased                             */
+  size_t        special_level; /* can vary from 0 to 5; 0 meaning normal   */
+  char *        str;           /* display string associated with this word */
+  size_t        len;           /* number of bytes of str (for trimming)    */
+  char *        orig;          /* NULL or original string if is had been   *
+                                * shortened for being displayed or altered *
+                                * by is expansion.                         */
+  char *        bitmap;        /* used to store the the position of the    *
+                                * currently searched chars in a word. The  *
+                                * objective is to speed their display      */
   unsigned char is_matching;
-  unsigned char is_tagged;     /* 1 if the word is tagged, 0 if not   */
-  unsigned char is_last;       /* 1 if the word is the last of a line */
-  unsigned char is_selectable; /* word is selectable                  */
-  unsigned char is_numbered;   /* word has a direct access index      */
+  unsigned char is_tagged;     /* 1 if the word is tagged, 0 if not        */
+  unsigned char is_last;       /* 1 if the word is the last of a line      */
+  unsigned char is_selectable; /* word is selectable                       */
+  unsigned char is_numbered;   /* word has a direct access index           */
 };
 
 /* Structure describing the window in which the user */
@@ -281,22 +281,22 @@ struct word_s
 /* """"""""""""""""""""""""""""""""""""""""""""""""" */
 struct win_s
 {
-  long start, end;      /* index of the first and last word        */
-  long first_column;    /* number of the first character displayed */
-  long cur_line;        /* relative number of the cursor line (1+) */
-  long asked_max_lines; /* requested number of lines in the window */
-  long max_lines;       /* effective number of lines in the window */
-  long max_cols;        /* max number of words in a single line    */
-  long real_max_width;  /* max line length. In column, tab or line *
-                         * mode it can be greater than the         *
-                         * terminal width                          */
-  long message_lines;   /* number of lines taken by the messages   *
-                         * (updated by disp_message                */
-  long    max_width;    /* max usable line width or the terminal   */
-  long    offset;       /* window offset user when centered        */
-  char *  sel_sep;      /* output separator when tags are enabled  */
-  char ** gutter_a;     /* array of UTF-8 gutter glyphs            */
-  long    gutter_nb;    /* number of UTF-8 gutter glyphs           */
+  long    start, end;      /* index of the first and last word        */
+  long    first_column;    /* number of the first character displayed */
+  long    cur_line;        /* relative number of the cursor line (1+) */
+  long    asked_max_lines; /* requested number of lines in the window */
+  long    max_lines;       /* effective number of lines in the window */
+  long    max_cols;        /* max number of words in a single line    */
+  long    real_max_width;  /* max line length. In column, tab or line *
+                            * mode it can be greater than the         *
+                            * terminal width                          */
+  long    message_lines;   /* number of lines taken by the messages   *
+                            * (updated by disp_message                */
+  long    max_width;       /* max usable line width or the terminal   */
+  long    offset;          /* window offset user when centered        */
+  char *  sel_sep;         /* output separator when tags are enabled  */
+  char ** gutter_a;        /* array of UTF-8 gutter glyphs            */
+  long    gutter_nb;       /* number of UTF-8 gutter glyphs           */
 
   unsigned char tab_mode;  /* -t */
   unsigned char col_mode;  /* -c */
@@ -337,7 +337,7 @@ struct sed_s
                                *              occur more than once */
   unsigned char stop;         /* stop flag:   only one alteration  *
                                *              per word is allowed  */
-  regex_t re;                 /* compiled regular expression       */
+  regex_t       re;           /* compiled regular expression       */
 };
 
 /* Structure used to keep track of the different timeout values */

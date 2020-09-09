@@ -84,9 +84,9 @@ char * left_arrow      = "\xe2\x86\x90";
 char * up_arrow        = "\xe2\x86\x91";
 char * right_arrow     = "\xe2\x86\x92";
 char * down_arrow      = "\xe2\x86\x93";
-char * vertical_bar    = "\xe2\x94\x82"; /* box drawings light vertical    */
-char * shift_left_sym  = "\xe2\x97\x80"; /* leftwards_arrow                */
-char * shift_right_sym = "\xe2\x96\xb6"; /* rightwards_arrow               */
+char * vertical_bar    = "\xe2\x94\x82"; /* box drawings light vertical      */
+char * shift_left_sym  = "\xe2\x97\x80"; /* leftwards_arrow                  */
+char * shift_right_sym = "\xe2\x96\xb6"; /* rightwards_arrow                 */
 char * sbar_line       = "\xe2\x94\x82"; /* box_drawings_light_vertical      */
 char * sbar_top        = "\xe2\x94\x90"; /* box_drawings_light_down_and_left */
 char * sbar_down       = "\xe2\x94\x98"; /* box_drawings_light_up_and_left   */
@@ -126,10 +126,10 @@ volatile sig_atomic_t got_sighup       = 0;
 /* Variables used when a timeout is set (option -x) */
 /* """""""""""""""""""""""""""""""""""""""""""""""" */
 timeout_t timeout;
-char *    timeout_word;    /* printed word when the timeout type is WORD. */
-char *    timeout_seconds; /* string containing the number of remaining   *
-                            * seconds.                                    */
-int quiet_timeout = 0;     /* 1 when we want no message to be displayed.  */
+char *    timeout_word;      /* printed word when the timeout type is WORD. */
+char *    timeout_seconds;   /* string containing the number of remaining   *
+                              * seconds.                                    */
+int       quiet_timeout = 0; /* 1 when we want no message to be displayed.  */
 
 /* ************** */
 /* Help functions */
@@ -907,12 +907,12 @@ update_bitmaps(search_mode_t mode, search_data_t * data,
 
   char * sb_orig = data->buf; /* sb: search buffer                        */
   char * sb;
-  long * o = data->utf8_off_a;    /* array of the offsets of the search   *
-                                   * buffer glyphs                        */
-  long * l = data->utf8_len_a;    /* array of the lengths in bytes of the *
-                                   * search buffer glyphs                 */
-  long last = data->utf8_len - 1; /* offset of the last glyph in the      *
-                                   * search buffer                        */
+  long * o    = data->utf8_off_a;   /* array of the offsets of the search *
+                                     * buffer glyphs                      */
+  long * l    = data->utf8_len_a;   /* array of the lengths in bytes of   *
+                                     * the search buffer glyphs           */
+  long   last = data->utf8_len - 1; /* offset of the last glyph in the    *
+                                     * search buffer                      */
 
   long badness = 0; /* number of 0s between two 1s                        */
 
@@ -1964,8 +1964,8 @@ build_repl_string(char * orig, char * repl, long match_start, long match_end,
 int
 replace(char * orig, sed_t * sed)
 {
-  size_t match_nb = 0;   /* number of matches in the original string */
-  int    sub_nb   = 0;   /* number of remembered matches in the      *
+  size_t match_nb   = 0; /* number of matches in the original string */
+  int    sub_nb     = 0; /* number of remembered matches in the      *
                           * original sting                           */
   size_t target_len = 0; /* length of the resulting string           */
   size_t subs_max   = 0;
@@ -2907,13 +2907,13 @@ set_win_start_end(win_t * win, long current, long last)
 long
 build_metadata(term_t * term, long count, win_t * win)
 {
-  long i = 0;
-  long word_len;
-  long len  = 0;
-  long last = 0;
-  long word_width;
-  long tab_count; /* Current number of words in the line, *
-                   * used in tab_mode                     */
+  long      i = 0;
+  long      word_len;
+  long      len  = 0;
+  long      last = 0;
+  long      word_width;
+  long      tab_count; /* Current number of words in the line, *
+                        * used in tab_mode                     */
   wchar_t * w;
 
   line_nb_of_word_a[0]    = 0;
@@ -2964,9 +2964,9 @@ build_metadata(term_t * term, long count, win_t * win)
 
       word_a[i].start = 0;
 
-      len       = word_width + 1; /* Resets the current line length     */
-      tab_count = 1;              /* Resets the current number of words *
-                                   * in the line                        */
+      len           = word_width + 1; /* Resets the current line length     */
+      tab_count     = 1;              /* Resets the current number of words *
+                                       * in the line                        */
       word_a[i].end = word_width - 1;
       word_a[i].mb  = word_len;
     }
@@ -2977,7 +2977,7 @@ build_metadata(term_t * term, long count, win_t * win)
       word_a[i].mb         = word_len;
       line_nb_of_word_a[i] = last;
 
-      len += word_width + 1; /* Increase line length */
+      len += word_width + 1; /* Increase line length                */
       tab_count++;           /* We've seen another word in the line */
     }
 
@@ -4953,8 +4953,8 @@ gutter_action(char * ctx_name, char * opt_name, char * param, int nb_values,
     gutter = xstrdup(values[0]);
 
     utf8_interpret(gutter, langinfo,
-                   misc->invalid_char_substitute); /* Guarantees a well formed *
-                                                    * UTF-8 string */
+                   misc->invalid_char_substitute); /* Guarantees a well   *
+                                                    * formed UTF-8 string */
 
     win->gutter_nb = utf8_strlen(gutter);
     win->gutter_a  = xmalloc(win->gutter_nb * sizeof(char *));
@@ -5904,14 +5904,13 @@ main(int argc, char * argv[])
   ll_t * message_lines_list = NULL; /* list of the lines in the message to   *
                                      * be displayed */
   long message_max_width = 0; /* total width of the message (longest line)   */
-  long message_max_len   = 0; /* max number of bytes taken by a message       *
-                               * line */
+  long message_max_len   = 0; /* max number of bytes taken by a message line */
 
-  FILE * input_file; /* The name of the file passed as argument if any */
+  FILE * input_file; /* The name of the file passed as argument if any       */
 
-  long index; /* generic counter */
+  long index; /* generic counter                                             */
 
-  long daccess_index = 1; /* First index of the numbered words */
+  long daccess_index = 1; /* First index of the numbered words               */
 
   char *  daccess_np = NULL; /* direct access numbered pattern               */
   regex_t daccess_np_re; /* variable to store the compiled direct access     *
@@ -5921,28 +5920,28 @@ main(int argc, char * argv[])
   regex_t daccess_up_re; /* variable to store the compiled direct access     *
                           * pattern (-U) RE */
 
-  char * include_pattern     = NULL;
-  char * exclude_pattern     = NULL;
-  int    pattern_def_include = -1; /* Set to -1 until an -i or -e option is  *
-                                    * specified, This variable remembers if  *
-                                    * the words not matched will be included *
-                                    * (value 1) or excluded (value 0) by     *
-                                    * default.                               */
-  regex_t include_re; /* variable to store the compiled include (-i) REs */
-  regex_t exclude_re; /* variable to store the compiled exclude (-e) REs */
+  char *  include_pattern     = NULL;
+  char *  exclude_pattern     = NULL;
+  int     pattern_def_include = -1; /* Set to -1 until an -i or -e option    *
+                                     * is specified, This variable remembers *
+                                     * if the words not matched will be      *
+                                     * included (value 1) or excluded        *
+                                     * (value 0) by default.                 */
+  regex_t include_re; /* variable to store the compiled include (-i) REs     */
+  regex_t exclude_re; /* variable to store the compiled exclude (-e) REs     */
 
-  ll_t * sed_list = NULL;         /* List of sed like string representation  *
+  ll_t * sed_list         = NULL; /* List of sed like string representation  *
                                    * of regex given after (-S)               */
-  ll_t * include_sed_list = NULL; /* idem for -I */
-  ll_t * exclude_sed_list = NULL; /* idem for -E */
+  ll_t * include_sed_list = NULL; /* idem for -I                             */
+  ll_t * exclude_sed_list = NULL; /* idem for -E                             */
 
-  ll_t * inc_col_interval_list = NULL; /* list of included or */
-  ll_t * exc_col_interval_list = NULL; /* excluded numerical intervals */
-  ll_t * inc_row_interval_list = NULL; /* for lines and columns */
+  ll_t * inc_col_interval_list = NULL; /* list of included or                */
+  ll_t * exc_col_interval_list = NULL; /* excluded numerical intervals       */
+  ll_t * inc_row_interval_list = NULL; /* for lines and columns              */
   ll_t * exc_row_interval_list = NULL;
 
   ll_t * inc_col_regex_list = NULL; /* same for lines and columns specified  */
-  ll_t * exc_col_regex_list = NULL; /* by regular expressions */
+  ll_t * exc_col_regex_list = NULL; /* by regular expressions                */
   ll_t * inc_row_regex_list = NULL;
   ll_t * exc_row_regex_list = NULL;
 
@@ -5991,14 +5990,14 @@ main(int argc, char * argv[])
 
   long nl;     /* Number of lines displayed in the window                    */
   long offset; /* Used to correctly put the cursor at the start of the       *
-                * selection window, even after a terminal vertical scroll */
+                * selection window, even after a terminal vertical scroll    */
 
   long first_selectable; /* Index of the first selectable word in the input  *
                           * stream */
   long last_selectable;  /* Index of the last selectable word in the input   *
                           * stream  */
 
-  long min_size; /* Minimum screen width of a column in tabular mode */
+  long min_size; /* Minimum screen width of a column in tabular mode         */
 
   long tab_max_size;      /* Maximum screen width of a column in tabular     *
                            * mode                                            */
@@ -6010,29 +6009,29 @@ main(int argc, char * argv[])
   long * col_max_size = NULL;      /* Array of maximum sizes of each column  */
                                    /* in column mode                         */
 
-  long word_real_max_size = 0; /* size of the longer word after expansion */
+  long word_real_max_size = 0; /* size of the longer word after expansion    */
   long cols_real_max_size = 0; /* Max real width of all columns used when    *
                                 * -w and -c are both set */
-  long cols_max_size = 0;      /* Same as above for the columns widths       */
+  long cols_max_size      = 0; /* Same as above for the columns widths       */
 
-  long col_index = 0;   /* Index of the current column when reading words,i  *
+  long col_index   = 0; /* Index of the current column when reading words,   *
                          * used  in column mode                              */
-  long cols_number = 0; /* Number of columns in column mode */
+  long cols_number = 0; /* Number of columns in column mode                  */
 
-  char * pre_selection_index = NULL; /* pattern used to set the initial   *
-                                      * cursor position                   */
+  char * pre_selection_index = NULL; /* pattern used to set the initial      *
+                                      * cursor position                      */
   unsigned char buffer[16];          /* Input buffer */
 
   search_data_t search_data;
-  search_data.buf = NULL;   /* Search buffer                                 */
-  search_data.len = 0;      /* Current position in the search buffer         */
-  search_data.utf8_len = 0; /* Current position in the search buffer in      *
+  search_data.buf = NULL;    /* Search buffer                                */
+  search_data.len = 0;       /* Current position in the search buffer        */
+  search_data.utf8_len  = 0; /* Current position in the search buffer in     *
                              * UTF-8 units */
-  search_data.fuzzy_err     = 0;  /* reset the error indicator               */
+  search_data.fuzzy_err = 0; /* reset the error indicator                    */
   search_data.fuzzy_err_pos = -1; /* no last error position in search buffer */
 
-  long matching_word_cur_index = -1; /* cache for the next/previous moves *
-                                      * in the matching words array */
+  long matching_word_cur_index = -1; /* cache for the next/previous moves    *
+                                      * in the matching words array          */
 
   struct sigaction sa; /* Signal structure */
 
@@ -6046,8 +6045,8 @@ main(int argc, char * argv[])
   unsigned char is_last;
   char *        charset;
 
-  char * home_ini_file;  /* init file full path                      */
-  char * local_ini_file; /* init file full path                      */
+  char * home_ini_file;  /* init file full path                              */
+  char * local_ini_file; /* init file full path                              */
 
   charsetinfo_t * charset_ptr;
   langinfo_t      langinfo;
@@ -6057,8 +6056,8 @@ main(int argc, char * argv[])
 
   attr_t init_attr;
 
-  ll_node_t * inc_interval_node = NULL; /* one node of this list */
-  ll_node_t * exc_interval_node = NULL; /* one node of this list */
+  ll_node_t * inc_interval_node = NULL; /* one node of this list             */
+  ll_node_t * exc_interval_node = NULL; /* one node of this list             */
 
   interval_t * inc_interval;       /* the data in each node                  */
   interval_t * exc_interval;       /* the data in each node                  */
@@ -8112,15 +8111,15 @@ main(int argc, char * argv[])
                     && daccess.offset + daccess.size + daccess.ignore
                          <= utf8_strlen(word->str))
                 {
-                  unsigned selector_value; /* numerical value of the         *
-                                            * extracted selector */
-                  long selector_offset;    /* offset in byte to the selector *
-                                            * to extract                     */
-                  char * ptr;              /* points just after the selector *
-                                            * to extract   */
-                  long plus_offset;        /* points to the first occurrence *
-                                            * of a number in word->str after *
-                                            * the offset given               */
+                  unsigned selector_value;  /* numerical value of the         *
+                                             * extracted selector             */
+                  long     selector_offset; /* offset in byte to the selector *
+                                             * to extract                     */
+                  char *   ptr;             /* points just after the selector *
+                                             * to extract                     */
+                  long     plus_offset;     /* points to the first occurrence *
+                                             * of a number in word->str after *
+                                             * the offset given               */
 
                   selector_offset = utf8_offset(word->str, daccess.offset);
 
