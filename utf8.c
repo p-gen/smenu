@@ -27,8 +27,8 @@
 int
 cptoutf8(char * utf8_str, uint32_t c)
 {
-  int len = 0;
-  int first;
+  int len   = 0;
+  int first = 0;
   int i;
 
   if (c < 0x80)

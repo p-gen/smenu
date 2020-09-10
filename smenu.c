@@ -6636,6 +6636,7 @@ main(int argc, char * argv[])
       fprintf(stderr, "The file \"%s\" does not exist or cannot be read.\n",
               rem_args[0]);
       ctxopt_disp_usage(exit_after);
+      exit(EXIT_FAILURE); /* Avoid a compiler warning. */
     }
   }
   else if (nb_rem_args == 0)
@@ -6650,6 +6651,7 @@ main(int argc, char * argv[])
     fprintf(stderr, ".\n");
 
     ctxopt_disp_usage(exit_after);
+    exit(EXIT_FAILURE); /* Avoid a compiler warning. */
   }
 
   /* Free the memory used internally by ctxopt */
