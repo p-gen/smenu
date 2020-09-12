@@ -1,4 +1,4 @@
-$ OUT=$(LC_ALL=en_US.UTF-8 smenu -n 10 -t 1 t0003.in)
+$ OUT=$(LANG=en_US.UTF-8 smenu -n 10 -t 1 t0003.in)
 
 1234567890123          ▲
 23:20 

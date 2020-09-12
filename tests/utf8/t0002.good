@@ -1,4 +1,4 @@
-$ OUT=$(LC_ALL=en_US.UTF-8 smenu -n 7 -c t0002.in)
+$ OUT=$(LANG=en_US.UTF-8 smenu -n 7 -c t0002.in)
 
 *.     *\n*     *4*   *45*   *456* *.*4* 
 

@@ -1,4 +1,4 @@
-$ OUT=$(LC_ALL=C smenu -M -m «←→»  t0003.in)
+$ OUT=$(LANG=C smenu -M -m «←→»  t0003.in)
 
                                     ....
 36:01 37:01 38:01 39:01 

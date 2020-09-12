@@ -1,4 +1,4 @@
-$ OUT=$(LC_ALL=en_US.UTF-8 smenu -t 10 -w t0004.in)
+$ OUT=$(LANG=en_US.UTF-8 smenu -t 10 -w t0004.in)
 
 ab      abc     éà      ùùù     €€€€    §§§§    →       ↓       ←       
 40:07 41:07 42:07 43:07 44:07 45:07 46:07 

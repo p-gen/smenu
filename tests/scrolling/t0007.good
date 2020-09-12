@@ -1,4 +1,4 @@
-$ OUT=$(LC_ALL=en_US smenu -c -R 4,6,11,16 -- t0007.in)
+$ OUT=$(LANG=C smenu -c -R 4,6,11,16 -- t0007.in)
 
 5  a a a a a a a a  ^
 5:07 20:20 

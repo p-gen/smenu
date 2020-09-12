@@ -1,4 +1,4 @@
-$ OUT=$(LC_ALL=en_US.UTF-8 smenu -S'/(.)(.)(.)/\3\2\1/g' \
+$ OUT=$(LANG=en_US.UTF-8 smenu -S'/(.)(.)(.)/\3\2\1/g' \
 
 >                                  -s '#150' -n 15 t0010.in)
 

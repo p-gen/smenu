@@ -1,4 +1,4 @@
-$ OUT=$(LC_ALL=en_US smenu -e [0-9] -e a -c t0004.in)
+$ OUT=$(LANG=C smenu -e [0-9] -e a -c t0004.in)
 
 13 b b b b b b b b  ^
 0:24 1:24 9:07 20:20 

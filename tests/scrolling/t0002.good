@@ -1,4 +1,4 @@
-$ OUT=$(LC_ALL=en_US smenu -n 4 -l t0002.in)
+$ OUT=$(LANG=C smenu -n 4 -l t0002.in)
 
 1 2 3 4 5       \
 6:07 16:20 
