@@ -1486,8 +1486,8 @@ struct constraint_s
                     | it to be freed.                                      */
 };
 
-state_t *           cur_state = NULL;      /* Current analysis state.        */
-static ll_t *       cmdline_list;          /* List of interpreted CLI words  *
+state_t *           cur_state      = NULL; /* Current analysis state.        */
+static ll_t *       cmdline_list   = NULL; /* List of interpreted CLI words  *
                                             | serves as the basis for the    *
                                             | analysis of the parameters.    */
 static ctx_t *      main_ctx       = NULL; /* initial context.               */
@@ -2455,7 +2455,7 @@ opt_parse(char * s, opt_t ** opt)
   char * s_orig = s;
 
   char * p;
-  char * opt_name;
+  char * opt_name = NULL;
   char * next_ctx;
   char   token[65];
 
@@ -2551,14 +2551,20 @@ opt_parse(char * s, opt_t ** opt)
     /* Abort on extraneous ] if the option is mandatory. */
     /* """"""""""""""""""""""""""""""""""""""""""""""""" */
     if (!opt_optional)
+    {
+      free(opt_name);
       return -(s - s_orig - 1);
+    }
 
     s++; /* skip the ] */
 
     if (!*s || isblank(*s))
       goto success;
     else
+    {
+      free(opt_name);
       return -(s - s_orig - 1);
+    }
   }
 
   /* A blank separates the option name and the argument tag. */
@@ -2641,7 +2647,10 @@ opt_parse(char * s, opt_t ** opt)
       /* Abort on extraneous ] if the option is mandatory. */
       /* """"""""""""""""""""""""""""""""""""""""""""""""" */
       if (!opt_optional)
+      {
+        free(opt_name);
         return -(s - s_orig - 1);
+      }
 
       s++; /* skip the ] */
 
@@ -2665,7 +2674,10 @@ opt_parse(char * s, opt_t ** opt)
                              * of another option.                      */
       goto success;
     else
+    {
+      free(opt_name);
       return -(s - s_orig - 1);
+    }
   }
 
 success:
@@ -3196,17 +3208,9 @@ ctxopt_build_cmdline_list(int nb_words, char ** words)
   /* If the option list is not empty, clear it before going further. */
   /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
   if (cmdline_list != NULL)
-  {
-    node = cmdline_list->head;
-    while (node != NULL)
-    {
-      free(node->data);
-      ll_delete(cmdline_list, node);
-      node = cmdline_list->head;
-    }
-  }
-  else
-    cmdline_list = ll_new();
+    ll_destroy(cmdline_list, free);
+
+  cmdline_list = ll_new();
 
   start_node = cmdline_list->head; /* In the following loop start_node will *
                                     * contain a pointer to the current      *
@@ -3930,7 +3934,7 @@ ctxopt_analyze(int nb_words, char ** words, int * nb_rem_args,
 
   if (cmdline_list->len > 0 && par_name && *par_name == '-')
   {
-    if (expect_arg && !opt->optional_args)
+    if (expect_arg && opt && !opt->optional_args)
       fatal(CTXOPTMISARG, NULL);
   }
 
