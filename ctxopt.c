@@ -1391,10 +1391,10 @@ struct opt_s
   int multiple; /* 1 if the option can appear more than one time in a        *
                  | context, else 0.                                          */
 
-  int      opt_count_matter; /* 1 if we must restrict the count, else 0.     */
-  int      occurrences;      /* Number of option occurrences in a context.   */
-  char     opt_count_oper;   /* <, = or >                                    */
-  unsigned opt_count_mark;   /* Value to be compared to with opt_count_oper. */
+  int  opt_count_matter; /* 1 if we must restrict the count, else 0.         */
+  int  occurrences;      /* Number of option occurrences in a context.       */
+  char opt_count_oper;   /* <, = or >                                        */
+  int  opt_count_mark;   /* Value to be compared to with opt_count_oper.     */
 
   char * arg; /* symbolic text after # describing the option argument.       */
 
@@ -1402,10 +1402,10 @@ struct opt_s
   int multiple_args; /* 1 is option can appear more than once in a context   *
                       | instance.                                            */
 
-  int      opt_args_count_matter; /* 1 if count is rescticted, else 0.       */
-  char     opt_args_count_oper;   /* <, = or >                               */
-  unsigned opt_args_count_mark;   /* Value to be compared to with            *
-                                   | opt_count_oper.                         */
+  int  opt_args_count_matter; /* 1 if count is rescticted, else 0.           */
+  char opt_args_count_oper;   /* <, = or >                                   */
+  int  opt_args_count_mark;   /* Value to be compared to with                *
+                               | opt_count_oper.                             */
 
   int eval_first; /* 1 if this option must be evaluated before the options   *
                    | without this mark.                                      */
@@ -2262,17 +2262,17 @@ check_for_occurrence_issues(ctx_inst_t * ctx_inst)
       {
         case '=':
           if (opt->occurrences > 0 && opt->opt_count_mark != opt->occurrences)
-            fatal(CTXOPTCTEOPT, NULL);
+            fatal(CTXOPTCTEOPT, "");
           break;
 
         case '<':
           if (opt->occurrences > 0 && opt->opt_count_mark <= opt->occurrences)
-            fatal(CTXOPTCTLOPT, NULL);
+            fatal(CTXOPTCTLOPT, "");
           break;
 
         case '>':
           if (opt->occurrences > 0 && opt->opt_count_mark >= opt->occurrences)
-            fatal(CTXOPTCTGOPT, NULL);
+            fatal(CTXOPTCTGOPT, "");
           break;
       }
 
@@ -2300,17 +2300,17 @@ check_for_occurrence_issues(ctx_inst_t * ctx_inst)
       {
         case '=':
           if (nb_values > 0 && opt->opt_args_count_mark != nb_values)
-            fatal(CTXOPTCTEARG, NULL);
+            fatal(CTXOPTCTEARG, "");
           break;
 
         case '<':
           if (nb_values > 0 && opt->opt_args_count_mark <= nb_values)
-            fatal(CTXOPTCTLARG, NULL);
+            fatal(CTXOPTCTLARG, "");
           break;
 
         case '>':
           if (nb_values > 0 && opt->opt_args_count_mark >= nb_values)
-            fatal(CTXOPTCTGARG, NULL);
+            fatal(CTXOPTCTGARG, "");
           break;
       }
 
@@ -3764,7 +3764,7 @@ ctxopt_analyze(int nb_words, char ** words, int * nb_rem_args,
         bst_seen_opt = (seen_opt_t *)(bst_node->key);
 
         if (!opt->multiple && bst_seen_opt->seen == 1)
-          fatal(CTXOPTDUPOPT, NULL);
+          fatal(CTXOPTDUPOPT, "");
 
         /* Check if this option is compatible with the options already */
         /* seen in this context instance.                              */
@@ -3858,10 +3858,10 @@ ctxopt_analyze(int nb_words, char ** words, int * nb_rem_args,
         while (n != NULL)
         {
           if (strcmp(n->data, "--") == 0 || strcmp(n->data, "\x1d") == 0)
-            fatal(CTXOPTUNXARG, NULL);
+            fatal(CTXOPTUNXARG, "");
 
           if (*(char *)(n->data) == '-')
-            fatal(CTXOPTUNXARG, NULL);
+            fatal(CTXOPTUNXARG, "");
 
           n = n->next;
         }
@@ -3914,7 +3914,7 @@ ctxopt_analyze(int nb_words, char ** words, int * nb_rem_args,
         expect_par = 1; /* Parameter takes only one argument. */
     }
     else if (expect_arg && *par_name == '-')
-      fatal(CTXOPTMISARG, NULL);
+      fatal(CTXOPTMISARG, "");
     else if (expect_par_or_arg)
     {
       expect_arg        = 0;
@@ -3935,7 +3935,7 @@ ctxopt_analyze(int nb_words, char ** words, int * nb_rem_args,
   if (cmdline_list->len > 0 && par_name && *par_name == '-')
   {
     if (expect_arg && opt && !opt->optional_args)
-      fatal(CTXOPTMISARG, NULL);
+      fatal(CTXOPTMISARG, "");
   }
 
   /* Look if a context_instance has unseen mandatory options. */
