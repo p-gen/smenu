@@ -194,8 +194,9 @@ utf8_interpret(char * s, langinfo_t * langinfo, char substitute)
       else
       {
         int    n;
+        char   end;
         size_t i;
-        char   b[2] = { ' ', ' ' };
+        char   b[3] = { ' ', ' ', '\0' };
 
         /* They are valid, deduce from them the length of the sequence */
         /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
@@ -212,10 +213,23 @@ utf8_interpret(char * s, langinfo_t * langinfo, char substitute)
 
         for (i = 1; i < utf8_ascii_len / 2; i++)
         {
-          n = sscanf(utf8_seq_offset + 2 * i, "%c%c", &b[0], &b[1]);
-          sscanf(b, "%x", &byte);
+          int good = 1;
 
-          if (n < 2 || (byte & 0xc0) != 0x80)
+          n = sscanf(utf8_seq_offset + 2 * i, "%c%c", &b[0], &b[1]);
+
+          if (n == 2)
+          {
+            byte = 0;
+            end  = '\0';
+            sscanf(b, "%x%c", &byte, &end);
+
+            if (byte == 0 || end != '\0' || (byte & 0xc0) != 0x80)
+              good = 0;
+          }
+          else
+            good = 0;
+
+          if (!good)
             utf8_ascii_len = 2 * i; /* Force the new length according to the *
                                      | number of valid UTF-8 bytes read.     */
           else
