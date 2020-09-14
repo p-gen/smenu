@@ -8666,7 +8666,7 @@ main(int argc, char * argv[])
 
   /* We can now allocate the space for our tmp_word work variable */
   /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-  tmp_word = xmalloc(word_real_max_size + 1);
+  tmp_word = xcalloc(word_real_max_size + 1, 1);
 
   search_data.utf8_off_a = xmalloc(word_real_max_size * sizeof(long));
   search_data.utf8_len_a = xmalloc(word_real_max_size * sizeof(long));
