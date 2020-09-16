@@ -1,37 +1,37 @@
 - Waiting to be versioned
 * Bug fixes:
-  + The SIGINT handling has been fixed.
-  + The lvm_menu example is fixed.
-  + Some memory allocation issues have been corrected.
-  + The last example in the man page now works correctly.
-  + The manual has been cleaned and corrected.
+  * The SIGINT handling has been fixed.
+  * The lvm_menu example is fixed.
+  * Some memory allocation issues have been corrected.
+  * The last example in the man page now works correctly.
+  * The manual has been cleaned and corrected.
   * Missing headers has been added.
   * The List management code has been corrected and improved.
   * Invalid UTF-8 sequences entered using \u are now handled correctly.
-  + Unreachable code has been removed.
-  + As xwcscasecmp is missing in C99, a local version is now used.
+  * Unreachable code has been removed.
+  * As xwcscasecmp is missing in C99, a local version is now used.
   * The search timeout now works correctly.
 * Improvements:
-  + Option management has been completely rewritten to use a new, more
+  * Option management has been completely rewritten to use a new, more
     flexible system called ctxopt (github.com/p-gen/ctxopt):
     - Both short and long options can now be used.
     - The validity of some option arguments can now be easily checked.
     - A better and more precise help system can now be used.
     - ...
-  + The horizontal and vertical scrolling symbols are now visually consistent.
-  + An updated version of autotools is now used.
-  + Wide mode is now allowed in column mode.
-  + Line delimiters can now be defined to break lines in tabulation mode.
-  + A set of UTF-8 characters can now be ignored as input.
+  * The horizontal and vertical scrolling symbols are now visually consistent.
+  * An updated version of autotools is now used.
+  * Wide mode is now allowed in column mode.
+  * Line delimiters can now be defined to break lines in tabulation mode.
+  * A set of UTF-8 characters can now be ignored as input.
   * Substitution character for non-printable characters can now be changed.
   * -N and -U options can now have multiple arguments.
   * Fuzzy and substring searches now ignore leading and trailing blanks.
   * Unicode codepoints can now be entered using the new \U notation.
   * smenu has been optimized to support networks with high latency.
 * Misc:
-  + A note in the README to thank the packagers has been added.
-  + The code has been adjusted to conform to C99.
-  + The code has been cleaned up in many places.
+  * A note in the README to thank the packagers has been added.
+  * The code has been adjusted to conform to C99.
+  * The code has been cleaned up in many places.
 
 - Version 0.9.15
 * Bug fixes:
