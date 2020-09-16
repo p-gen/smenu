@@ -835,7 +835,7 @@ sub_tst_new(void)
 /* Emit a small (visual) beep warn the user */
 /* ======================================== */
 void
-beep(toggle_t * toggle)
+my_beep(toggle_t * toggle)
 {
   struct timespec ts, rem;
   int             rc;
@@ -8939,9 +8939,9 @@ main(int argc, char * argv[])
   /* Arm the periodic timer */
   /* """""""""""""""""""""" */
   periodic_itv.it_value.tv_sec     = 0;
-  periodic_itv.it_value.tv_usec    = TICK;
+  periodic_itv.it_value.tv_usec    = TCK;
   periodic_itv.it_interval.tv_sec  = 0;
-  periodic_itv.it_interval.tv_usec = TICK;
+  periodic_itv.it_interval.tv_usec = TCK;
   setitimer(ITIMER_REAL, &periodic_itv, NULL);
 
   /* Main loop */
@@ -10493,7 +10493,7 @@ main(int argc, char * argv[])
               }
             }
             else
-              beep(&toggle);
+              my_beep(&toggle);
 
             if (search_data.utf8_len > 0)
               goto special_cmds_when_searching;
@@ -10607,7 +10607,7 @@ main(int argc, char * argv[])
               {
                 if (search_data.len == old_len && matches_count == 1
                     && buffer[0] != 0x08 && buffer[0] != 0x7f)
-                  beep(&toggle);
+                  my_beep(&toggle);
                 else
                 {
                   /* Adjust the bitmap to the ending version */
@@ -10630,7 +10630,7 @@ main(int argc, char * argv[])
               }
               else
               {
-                beep(&toggle);
+                my_beep(&toggle);
 
                 search_data.len                  = old_len;
                 search_data.utf8_len             = old_utf8_len;
@@ -10700,7 +10700,7 @@ main(int argc, char * argv[])
                   sub_tst_data = (sub_tst_t *)(node->data);
                   if (sub_tst_data->count == 0)
                   {
-                    beep(&toggle);
+                    my_beep(&toggle);
 
                     search_data.len      = 0;
                     search_data.utf8_len = 0;
@@ -10747,7 +10747,7 @@ main(int argc, char * argv[])
                       if (search_data.fuzzy_err_pos == -1)
                         search_data.fuzzy_err_pos = search_data.utf8_len;
 
-                      beep(&toggle);
+                      my_beep(&toggle);
 
                       search_data.len                  = old_len;
                       search_data.utf8_len             = old_utf8_len;
@@ -10755,7 +10755,7 @@ main(int argc, char * argv[])
                     }
                   }
                   else
-                    beep(&toggle);
+                    my_beep(&toggle);
                 }
               }
               free(w);
@@ -10797,7 +10797,7 @@ main(int argc, char * argv[])
                                 &langinfo);
               }
               else
-                beep(&toggle);
+                my_beep(&toggle);
             }
             else /* SUBSTRING */
             {
@@ -10850,7 +10850,7 @@ main(int argc, char * argv[])
               {
                 if (search_data.len == old_len && matches_count == 1
                     && buffer[0] != 0x08 && buffer[0] != 0x7f)
-                  beep(&toggle);
+                  my_beep(&toggle);
                 else
                 {
                   if (search_data.only_starting)
@@ -10878,7 +10878,7 @@ main(int argc, char * argv[])
               }
               else
               {
-                beep(&toggle);
+                my_beep(&toggle);
 
                 search_data.len = old_len;
                 search_data.utf8_len--;

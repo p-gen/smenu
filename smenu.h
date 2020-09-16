@@ -20,7 +20,7 @@
 /* """""""""""""""""""""""""" */
 #define SECOND 1000000
 #define FREQ 10
-#define TICK (SECOND / FREQ)
+#define TCK (SECOND / FREQ)
 
 /* Bit array management */
 /* """""""""""""""""""" */
@@ -421,7 +421,7 @@ int
 isempty(const char * s);
 
 void
-beep(toggle_t * toggle);
+my_beep(toggle_t * toggle);
 
 int
 get_cursor_position(int * const r, int * const c);
