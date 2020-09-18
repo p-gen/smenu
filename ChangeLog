@@ -1,4 +1,4 @@
-- Waiting to be versioned
+- Version 0.9.16
 * Bug fixes:
   * The SIGINT handling has been fixed.
   * The lvm_menu example is fixed.
