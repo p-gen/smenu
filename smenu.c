@@ -2616,15 +2616,18 @@ get_word(FILE * input, ll_t * word_delims_list, ll_t * record_delims_list,
       }
     else
     {
-      /* Manage double quotes */
-      /* """""""""""""""""""" */
-      if (byte == '"' && !is_squote)
-        is_dquote = !is_dquote;
+      if (!misc->ignore_quotes)
+      {
+        /* Manage double quotes */
+        /* """""""""""""""""""" */
+        if (byte == '"' && !is_squote)
+          is_dquote = !is_dquote;
 
-      /* Manage single quotes */
-      /* """""""""""""""""""" */
-      if (byte == '\'' && !is_dquote)
-        is_squote = !is_squote;
+        /* Manage single quotes */
+        /* """""""""""""""""""" */
+        if (byte == '\'' && !is_dquote)
+          is_squote = !is_squote;
+      }
     }
 
     /* Only consider delimiters when outside quotations */
@@ -2633,13 +2636,16 @@ get_word(FILE * input, ll_t * word_delims_list, ll_t * record_delims_list,
         && ll_find(word_delims_list, utf8_buffer, buffer_cmp) != NULL)
       break;
 
-    /* We no dot count the significant quotes */
-    /* """""""""""""""""""""""""""""""""""""" */
-    if (!is_special
-        && ((byte == '"' && !is_squote) || (byte == '\'' && !is_dquote)))
+    if (!misc->ignore_quotes)
     {
-      is_special = 0;
-      goto next;
+      /* We no dot count the significant quotes */
+      /* """""""""""""""""""""""""""""""""""""" */
+      if (!is_special
+          && ((byte == '"' && !is_squote) || (byte == '\'' && !is_dquote)))
+      {
+        is_special = 0;
+        goto next;
+      }
     }
 
     /* Feed temp with the content of utf8_buffer */
@@ -5745,6 +5751,16 @@ da_options_action(char * ctx_name, char * opt_name, char * param, int nb_values,
   }
 }
 
+void
+ignore_quotes_action(char * ctx_name, char * opt_name, char * param,
+                     int nb_values, char ** values, int nb_opt_data,
+                     void ** opt_data, int nb_ctx_data, void ** ctx_data)
+{
+  misc_t * misc = opt_data[0];
+
+  misc->ignore_quotes = 1;
+}
+
 /* ================ */
 /* Main entry point */
 /* ================ */
@@ -6151,6 +6167,7 @@ main(int argc, char * argv[])
   /* misc default values */
   /* """"""""""""""""""" */
   misc.default_search_method = NONE;
+  misc.ignore_quotes         = 0;
 
   /* direct access variable initialization */
   /* """"""""""""""""""""""""""""""""""""" */
@@ -6326,7 +6343,8 @@ main(int argc, char * argv[])
                    "[timeout #...] "
                    "[hidden_timeout #...] "
                    "[validate_in_search_mode] "
-                   "[visual_bell] "; /* Do not remove the last space. */
+                   "[visual_bell] "
+                   "[ignore_quotes] "; /* Do not remove the last space. */
 
   main_spec_options = "[*version] "
                       "[*long_help] "
@@ -6470,6 +6488,7 @@ main(int argc, char * argv[])
   ctxopt_add_opt_settings(parameters, "validate_in_search_mode",
                           "-r -auto_validate");
   ctxopt_add_opt_settings(parameters, "visual_bell", "-v -vb -visual_bell");
+  ctxopt_add_opt_settings(parameters, "ignore_quotes", "-Q -ignore_quotes");
 
   /* ctxopt options incompatibilities  */
   /* """"""""""""""""""""""""""""""""" */
@@ -6596,6 +6615,8 @@ main(int argc, char * argv[])
                           (char *)0);
   ctxopt_add_opt_settings(actions, "da_options", da_options_action, &langinfo,
                           &daccess_index, &misc, (char *)0);
+  ctxopt_add_opt_settings(actions, "ignore_quotes", ignore_quotes_action, &misc,
+                          (char *)0);
 
   /* ctxopt constraints */
   /* """""""""""""""""" */

@@ -57,6 +57,7 @@ and outputs the selection to stdout.
 \fIdelay\fP]
   [\fB-r\fP|\fB-auto_validate\fP]
   [\fB-v\fP|\fB-vb\fP|\fB-visual_bell\fP]
+  [\fB-Q\fP|\fB-ignore_quotes\fP]
 
 
   selectors ::= \fIcol1\fP[-\fIcol2\fP],...|\fIrow1\fP[-\fIrow2\fP],...|\
@@ -1487,6 +1488,14 @@ By default, when searching, an alarm is produced by the terminal when
 the user enters a character or makes a move which lead to no result or
 to an error condition.
 This argument make this beep visual by briefly showing the cursor.
+.IP "\fB-Q\fP|\fB-ignore_quotes\fP"
+(Allowed in all contexts.)
+
+Using this option will remove the word grouping feature from single and
+double quotes which will be considered normal characters.
+For example: \f(CB"a b"\fP will be considered by smenu as two words
+\fB"a\fP and \fBb"\fP and no more as a single word: \fBa b\fP.
+
 .SH NOTES
 If tabulators (\fI\\t\fP) are embedded in the input, there is no way
 to replace them with the original number of spaces.

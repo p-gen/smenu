@@ -74,6 +74,8 @@ common_help(void)
   printf("  enables ENTER to validate the selection even in search mode.\n");
   printf("-v|-vb|-visual_bell\n");
   printf("  makes the bell visual (fuzzy search with error).\n");
+  printf("-Q|-ignore_quotes\n");
+  printf("  treats single and double quotes as normal characters.\n");
 }
 
 void
