@@ -1415,6 +1415,7 @@ get_terminal_size(int * const r, int * const c, term_t * term)
 /* ====================================================== */
 /* Get cursor position the terminal                       */
 /* Assume that the Escape sequence ESC [ 6 n is available */
+/* Returns 1 on success and 0 on error.                   */
 /* ====================================================== */
 int
 get_cursor_position(int * const r, int * const c)
@@ -1424,30 +1425,28 @@ get_cursor_position(int * const r, int * const c)
 
   /* Report cursor location */
   /* """""""""""""""""""""" */
-  if (write(1, "\x1b[6n", 4) != 4)
-    return -1;
+  write(STDOUT_FILENO, "\x1b[6n", 4);
 
   /* Read the response: ESC [ rows ; cols R */
   /* """""""""""""""""""""""""""""""""""""" */
   while (i < sizeof(buf) - 1)
   {
-    if (read(0, buf + i, 1) != 1)
-      break;
-
-    if (buf[i] == 'R')
-      break;
+    read(STDIN_FILENO, buf + i, 1);
 
     i++;
+
+    if (buf[i - 1] == 'R')
+      break;
   }
   buf[i] = '\0';
 
   /* Parse it. */
   /* """"""""" */
   if (buf[0] != 0x1b || buf[1] != '[')
-    return -1;
+    return 0;
 
   if (sscanf(buf + 2, "%d;%d", r, c) != 2)
-    return -1;
+    return 0;
 
   return 1;
 }
