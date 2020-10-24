@@ -1377,25 +1377,38 @@ restore_term(int const fd)
 /* Defaults to 80x24                              */
 /* ============================================== */
 void
-get_terminal_size(int * const r, int * const c)
+get_terminal_size(int * const r, int * const c, term_t * term)
 {
   struct winsize ws;
+
+  *r = *c = -1;
 
   if (ioctl(0, TIOCGWINSZ, &ws) == 0)
   {
     *r = ws.ws_row;
     *c = ws.ws_col;
-  }
-  else
-  {
-    *r = tigetnum("lines");
-    *c = tigetnum("cols");
 
-    if (*r < 0 || *c < 0)
-    {
-      *r = 80;
-      *c = 24;
-    }
+    if (*r > 0 && *c > 0)
+      return;
+  }
+
+  if (term->has_cursor_address)
+  {
+    tputs(TPARM1(save_cursor), 1, outch);
+    tputs(TPARM3(cursor_address, 999, 999), 1, outch);
+    get_cursor_position(r, c);
+
+    if (*r > 0 && *c > 0)
+      return;
+  }
+
+  *r = tigetnum("lines");
+  *c = tigetnum("cols");
+
+  if (*r <= 0 || *c <= 0)
+  {
+    *r = 80;
+    *c = 24;
   }
 }
 
