@@ -428,7 +428,7 @@ int
 get_cursor_position(int * const r, int * const c);
 
 void
-get_terminal_size(int * const r, int * const c);
+get_terminal_size(int * const r, int * const c, term_t * term);
 
 int
 #ifdef __sun

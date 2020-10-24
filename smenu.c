@@ -1392,16 +1392,6 @@ get_terminal_size(int * const r, int * const c, term_t * term)
       return;
   }
 
-  if (term->has_cursor_address)
-  {
-    tputs(TPARM1(save_cursor), 1, outch);
-    tputs(TPARM3(cursor_address, 999, 999), 1, outch);
-    get_cursor_position(r, c);
-
-    if (*r > 0 && *c > 0)
-      return;
-  }
-
   *r = tigetnum("lines");
   *c = tigetnum("cols");
 
@@ -6014,8 +6004,9 @@ main(int argc, char * argv[])
   misc_t   misc;   /* misc contents.                                         */
   toggle_t toggle; /* set of binary indicators.                              */
 
-  int    old_fd0;    /* backups of the old stdin file descriptor.            */
-  int    old_fd1;    /* backups of the old stdout file descriptor.           */
+  int    old_fd0; /* backups of the old stdin file descriptor.               */
+  int    old_fd1; /* backups of the old stdout file descriptor.              */
+  FILE * old_stdin;
   FILE * old_stdout; /* The selected word will go there.                     */
 
   long nl;     /* Number of lines displayed in the window.                   */
@@ -6105,6 +6096,11 @@ main(int argc, char * argv[])
   char * line_options, *line_spec_options;
   char * tab_options, *tab_spec_options;
   char * tag_options, *tag_spec_options;
+
+  /* Used to check the usablility of the DSR terminal feature. */
+  /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+  int row; /* absolute line position in terminal (1...)   */
+  int col; /* absolute column position in terminal (1...) */
 
   /* Win fields initialization */
   /* """"""""""""""""""""""""" */
@@ -6299,9 +6295,38 @@ main(int argc, char * argv[])
   daccess.num_sep    = NULL;
   daccess.def_number = -1;
 
+  /* Ignore SIGTTIN */
+  /* """""""""""""" */
+  sigset_t sigs, oldsigs;
+
+  sigemptyset(&sigs);
+  sigaddset(&sigs, SIGTTIN);
+  sigprocmask(SIG_BLOCK, &sigs, &oldsigs);
+
+  /* Temporarily set /dev/tty as stdin/stdout to get its size */
+  /* even in a pipe.                                          */
+  /* """""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+  old_fd0    = dup(0);
+  old_stdin  = freopen("/dev/tty", "r", stdin);
+  old_fd1    = dup(1);
+  old_stdout = freopen("/dev/tty", "w", stdout);
+
+  if (old_stdin == NULL || old_stdout == NULL)
+  {
+    fprintf(stderr, "A terminal is required to use this program.\n");
+    exit(EXIT_FAILURE);
+  }
+
   /* Get the number of lines/columns of the terminal */
   /* """"""""""""""""""""""""""""""""""""""""""""""" */
-  get_terminal_size(&term.nlines, &term.ncolumns);
+  get_terminal_size(&term.nlines, &term.ncolumns, &term);
+
+  /* Restore the old stdin and stdout. */
+  /* """"""""""""""""""""""""""""""""" */
+  dup2(old_fd0, 0);
+  dup2(old_fd1, 1);
+  close(old_fd0);
+  close(old_fd1);
 
   /* Default substitution character on invalid input. */
   /* """""""""""""""""""""""""""""""""""""""""""""""" */
@@ -7990,12 +8015,8 @@ main(int argc, char * argv[])
   if (count == 0)
     exit(EXIT_FAILURE);
 
-  /* Ignore SIGTTIN and SIGINT */
-  /* """"""""""""""""""""""""" */
-  sigset_t sigs, oldsigs;
-
-  sigemptyset(&sigs);
-  sigaddset(&sigs, SIGTTIN);
+  /* Ignore SIGINT */
+  /* """"""""""""" */
   sigaddset(&sigs, SIGINT);
   sigprocmask(SIG_BLOCK, &sigs, &oldsigs);
 
@@ -8879,26 +8900,28 @@ main(int argc, char * argv[])
   /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
   set_win_start_end(&win, current, last_line);
 
-  /* We've finished reading from stdin                               */
-  /* we will now get the inputs from the controlling terminal if any */
-  /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-  errno = 0;
-  if (freopen("/dev/tty", "r", stdin) == NULL)
-    fprintf(stderr, "/dev/tty: %s\n", strerror(errno));
+  freopen("/dev/tty", "r", stdin);
 
   old_fd1    = dup(1);
   old_stdout = fdopen(old_fd1, "w");
   setbuf(old_stdout, NULL);
 
-  errno = 0;
-  if (freopen("/dev/tty", "w", stdout) == NULL)
-    fprintf(stderr, "/dev/tty: %s\n", strerror(errno));
+  freopen("/dev/tty", "w", stdout);
 
   setvbuf(stdout, NULL, _IONBF, 0);
 
   /* Set the characteristics of the terminal */
   /* """"""""""""""""""""""""""""""""""""""" */
   setup_term(fileno(stdin));
+
+  if (!get_cursor_position(&row, &col))
+  {
+    fprintf(stderr, "The terminal does not have the capability to report "
+                    "the cursor position.\n");
+    restore_term(fileno(stdin));
+
+    exit(EXIT_FAILURE);
+  }
 
   /* Initialize the search buffer with tab_real_max_size+1 NULs  */
   /* It will never be reallocated, only cleared.                 */
@@ -9073,7 +9096,7 @@ main(int argc, char * argv[])
       /* """""""""""""""" */
       winch_timer = timers.winch; /* default 7 / FREQ s */
 
-      get_terminal_size(&nlines, &ncolumns);
+      get_terminal_size(&nlines, &ncolumns, &term);
 
       got_winch_alrm = 0;
 
