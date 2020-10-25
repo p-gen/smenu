@@ -5928,25 +5928,26 @@ main(int argc, char * argv[])
   char ** rem_args    = NULL;
 
   char * message = NULL; /* message to be displayed above the selection      *
-                          * window */
+                          * window.                                          */
   ll_t * message_lines_list = NULL; /* list of the lines in the message to   *
-                                     * be displayed */
-  long message_max_width = 0; /* total width of the message (longest line)   */
-  long message_max_len   = 0; /* max number of bytes taken by a message line */
+                                     * be displayed.                         */
+  long message_max_width = 0; /* total width of the message (longest line).  */
+  long message_max_len   = 0; /* max number of bytes taken by a message      *
+                               * line.                                       */
 
-  FILE * input_file; /* The name of the file passed as argument if any       */
+  FILE * input_file; /* The name of the file passed as argument if any.      */
 
-  long index; /* generic counter                                             */
+  long index; /* generic counter.                                            */
 
-  long daccess_index = 1; /* First index of the numbered words               */
+  long daccess_index = 1; /* First index of the numbered words.              */
 
-  char *  daccess_np = NULL; /* direct access numbered pattern               */
+  char *  daccess_np = NULL; /* direct access numbered pattern.              */
   regex_t daccess_np_re; /* variable to store the compiled direct access     *
-                          * pattern (-N) RE */
+                          * pattern (-N) RE.                                 */
 
-  char *  daccess_up = NULL; /* direct access not numbered pattern           */
+  char *  daccess_up = NULL; /* direct access not numbered pattern.          */
   regex_t daccess_up_re; /* variable to store the compiled direct access     *
-                          * pattern (-U) RE */
+                          * pattern (-U) RE.                                 */
 
   char *  include_pattern     = NULL;
   char *  exclude_pattern     = NULL;
@@ -5955,27 +5956,27 @@ main(int argc, char * argv[])
                                      * if the words not matched will be      *
                                      * included (value 1) or excluded        *
                                      * (value 0) by default.                 */
-  regex_t include_re; /* variable to store the compiled include (-i) REs     */
-  regex_t exclude_re; /* variable to store the compiled exclude (-e) REs     */
+  regex_t include_re; /* variable to store the compiled include (-i) REs.    */
+  regex_t exclude_re; /* variable to store the compiled exclude (-e) REs.    */
 
   ll_t * sed_list         = NULL; /* List of sed like string representation  *
-                                   * of regex given after (-S)               */
-  ll_t * include_sed_list = NULL; /* idem for -I                             */
-  ll_t * exclude_sed_list = NULL; /* idem for -E                             */
+                                   * of regex given after (-S).              */
+  ll_t * include_sed_list = NULL; /* idem for -I.                            */
+  ll_t * exclude_sed_list = NULL; /* idem for -E.                            */
 
   ll_t * inc_col_interval_list = NULL; /* list of included or                */
   ll_t * exc_col_interval_list = NULL; /* excluded numerical intervals       */
-  ll_t * inc_row_interval_list = NULL; /* for lines and columns              */
+  ll_t * inc_row_interval_list = NULL; /* for lines and columns.             */
   ll_t * exc_row_interval_list = NULL;
 
-  ll_t * inc_col_regex_list = NULL; /* same for lines and columns specified  */
-  ll_t * exc_col_regex_list = NULL; /* by regular expressions                */
+  ll_t * inc_col_regex_list = NULL; /* same for lines and columns specified. */
+  ll_t * exc_col_regex_list = NULL; /* by regular expressions.               */
   ll_t * inc_row_regex_list = NULL;
   ll_t * exc_row_regex_list = NULL;
 
   filters_t rows_filter_type = UNKNOWN_FILTER;
 
-  char *  first_word_pattern = NULL; /* used by -A/-Z                        */
+  char *  first_word_pattern = NULL; /* used by -A/-Z.                       */
   char *  last_word_pattern  = NULL;
   regex_t first_word_re;
   regex_t last_word_re;
@@ -5986,7 +5987,7 @@ main(int argc, char * argv[])
   int include_visual_only = 0; /* If set to 1, the original word which is    *
                                 * read from stdin will be output even if its */
   int exclude_visual_only = 0; /* visual representation was modified via     *
-                                * -S/-I/-E */
+                                * -S/-I/-E.                                  */
 
   ll_t * cols_selector_list = NULL;
   char * cols_selector      = NULL;
@@ -5994,74 +5995,76 @@ main(int argc, char * argv[])
   ll_t * rows_selector_list = NULL;
   char * rows_selector      = NULL;
 
-  long wi; /* word index */
+  long wi; /* word index.                                                    */
 
-  term_t term; /* Terminal structure */
+  term_t term; /* Terminal structure.                                        */
 
-  tst_node_t * tst_word    = NULL; /* TST used by the search function        */
-  tst_node_t * tst_daccess = NULL; /* TST used by the direct access system   */
+  tst_node_t * tst_word    = NULL; /* TST used by the search function.       */
+  tst_node_t * tst_daccess = NULL; /* TST used by the direct access system.  */
 
   long   page;     /* Step for the vertical cursor moves                     */
   char * word;     /* Temporary variable to work on words                    */
   char * tmp_word; /* Temporary variable able to contain  the beginning of   *
-                    * the word to be displayed */
+                    * the word to be displayed.                              */
 
   long     last_line = 0; /* last logical line number (from 0)               */
   win_t    win;
-  limits_t limits; /* set of various limitations */
-  timers_t timers; /* timers contents */
-  misc_t   misc;   /* misc contents                                          */
-  toggle_t toggle; /* set of binary indicators */
+  limits_t limits; /* set of various limitations.                            */
+  timers_t timers; /* timers contents.                                       */
+  misc_t   misc;   /* misc contents.                                         */
+  toggle_t toggle; /* set of binary indicators.                              */
 
-  int    old_fd1;    /* backups of the old stdout file descriptor            */
-  FILE * old_stdout; /* The selected word will go there */
+  int    old_fd0;    /* backups of the old stdin file descriptor.            */
+  int    old_fd1;    /* backups of the old stdout file descriptor.           */
+  FILE * old_stdout; /* The selected word will go there.                     */
 
-  long nl;     /* Number of lines displayed in the window                    */
+  long nl;     /* Number of lines displayed in the window.                   */
   long offset; /* Used to correctly put the cursor at the start of the       *
-                * selection window, even after a terminal vertical scroll    */
+                * selection window, even after a terminal vertical scroll.   */
 
   long first_selectable; /* Index of the first selectable word in the input  *
-                          * stream */
+                          * stream.                                          */
   long last_selectable;  /* Index of the last selectable word in the input   *
-                          * stream  */
+                          * stream.                                          */
 
-  long min_size; /* Minimum screen width of a column in tabular mode         */
+  long min_size; /* Minimum screen width of a column in tabular mode.        */
 
   long tab_max_size;      /* Maximum screen width of a column in tabular     *
-                           * mode                                            */
+                           * mode.                                           */
   long tab_real_max_size; /* Maximum size in bytes of a column in tabular    *
-                           * mode */
+                           * mode.                                           */
 
   long * col_real_max_size = NULL; /* Array of maximum sizes (bytes) of each */
-                                   /* column in column mode                  */
+                                   /* column in column mode.                 */
   long * col_max_size = NULL;      /* Array of maximum sizes of each column  */
-                                   /* in column mode                         */
+                                   /* in column mode.                        */
 
-  long word_real_max_size = 0; /* size of the longer word after expansion    */
+  long word_real_max_size = 0; /* size of the longer word after expansion.   */
   long cols_real_max_size = 0; /* Max real width of all columns used when    *
-                                * -w and -c are both set */
+                                * -w and -c are both set.                    */
   long cols_max_size      = 0; /* Same as above for the columns widths       */
 
   long col_index   = 0; /* Index of the current column when reading words,   *
-                         * used  in column mode                              */
-  long cols_number = 0; /* Number of columns in column mode                  */
+                         * used  in column mode.                             */
+  long cols_number = 0; /* Number of columns in column mode.                 */
 
   char * pre_selection_index = NULL; /* pattern used to set the initial      *
-                                      * cursor position                      */
-  unsigned char buffer[16];          /* Input buffer */
+                                      * cursor position.                     */
+  unsigned char buffer[16];          /* Input buffer.                        */
 
   search_data_t search_data;
   search_data.buf = NULL;    /* Search buffer                                */
   search_data.len = 0;       /* Current position in the search buffer        */
   search_data.utf8_len  = 0; /* Current position in the search buffer in     *
-                             * UTF-8 units */
-  search_data.fuzzy_err = 0; /* reset the error indicator                    */
-  search_data.fuzzy_err_pos = -1; /* no last error position in search buffer */
+                              * UTF-8 units.                                 */
+  search_data.fuzzy_err = 0; /* reset the error indicator.                   */
+  search_data.fuzzy_err_pos = -1; /* no last error position in search        *
+                                  buffer.                                    */
 
   long matching_word_cur_index = -1; /* cache for the next/previous moves    *
-                                      * in the matching words array          */
+                                      * in the matching words array.         */
 
-  struct sigaction sa; /* Signal structure */
+  struct sigaction sa; /* Signal structure.                                  */
 
   char * iws = NULL, *ils = NULL, *zg = NULL;
   ll_t * word_delims_list   = NULL;
@@ -6069,27 +6072,27 @@ main(int argc, char * argv[])
   ll_t * record_delims_list = NULL;
 
   char utf8_buffer[5]; /* buffer to store the bytes of a UTF-8 glyph         *
-                        * (4 chars max) */
+                        * (4 chars max).                                     */
   unsigned char is_last;
   char *        charset;
 
-  char * home_ini_file;  /* init file full path                              */
-  char * local_ini_file; /* init file full path                              */
+  char * home_ini_file;  /* init file full path.                             */
+  char * local_ini_file; /* init file full path.                             */
 
   charsetinfo_t * charset_ptr;
   langinfo_t      langinfo;
   int             is_supported_charset;
 
-  long line_count = 0; /* Only used when -R is selected */
+  long line_count = 0; /* Only used when -R is selected.                     */
 
   attr_t init_attr;
 
-  ll_node_t * inc_interval_node = NULL; /* one node of this list             */
-  ll_node_t * exc_interval_node = NULL; /* one node of this list             */
+  ll_node_t * inc_interval_node = NULL; /* one node of this list.            */
+  ll_node_t * exc_interval_node = NULL; /* one node of this list.            */
 
-  interval_t * inc_interval;       /* the data in each node                  */
-  interval_t * exc_interval;       /* the data in each node                  */
-  int          row_def_selectable; /* default selectable value               */
+  interval_t * inc_interval;       /* the data in each node.                 */
+  interval_t * exc_interval;       /* the data in each node.                 */
+  int          row_def_selectable; /* default selectable value.              */
 
   int line_selected_by_regex = 0;
   int line_excluded          = 0;
