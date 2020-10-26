@@ -8909,13 +8909,24 @@ main(int argc, char * argv[])
   /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
   set_win_start_end(&win, current, last_line);
 
-  freopen("/dev/tty", "r", stdin);
+  /* Re-associates /dev/tty with stdin and stdout. */
+  /* """"""""""""""""""""""""""""""""""""""""""""" */
+  if (freopen("/dev/tty", "r", stdin) == NULL)
+  {
+    fprintf(stderr, "Unable to associate /dev/tty with stdin.\n");
+    exit(EXIT_FAILURE);
+  }
 
   old_fd1    = dup(1);
   old_stdout = fdopen(old_fd1, "w");
+
   setbuf(old_stdout, NULL);
 
-  freopen("/dev/tty", "w", stdout);
+  if (freopen("/dev/tty", "w", stdout) == NULL)
+  {
+    fprintf(stderr, "Unable to associate /dev/tty with stdout.\n");
+    exit(EXIT_FAILURE);
+  }
 
   setvbuf(stdout, NULL, _IONBF, 0);
 
