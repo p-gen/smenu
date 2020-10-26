@@ -6756,17 +6756,6 @@ main(int argc, char * argv[])
 
   win.start = 0;
 
-  void sig_handler(int s);
-
-  sa.sa_handler = sig_handler;
-  sa.sa_flags   = 0;
-  sigemptyset(&sa.sa_mask);
-  sigaction(SIGWINCH, &sa, NULL);
-  sigaction(SIGALRM, &sa, NULL);
-  sigaction(SIGTERM, &sa, NULL);
-  sigaction(SIGHUP, &sa, NULL);
-  sigaction(SIGSEGV, &sa, NULL);
-
   term.color_method = 1; /* we default to setaf/setbf to set colors */
   term.curs_line = term.curs_column = 0;
 
@@ -9022,6 +9011,19 @@ main(int argc, char * argv[])
   periodic_itv.it_interval.tv_sec  = 0;
   periodic_itv.it_interval.tv_usec = TCK;
   setitimer(ITIMER_REAL, &periodic_itv, NULL);
+
+  /* Signal management. */
+  /* """""""""""""""""" */
+  void sig_handler(int s);
+
+  sa.sa_handler = sig_handler;
+  sa.sa_flags   = 0;
+  sigemptyset(&sa.sa_mask);
+  sigaction(SIGWINCH, &sa, NULL);
+  sigaction(SIGALRM, &sa, NULL);
+  sigaction(SIGTERM, &sa, NULL);
+  sigaction(SIGHUP, &sa, NULL);
+  sigaction(SIGSEGV, &sa, NULL);
 
   /* Main loop */
   /* """"""""" */
