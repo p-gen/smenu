@@ -1411,17 +1411,37 @@ int
 get_cursor_position(int * const r, int * const c)
 {
   char   buf[32];
-  size_t i = 0;
+  size_t i     = 0;
+  int    count = 64;
+  int    v;
+  int    rc = 1;
 
   /* Report cursor location */
   /* """""""""""""""""""""" */
-  write(STDOUT_FILENO, "\x1b[6n", 4);
+  errno = 0;
+  while ((v = write(STDOUT_FILENO, "\x1b[6n", 4)) == -1 && count)
+  {
+    if (errno == EINTR)
+      count--;
+    else
+    {
+      rc = 0;
+      goto read;
+    }
+
+    errno = 0;
+  }
+
+  if (v != 4)
+    rc = 0;
+
+read:
 
   /* Read the response: ESC [ rows ; cols R */
   /* """""""""""""""""""""""""""""""""""""" */
   while (i < sizeof(buf) - 1)
   {
-    read(STDIN_FILENO, buf + i, 1);
+    v = read(STDIN_FILENO, buf + i, 1);
 
     i++;
 
@@ -1436,9 +1456,9 @@ get_cursor_position(int * const r, int * const c)
     return 0;
 
   if (sscanf(buf + 2, "%d;%d", r, c) != 2)
-    return 0;
+    rc = 0;
 
-  return 1;
+  return rc;
 }
 
 /* ===================================================== */
