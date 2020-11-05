@@ -29,6 +29,8 @@ common_help(void)
          "words.\n");
   printf("-m|-msg|-message|-title\n");
   printf("  displays a one-line message above the window.\n");
+  printf("-!|-int|-int_string\n");
+  printf("  outputs a specific string on interruption by ^C.\n");
   printf("-a|-attr|-attributes\n");
   printf("  sets the attributes for the various displayed elements.\n");
   printf("-1|-l1|-level1,-2|-l2|-level2,...,-5|-l5|-level5\n");

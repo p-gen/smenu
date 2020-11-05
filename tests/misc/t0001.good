@@ -1,0 +1,11 @@
+$ OUT=$(smenu -! "Interrupted by CTRL-C" t0001.in)
+
+a b c 
+2:07 
+$ 
+
+$ echo ":$OUT:"
+
+:Interrupted by CTRL-C:
+
+$ exit 0

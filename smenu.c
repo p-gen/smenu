@@ -4826,31 +4826,31 @@ tab_mode_action(char * ctx_name, char * opt_name, char * param, int nb_values,
 }
 
 void
-start_pattern_action(char * ctx_name, char * opt_name, char * param,
-                     int nb_values, char ** values, int nb_opt_data,
-                     void ** opt_data, int nb_ctx_data, void ** ctx_data)
+set_pattern_action(char * ctx_name, char * opt_name, char * param,
+                   int nb_values, char ** values, int nb_opt_data,
+                   void ** opt_data, int nb_ctx_data, void ** ctx_data)
 {
-  char **      pre_selection_index = opt_data[0];
-  langinfo_t * langinfo            = opt_data[1];
-  misc_t *     misc                = opt_data[2];
-
-  *pre_selection_index = xstrdup(values[0]);
-  utf8_interpret(*pre_selection_index, langinfo, misc->invalid_char_substitute);
-}
-
-void
-title_action(char * ctx_name, char * opt_name, char * param, int nb_values,
-             char ** values, int nb_opt_data, void ** opt_data, int nb_ctx_data,
-             void ** ctx_data)
-{
-  char **      message  = opt_data[0];
+  char **      pattern  = opt_data[0];
   langinfo_t * langinfo = opt_data[1];
   misc_t *     misc     = opt_data[2];
 
-  *message = xstrdup(values[0]);
+  *pattern = xstrdup(values[0]);
+  utf8_interpret(*pattern, langinfo, misc->invalid_char_substitute);
+}
+
+void
+set_string_action(char * ctx_name, char * opt_name, char * param, int nb_values,
+                  char ** values, int nb_opt_data, void ** opt_data,
+                  int nb_ctx_data, void ** ctx_data)
+{
+  char **      string   = opt_data[0];
+  langinfo_t * langinfo = opt_data[1];
+  misc_t *     misc     = opt_data[2];
+
+  *string = xstrdup(values[0]);
   if (!langinfo->utf8)
-    utf8_sanitize(*message, misc->invalid_char_substitute);
-  utf8_interpret(*message, langinfo, misc->invalid_char_substitute);
+    utf8_sanitize(*string, misc->invalid_char_substitute);
+  utf8_interpret(*string, langinfo, misc->invalid_char_substitute);
 }
 
 void
@@ -5333,58 +5333,6 @@ timeout_action(char * ctx_name, char * opt_name, char * param, int nb_values,
     fprintf(stderr, "%s: Invalid timeout delay.\n", param);
     ctxopt_ctx_disp_usage(ctx_name, exit_after);
   }
-}
-
-void
-force_first_column_action(char * ctx_name, char * opt_name, char * param,
-                          int nb_values, char ** values, int nb_opt_data,
-                          void ** opt_data, int nb_ctx_data, void ** ctx_data)
-{
-  char **      first_word_pattern = opt_data[0];
-  langinfo_t * langinfo           = opt_data[1];
-  misc_t *     misc               = opt_data[2];
-
-  *first_word_pattern = xstrdup(values[0]);
-  utf8_interpret(*first_word_pattern, langinfo, misc->invalid_char_substitute);
-}
-
-void
-force_last_column_action(char * ctx_name, char * opt_name, char * param,
-                         int nb_values, char ** values, int nb_opt_data,
-                         void ** opt_data, int nb_ctx_data, void ** ctx_data)
-{
-  char **      last_word_pattern = opt_data[0];
-  langinfo_t * langinfo          = opt_data[1];
-  misc_t *     misc              = opt_data[2];
-
-  *last_word_pattern = xstrdup(values[0]);
-  utf8_interpret(*last_word_pattern, langinfo, misc->invalid_char_substitute);
-}
-
-void
-zapped_glyphs_action(char * ctx_name, char * opt_name, char * param,
-                     int nb_values, char ** values, int nb_opt_data,
-                     void ** opt_data, int nb_ctx_data, void ** ctx_data)
-{
-  char **      glyph    = opt_data[0];
-  langinfo_t * langinfo = opt_data[1];
-  misc_t *     misc     = opt_data[2];
-
-  *glyph = xstrdup(values[0]);
-  utf8_interpret(*glyph, langinfo, misc->invalid_char_substitute);
-}
-
-void
-separators_action(char * ctx_name, char * opt_name, char * param, int nb_values,
-                  char ** values, int nb_opt_data, void ** opt_data,
-                  int nb_ctx_data, void ** ctx_data)
-{
-  char **      sep      = opt_data[0];
-  langinfo_t * langinfo = opt_data[1];
-  misc_t *     misc     = opt_data[2];
-
-  *sep = xstrdup(values[0]);
-  utf8_interpret(*sep, langinfo, misc->invalid_char_substitute);
 }
 
 void
@@ -5945,6 +5893,8 @@ main(int argc, char * argv[])
   long message_max_len   = 0; /* max number of bytes taken by a message      *
                                * line.                                       */
 
+  char * int_string = NULL; /* String to be output when typeing ^C.          */
+
   FILE * input_file; /* The name of the file passed as argument if any.      */
 
   long index; /* generic counter.                                            */
@@ -6380,6 +6330,7 @@ main(int argc, char * argv[])
                    "[include_re... #regex] "
                    "[exclude_re... #regex] "
                    "[title #message] "
+                   "[int #string] "
                    "[attributes #prefix:attr...] "
                    "[special_level_1 #...<3] "
                    "[special_level_2 #...<3] "
@@ -6491,6 +6442,7 @@ main(int argc, char * argv[])
                           "-e -ex -exc -excl -exclude");
   ctxopt_add_opt_settings(parameters, "lines", "-n -lines -height");
   ctxopt_add_opt_settings(parameters, "title", "-m -msg -message -title");
+  ctxopt_add_opt_settings(parameters, "int", "-! -int -int_string");
   ctxopt_add_opt_settings(parameters, "attributes", "-a -attr -attributes");
   ctxopt_add_opt_settings(parameters, "special_level_1", "-1 -l1 -level1");
   ctxopt_add_opt_settings(parameters, "special_level_2", "-2 -l2 -level2");
@@ -6611,10 +6563,12 @@ main(int argc, char * argv[])
   ctxopt_add_opt_settings(actions, "lines", lines_action, &win, (char *)0);
   ctxopt_add_opt_settings(actions, "no_scoll_bar", toggle_action, &toggle,
                           (char *)0);
-  ctxopt_add_opt_settings(actions, "start_pattern", start_pattern_action,
+  ctxopt_add_opt_settings(actions, "start_pattern", set_pattern_action,
                           &pre_selection_index, &langinfo, &misc, (char *)0);
-  ctxopt_add_opt_settings(actions, "title", title_action, &message, &langinfo,
-                          &misc, (char *)0);
+  ctxopt_add_opt_settings(actions, "title", set_string_action, &message,
+                          &langinfo, &misc, (char *)0);
+  ctxopt_add_opt_settings(actions, "int", set_string_action, &int_string,
+                          &langinfo, &misc, (char *)0);
   ctxopt_add_opt_settings(actions, "validate_in_search_mode", toggle_action,
                           &toggle, (char *)0);
   ctxopt_add_opt_settings(actions, "version", version_action, (char *)0);
@@ -6649,17 +6603,15 @@ main(int argc, char * argv[])
                           (char *)0);
   ctxopt_add_opt_settings(actions, "hidden_timeout", timeout_action, &langinfo,
                           (char *)0);
-  ctxopt_add_opt_settings(actions, "force_first_column",
-                          force_first_column_action, &first_word_pattern,
+  ctxopt_add_opt_settings(actions, "force_first_column", set_pattern_action,
+                          &first_word_pattern, &langinfo, &misc, (char *)0);
+  ctxopt_add_opt_settings(actions, "force_last_column", set_pattern_action,
+                          &last_word_pattern, &langinfo, &misc, (char *)0);
+  ctxopt_add_opt_settings(actions, "word_separators", set_pattern_action, &iws,
                           &langinfo, &misc, (char *)0);
-  ctxopt_add_opt_settings(actions, "force_last_column",
-                          force_last_column_action, &last_word_pattern,
+  ctxopt_add_opt_settings(actions, "line_separators", set_pattern_action, &ils,
                           &langinfo, &misc, (char *)0);
-  ctxopt_add_opt_settings(actions, "word_separators", separators_action, &iws,
-                          &langinfo, &misc, (char *)0);
-  ctxopt_add_opt_settings(actions, "line_separators", separators_action, &ils,
-                          &langinfo, &misc, (char *)0);
-  ctxopt_add_opt_settings(actions, "zapped_glyphs", zapped_glyphs_action, &zg,
+  ctxopt_add_opt_settings(actions, "zapped_glyphs", set_pattern_action, &zg,
                           &langinfo, &misc, (char *)0);
   ctxopt_add_opt_settings(actions, "tag_mode", tag_mode_action, &toggle, &win,
                           &langinfo, &misc, (char *)0);
@@ -9624,6 +9576,9 @@ main(int argc, char * argv[])
               puts("");
             }
           }
+
+          if (buffer[0] == 3 && int_string != NULL)
+            fprintf(old_stdout, "%s", int_string);
 
           tputs(TPARM1(cursor_normal), 1, outch);
           restore_term(fileno(stdin));

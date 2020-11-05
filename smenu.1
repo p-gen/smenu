@@ -12,6 +12,7 @@ and outputs the selection to stdout.
   [\fB-i\fP|\fB-in\fP|\fB-inc\fP|\fB-incl\fP|\fB-include\fP... \fIregex\fP]
   [\fB-e\fP|\fB-ex\fP|\fB-exc\fP|\fB-excl\fP|\fB-exclude\fP... \fIregex\fP]
   [\fB-m\fP|\fB-msg\fP|\fB-message\fP|\fB-title\fP \fImessage\fP]
+  [\fB-!\fP|\fB-int\fP|\fB-int_string\fP \fIstring\fP]
   [\fB-a\fP|\fB-attr\fP|\fB-attributes\fP \fIprefix:attr\fP...]
   [\fB-1\fP|\fB-l1\fP|\fB-level1\fP \fIregex\fP [\fIattr\fP]]
   [\fB-2\fP|\fB-l2\fP|\fB-level2\fP \fIregex\fP [\fIattr\fP]]
@@ -362,6 +363,11 @@ Note that the search buffer is persistent as long as the same search
 algorithm is used and \fBESC\fP has not been pressed.
 .SS "Selection and Exit"
 Pressing \fBq\fP gives the possibility to exit without selecting anything.
+.PP
+\fBCTRL\ C\fP (Abort) also allows you to exit the program
+immediately with a return code equal to 0 without selecting anything.
+See the \fB-!\fP|\fB-int\fP|\fB-int_string\fP option for more information
+about \fBCTRL\ C\fP.
 .PP
 By default, \fBENTER\fP writes the selected word to stdout when not in
 search mode otherwise it exits from this mode and does nothing more.
@@ -720,6 +726,13 @@ will be replaced by the substitution character.
 
 Note that the message will be truncated if it does not fit on a terminal
 line.
+.IP "\fB-!\fP|\fB-int\fP|\fB-int_string\fP \fIstring\fP"
+(Allowed in all contexts.)
+
+Defines the string to be displayed on the standard output after entering
+the \fBCTRL\ C\fP sequence.
+When this option is not used, nothing is printed on the standard output
+in such a case.
 .IP "\fB-a\fP|\fB-attr\fP|\fB-attributes\fP \fIprefix:attr\fP..."
 (Allowed in all contexts.)
 
@@ -1470,8 +1483,8 @@ The remaining time (in seconds) is added at the end of the message
 displayed above the selection window and is updated in real time each
 second.
 
-Any key except \fBENTER\fP, \fBq\fP, \fBQ\fP and \fB^C\fP resets the
-timer to its initial value.
+Any key except \fBENTER\fP, \fBq\fP, \fBQ\fP and \fBCTRL\ C\fP resets
+the timer to its initial value.
 
 The \fB-X\fP|\fB-htmout\fP|\fB-hidden_timeout\fP version works like
 \fB-x\fP|\fB-tmout\fP|\fB-timeout\fP but no periodic remaining messages
