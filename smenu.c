@@ -7084,14 +7084,17 @@ main(int argc, char * argv[])
           "[     s before selecting the current highlighted word]");
         break;
       case WORD:
-        timeout_message = xcalloc(1, 4
-                                       + strlen(
-                                         "[     s before selecting the word ")
-                                       + strlen(timeout_word));
-        strcpy(timeout_message, "[     s before selecting the word \"");
+      {
+        char * s = "[     s before selecting the word \"";
+
+        timeout_message = xcalloc(1, 4 + strlen(s) + strlen(timeout_word));
+
+        strcpy(timeout_message, s);
         strcat(timeout_message, timeout_word);
         strcat(timeout_message, "\"]");
+
         break;
+      }
 
       default:
         /* The other cases are impossible due to options analysis */
