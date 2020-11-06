@@ -4839,6 +4839,27 @@ set_pattern_action(char * ctx_name, char * opt_name, char * param,
 }
 
 void
+int_action(char * ctx_name, char * opt_name, char * param, int nb_values,
+           char ** values, int nb_opt_data, void ** opt_data, int nb_ctx_data,
+           void ** ctx_data)
+{
+  char **      string     = opt_data[0];
+  int *        shell_like = opt_data[1];
+  langinfo_t * langinfo   = opt_data[2];
+  misc_t *     misc       = opt_data[3];
+
+  if (nb_values == 1)
+  {
+    *string = xstrdup(values[0]);
+    if (!langinfo->utf8)
+      utf8_sanitize(*string, misc->invalid_char_substitute);
+    utf8_interpret(*string, langinfo, misc->invalid_char_substitute);
+  }
+
+  *shell_like = 0;
+}
+
+void
 set_string_action(char * ctx_name, char * opt_name, char * param, int nb_values,
                   char ** values, int nb_opt_data, void ** opt_data,
                   int nb_ctx_data, void ** ctx_data)
@@ -5894,6 +5915,7 @@ main(int argc, char * argv[])
                                * line.                                       */
 
   char * int_string = NULL; /* String to be output when typeing ^C.          */
+  int    int_as_in_shell = 1; /* CTRL-C mimics the shell behaviour.          */
 
   FILE * input_file; /* The name of the file passed as argument if any.      */
 
@@ -6330,7 +6352,7 @@ main(int argc, char * argv[])
                    "[include_re... #regex] "
                    "[exclude_re... #regex] "
                    "[title #message] "
-                   "[int #string] "
+                   "[int [#string]] "
                    "[attributes #prefix:attr...] "
                    "[special_level_1 #...<3] "
                    "[special_level_2 #...<3] "
@@ -6567,8 +6589,8 @@ main(int argc, char * argv[])
                           &pre_selection_index, &langinfo, &misc, (char *)0);
   ctxopt_add_opt_settings(actions, "title", set_string_action, &message,
                           &langinfo, &misc, (char *)0);
-  ctxopt_add_opt_settings(actions, "int", set_string_action, &int_string,
-                          &langinfo, &misc, (char *)0);
+  ctxopt_add_opt_settings(actions, "int", int_action, &int_string,
+                          &int_as_in_shell, &langinfo, &misc, (char *)0);
   ctxopt_add_opt_settings(actions, "validate_in_search_mode", toggle_action,
                           &toggle, (char *)0);
   ctxopt_add_opt_settings(actions, "version", version_action, (char *)0);
@@ -9007,7 +9029,7 @@ main(int argc, char * argv[])
       tputs(TPARM1(cursor_normal), 1, outch);
       restore_term(fileno(stdin));
 
-      exit(EXIT_FAILURE);
+      exit(128 + SIGSEGV);
     }
 
     /* Manage the hangup and termination signal by exiting with failure */
@@ -9020,7 +9042,10 @@ main(int argc, char * argv[])
       tputs(TPARM1(cursor_normal), 1, outch);
       restore_term(fileno(stdin));
 
-      exit(EXIT_FAILURE);
+      if (got_sigterm)
+        exit(128 + SIGTERM);
+      else
+        exit(128 + SIGHUP);
     }
 
     /* If this alarm is triggered, then redisplay the window */
@@ -9580,11 +9605,26 @@ main(int argc, char * argv[])
             }
           }
 
-          if (buffer[0] == 3 && int_string != NULL)
-            fprintf(old_stdout, "%s", int_string);
-
+          /* Restore the visibility of the cursor */
+          /* """""""""""""""""""""""""""""""""""" */
           tputs(TPARM1(cursor_normal), 1, outch);
-          restore_term(fileno(stdin));
+
+          if (buffer[0] == 3)
+          {
+            if (int_string != NULL)
+              fprintf(old_stdout, "%s", int_string);
+
+            /* Set the cursor at the start on the line an restore the */
+            /* original terminal state before exiting                 */
+            /* """""""""""""""""""""""""""""""""""""""""""""""""""""" */
+            tputs(TPARM1(carriage_return), 1, outch);
+            restore_term(fileno(stdin));
+
+            if (int_as_in_shell)
+              exit(128 + SIGINT);
+          }
+          else
+            restore_term(fileno(stdin));
 
           exit(EXIT_SUCCESS);
 

@@ -12,7 +12,7 @@ and outputs the selection to stdout.
   [\fB-i\fP|\fB-in\fP|\fB-inc\fP|\fB-incl\fP|\fB-include\fP... \fIregex\fP]
   [\fB-e\fP|\fB-ex\fP|\fB-exc\fP|\fB-excl\fP|\fB-exclude\fP... \fIregex\fP]
   [\fB-m\fP|\fB-msg\fP|\fB-message\fP|\fB-title\fP \fImessage\fP]
-  [\fB-!\fP|\fB-int\fP|\fB-int_string\fP \fIstring\fP]
+  [\fB-!\fP|\fB-int\fP|\fB-int_string\fP [\fIstring\fP]]
   [\fB-a\fP|\fB-attr\fP|\fB-attributes\fP \fIprefix:attr\fP...]
   [\fB-1\fP|\fB-l1\fP|\fB-level1\fP \fIregex\fP [\fIattr\fP]]
   [\fB-2\fP|\fB-l2\fP|\fB-level2\fP \fIregex\fP [\fIattr\fP]]
@@ -365,9 +365,10 @@ algorithm is used and \fBESC\fP has not been pressed.
 Pressing \fBq\fP gives the possibility to exit without selecting anything.
 .PP
 \fBCTRL\ C\fP (Abort) also allows you to exit the program
-immediately with a return code equal to 0 without selecting anything.
+immediately with a return code equal to 128+SINGINT (by default)
+without selecting anything.
 See the \fB-!\fP|\fB-int\fP|\fB-int_string\fP option for more information
-about \fBCTRL\ C\fP.
+about the customization of the \fBCTRL\ C\fP behaviour.
 .PP
 By default, \fBENTER\fP writes the selected word to stdout when not in
 search mode otherwise it exits from this mode and does nothing more.
@@ -726,13 +727,21 @@ will be replaced by the substitution character.
 
 Note that the message will be truncated if it does not fit on a terminal
 line.
-.IP "\fB-!\fP|\fB-int\fP|\fB-int_string\fP \fIstring\fP"
+.IP "\fB-!\fP|\fB-int\fP|\fB-int_string\fP [\fIstring\fP]"
 (Allowed in all contexts.)
 
-Defines the string to be displayed on the standard output after entering
-the \fBCTRL\ C\fP sequence.
-When this option is not used, nothing is printed on the standard output
-in such a case.
+The optional \fIstring\fP argument, when present,
+defines the string to be used as the selection string when
+the \fBCTRL\ C\fP sequence is entered.
+
+If \fIstring\fP is missing then nothing will be selected.
+
+In all cases, when \fB-!\fP|\fB-int\fP|\fB-int_string\fP is present in
+the command line, the return code of the program will be \fB0\fP.
+
+This gives the user the choice to make the behaviour of \fBCTRL\ C\fP
+similar to that of \fBq\fP and \fBQ\fP or to that of the Unix shell
+leaving the shell with a return code greater than 128.
 .IP "\fB-a\fP|\fB-attr\fP|\fB-attributes\fP \fIprefix:attr\fP..."
 (Allowed in all contexts.)
 
