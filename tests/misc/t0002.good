@@ -1,4 +1,4 @@
-$ OUT=$(smenu t0001.in)
+$ OUT=$(smenu t0002.in)
 
 a b c 
 2:07 
