@@ -5068,8 +5068,10 @@ include_re_action(char * ctx_name, char * opt_name, char * param, int nb_values,
                   char ** values, int nb_opt_data, void ** opt_data,
                   int nb_ctx_data, void ** ctx_data)
 {
-  int *   pattern_def_include = opt_data[0];
-  char ** include_pattern     = opt_data[1];
+  int *        pattern_def_include = opt_data[0];
+  char **      include_pattern     = opt_data[1];
+  langinfo_t * langinfo            = opt_data[2];
+  misc_t *     misc                = opt_data[3];
 
   /* Set the default behaviour if not already set */
   /* """""""""""""""""""""""""""""""""""""""""""" */
@@ -5081,6 +5083,11 @@ include_re_action(char * ctx_name, char * opt_name, char * param, int nb_values,
   else
     *include_pattern = concat(*include_pattern, "|(", values[0], ")",
                               (char *)0);
+
+  /* Replace the UTF-8 ASCII representations by their binary values in */
+  /* inclusion patterns.                                               */
+  /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+  utf8_interpret(*include_pattern, langinfo, misc->invalid_char_substitute);
 }
 
 void
@@ -5088,8 +5095,10 @@ exclude_re_action(char * ctx_name, char * opt_name, char * param, int nb_values,
                   char ** values, int nb_opt_data, void ** opt_data,
                   int nb_ctx_data, void ** ctx_data)
 {
-  int *   pattern_def_exclude = opt_data[0];
-  char ** exclude_pattern     = opt_data[1];
+  int *        pattern_def_exclude = opt_data[0];
+  char **      exclude_pattern     = opt_data[1];
+  langinfo_t * langinfo            = opt_data[2];
+  misc_t *     misc                = opt_data[3];
 
   /* Set the default behaviour if not already set */
   /* """""""""""""""""""""""""""""""""""""""""""" */
@@ -5101,6 +5110,11 @@ exclude_re_action(char * ctx_name, char * opt_name, char * param, int nb_values,
   else
     *exclude_pattern = concat(*exclude_pattern, "|(", values[0], ")",
                               (char *)0);
+
+  /* Replace the UTF-8 ASCII representations by their binary values in */
+  /* exclusion patterns.                                               */
+  /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+  utf8_interpret(*exclude_pattern, langinfo, misc->invalid_char_substitute);
 }
 
 void
@@ -6577,15 +6591,17 @@ main(int argc, char * argv[])
                           &cols_selector_list, (char *)0);
   ctxopt_add_opt_settings(actions, "rows_select", rows_select_action,
                           &rows_selector_list, &win, (char *)0);
+  ctxopt_add_opt_settings(actions, "include_re", include_re_action,
+                          &pattern_def_include, &include_pattern, &langinfo,
+                          &misc, (char *)0);
   ctxopt_add_opt_settings(actions, "exclude_re", exclude_re_action,
-                          &pattern_def_include, &exclude_pattern, (char *)0);
+                          &pattern_def_include, &exclude_pattern, &langinfo,
+                          &misc, (char *)0);
   ctxopt_add_opt_settings(actions, "gutter", gutter_action, &win, &langinfo,
                           &misc, (char *)0);
   ctxopt_add_opt_settings(actions, "help", help_action, (char *)0);
   ctxopt_add_opt_settings(actions, "long_help", long_help_action, (char *)0);
   ctxopt_add_opt_settings(actions, "usage", usage_action, (char *)0);
-  ctxopt_add_opt_settings(actions, "include_re", include_re_action,
-                          &pattern_def_include, &include_pattern, (char *)0);
   ctxopt_add_opt_settings(actions, "keep_spaces", toggle_action, &toggle,
                           (char *)0);
   ctxopt_add_opt_settings(actions, "lines", lines_action, &win, (char *)0);
@@ -6718,15 +6734,6 @@ main(int argc, char * argv[])
   /* Free the memory used internally by ctxopt */
   /* """"""""""""""""""""""""""""""""""""""""" */
   ctxopt_free_memory();
-
-  /* Replace the UTF-8 ASCII representations by their binary values in */
-  /* the inclusion and exclusion patterns.                             */
-  /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-  if (include_pattern != NULL)
-    utf8_interpret(include_pattern, &langinfo, misc.invalid_char_substitute);
-
-  if (exclude_pattern != NULL)
-    utf8_interpret(exclude_pattern, &langinfo, misc.invalid_char_substitute);
 
   /* If we did not impose the number of columns, use the whole */
   /* terminal width                                            */
