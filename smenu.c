@@ -2631,6 +2631,12 @@ get_word(FILE * input, ll_t * word_delims_list, ll_t * record_delims_list,
           utf8_buffer[2] = '\0';
           break;
 
+        case 'U':
+          utf8_buffer[0] = '\\';
+          utf8_buffer[1] = 'U';
+          utf8_buffer[2] = '\0';
+          break;
+
         case '\\':
           utf8_buffer[0] = byte = '\\';
           utf8_buffer[1]        = '\0';
