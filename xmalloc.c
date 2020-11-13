@@ -1,10 +1,10 @@
-/* *************************** */
-/* Memory management functions */
-/* *************************** */
+/* **************************** */
+/* Memory management functions. */
+/* **************************** */
 
-/* Created by Kevin Locke (from numerous canonical examples)         */
+/* Created by Kevin Locke (from numerous canonical examples).        */
 /*                                                                   */
-/* Adapted for use by smenu                                          */
+/* Adapted for use by smenu.                                         */
 /*                                                                   */
 /* I hereby place this file in the public domain.  It may be freely  */
 /* reproduced, distributed, used, modified, built upon, or otherwise */
@@ -18,9 +18,9 @@
 
 #include "xmalloc.h"
 
-/* ================= */
-/* Customized malloc */
-/* ================= */
+/* ================== */
+/* Customized malloc. */
+/* ================== */
 void *
 xmalloc(size_t size)
 {
@@ -41,9 +41,9 @@ xmalloc(size_t size)
   return allocated;
 }
 
-/* ================= */
-/* Customized calloc */
-/* ================= */
+/* ================== */
+/* Customized calloc. */
+/* ================== */
 void *
 xcalloc(size_t n, size_t size)
 {
@@ -64,9 +64,9 @@ xcalloc(size_t n, size_t size)
   return allocated;
 }
 
-/* ================== */
-/* Customized realloc */
-/* ================== */
+/* =================== */
+/* Customized realloc. */
+/* =================== */
 void *
 xrealloc(void * p, size_t size)
 {
@@ -85,9 +85,9 @@ xrealloc(void * p, size_t size)
   return allocated;
 }
 
-/* =================================== */
-/* strdup implementation using xmalloc */
-/* =================================== */
+/* ==================================== */
+/* strdup implementation using xmalloc. */
+/* ==================================== */
 char *
 xstrdup(const char * p)
 {
@@ -99,10 +99,10 @@ xstrdup(const char * p)
   return allocated;
 }
 
-/* ================================================== */
-/* strndup implementation using xmalloc               */
-/* This version guarantees that there is a final '\0' */
-/* ================================================== */
+/* =================================================== */
+/* strndup implementation using xmalloc.               */
+/* This version guarantees that there is a final '\0'. */
+/* =================================================== */
 char *
 xstrndup(const char * str, size_t len)
 {

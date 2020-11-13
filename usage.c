@@ -1,6 +1,6 @@
-/* *************** */
-/* Usage functions */
-/* *************** */
+/* **************** */
+/* Usage functions. */
+/* **************** */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -12,9 +12,9 @@
 static void
 common_help(void);
 
-/* ====================== */
-/* Usage display and exit */
-/* ====================== */
+/* ======================= */
+/* Usage display and exit. */
+/* ======================= */
 static void
 common_help(void)
 {

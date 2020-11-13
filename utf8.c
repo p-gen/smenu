@@ -1,11 +1,11 @@
 /* ########################################################### */
 /* This Software is licensed under the GPL licensed Version 2, */
-/* please read http://www.gnu.org/copyleft/gpl.html            */
+/* please read http://www.gnu.org/copyleft/gpl.html.           */
 /* ########################################################### */
 
-/* ************************************ */
-/* Various UTF-8 manipulation functions */
-/* ************************************ */
+/* ************************************* */
+/* Various UTF-8 manipulation functions. */
+/* ************************************* */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -149,8 +149,8 @@ utf8_interpret(char * s, langinfo_t * langinfo, char substitute)
     }
   }
 
-  /* Make sure that the string is well terminated */
-  /* """""""""""""""""""""""""""""""""""""""""""" */
+  /* Make sure that the string is well terminated. */
+  /* """"""""""""""""""""""""""""""""""""""""""""" */
   *(s + init_len - len_to_remove) = '\0';
 
   /* Manage \u UTF-8 byte sequences. */
@@ -170,7 +170,8 @@ utf8_interpret(char * s, langinfo_t * langinfo, char substitute)
       unsigned byte;
       char *   utf8_seq_offset = utf8_str + 2;
 
-      /* Get the first 2 utf8 bytes */
+      /* Get the first 2 utf8 bytes. */
+      /* """"""""""""""""""""""""""" */
       *tmp       = *utf8_seq_offset;
       *(tmp + 1) = *(utf8_seq_offset + 1);
       *(tmp + 2) = '\0';
@@ -185,8 +186,8 @@ utf8_interpret(char * s, langinfo_t * langinfo, char substitute)
           *(utf8_str + 1) = '\0';
         else
         {
-          /* Do not forget the training \0 */
-          /* ''''''''''''''''''''''''''''' */
+          /* Do not forget the training \0. */
+          /* """""""""""""""""""""""""""""" */
           memmove(utf8_str + 1, utf8_str + 4, utf8_to_eos_len - 4 + 1);
         }
         rc = 0;
@@ -198,17 +199,17 @@ utf8_interpret(char * s, langinfo_t * langinfo, char substitute)
         size_t i;
         char   b[3] = { ' ', ' ', '\0' };
 
-        /* They are valid, deduce from them the length of the sequence */
-        /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+        /* They are valid, deduce from them the length of the sequence. */
+        /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
         sscanf(tmp, "%2x", &byte);
 
         utf8_ascii_len = utf8_get_length(byte) * 2;
 
-        /* replace the \u sequence by the bytes forming the UTF-8 char */
-        /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+        /* replace the \u sequence by the bytes forming the UTF-8 char. */
+        /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
 
-        /* Put the bytes in the tmp string */
-        /* ''''''''''''''''''''''''''''''' */
+        /* Put the bytes in the tmp string. */
+        /* '''''''''''''''''''''''''''''''' */
         *tmp = byte; /* Reuse the tmp array. */
 
         for (i = 1; i < utf8_ascii_len / 2; i++)
@@ -242,7 +243,7 @@ utf8_interpret(char * s, langinfo_t * langinfo, char substitute)
         if (utf8_validate(tmp, utf8_ascii_len / 2))
         {
           /* Put them back in the original string and move */
-          /* the remaining bytes after them                */
+          /* the remaining bytes after them.               */
           /* ''''''''''''''''''''''''''''''''''''''''''''' */
           memmove(utf8_str, tmp, utf8_ascii_len / 2);
 
@@ -271,15 +272,15 @@ utf8_interpret(char * s, langinfo_t * langinfo, char substitute)
         }
 
         /* Update the number of bytes to remove at the end */
-        /* of the initial string                           */
+        /* of the initial string.                          */
         /* """"""""""""""""""""""""""""""""""""""""""""""" */
         len_to_remove += 2 + utf8_ascii_len / 2;
       }
     }
   }
 
-  /* Make sure that the string is well terminated */
-  /* """""""""""""""""""""""""""""""""""""""""""" */
+  /* Make sure that the string is well terminated. */
+  /* """"""""""""""""""""""""""""""""""""""""""""" */
   *(s + init_len - len_to_remove) = '\0';
 
   return rc;
@@ -303,9 +304,9 @@ utf8_get_length(unsigned char c)
     return 4;
 }
 
-/* =================================================== */
-/* Returns the byte offset of the nth UTF-8 glyph in s */
-/* =================================================== */
+/* ==================================================== */
+/* Returns the byte offset of the nth UTF-8 glyph in s. */
+/* ==================================================== */
 size_t
 utf8_offset(char * s, size_t n)
 {
@@ -324,7 +325,7 @@ utf8_offset(char * s, size_t n)
 
 /* ============================================== */
 /* Points to the previous UTF-8 glyph in a string */
-/* from the given position                        */
+/* from the given position.                       */
 /* ============================================== */
 char *
 utf8_prev(const char * str, const char * p)
@@ -342,7 +343,7 @@ utf8_prev(const char * str, const char * p)
 
 /* ========================================== */
 /* Points to the next UTF-8 glyph in a string */
-/* from the current position                  */
+/* from the current position.                 */
 /* ========================================== */
 char *
 utf8_next(char * p)
@@ -355,11 +356,11 @@ utf8_next(char * p)
   return (*p == '\0' ? NULL : p);
 }
 
-/* ============================================================ */
-/* Replaces any UTF-8 glyph present in s by a substitution      */
-/* character in-place.                                          */
-/* s will be modified but its address in memory will not change */
-/* ============================================================ */
+/* ============================================================= */
+/* Replaces any UTF-8 glyph present in s by a substitution       */
+/* character in-place.                                           */
+/* s will be modified but its address in memory will not change. */
+/* ============================================================= */
 void
 utf8_sanitize(char * s, char substitute)
 {
@@ -394,13 +395,13 @@ static const char trailing_bytes_for_utf8[256] = {
   2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 3, 3, 4, 4, 4, 4, 5, 5, 5, 5
 };
 
-/* ================================================================== */
-/* UTF-8 validation routine inspired by Jeff Bezanson                 */
-/*   placed in the public domain Fall 2005                            */
-/*   (https://github.com/JeffBezanson/cutef8)                         */
-/*                                                                    */
-/* Returns 1 if str contains a valid UTF-8 byte sequence, 0 otherwise */
-/* ================================================================== */
+/* =================================================================== */
+/* UTF-8 validation routine inspired by Jeff Bezanson                  */
+/*   placed in the public domain Fall 2005                             */
+/*   (https://github.com/JeffBezanson/cutef8).                         */
+/*                                                                     */
+/* Returns 1 if str contains a valid UTF-8 byte sequence, 0 otherwise. */
+/* =================================================================== */
 int
 utf8_validate(const char * str, size_t length)
 {
@@ -421,54 +422,54 @@ utf8_validate(const char * str, size_t length)
     length -= ab;
 
     p++;
-    /* Check top bits in the second byte */
-    /* """"""""""""""""""""""""""""""""" */
+    /* Check top bits in the second byte. */
+    /* """""""""""""""""""""""""""""""""" */
     if ((*p & 0xc0) != 0x80)
       return 0;
 
-    /* Check for overlong sequences for each different length */
-    /* """""""""""""""""""""""""""""""""""""""""""""""""""""" */
+    /* Check for overlong sequences for each different length. */
+    /* """"""""""""""""""""""""""""""""""""""""""""""""""""""" */
     switch (ab)
     {
-      /* Check for xx00 000x */
-      /* """"""""""""""""""" */
+      /* Check for xx00 000x. */
+      /* """""""""""""""""""" */
       case 1:
         if ((c & 0x3e) == 0)
           return 0;
-        continue; /* We know there aren't any more bytes to check */
+        continue; /* We know there aren't any more bytes to check. */
 
-      /* Check for 1110 0000, xx0x xxxx */
-      /* """""""""""""""""""""""""""""" */
+      /* Check for 1110 0000, xx0x xxxx. */
+      /* """"""""""""""""""""""""""""""" */
       case 2:
         if (c == 0xe0 && (*p & 0x20) == 0)
           return 0;
         break;
 
-      /* Check for 1111 0000, xx00 xxxx */
-      /* """""""""""""""""""""""""""""" */
+      /* Check for 1111 0000, xx00 xxxx. */
+      /* """"""""""""""""""""""""""""""" */
       case 3:
         if (c == 0xf0 && (*p & 0x30) == 0)
           return 0;
         break;
 
-      /* Check for 1111 1000, xx00 0xxx */
-      /* """""""""""""""""""""""""""""" */
+      /* Check for 1111 1000, xx00 0xxx. */
+      /* """"""""""""""""""""""""""""""" */
       case 4:
         if (c == 0xf8 && (*p & 0x38) == 0)
           return 0;
         break;
 
-      /* Check for leading 0xfe or 0xff,   */
-      /* and then for 1111 1100, xx00 00xx */
-      /* """"""""""""""""""""""""""""""""" */
+      /* Check for leading 0xfe or 0xff,    */
+      /* and then for 1111 1100, xx00 00xx. */
+      /* """""""""""""""""""""""""""""""""" */
       case 5:
         if (c == 0xfe || c == 0xff || (c == 0xfc && (*p & 0x3c) == 0))
           return 0;
         break;
     }
 
-    /* Check for valid bytes after the 2nd, if any; all must start 10 */
-    /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+    /* Check for valid bytes after the 2nd, if any; all must start with 10. */
+    /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
     while (--ab > 0)
     {
       if ((*(++p) & 0xc0) != 0x80)
@@ -479,9 +480,9 @@ utf8_validate(const char * str, size_t length)
   return 1;
 }
 
-/* ====================== */
-/* Multibyte UTF-8 strlen */
-/* ====================== */
+/* ======================= */
+/* Multibyte UTF-8 strlen. */
+/* ======================= */
 size_t
 utf8_strlen(char * str)
 {
@@ -528,9 +529,9 @@ utf8_strprefix(char * d, char * s, long n, long * pos)
   return d;
 }
 
-/* ================================================= */
-/* Converts a UTF-8 glyph string to a wchar_t string */
-/* ================================================= */
+/* ================================================== */
+/* Converts a UTF-8 glyph string to a wchar_t string. */
+/* ================================================== */
 wchar_t *
 utf8_strtowcs(char * s)
 {

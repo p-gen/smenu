@@ -1,11 +1,11 @@
 /* ########################################################### */
 /* This Software is licensed under the GPL licensed Version 2, */
-/* please read http://www.gnu.org/copyleft/gpl.html            */
+/* please read http://www.gnu.org/copyleft/gpl.html.           */
 /* ########################################################### */
 
-/* ******************************* */
-/* Various small utility functions */
-/* ******************************* */
+/* ******************************** */
+/* Various small utility functions. */
+/* ******************************** */
 
 #include "config.h"
 #include <stdlib.h>
@@ -18,13 +18,13 @@
 #include "list.h"
 #include "utils.h"
 
-/* ****************** */
-/* Interval functions */
-/* ****************** */
+/* ******************* */
+/* Interval functions. */
+/* ******************* */
 
-/* ====================== */
-/* Creates a new interval */
-/* ====================== */
+/* ======================= */
+/* Creates a new interval. */
+/* ======================= */
 interval_t *
 interval_new(void)
 {
@@ -35,7 +35,7 @@ interval_new(void)
 
 /* ======================================= */
 /* Compares 2 intervals as integer couples */
-/* same return values as for strcmp        */
+/* same return values as for strcmp.       */
 /* ======================================= */
 int
 interval_comp(void * a, void * b)
@@ -63,9 +63,9 @@ interval_comp(void * a, void * b)
   return 0;
 }
 
-/* ================================= */
-/* Swaps the values of two intervals */
-/* ================================= */
+/* ================================== */
+/* Swaps the values of two intervals. */
+/* ================================== */
 void
 interval_swap(void * a, void * b)
 {
@@ -96,11 +96,11 @@ merge_intervals(ll_t * list)
     return;
   else
   {
-    /* Step 1: sort the intervals list */
-    /* """"""""""""""""""""""""""""""" */
+    /* Step 1: sort the intervals list. */
+    /* """""""""""""""""""""""""""""""" */
     ll_sort(list, interval_comp, interval_swap);
 
-    /* Step 2: merge the list by merging the consecutive intervals */
+    /* Step 2: merge the list by merging the consecutive intervals. */
     /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
     node1 = list->head;
     node2 = node1->next;
@@ -112,8 +112,8 @@ merge_intervals(ll_t * list)
 
       if (data1->high >= data2->low - 1)
       {
-        /* Interval 1 overlaps interval 2 */
-        /* '''''''''''''''''''''''''''''' */
+        /* Interval 1 overlaps interval 2. */
+        /* ''''''''''''''''''''''''''''''' */
         if (data2->high >= data1->high)
           data1->high = data2->high;
         ll_delete(list, node2);
@@ -122,8 +122,8 @@ merge_intervals(ll_t * list)
       }
       else
       {
-        /* No overlap */
-        /* '''''''''' */
+        /* No overlap. */
+        /* ''''''''''' */
         node1 = node2;
         node2 = node2->next;
       }
@@ -131,9 +131,9 @@ merge_intervals(ll_t * list)
   }
 }
 
-/* ***************** */
-/* Strings functions */
-/* ***************** */
+/* ****************** */
+/* Strings functions. */
+/* ****************** */
 
 /* ========================================================================= */
 /* Allocates memory and safely concatenate strings. Stolen from a public     */
@@ -199,9 +199,9 @@ strprefix(char * str1, char * str2)
   return *str2 == '\0';
 }
 
-/* ======================== */
-/* Trims leading characters */
-/* ======================== */
+/* ========================= */
+/* Trims leading characters. */
+/* ========================= */
 void
 ltrim(char * str, const char * trim_str)
 {
@@ -215,7 +215,7 @@ ltrim(char * str, const char * trim_str)
 }
 
 /* ================================================= */
-/* Trims trailing characters                         */
+/* Trims trailing characters.                        */
 /* The resulting string will have at least min bytes */
 /* even if trailing spaces remain.                   */
 /* ================================================= */
@@ -228,7 +228,7 @@ rtrim(char * str, const char * trim_str, size_t min)
 }
 
 /* ========================================= */
-/* Case insensitive strcmp                   */
+/* Case insensitive strcmp.                  */
 /* from http://c.snippets.org/code/stricmp.c */
 /* ========================================= */
 int
@@ -255,9 +255,9 @@ my_strcasecmp(const char * str1, const char * str2)
 #endif
 }
 
-/* =========================================== */
-/* memmove based strcpy (tolerates overlaping) */
-/* =========================================== */
+/* ============================================ */
+/* memmove based strcpy (tolerates overlaping). */
+/* ============================================ */
 char *
 my_strcpy(char * str1, char * str2)
 {
@@ -269,18 +269,18 @@ my_strcpy(char * str1, char * str2)
   return str1;
 }
 
-/* =============================== */
-/* 7 bits aware version of isprint */
-/* =============================== */
+/* ================================ */
+/* 7 bits aware version of isprint. */
+/* ================================ */
 int
 isprint7(int i)
 {
   return (i >= 0x20 && i <= 0x7e);
 }
 
-/* =============================== */
-/* 8 bits aware version of isprint */
-/* =============================== */
+/* ================================ */
+/* 8 bits aware version of isprint. */
+/* ================================ */
 int
 isprint8(int i)
 {
@@ -289,9 +289,9 @@ isprint8(int i)
   return (c >= 0x20 && c < 0x7f) || (c >= (unsigned char)0xa0);
 }
 
-/* =================================================== */
-/* Private implementation of wcscasecmp wimming in c99 */
-/* =================================================== */
+/* ==================================================== */
+/* Private implementation of wcscasecmp wimming in c99. */
+/* ==================================================== */
 int
 xwcscasecmp(const wchar_t * s1, const wchar_t * s2)
 {

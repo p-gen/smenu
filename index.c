@@ -1,11 +1,11 @@
 /* ########################################################### */
 /* This Software is licensed under the GPL licensed Version 2, */
-/* please read http://www.gnu.org/copyleft/gpl.html            */
+/* please read http://www.gnu.org/copyleft/gpl.html.           */
 /* ########################################################### */
 
-/* Ternary Search Tree and sorted array creation functions         */
-/* Inspired by: https://www.cs.princeton.edu/~rs/strings/tstdemo.c */
-/* *************************************************************** */
+/* Ternary Search Tree and sorted array creation functions          */
+/* Inspired by: https://www.cs.princeton.edu/~rs/strings/tstdemo.c. */
+/* **************************************************************** */
 
 #include <stdlib.h>
 #include <stdint.h>
@@ -18,13 +18,13 @@
 #include "utils.h"
 #include "index.h"
 
-/* List of words matching the current search */
-/* """"""""""""""""""""""""""""""""""""""""" */
-ll_t * tst_search_list; /* Must be initialized by ll_new() before use */
+/* List of words matching the current search. */
+/* """""""""""""""""""""""""""""""""""""""""" */
+ll_t * tst_search_list; /* Must be initialized by ll_new() before use. */
 
-/* ====================================== */
-/* Ternary search tree insertion function */
-/* ====================================== */
+/* ======================================= */
+/* Ternary search tree insertion function. */
+/* ======================================= */
 tst_node_t *
 tst_insert(tst_node_t * p, wchar_t * w, void * data)
 {
@@ -54,10 +54,10 @@ tst_insert(tst_node_t * p, wchar_t * w, void * data)
   return (p);
 }
 
-/* ===================================== */
-/* Ternary search tree deletion function */
-/* user data area not cleaned            */
-/* ===================================== */
+/* ====================================== */
+/* Ternary search tree deletion function. */
+/* User data area not cleaned.            */
+/* ====================================== */
 void
 tst_cleanup(tst_node_t * p)
 {
@@ -73,11 +73,11 @@ tst_cleanup(tst_node_t * p)
 
 /* ========================================================== */
 /* Recursive traversal of a ternary tree. A callback function */
-/* is also called when a complete string is found             */
-/* returns 1 if the callback function succeed (returned 1) at */
-/* least once                                                 */
-/* the first_call argument is for initializing the static     */
-/* variable                                                   */
+/* is also called when a complete string is found.            */
+/* Returns 1 if the callback function succeed (returned 1) at */
+/* least once.                                                */
+/* The first_call argument is for initializing the static     */
+/* variable.                                                  */
 /* ========================================================== */
 int
 tst_traverse(tst_node_t * p, int (*callback)(void *), int first_call)
@@ -190,9 +190,9 @@ tst_fuzzy_traverse(tst_node_t * p, int (*callback)(void *), int first_call,
   return !!rc;
 }
 
-/* ====================================================================== */
-/* Searches a complete string in a ternary tree starting from a root node */
-/* ====================================================================== */
+/* ======================================================================= */
+/* Searches a complete string in a ternary tree starting from a root node. */
+/* ======================================================================= */
 void *
 tst_search(tst_node_t * root, wchar_t * w)
 {
@@ -220,7 +220,7 @@ tst_search(tst_node_t * root, wchar_t * w)
 /* ================================================================= */
 /* Searches all strings beginning with the same prefix.              */
 /* the callback function will be applied to each of theses strings   */
-/* returns NULL if no string matched the prefix                      */
+/* returns NULL if no string matched the prefix.                     */
 /* ================================================================= */
 void *
 tst_prefix_search(tst_node_t * root, wchar_t * w, int (*callback)(void *))
@@ -264,13 +264,13 @@ insert_sorted_index(long ** array, long * size, long * nb, long value)
 
   if (*nb > 0)
   {
-    /* bisection search */
-    /* """""""""""""""" */
+    /* Bisection search. */
+    /* """"""""""""""""" */
     while (left < right)
     {
       middle = (left + right) / 2;
       if ((*array)[middle] == value)
-        return; /* Value already in array */
+        return; /* Value already in array. */
 
       if (value < (*array)[middle])
         right = middle;
@@ -307,13 +307,13 @@ insert_sorted_ptr(tst_node_t *** array, unsigned long long * size,
 
   if (*nb > 0)
   {
-    /* bisection search */
-    /* """""""""""""""" */
+    /* Bisection search. */
+    /* """"""""""""""""" */
     while (left < right)
     {
       middle = (left + right) / 2;
       if ((intptr_t)((*array)[middle]) == (intptr_t)ptr)
-        return; /* Value already in array */
+        return; /* Value already in array. */
 
       if ((intptr_t)ptr < (intptr_t)((*array)[middle]))
         right = middle;
