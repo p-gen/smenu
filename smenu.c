@@ -6219,6 +6219,10 @@ main(int argc, char * argv[])
   /* """"""""""""""""""""""""""" */
   char * cols_filter = NULL;
 
+  /* Initialize the count of tagged words. */
+  /* """"""""""""""""""""""""""""""""""""" */
+  long tagged_words = 0;
+
   /* Get the current locale */
   /* """""""""""""""""""""" */
   setlocale(LC_ALL, "");
@@ -6228,10 +6232,6 @@ main(int argc, char * argv[])
   /* """"""""""""""""""""""""""""""""""""""" */
   is_supported_charset = 0;
   charset_ptr          = all_supported_charsets;
-
-  /* Count of the words currently tagged */
-  /* """"""""""""""""""""""""""""""""""" */
-  long tagged_words = 0;
 
   while (charset_ptr->name != NULL)
   {
