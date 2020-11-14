@@ -39,11 +39,11 @@ fatal_internal(const char * format, ...);
 static void
 fatal(errors e, char * errmsg);
 
-static int    user_rc;      /* Used by various callback functions */
-static int    user_value;   /* Used by various callback functions */
-static char * user_string;  /* Used by various callback functions */
-static char * user_string2; /* Used by various callback functions */
-static void * user_object;  /* Used by various callback functions */
+static int    user_rc;      /* Used by various callback functions. */
+static int    user_value;   /* Used by various callback functions. */
+static char * user_string;  /* Used by various callback functions. */
+static char * user_string2; /* Used by various callback functions. */
+static void * user_object;  /* Used by various callback functions. */
 
 /* ************************************ */
 /* Memory management static prototypes. */
@@ -78,7 +78,7 @@ typedef enum
   leaf
 } walk_order_e;
 
-#if 0 /* Unused yet */
+#if 0 /* Unused yet. */
 static void *
 bst_delete(const void * vkey, void ** vrootp,
            int (*compar)(const void *, const void *));
@@ -124,7 +124,7 @@ ll_insert_before(ll_t * const list, ll_node_t * node, void * const data);
 static int
 ll_delete(ll_t * const list, ll_node_t * node);
 
-#if 0 /* Unused yet */
+#if 0 /* Unused yet. */
 static ll_node_t *
 ll_find(ll_t * const, void * const, int (*)(const void *, const void *));
 #endif
@@ -293,13 +293,13 @@ evaluate_ctx_inst(ctx_inst_t * ctx_inst);
 /* Fatal messages implementation. */
 /* ****************************** */
 
-/* ================================================================== */
-/* Fatal error function used when a fatal condition is encountered.   */
-/* This function is reserved for the ctxopt internal usage.           */
-/*                                                                    */
-/* format : printf like format                                        */
-/* ...    : remaining arguments interpreted using the format argument */
-/* ================================================================== */
+/* =================================================================== */
+/* Fatal error function used when a fatal condition is encountered.    */
+/* This function is reserved for the ctxopt internal usage.            */
+/*                                                                     */
+/* format : printf like format.                                        */
+/* ...    : remaining arguments interpreted using the format argument. */
+/* =================================================================== */
 static void
 fatal_internal(const char * format, ...)
 {
@@ -320,24 +320,24 @@ fatal_internal(const char * format, ...)
 /* stored in the cur_state structure and can call custom error functions. */
 /* registered by the users for a given error identifier if any.           */
 /*                                                                        */
-/* e      : Error identifier responsible of the fatal error               */
-/* errmsg : Users's provided string specific to the error e               */
-/*          Note that errmsg is not used in all cases                     */
+/* e      : Error identifier responsible of the fatal error.              */
+/* errmsg : Users's provided string specific to the error e.              */
+/*          Note that errmsg is not used in all cases.                    */
 /*                                                                        */
-/*          CTXOPTMISPAR Missing parameter                                */
+/*          CTXOPTMISPAR Missing parameter.                               */
 /*          CTXOPTREQPAR Option: all parameters in a required group are   */
 /*                               missing.                                 */
-/*          CTXOPTMISARG Missing argument                                 */
-/*          CTXOPTUXPARG Unexpected argument                              */
-/*          CTXOPTDUPOPT Duplicated option                                */
-/*          CTXOPTUNKPAR Unknown parameter                                */
-/*          CTXOPTINCOPT Incompatible option                              */
-/*          CTXOPTCTEOPT Option: bad number of occurrences                */
-/*          CTXOPTCTLOPT Option: not enough occurrences                   */
-/*          CTXOPTCTGOPT Option: too many occurrence of                   */
-/*          CTXOPTCTEARG Arguments: bad number of occurrences             */
-/*          CTXOPTCTLARG Arguments: not enough occurrences                */
-/*          CTXOPTCTGARG Arguments: too many occurrences                  */
+/*          CTXOPTMISARG Missing argument.                                */
+/*          CTXOPTUXPARG Unexpected argument.                             */
+/*          CTXOPTDUPOPT Duplicated option.                               */
+/*          CTXOPTUNKPAR Unknown parameter.                               */
+/*          CTXOPTINCOPT Incompatible option.                             */
+/*          CTXOPTCTEOPT Option: bad number of occurrences.               */
+/*          CTXOPTCTLOPT Option: not enough occurrences.                  */
+/*          CTXOPTCTGOPT Option: too many occurrence of.                  */
+/*          CTXOPTCTEARG Arguments: bad number of occurrences.            */
+/*          CTXOPTCTLARG Arguments: not enough occurrences.               */
+/*          CTXOPTCTGARG Arguments: too many occurrences.                 */
 /* ====================================================================== */
 static void
 fatal(errors e, char * errmsg)
@@ -774,7 +774,7 @@ ll_insert_after(ll_t * const list, ll_node_t * node, void * const data)
 }
 
 /* ================================================================= */
-/* Remove a node from a linked list                                  */
+/* Remove a node from a linked list.                                 */
 /* The memory taken by the deleted node must be freed by the caller. */
 /* ================================================================= */
 static int
@@ -838,13 +838,13 @@ ll_find(ll_t * const list, void * const data,
 /* ==================================================================== */
 /* Allocate and fill an array of strings from a list.                   */
 /* WARNINGS:                                                            */
-/*   1) The list node must contain strings (char *)                     */
+/*   1) The list node must contain strings (char *).                    */
 /*   2) The strings in the resulting array MUST NOT be freed as the are */
 /*      NOT copied from the strings of the list.                        */
 /*                                                                      */
-/* IN list       : The list from which the array is generated           */
+/* IN list       : The list from which the array is generated.          */
 /* IN start_node : The node of the list which will be the first node to */
-/*                 consider to create the array                         */
+/*                 consider to create the array.                        */
 /* OUT: count    : The number of elements of the resulting array.       */
 /* OUT: array    : The resulting array or NULL if the list is empty.    */
 /* RC :          : The number of elements of the resulting array.       */
@@ -898,7 +898,7 @@ struct bst_s
   struct bst_s * rlink;
 };
 
-#if 0 /* Unused yet */
+#if 0 /* Unused yet. */
 /* =========================== */
 /* Delete node with given key. */
 /* =========================== */
@@ -1137,16 +1137,17 @@ stricmp(const char * s1, const char * s2)
   return (int)tolower((unsigned char)*s1) - (int)tolower((unsigned char)*s2);
 }
 
-/* ======================================================================== */
-/* Strings concatenation with dynamic memory allocation.                    */
-/* IN : a variable number of char * arguments with NULL terminating         */
-/*      the sequence.                                                       */
-/*      The first one must have been dynamically allocated and is mandatory */
-/*                                                                          */
-/* Returns a new allocated string containing the concatenation of all       */
-/* the arguments. It is the caller's responsibility to free the resulting   */
-/* string.                                                                  */
-/* ======================================================================== */
+/* ====================================================================== */
+/* Strings concatenation with dynamic memory allocation.                  */
+/* IN : a variable number of char * arguments with NULL terminating       */
+/*      the sequence.                                                     */
+/*      The first one must have been dynamically allocated and is         */
+/*      mandatory.                                                        */
+/*                                                                        */
+/* Returns a new allocated string containing the concatenation of all     */
+/* the arguments. It is the caller's responsibility to free the resulting */
+/* string.                                                                */
+/* ====================================================================== */
 static char *
 strappend(char * str, ...)
 {
@@ -1191,7 +1192,7 @@ strappend(char * str, ...)
 /*      http://groups.google.com/group/comp.lang.c/msg/7c7b39328fefab9c   */
 /*                                                                        */
 /* Also, fixed by Fletcher T. Penney --- added the "return NULL" when     */
-/* *end == NULL                                                           */
+/* *end == NULL.                                                          */
 /* ====================================================================== */
 static char *
 xstrtok_r(char * str, const char * delim, char ** end)
@@ -1257,7 +1258,7 @@ get_word(char * str, char * buf, size_t len)
 /* Return 1 is value is "1" or "yes" (ignoring case).                   */
 /* Return 0 is value is "0" or "no" (ignoring case).                    */
 /* If value has another value, then set invalid to 1 and also return 0  */
-/* invalid is set to 0i in all the other cases.                         */
+/* invalid is set to 0 in all the other cases.                          */
 /* ==================================================================== */
 static int
 eval_yes(char * value, int * invalid)
@@ -1310,7 +1311,7 @@ str2argv(char * str, char ** args, int max)
 /* ctxopt implementation. */
 /* ********************** */
 
-static int ctxopt_initialized = 0; /* cap_init has not yet been called */
+static int ctxopt_initialized = 0; /* cap_init has not yet been called. */
 
 /* Flags structure initialized by ctxopt_init. */
 /* """"""""""""""""""""""""""""""""""""""""""" */
@@ -1318,7 +1319,10 @@ struct flags_s
 {
   int stop_if_non_option;
   int allow_abbreviations;
+  int display_usage_on_error;
 };
+
+static flags_t flags = { 0, 1, 1 };
 
 /* Context structure. */
 /* """""""""""""""""" */
@@ -1495,8 +1499,6 @@ static ctx_inst_t * first_ctx_inst = NULL; /* Pointer to the fist context    *
                                             | instance which holds the       *
                                             | options instances.             */
 static ll_t *       ctx_inst_list  = NULL; /* List of the context instances. */
-
-static flags_t flags = { 0, 1 };
 
 /* ======================================================= */
 /* Parse a string for the next matching token.             */
@@ -2624,7 +2626,7 @@ opt_parse(char * s, opt_t ** opt)
         if (n == 2) /* There were dots. */
           opt_multiple_args = 1;
 
-        s += pos + !!(n == 2) * 3; /* Skip the dots */
+        s += pos + !!(n == 2) * 3; /* Skip the dots. */
 
         if (*s == '<' || *s == '=' || *s == '>')
         {
@@ -2730,7 +2732,7 @@ success:
 }
 
 /* ==================================================================== */
-/* Try to initialize all the option in a given string                   */
+/* Try to initialize all the option in a given string.                  */
 /* Each parsed option are put in a BST tree with its name as index.     */
 /*                                                                      */
 /* On collision, the arguments only the signature are required to be    */
@@ -2876,6 +2878,15 @@ ctxopt_init(char * prog_name, char * init_flags)
         else
           fatal_internal("Invalid flag value for %s: %s.", fname, vname);
       }
+      else if (strcmp(fname, "display_usage_on_error") == 0)
+      {
+        if (eval_yes(vname, &invalid))
+          flags.display_usage_on_error = 1;
+        else if (!invalid)
+          flags.display_usage_on_error = 0;
+        else
+          fatal_internal("Invalid flag value for %s: %s.", fname, vname);
+      }
       else
         fatal_internal("Invalid flag name: %s.", fname);
     }
@@ -2916,7 +2927,7 @@ opt_set_parms(char * opt_name, char * par_str)
   opt_t * opt;
   bst_t * node;
   par_t * par, tmp_par;
-  int     rc = 1; /* return code */
+  int     rc = 1; /* Return code. */
 
   ll_t *      list;
   ll_node_t * lnode;
@@ -2970,7 +2981,7 @@ opt_set_parms(char * opt_name, char * par_str)
         {
           par       = xmalloc(sizeof(par_t));
           par->name = xstrdup(par_name);
-          par->opt  = opt; /* Link the option to this parameter */
+          par->opt  = opt; /* Link the option to this parameter. */
 
           bst_search(par, &par_bst, par_compare);
         }
@@ -3074,7 +3085,7 @@ new_ctx_inst(ctx_t * ctx, ctx_inst_t * prev_ctx_inst)
   /* These names are then used to search for the object of type seen_opt_t */
   /* which is already present in the seen_opt_bst of the context instance. */
   /* in the BST.                                                           */
-  /* Once found the seen_opt_t object in inserted in the new BST           */
+  /* Once found the seen_opt_t object in inserted in the new BST.          */
   /* At the end the new BST in added to the list incomp_bst_list.          */
   /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
   node = ctx->incomp_list->head;
@@ -3229,8 +3240,8 @@ ctxopt_build_cmdline_list(int nb_words, char ** words)
     /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
     while ((ptr = strstr(str, "{}")) != NULL)
     {
-      *ptr       = 0x02; /* Arbitrary values unlikely. */
-      *(ptr + 1) = 0x03; /* present in a word          */
+      *ptr       = 0x02; /* Arbitrary values unlikely */
+      *(ptr + 1) = 0x03; /* present in a word.        */
     }
 
     if (len > 1) /* The word contains at least 2 characters. */
@@ -3442,8 +3453,8 @@ ctxopt_analyze(int nb_words, char ** words, int * nb_rem_args,
   /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
   bst_walk(options_bst, bst_check_opt_cb);
 
-  /* CTXOPT debug setting */
-  /* """""""""""""""""""" */
+  /* CTXOPT debug setting. */
+  /* """"""""""""""""""""" */
   ctxopt_debug_env = getenv("CTXOPT_DEBUG");
   if (ctxopt_debug_env != NULL && *ctxopt_debug_env != '\0')
     ctxopt_debug = 1;
@@ -3480,7 +3491,7 @@ ctxopt_analyze(int nb_words, char ** words, int * nb_rem_args,
     /* Replace a leading -- by a single - */
     /* """""""""""""""""""""""""""""""""" */
     if (strncmp(par_name, "--", 2) == 0)
-      par_name += 1; /* Ignore the first dash */
+      par_name += 1; /* Ignore the first dash. */
 
     if (strcmp(par_name, "\x1d") == 0)
     {
@@ -3593,7 +3604,7 @@ ctxopt_analyze(int nb_words, char ** words, int * nb_rem_args,
           /* """"""""""""""""""""""""""""""""""""""""""""" */
           ll_insert_after(cmdline_list, cli_node, word);
 
-          continue; /* loop */
+          continue; /* loop. */
         }
         else
         {
@@ -3618,14 +3629,21 @@ ctxopt_analyze(int nb_words, char ** words, int * nb_rem_args,
 
             if (*user_string2 != '\0')
             {
+              char * help_msg;
+
+              if (flags.display_usage_on_error)
+                help_msg = "see below.\n";
+              else
+                help_msg = "\nrefer to the manual for more information.\n";
+
               errmsg = strappend(
                 errmsg,
                 "\nThis parameter is only valid in one of the following "
                 "contexts:\n",
                 user_string2,
                 "\n\nSwitch to one of them first using the appropriate "
-                "parameter, see below.\n",
-                (char *)0);
+                "parameter, ",
+                help_msg, (char *)0);
             }
 
             fatal(CTXOPTUNKPAR, errmsg);
@@ -4159,6 +4177,9 @@ ctxopt_ctx_disp_usage(char * ctx_name, usage_behaviour action)
   int has_ctx_change  = 0;
   int has_early_eval  = 0;
 
+  if (!flags.display_usage_on_error)
+    return;
+
   ctx = locate_ctx(ctx_name);
   if (ctx == NULL)
     fatal_internal("Unknown context %s.", ctx_name);
@@ -4198,6 +4219,9 @@ ctxopt_disp_usage(usage_behaviour action)
   int    has_ctx_change  = 0;
   int    has_early_eval  = 0;
 
+  if (!flags.display_usage_on_error)
+    return;
+
   if (main_ctx == NULL)
     fatal_internal("At least one context must have been created.");
 
@@ -4225,9 +4249,9 @@ ctxopt_disp_usage(usage_behaviour action)
     exit(EXIT_FAILURE);
 }
 
-/* *********************************** */
-/* Built-in constraint check functions */
-/* *********************************** */
+/* ************************************ */
+/* Built-in constraint check functions. */
+/* ************************************ */
 
 /* ============================================================= */
 /* This constraint checks if each arguments respects a format as */
@@ -4368,7 +4392,7 @@ ctxopt_range_constraint(int nb_args, char ** args, char * value, char * par)
     return 0;
   }
 
-  return 1; /* check passed */
+  return 1; /* Check passed. */
 }
 
 /* =============================================================== */
