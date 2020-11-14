@@ -6375,7 +6375,8 @@ main(int argc, char * argv[])
   /* Command line options setting using ctxopt. */
   /* """""""""""""""""""""""""""""""""""""""""" */
   ctxopt_init(argv[0], "stop_if_non_option=No "
-                       "allow_abbreviations=No ");
+                       "allow_abbreviations=No "
+                       "display_usage_on_error=No  ");
 
   common_options = "[*help] "
                    "[*usage] "
