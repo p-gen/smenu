@@ -6376,7 +6376,7 @@ main(int argc, char * argv[])
   /* """""""""""""""""""""""""""""""""""""""""" */
   ctxopt_init(argv[0], "stop_if_non_option=No "
                        "allow_abbreviations=No "
-                       "display_usage_on_error=No  ");
+                       "display_usage_on_error=Yes ");
 
   common_options = "[*help] "
                    "[*usage] "
