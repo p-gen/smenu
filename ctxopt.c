@@ -3630,20 +3630,33 @@ ctxopt_analyze(int nb_words, char ** words, int * nb_rem_args,
             if (*user_string2 != '\0')
             {
               char * help_msg;
+              int    count = 0;
+
+              count = strchrcount(user_string2, '\n');
 
               if (flags.display_usage_on_error)
-                help_msg = "see below.\n";
+                help_msg = ", see below";
               else
-                help_msg = "\nrefer to the manual for more information.\n";
+                help_msg = "";
 
-              errmsg = strappend(
-                errmsg,
-                "\nThis parameter is only valid in one of the following "
-                "contexts:\n",
-                user_string2,
-                "\n\nSwitch to one of them first using the appropriate "
-                "parameter, ",
-                help_msg, (char *)0);
+              if (count == 0) /* Only one context involved. */
+                errmsg = strappend(
+                  errmsg,
+                  "\nThis parameter is only valid in the following "
+                  "context:\n",
+                  user_string2,
+                  "\n\nFirst switch to this context using the appropriate "
+                  "parameter",
+                  help_msg, ".\n", (char *)0);
+              else
+                errmsg = strappend(
+                  errmsg,
+                  "\nThis parameter is only valid in one of the following "
+                  "contexts:\n",
+                  user_string2,
+                  "\n\nFirst switch to one of them using the appropriate "
+                  "parameter",
+                  help_msg, ".\n", (char *)0);
             }
 
             fatal(CTXOPTUNKPAR, errmsg);
