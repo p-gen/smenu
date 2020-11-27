@@ -156,8 +156,9 @@ help(win_t * win, term_t * term, long last_line, toggle_t * toggle)
     int    len;  /* length of one of these objects.                        */
   };
 
-  char *         arrows = concat(left_arrow, up_arrow, right_arrow, down_arrow,
+  char * arrows = concat(left_arrow, up_arrow, right_arrow, down_arrow,
                          (char *)0);
+
   struct entry_s entries[] = {
     { 'n', "Move:", 5 }, { 'b', arrows, 4 },   { 'n', "|", 1 },
     { 'b', "h", 1 },     { 'b', "j", 1 },      { 'b', "k", 1 },

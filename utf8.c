@@ -531,6 +531,7 @@ utf8_strprefix(char * d, char * s, long n, long * pos)
 
 /* ================================================== */
 /* Converts a UTF-8 glyph string to a wchar_t string. */
+/* The returned string must be freed by the caller.   */
 /* ================================================== */
 wchar_t *
 utf8_strtowcs(char * s)

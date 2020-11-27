@@ -3,9 +3,13 @@
 /* please read http://www.gnu.org/copyleft/gpl.html.           */
 /* ########################################################### */
 
-/* Ternary Search Tree and sorted array creation functions          */
-/* Inspired by: https://www.cs.princeton.edu/~rs/strings/tstdemo.c. */
-/* **************************************************************** */
+/* Ternary Search Tree and sorted array creation functions.                 */
+/* Inspired by a code described in "Ternary Search Trees" by Jon            */
+/* Bentley and Robert Sedgewick in the April, 1998, Dr. Dobb's Journal.     */
+/* Links:                                                                   */
+/*   https://www.drdobbs.com/database/ternary-search-trees/184410528?pgno=1 */
+/*   https://www.cs.princeton.edu/~rs/strings/tstdemo.c.                    */
+/* ************************************************************************ */
 
 #include <stdlib.h>
 #include <stdint.h>

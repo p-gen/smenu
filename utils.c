@@ -186,6 +186,7 @@ concat(const char * s1, ...)
 
 /* =============================================== */
 /* Is the string str2 a prefix of the string str1? */
+/* Returns 1 if true, else 0.                      */
 /* =============================================== */
 int
 strprefix(char * str1, char * str2)
