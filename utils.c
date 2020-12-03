@@ -326,3 +326,31 @@ is_integer(const char * const s)
   strtol(s, &end, 10);
   return (*end == '\0');
 }
+
+/* ========= */
+/* Safe read */
+/* ========= */
+ssize_t
+xread(int fd, void * buf, size_t n)
+{
+  size_t  rem = n;
+  ssize_t r;
+  char *  ptr = buf;
+
+  while (rem > 0)
+  {
+    if ((r = read(fd, ptr, rem)) < 0)
+    {
+      if (errno == EINTR)
+        r = 0;
+      else
+        return -1;
+    }
+    else if (r == 0)
+      break; /* EOF */
+
+    rem -= r;
+    ptr += r;
+  }
+  return (n - rem);
+}

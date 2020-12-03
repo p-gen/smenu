@@ -1444,7 +1444,7 @@ read:
   /* """"""""""""""""""""""""""""""""""""""" */
   while (i < sizeof(buf) - 1)
   {
-    v = read(STDIN_FILENO, buf + i, 1);
+    v = xread(STDIN_FILENO, buf + i, 1);
 
     i++;
 

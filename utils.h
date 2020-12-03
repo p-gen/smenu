@@ -6,6 +6,9 @@
 #ifndef UTILS_H
 #define UTILS_H
 
+# include <errno.h>
+# include <unistd.h>
+
 typedef struct interval_s interval_t;
 typedef struct range_s    range_t;
 
@@ -64,5 +67,8 @@ xwcscasecmp(const wchar_t * w1s, const wchar_t * w2s);
 
 int
 is_integer(const char * const s);
+
+ssize_t
+xread(int fd, void * buf, size_t n);
 
 #endif
