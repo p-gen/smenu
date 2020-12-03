@@ -5275,8 +5275,8 @@ attributes_action(char * ctx_name, char * opt_name, char * param, int nb_values,
     { NULL, NULL, NULL, NULL, 0 }
   };
 
-  /* Parse the arguments arguments. */
-  /* """""""""""""""""""""""""""""" */
+  /* Parse the arguments. */
+  /* """""""""""""""""""" */
   for (a = 0; a < nb_values; a++)
   {
     attr = *init_attr;
