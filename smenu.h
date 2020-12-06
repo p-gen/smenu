@@ -42,8 +42,8 @@ typedef struct toggle_s      toggle_t;
 typedef struct win_s         win_t;
 typedef struct word_s        word_t;
 typedef struct attr_s        attr_t;
-typedef struct limits_s      limits_t;
-typedef struct timers_s      timers_t;
+typedef struct limit_s       limit_t;
+typedef struct ticker_s      ticker_t;
 typedef struct misc_s        misc_t;
 typedef struct sed_s         sed_t;
 typedef struct timeout_s     timeout_t;
@@ -165,7 +165,7 @@ struct toggle_s
 
 /* Structure to store the default or imposed smenu limits */
 /* """""""""""""""""""""""""""""""""""""""""""""""""""""" */
-struct limits_s
+struct limit_s
 {
   long word_length; /* maximum number of bytes in a word */
   long words;       /* maximum number of words           */
@@ -174,7 +174,7 @@ struct limits_s
 
 /* Structure to store the default or imposed timers */
 /* """""""""""""""""""""""""""""""""""""""""""""""" */
-struct timers_s
+struct ticker_s
 {
   int search;
   int help;
@@ -410,7 +410,7 @@ struct search_data_s
 /* ********** */
 
 void
-help(win_t * win, term_t * term, long last_line, toggle_t * toggle);
+help(win_t * win, term_t * term, long last_line, toggle_t * toggles);
 
 int
 tag_comp(void * a, void * b);
@@ -422,7 +422,7 @@ int
 isempty(const char * s);
 
 void
-my_beep(toggle_t * toggle);
+my_beep(toggle_t * toggles);
 
 int
 get_cursor_position(int * const r, int * const c);
@@ -444,7 +444,7 @@ void
 setup_term(int const fd);
 
 void
-strip_ansi_color(char * s, toggle_t * toggle, misc_t * misc);
+strip_ansi_color(char * s, toggle_t * toggles, misc_t * misc);
 
 int
 tst_cb(void * elem);
@@ -453,14 +453,14 @@ int
 tst_cb_cli(void * elem);
 
 int
-ini_load(const char * filename, win_t * win, term_t * term, limits_t * limits,
-         timers_t * timers, misc_t * misc, langinfo_t * langinfo,
-         int (*report)(win_t * win, term_t * term, limits_t * limits,
-                       timers_t * timers, misc_t * misc, langinfo_t * langinfo,
+ini_load(const char * filename, win_t * win, term_t * term, limit_t * limits,
+         ticker_t * timers, misc_t * misc, langinfo_t * langinfo,
+         int (*report)(win_t * win, term_t * term, limit_t * limits,
+                       ticker_t * timers, misc_t * misc, langinfo_t * langinfo,
                        const char * section, const char * name, char * value));
 
 int
-ini_cb(win_t * win, term_t * term, limits_t * limits, timers_t * timers,
+ini_cb(win_t * win, term_t * term, limit_t * limits, ticker_t * timers,
        misc_t * misc, langinfo_t * langinfo, const char * section,
        const char * name, char * value);
 
@@ -480,7 +480,7 @@ long
 build_metadata(term_t * term, long count, win_t * win);
 
 long
-disp_lines(win_t * win, toggle_t * toggle, long current, long count,
+disp_lines(win_t * win, toggle_t * toggles, long current, long count,
            search_mode_t search_mode, search_data_t * search_data,
            term_t * term, long last_line, char * tmp_word,
            langinfo_t * langinfo);
@@ -521,7 +521,7 @@ disp_word(long pos, search_mode_t search_mode, search_data_t * search_data,
           term_t * term, win_t * win, char * tmp_word);
 
 size_t
-expand(char * src, char * dest, langinfo_t * langinfo, toggle_t * toggle,
+expand(char * src, char * dest, langinfo_t * langinfo, toggle_t * toggles,
        misc_t * misc);
 
 int
@@ -534,8 +534,8 @@ get_scancode(unsigned char * s, size_t max);
 char *
 get_word(FILE * input, ll_t * word_delims_list, ll_t * record_delims_list,
          ll_t * ignored_glyphs_list, char * utf8_buffer,
-         unsigned char * is_last, toggle_t * toggle, langinfo_t * langinfo,
-         win_t * win, limits_t * limits, misc_t * misc);
+         unsigned char * is_last, toggle_t * toggles, langinfo_t * langinfo,
+         win_t * win, limit_t * limits, misc_t * misc);
 
 void
 left_margin_putp(char * s, term_t * term, win_t * win);
@@ -578,12 +578,12 @@ long
 get_line_last_word(long line, long last_line);
 
 void
-move_left(win_t * win, term_t * term, toggle_t * toggle,
+move_left(win_t * win, term_t * term, toggle_t * toggles,
           search_data_t * search_data, langinfo_t * langinfo, long * nl,
           long last_line, char * tmp_word);
 
 void
-move_right(win_t * win, term_t * term, toggle_t * toggle,
+move_right(win_t * win, term_t * term, toggle_t * toggles,
            search_data_t * search_data, langinfo_t * langinfo, long * nl,
            long last_line, char * tmp_word);
 
@@ -594,17 +594,17 @@ int
 find_best_word_downward(long last_word, long s, long e);
 
 void
-move_up(win_t * win, term_t * term, toggle_t * toggle,
+move_up(win_t * win, term_t * term, toggle_t * toggles,
         search_data_t * search_data, langinfo_t * langinfo, long * nl,
         long page, long first_selectable, long last_line, char * tmp_word);
 
 void
-move_down(win_t * win, term_t * term, toggle_t * toggle,
+move_down(win_t * win, term_t * term, toggle_t * toggles,
           search_data_t * search_data, langinfo_t * langinfo, long * nl,
           long page, long last_selectable, long last_line, char * tmp_word);
 
 void
-init_main_ds(attr_t * init_attr, win_t * win, limits_t * limits,
-             timers_t * timers, toggle_t * toggle, misc_t * misc,
+init_main_ds(attr_t * init_attr, win_t * win, limit_t * limits,
+             ticker_t * timers, toggle_t * toggles, misc_t * misc,
              timeout_t * timeout, daccess_t * daccess);
 #endif

@@ -139,7 +139,7 @@ int       quiet_timeout = 0; /* 1 when we want no message to be displayed.  */
 /* Help message display. */
 /* ===================== */
 void
-help(win_t * win, term_t * term, long last_line, toggle_t * toggle)
+help(win_t * win, term_t * term, long last_line, toggle_t * toggles)
 {
   int index;      /* used to identify the objects long the help line. */
   int line   = 0; /* number of windows lines used by the help line.   */
@@ -178,7 +178,7 @@ help(win_t * win, term_t * term, long last_line, toggle_t * toggle)
 
   /* Remove the last two entries if tagging is not enabled. */
   /* """""""""""""""""""""""""""""""""""""""""""""""""""""" */
-  if (!toggle->taggable)
+  if (!toggles->taggable)
     entries_nb -= 2;
 
   /* Get the total length of the help line. */
@@ -420,7 +420,7 @@ apply_attr(term_t * term, attr_t attr)
 /* Returns 0 if OK, 1 if not.                            */
 /* ===================================================== */
 int
-ini_cb(win_t * win, term_t * term, limits_t * limits, timers_t * timers,
+ini_cb(win_t * win, term_t * term, limit_t * limits, ticker_t * timers,
        misc_t * misc, langinfo_t * langinfo, const char * section,
        const char * name, char * value)
 {
@@ -645,10 +645,10 @@ out:
 /* Jon Mayo April 2011.                                                     */
 /* ======================================================================== */
 int
-ini_load(const char * filename, win_t * win, term_t * term, limits_t * limits,
-         timers_t * timers, misc_t * misc, langinfo_t * langinfo,
-         int (*report)(win_t * win, term_t * term, limits_t * limits,
-                       timers_t * timers, misc_t * misc, langinfo_t * langinfo,
+ini_load(const char * filename, win_t * win, term_t * term, limit_t * limits,
+         ticker_t * timers, misc_t * misc, langinfo_t * langinfo,
+         int (*report)(win_t * win, term_t * term, limit_t * limits,
+                       ticker_t * timers, misc_t * misc, langinfo_t * langinfo,
                        const char * section, const char * name, char * value))
 {
   char   name[64]     = "";
@@ -838,12 +838,12 @@ sub_tst_new(void)
 /* Emit a small (visual) beep warn the user. */
 /* ========================================= */
 void
-my_beep(toggle_t * toggle)
+my_beep(toggle_t * toggles)
 {
   struct timespec ts, rem;
   int             rc;
 
-  if (!toggle->visual_bell)
+  if (!toggles->visual_bell)
     fputc('\a', stdout);
   else
   {
@@ -2111,7 +2111,7 @@ fail:
 /* Memory space for d must have been allocated before.          */
 /* ============================================================ */
 void
-strip_ansi_color(char * s, toggle_t * toggle, misc_t * misc)
+strip_ansi_color(char * s, toggle_t * toggles, misc_t * misc)
 {
   char * p   = s;
   long   len = strlen(s);
@@ -2129,7 +2129,7 @@ strip_ansi_color(char * s, toggle_t * toggle, misc_t * misc)
     /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
     else if (*s == 0x1b)
     {
-      if (toggle->blank_nonprintable && len > 1)
+      if (toggles->blank_nonprintable && len > 1)
         *s++ = ' ';
       else
         *s++ = misc->invalid_char_substitute;
@@ -2402,7 +2402,7 @@ get_bytes(FILE * input, char * utf8_buffer, ll_t * zapped_glyphs_list,
 /* dest must be long enough to contain the expanded string.               */
 /* ====================================================================== */
 size_t
-expand(char * src, char * dest, langinfo_t * langinfo, toggle_t * toggle,
+expand(char * src, char * dest, langinfo_t * langinfo, toggle_t * toggles,
        misc_t * misc)
 {
   char   c;
@@ -2503,7 +2503,7 @@ expand(char * src, char * dest, langinfo_t * langinfo, toggle_t * toggle,
           }
           else
           {
-            if (toggle->blank_nonprintable)
+            if (toggles->blank_nonprintable)
               *(ptr++) = ' ';
             else
             {
@@ -2537,8 +2537,8 @@ expand(char * src, char * dest, langinfo_t * langinfo, toggle_t * toggle,
 char *
 get_word(FILE * input, ll_t * word_delims_list, ll_t * record_delims_list,
          ll_t * zapped_glyphs_list, char * utf8_buffer, unsigned char * is_last,
-         toggle_t * toggle, langinfo_t * langinfo, win_t * win,
-         limits_t * limits, misc_t * misc)
+         toggle_t * toggles, langinfo_t * langinfo, win_t * win,
+         limit_t * limits, misc_t * misc)
 {
   char * temp = NULL;
   int    byte;
@@ -2745,7 +2745,7 @@ get_word(FILE * input, ll_t * word_delims_list, ll_t * record_delims_list,
 
   /* Remove the ANSI color escape sequences from the word. */
   /* """"""""""""""""""""""""""""""""""""""""""""""""""""" */
-  strip_ansi_color(temp, toggle, misc);
+  strip_ansi_color(temp, toggles, misc);
 
   return temp;
 }
@@ -3514,7 +3514,7 @@ disp_message(ll_t * message_lines_list, long message_max_width,
 /* Display the selection window. */
 /* ============================= */
 long
-disp_lines(win_t * win, toggle_t * toggle, long current, long count,
+disp_lines(win_t * win, toggle_t * toggles, long current, long count,
            search_mode_t search_mode, search_data_t * search_data,
            term_t * term, long last_line, char * tmp_word,
            langinfo_t * langinfo)
@@ -3651,7 +3651,7 @@ disp_lines(win_t * win, toggle_t * toggle, long current, long count,
       {
         /* If we have more than one line to display. */
         /* """"""""""""""""""""""""""""""""""""""""" */
-        if (display_bar && !toggle->no_scrollbar
+        if (display_bar && !toggles->no_scrollbar
             && (lines_disp > 1 || i < count - 1))
         {
           /* Display the next element of the scrollbar. */
@@ -3721,7 +3721,7 @@ disp_lines(win_t * win, toggle_t * toggle, long current, long count,
         /* """"""""""""""""""""""""""""""""""""""""""""""" */
         if (display_bar && line_nb_of_word_a[i] == last_line)
         {
-          if (!toggle->no_scrollbar)
+          if (!toggles->no_scrollbar)
           {
             if (win->max_lines > 1)
               right_margin_putp(sbar_down, "/", langinfo, term, win, lines_disp,
@@ -3733,7 +3733,7 @@ disp_lines(win_t * win, toggle_t * toggle, long current, long count,
         }
         else
         {
-          if (display_bar && !toggle->no_scrollbar)
+          if (display_bar && !toggles->no_scrollbar)
             right_margin_putp(sbar_arr_down, "v", langinfo, term, win,
                               lines_disp, win->offset);
           break;
@@ -4076,7 +4076,7 @@ select_starting_matches(win_t * win, term_t * term, search_data_t * search_data,
 /* Moves the cursor left. */
 /* ====================== */
 void
-move_left(win_t * win, term_t * term, toggle_t * toggle,
+move_left(win_t * win, term_t * term, toggle_t * toggles,
           search_data_t * search_data, langinfo_t * langinfo, long * nl,
           long last_line, char * tmp_word)
 {
@@ -4156,7 +4156,7 @@ move_left(win_t * win, term_t * term, toggle_t * toggle,
   }
 
   if (current != old_current)
-    *nl = disp_lines(win, toggle, current, count, search_mode, search_data,
+    *nl = disp_lines(win, toggles, current, count, search_mode, search_data,
                      term, last_line, tmp_word, langinfo);
 }
 
@@ -4164,7 +4164,7 @@ move_left(win_t * win, term_t * term, toggle_t * toggle,
 /* Moves the cursor right. */
 /* ======================= */
 void
-move_right(win_t * win, term_t * term, toggle_t * toggle,
+move_right(win_t * win, term_t * term, toggle_t * toggles,
            search_data_t * search_data, langinfo_t * langinfo, long * nl,
            long last_line, char * tmp_word)
 {
@@ -4257,7 +4257,7 @@ move_right(win_t * win, term_t * term, toggle_t * toggle,
   }
 
   if (current != old_current)
-    *nl = disp_lines(win, toggle, current, count, search_mode, search_data,
+    *nl = disp_lines(win, toggles, current, count, search_mode, search_data,
                      term, last_line, tmp_word, langinfo);
 }
 
@@ -4433,7 +4433,7 @@ find_best_word_downward(long last_word, long s, long e)
 /* Moves the cursor up. */
 /* ==================== */
 void
-move_up(win_t * win, term_t * term, toggle_t * toggle,
+move_up(win_t * win, term_t * term, toggle_t * toggles,
         search_data_t * search_data, langinfo_t * langinfo, long * nl,
         long page, long first_selectable, long last_line, char * tmp_word)
 {
@@ -4588,7 +4588,7 @@ move_up(win_t * win, term_t * term, toggle_t * toggle,
 
   /* Redisplay the window. */
   /* """"""""""""""""""""" */
-  *nl = disp_lines(win, toggle, current, count, search_mode, search_data, term,
+  *nl = disp_lines(win, toggles, current, count, search_mode, search_data, term,
                    last_line, tmp_word, langinfo);
 }
 
@@ -4596,7 +4596,7 @@ move_up(win_t * win, term_t * term, toggle_t * toggle,
 /* Moves the cursor down. */
 /* ====================== */
 void
-move_down(win_t * win, term_t * term, toggle_t * toggle,
+move_down(win_t * win, term_t * term, toggle_t * toggles,
           search_data_t * search_data, langinfo_t * langinfo, long * nl,
           long page, long last_selectable, long last_line, char * tmp_word)
 {
@@ -4753,7 +4753,7 @@ move_down(win_t * win, term_t * term, toggle_t * toggle,
 
   /* Redisplay the window. */
   /* """"""""""""""""""""" */
-  *nl = disp_lines(win, toggle, current, count, search_mode, search_data, term,
+  *nl = disp_lines(win, toggles, current, count, search_mode, search_data, term,
                    last_line, tmp_word, langinfo);
 }
 
@@ -4761,8 +4761,8 @@ move_down(win_t * win, term_t * term, toggle_t * toggle,
 /* Initialize some internal data structures. */
 /* ========================================= */
 void
-init_main_ds(attr_t * init_attr, win_t * win, limits_t * limits,
-             timers_t * timers, toggle_t * toggle, misc_t * misc,
+init_main_ds(attr_t * init_attr, win_t * win, limit_t * limits,
+             ticker_t * timers, toggle_t * toggles, misc_t * misc,
              timeout_t * timeout, daccess_t * daccess)
 {
   int i;
@@ -4830,17 +4830,17 @@ init_main_ds(attr_t * init_attr, win_t * win, limits_t * limits,
   timers->winch         = 7 * FREQ / 10;
   timers->direct_access = 6 * FREQ / 10;
 
-  /* Toggles initialization-> */
-  /* """"""""""""""""""""""" */
-  toggle->del_line            = 0;
-  toggle->enter_val_in_search = 0;
-  toggle->no_scrollbar        = 0;
-  toggle->blank_nonprintable  = 0;
-  toggle->keep_spaces         = 0;
-  toggle->taggable            = 0;
-  toggle->autotag             = 0;
-  toggle->pinable             = 0;
-  toggle->visual_bell         = 0;
+  /* toggles initialization-> */
+  /* """""""""""""""""""""""" */
+  toggles->del_line            = 0;
+  toggles->enter_val_in_search = 0;
+  toggles->no_scrollbar        = 0;
+  toggles->blank_nonprintable  = 0;
+  toggles->keep_spaces         = 0;
+  toggles->taggable            = 0;
+  toggles->autotag             = 0;
+  toggles->pinable             = 0;
+  toggles->visual_bell         = 0;
 
   /* misc default values-> */
   /* """""""""""""""""""" */
@@ -5061,22 +5061,22 @@ toggle_action(char * ctx_name, char * opt_name, char * param, int nb_values,
               char ** values, int nb_opt_data, void ** opt_data,
               int nb_ctx_data, void ** ctx_data)
 {
-  toggle_t * toggle = opt_data[0];
+  toggle_t * toggles = opt_data[0];
 
   if (strcmp(opt_name, "clean") == 0)
-    toggle->del_line = 1;
+    toggles->del_line = 1;
   else if (strcmp(opt_name, "keep_spaces") == 0)
-    toggle->keep_spaces = 1;
+    toggles->keep_spaces = 1;
   else if (strcmp(opt_name, "visual_bell") == 0)
-    toggle->visual_bell = 1;
+    toggles->visual_bell = 1;
   else if (strcmp(opt_name, "validate_in_search_mode") == 0)
-    toggle->enter_val_in_search = 1;
+    toggles->enter_val_in_search = 1;
   else if (strcmp(opt_name, "blank_nonprintable") == 0)
-    toggle->blank_nonprintable = 1;
+    toggles->blank_nonprintable = 1;
   else if (strcmp(opt_name, "no_scoll_bar") == 0)
-    toggle->no_scrollbar = 1;
+    toggles->no_scrollbar = 1;
   else if (strcmp(opt_name, "auto_tag") == 0)
-    toggle->autotag = 1;
+    toggles->autotag = 1;
 }
 
 void
@@ -5504,12 +5504,12 @@ tag_mode_action(char * ctx_name, char * opt_name, char * param, int nb_values,
                 char ** values, int nb_opt_data, void ** opt_data,
                 int nb_ctx_data, void ** ctx_data)
 {
-  toggle_t *   toggle   = opt_data[0];
+  toggle_t *   toggles  = opt_data[0];
   win_t *      win      = opt_data[1];
   langinfo_t * langinfo = opt_data[2];
   misc_t *     misc     = opt_data[3];
 
-  toggle->taggable = 1;
+  toggles->taggable = 1;
 
   if (nb_values == 1)
   {
@@ -5523,13 +5523,13 @@ pin_mode_action(char * ctx_name, char * opt_name, char * param, int nb_values,
                 char ** values, int nb_opt_data, void ** opt_data,
                 int nb_ctx_data, void ** ctx_data)
 {
-  toggle_t *   toggle   = opt_data[0];
+  toggle_t *   toggles  = opt_data[0];
   win_t *      win      = opt_data[1];
   langinfo_t * langinfo = opt_data[2];
   misc_t *     misc     = opt_data[3];
 
-  toggle->taggable = 1;
-  toggle->pinable  = 1;
+  toggles->taggable = 1;
+  toggles->pinable  = 1;
 
   if (nb_values == 1)
   {
@@ -6134,10 +6134,10 @@ main(int argc, char * argv[])
 
   long     last_line = 0; /* last logical line number (from 0).              */
   win_t    win;
-  limits_t limits; /* set of various limitations.                            */
-  timers_t timers; /* timers contents.                                       */
-  misc_t   misc;   /* misc contents.                                         */
-  toggle_t toggle; /* set of binary indicators.                              */
+  limit_t  limits;  /* set of various limitations.                           */
+  ticker_t timers;  /* timers contents.                                      */
+  misc_t   misc;    /* misc contents.                                        */
+  toggle_t toggles; /* set of binary indicators.                             */
 
   int    old_fd0; /* backups of the old stdin file descriptor.               */
   int    old_fd1; /* backups of the old stdout file descriptor.              */
@@ -6239,7 +6239,7 @@ main(int argc, char * argv[])
 
   /* Initialize some internal data structures. */
   /* """"""""""""""""""""""""""""""""""""""""" */
-  init_main_ds(&init_attr, &win, &limits, &timers, &toggle, &misc, &timeout,
+  init_main_ds(&init_attr, &win, &limits, &timers, &toggles, &misc, &timeout,
                &daccess);
 
   /* direct access variable initialization. */
@@ -6602,15 +6602,15 @@ main(int argc, char * argv[])
   /* ctxopt actions. */
   /* """"""""""""""" */
 
-  ctxopt_add_opt_settings(actions, "auto_tag", toggle_action, &toggle,
+  ctxopt_add_opt_settings(actions, "auto_tag", toggle_action, &toggles,
                           (char *)0);
   ctxopt_add_opt_settings(actions, "invalid_character", invalid_char_action,
                           &misc, (char *)0);
-  ctxopt_add_opt_settings(actions, "blank_nonprintable", toggle_action, &toggle,
-                          (char *)0);
+  ctxopt_add_opt_settings(actions, "blank_nonprintable", toggle_action,
+                          &toggles, (char *)0);
   ctxopt_add_opt_settings(actions, "center_mode", center_mode_action, &win,
                           (char *)0);
-  ctxopt_add_opt_settings(actions, "clean", toggle_action, &toggle, (char *)0);
+  ctxopt_add_opt_settings(actions, "clean", toggle_action, &toggles, (char *)0);
   ctxopt_add_opt_settings(actions, "column_mode", column_mode_action, &win,
                           (char *)0);
   ctxopt_add_opt_settings(actions, "line_mode", line_mode_action, &win,
@@ -6632,10 +6632,10 @@ main(int argc, char * argv[])
   ctxopt_add_opt_settings(actions, "help", help_action, (char *)0);
   ctxopt_add_opt_settings(actions, "long_help", long_help_action, (char *)0);
   ctxopt_add_opt_settings(actions, "usage", usage_action, (char *)0);
-  ctxopt_add_opt_settings(actions, "keep_spaces", toggle_action, &toggle,
+  ctxopt_add_opt_settings(actions, "keep_spaces", toggle_action, &toggles,
                           (char *)0);
   ctxopt_add_opt_settings(actions, "lines", lines_action, &win, (char *)0);
-  ctxopt_add_opt_settings(actions, "no_scoll_bar", toggle_action, &toggle,
+  ctxopt_add_opt_settings(actions, "no_scoll_bar", toggle_action, &toggles,
                           (char *)0);
   ctxopt_add_opt_settings(actions, "start_pattern", set_pattern_action,
                           &pre_selection_index, &langinfo, &misc, (char *)0);
@@ -6644,9 +6644,9 @@ main(int argc, char * argv[])
   ctxopt_add_opt_settings(actions, "int", int_action, &int_string,
                           &int_as_in_shell, &langinfo, &misc, (char *)0);
   ctxopt_add_opt_settings(actions, "validate_in_search_mode", toggle_action,
-                          &toggle, (char *)0);
+                          &toggles, (char *)0);
   ctxopt_add_opt_settings(actions, "version", version_action, (char *)0);
-  ctxopt_add_opt_settings(actions, "visual_bell", toggle_action, &toggle,
+  ctxopt_add_opt_settings(actions, "visual_bell", toggle_action, &toggles,
                           (char *)0);
   ctxopt_add_opt_settings(actions, "wide_mode", wide_mode_action, &win,
                           (char *)0);
@@ -6687,9 +6687,9 @@ main(int argc, char * argv[])
                           &langinfo, &misc, (char *)0);
   ctxopt_add_opt_settings(actions, "zapped_glyphs", set_pattern_action, &zg,
                           &langinfo, &misc, (char *)0);
-  ctxopt_add_opt_settings(actions, "tag_mode", tag_mode_action, &toggle, &win,
+  ctxopt_add_opt_settings(actions, "tag_mode", tag_mode_action, &toggles, &win,
                           &langinfo, &misc, (char *)0);
-  ctxopt_add_opt_settings(actions, "pin_mode", pin_mode_action, &toggle, &win,
+  ctxopt_add_opt_settings(actions, "pin_mode", pin_mode_action, &toggles, &win,
                           &langinfo, &misc, (char *)0);
   ctxopt_add_opt_settings(actions, "search_method", search_method_action, &misc,
                           (char *)0);
@@ -7634,7 +7634,7 @@ main(int argc, char * argv[])
   /* - The first part of the -C option is done                    */
   /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
   while ((word = get_word(input_file, word_delims_list, record_delims_list,
-                          zapped_glyphs_list, utf8_buffer, &is_last, &toggle,
+                          zapped_glyphs_list, utf8_buffer, &is_last, &toggles,
                           &langinfo, &win, &limits, &misc))
          != NULL)
   {
@@ -8461,7 +8461,7 @@ main(int argc, char * argv[])
     word_len = strlen(word->str);
 
     expanded_word = xmalloc(5 * word_len + 1);
-    len           = expand(word->str, expanded_word, &langinfo, &toggle, &misc);
+    len = expand(word->str, expanded_word, &langinfo, &toggles, &misc);
 
     /* Update it if needed. */
     /* '''''''''''''''''''' */
@@ -9019,7 +9019,7 @@ main(int argc, char * argv[])
   /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
   get_cursor_position(&term.curs_line, &term.curs_column);
 
-  nl = disp_lines(&win, &toggle, current, count, search_mode, &search_data,
+  nl = disp_lines(&win, &toggles, current, count, search_mode, &search_data,
                   &term, last_line, tmp_word, &langinfo);
 
   /* Determine the number of lines to move the cursor up if the window */
@@ -9112,7 +9112,7 @@ main(int argc, char * argv[])
       last_line = build_metadata(&term, count, &win);
 
       help_mode = 0;
-      nl = disp_lines(&win, &toggle, current, count, search_mode, &search_data,
+      nl = disp_lines(&win, &toggles, current, count, search_mode, &search_data,
                       &term, last_line, tmp_word, &langinfo);
     }
 
@@ -9137,7 +9137,7 @@ main(int argc, char * argv[])
 
       search_mode = NONE;
 
-      nl = disp_lines(&win, &toggle, current, count, search_mode, &search_data,
+      nl = disp_lines(&win, &toggles, current, count, search_mode, &search_data,
                       &term, last_line, tmp_word, &langinfo);
     }
 
@@ -9247,7 +9247,7 @@ main(int argc, char * argv[])
       disp_message(message_lines_list, message_max_width, message_max_len,
                    &term, &win);
 
-      nl = disp_lines(&win, &toggle, current, count, search_mode, &search_data,
+      nl = disp_lines(&win, &toggles, current, count, search_mode, &search_data,
                       &term, last_line, tmp_word, &langinfo);
 
       /* Determine the number of lines to move the cursor up if the window  */
@@ -9429,7 +9429,7 @@ main(int argc, char * argv[])
                   win.first_column = word_a[current].start;
             }
 
-            nl = disp_lines(&win, &toggle, current, count, search_mode,
+            nl = disp_lines(&win, &toggles, current, count, search_mode,
                             &search_data, &term, last_line, tmp_word,
                             &langinfo);
             break;
@@ -9504,7 +9504,7 @@ main(int argc, char * argv[])
               }
             }
 
-            nl = disp_lines(&win, &toggle, current, count, search_mode,
+            nl = disp_lines(&win, &toggles, current, count, search_mode,
                             &search_data, &term, last_line, tmp_word,
                             &langinfo);
             break;
@@ -9591,7 +9591,7 @@ main(int argc, char * argv[])
             search_data.only_ending   = 0;
 
             if (help_mode)
-              nl = disp_lines(&win, &toggle, current, count, search_mode,
+              nl = disp_lines(&win, &toggles, current, count, search_mode,
                               &search_data, &term, last_line, tmp_word,
                               &langinfo);
 
@@ -9609,7 +9609,7 @@ main(int argc, char * argv[])
             {
               clean_matches(&search_data, word_real_max_size);
 
-              nl = disp_lines(&win, &toggle, current, count, search_mode,
+              nl = disp_lines(&win, &toggles, current, count, search_mode,
                               &search_data, &term, last_line, tmp_word,
                               &langinfo);
             }
@@ -9635,7 +9635,7 @@ main(int argc, char * argv[])
             for (i = 0; i < win.message_lines; i++)
               tputs(TPARM1(cursor_up), 1, outch);
 
-            if (toggle.del_line)
+            if (toggles.del_line)
             {
               tputs(TPARM1(clr_eol), 1, outch);
               tputs(TPARM1(clr_bol), 1, outch);
@@ -9684,7 +9684,7 @@ main(int argc, char * argv[])
           if (current < win.start || current > win.end)
             last_line = build_metadata(&term, count, &win);
 
-          nl = disp_lines(&win, &toggle, current, count, search_mode,
+          nl = disp_lines(&win, &toggles, current, count, search_mode,
                           &search_data, &term, last_line, tmp_word, &langinfo);
           break;
 
@@ -9710,7 +9710,7 @@ main(int argc, char * argv[])
             /* """""""""""""""""""""""""""""""" */
             set_new_first_column(&win, &term);
 
-            nl = disp_lines(&win, &toggle, current, count, search_mode,
+            nl = disp_lines(&win, &toggles, current, count, search_mode,
                             &search_data, &term, last_line, tmp_word,
                             &langinfo);
           }
@@ -9738,7 +9738,7 @@ main(int argc, char * argv[])
           /* """""""""""""""""""""""""""""""" */
           set_new_first_column(&win, &term);
 
-          nl = disp_lines(&win, &toggle, current, count, search_mode,
+          nl = disp_lines(&win, &toggles, current, count, search_mode,
                           &search_data, &term, last_line, tmp_word, &langinfo);
           break;
 
@@ -9770,7 +9770,7 @@ main(int argc, char * argv[])
             /* """""""""""""""""""""""""""""""" */
             set_new_first_column(&win, &term);
 
-            nl = disp_lines(&win, &toggle, current, count, search_mode,
+            nl = disp_lines(&win, &toggles, current, count, search_mode,
                             &search_data, &term, last_line, tmp_word,
                             &langinfo);
           }
@@ -9805,7 +9805,7 @@ main(int argc, char * argv[])
           /* """""""""""""""""""""""""""""""" */
           set_new_first_column(&win, &term);
 
-          nl = disp_lines(&win, &toggle, current, count, search_mode,
+          nl = disp_lines(&win, &toggles, current, count, search_mode,
                           &search_data, &term, last_line, tmp_word, &langinfo);
           break;
 
@@ -9825,7 +9825,7 @@ main(int argc, char * argv[])
           long      i; /* Generic index in this block. */
 
           if (help_mode)
-            nl = disp_lines(&win, &toggle, current, count, search_mode,
+            nl = disp_lines(&win, &toggles, current, count, search_mode,
                             &search_data, &term, last_line, tmp_word,
                             &langinfo);
 
@@ -9839,18 +9839,18 @@ main(int argc, char * argv[])
             search_data.only_starting = 0;
             search_data.only_ending   = 0;
 
-            nl = disp_lines(&win, &toggle, current, count, search_mode,
+            nl = disp_lines(&win, &toggles, current, count, search_mode,
                             &search_data, &term, last_line, tmp_word,
                             &langinfo);
 
-            if (!toggle.enter_val_in_search)
+            if (!toggles.enter_val_in_search)
               break;
           }
 
           /* Erase or jump after the window before printing the */
           /* selected string.                                   */
           /* """""""""""""""""""""""""""""""""""""""""""""""""" */
-          if (toggle.del_line)
+          if (toggles.del_line)
           {
             for (i = 0; i < win.message_lines; i++)
               tputs(TPARM1(cursor_up), 1, outch);
@@ -9886,7 +9886,7 @@ main(int argc, char * argv[])
             char * num_str;
             char * str;
 
-            if (toggle.taggable)
+            if (toggles.taggable)
             {
               ll_t *      output_list = ll_new();
               ll_node_t * node;
@@ -9894,7 +9894,7 @@ main(int argc, char * argv[])
               /* When using -P, updates the tagging order of this word to */
               /* make sure that the output will be correctly sorted.      */
               /* """""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-              if (toggle.pinable)
+              if (toggles.pinable)
                 word_a[current].tag_order = next_tag_nb++;
 
               for (wi = 0; wi < count; wi++)
@@ -9904,7 +9904,7 @@ main(int argc, char * argv[])
                   /* If the -p option is not used we do not take into */
                   /* account an untagged word under the cursor.       */
                   /* """""""""""""""""""""""""""""""""""""""""""""""" */
-                  if (wi == current && tagged_words > 0 && !toggle.autotag
+                  if (wi == current && tagged_words > 0 && !toggles.autotag
                       && !word_a[wi].is_tagged)
                     continue;
 
@@ -9938,7 +9938,7 @@ main(int argc, char * argv[])
 
                   /* Trim the spaces if -k is not given. */
                   /* """"""""""""""""""""""""""""""""""" */
-                  if (!toggle.keep_spaces)
+                  if (!toggles.keep_spaces)
                   {
                     ltrim(output_node->output_str, " \t");
                     rtrim(output_node->output_str, " \t", 0);
@@ -9955,7 +9955,7 @@ main(int argc, char * argv[])
 
               /* If -P is in use, then sort the output list. */
               /* """"""""""""""""""""""""""""""""""""""""""" */
-              if (toggle.pinable)
+              if (toggles.pinable)
                 ll_sort(output_list, tag_comp, tag_swap);
 
               /* And print them. */
@@ -10021,7 +10021,7 @@ main(int argc, char * argv[])
 
               /* Trim the spaces if -k is not given. */
               /* """"""""""""""""""""""""""""""""""" */
-              if (!toggle.keep_spaces)
+              if (!toggles.keep_spaces)
               {
                 ltrim(output_str, " \t");
                 rtrim(output_str, " \t", 0);
@@ -10092,7 +10092,7 @@ main(int argc, char * argv[])
             win.first_column = 0;
             set_new_first_column(&win, &term);
 
-            nl = disp_lines(&win, &toggle, current, count, search_mode,
+            nl = disp_lines(&win, &toggles, current, count, search_mode,
                             &search_data, &term, last_line, tmp_word,
                             &langinfo);
           }
@@ -10109,7 +10109,7 @@ main(int argc, char * argv[])
 
         case 'h':
           if (search_mode == NONE)
-            move_left(&win, &term, &toggle, &search_data, &langinfo, &nl,
+            move_left(&win, &term, &toggles, &search_data, &langinfo, &nl,
                       last_line, tmp_word);
           else
             goto special_cmds_when_searching;
@@ -10135,7 +10135,7 @@ main(int argc, char * argv[])
 
             set_new_first_column(&win, &term);
 
-            nl = disp_lines(&win, &toggle, current, count, search_mode,
+            nl = disp_lines(&win, &toggles, current, count, search_mode,
                             &search_data, &term, last_line, tmp_word,
                             &langinfo);
           }
@@ -10152,7 +10152,7 @@ main(int argc, char * argv[])
 
         case 'l':
           if (search_mode == NONE)
-            move_right(&win, &term, &toggle, &search_data, &langinfo, &nl,
+            move_right(&win, &term, &toggles, &search_data, &langinfo, &nl,
                        last_line, tmp_word);
           else
             goto special_cmds_when_searching;
@@ -10181,7 +10181,7 @@ main(int argc, char * argv[])
 
         case 'k':
           if (search_mode == NONE)
-            move_up(&win, &term, &toggle, &search_data, &langinfo, &nl, page,
+            move_up(&win, &term, &toggles, &search_data, &langinfo, &nl, page,
                     first_selectable, last_line, tmp_word);
           else
             goto special_cmds_when_searching;
@@ -10222,7 +10222,7 @@ main(int argc, char * argv[])
             win.first_column = word_a[pos].start;
           }
 
-          nl = disp_lines(&win, &toggle, current, count, search_mode,
+          nl = disp_lines(&win, &toggles, current, count, search_mode,
                           &search_data, &term, last_line, tmp_word, &langinfo);
           break;
 
@@ -10248,7 +10248,7 @@ main(int argc, char * argv[])
 
         case 'j':
           if (search_mode == NONE)
-            move_down(&win, &term, &toggle, &search_data, &langinfo, &nl, page,
+            move_down(&win, &term, &toggles, &search_data, &langinfo, &nl, page,
                       last_selectable, last_line, tmp_word);
           else
             goto special_cmds_when_searching;
@@ -10288,7 +10288,7 @@ main(int argc, char * argv[])
             win.first_column = word_a[pos].start;
           }
 
-          nl = disp_lines(&win, &toggle, current, count, search_mode,
+          nl = disp_lines(&win, &toggles, current, count, search_mode,
                           &search_data, &term, last_line, tmp_word, &langinfo);
           break;
 
@@ -10325,7 +10325,7 @@ main(int argc, char * argv[])
               clean_matches(&search_data, word_real_max_size);
             }
 
-            nl = disp_lines(&win, &toggle, current, count, search_mode,
+            nl = disp_lines(&win, &toggles, current, count, search_mode,
                             &search_data, &term, last_line, tmp_word,
                             &langinfo);
           }
@@ -10355,7 +10355,7 @@ main(int argc, char * argv[])
               clean_matches(&search_data, word_real_max_size);
             }
 
-            nl = disp_lines(&win, &toggle, current, count, search_mode,
+            nl = disp_lines(&win, &toggles, current, count, search_mode,
                             &search_data, &term, last_line, tmp_word,
                             &langinfo);
           }
@@ -10385,7 +10385,7 @@ main(int argc, char * argv[])
               clean_matches(&search_data, word_real_max_size);
             }
 
-            nl = disp_lines(&win, &toggle, current, count, search_mode,
+            nl = disp_lines(&win, &toggles, current, count, search_mode,
                             &search_data, &term, last_line, tmp_word,
                             &langinfo);
             break;
@@ -10396,17 +10396,17 @@ main(int argc, char * argv[])
           break;
 
         kins:
-          if (toggle.taggable)
+          if (toggles.taggable)
           {
             if (word_a[current].is_tagged == 0)
             {
               tagged_words++;
               word_a[current].is_tagged = 1;
 
-              if (toggle.pinable)
+              if (toggles.pinable)
                 word_a[current].tag_order = next_tag_nb++;
 
-              nl = disp_lines(&win, &toggle, current, count, search_mode,
+              nl = disp_lines(&win, &toggles, current, count, search_mode,
                               &search_data, &term, last_line, tmp_word,
                               &langinfo);
             }
@@ -10414,14 +10414,14 @@ main(int argc, char * argv[])
           break;
 
         kdel:
-          if (toggle.taggable)
+          if (toggles.taggable)
           {
             if (word_a[current].is_tagged == 1)
             {
               word_a[current].is_tagged = 0;
               tagged_words--;
 
-              nl = disp_lines(&win, &toggle, current, count, search_mode,
+              nl = disp_lines(&win, &toggles, current, count, search_mode,
                               &search_data, &term, last_line, tmp_word,
                               &langinfo);
             }
@@ -10431,7 +10431,7 @@ main(int argc, char * argv[])
         case 't':
           if (search_mode == NONE)
           {
-            if (toggle.taggable)
+            if (toggles.taggable)
             {
               if (word_a[current].is_tagged)
               {
@@ -10443,10 +10443,10 @@ main(int argc, char * argv[])
                 word_a[current].is_tagged = 1;
                 tagged_words++;
 
-                if (toggle.pinable)
+                if (toggles.pinable)
                   word_a[current].tag_order = next_tag_nb++;
               }
-              nl = disp_lines(&win, &toggle, current, count, search_mode,
+              nl = disp_lines(&win, &toggles, current, count, search_mode,
                               &search_data, &term, last_line, tmp_word,
                               &langinfo);
             }
@@ -10458,7 +10458,7 @@ main(int argc, char * argv[])
         case 'T':
           if (search_mode == NONE)
           {
-            if (toggle.taggable)
+            if (toggles.taggable)
             {
               long i, n;
 
@@ -10471,11 +10471,11 @@ main(int argc, char * argv[])
                   word_a[n].is_tagged = 1;
                   tagged_words++;
 
-                  if (toggle.pinable)
+                  if (toggles.pinable)
                     word_a[n].tag_order = next_tag_nb++;
                 }
               }
-              nl = disp_lines(&win, &toggle, current, count, search_mode,
+              nl = disp_lines(&win, &toggles, current, count, search_mode,
                               &search_data, &term, last_line, tmp_word,
                               &langinfo);
             }
@@ -10487,7 +10487,7 @@ main(int argc, char * argv[])
         case 'U':
           if (search_mode == NONE)
           {
-            if (toggle.taggable)
+            if (toggles.taggable)
             {
               long i, n;
 
@@ -10501,7 +10501,7 @@ main(int argc, char * argv[])
                   tagged_words--;
                 }
               }
-              nl = disp_lines(&win, &toggle, current, count, search_mode,
+              nl = disp_lines(&win, &toggles, current, count, search_mode,
                               &search_data, &term, last_line, tmp_word,
                               &langinfo);
             }
@@ -10552,7 +10552,7 @@ main(int argc, char * argv[])
               /* """""""""""""""""""""""""""""""" */
               set_new_first_column(&win, &term);
 
-              nl = disp_lines(&win, &toggle, current, count, search_mode,
+              nl = disp_lines(&win, &toggles, current, count, search_mode,
                               &search_data, &term, last_line, tmp_word,
                               &langinfo);
             }
@@ -10569,7 +10569,7 @@ main(int argc, char * argv[])
                 /* """""""""""""""""""""""""""""""" */
                 set_new_first_column(&win, &term);
 
-                nl = disp_lines(&win, &toggle, current, count, search_mode,
+                nl = disp_lines(&win, &toggles, current, count, search_mode,
                                 &search_data, &term, last_line, tmp_word,
                                 &langinfo);
               }
@@ -10630,13 +10630,13 @@ main(int argc, char * argv[])
 
                 matches_count = 0;
 
-                nl = disp_lines(&win, &toggle, current, count, search_mode,
+                nl = disp_lines(&win, &toggles, current, count, search_mode,
                                 &search_data, &term, last_line, tmp_word,
                                 &langinfo);
               }
             }
             else
-              my_beep(&toggle);
+              my_beep(&toggles);
 
             if (search_data.utf8_len > 0)
               goto special_cmds_when_searching;
@@ -10667,7 +10667,7 @@ main(int argc, char * argv[])
           /* """""""""" */
           if (search_mode == NONE)
           {
-            help(&win, &term, last_line, &toggle);
+            help(&win, &term, last_line, &toggles);
             help_mode = 1;
 
             /* Arm the help timer. */
@@ -10750,7 +10750,7 @@ main(int argc, char * argv[])
               {
                 if (search_data.len == old_len && matches_count == 1
                     && buffer[0] != 0x08 && buffer[0] != 0x7f)
-                  my_beep(&toggle);
+                  my_beep(&toggles);
                 else
                 {
                   /* Adjust the bitmap to the ending version. */
@@ -10766,14 +10766,14 @@ main(int argc, char * argv[])
                   /* """""""""""""""""""""""""""""""" */
                   set_new_first_column(&win, &term);
 
-                  nl = disp_lines(&win, &toggle, current, count, search_mode,
+                  nl = disp_lines(&win, &toggles, current, count, search_mode,
                                   &search_data, &term, last_line, tmp_word,
                                   &langinfo);
                 }
               }
               else
               {
-                my_beep(&toggle);
+                my_beep(&toggles);
 
                 search_data.len                  = old_len;
                 search_data.utf8_len             = old_utf8_len;
@@ -10843,7 +10843,7 @@ main(int argc, char * argv[])
                   sub_tst_data = (sub_tst_t *)(node->data);
                   if (sub_tst_data->count == 0)
                   {
-                    my_beep(&toggle);
+                    my_beep(&toggles);
 
                     search_data.len      = 0;
                     search_data.utf8_len = 0;
@@ -10890,7 +10890,7 @@ main(int argc, char * argv[])
                       if (search_data.fuzzy_err_pos == -1)
                         search_data.fuzzy_err_pos = search_data.utf8_len;
 
-                      my_beep(&toggle);
+                      my_beep(&toggles);
 
                       search_data.len                  = old_len;
                       search_data.utf8_len             = old_utf8_len;
@@ -10898,7 +10898,7 @@ main(int argc, char * argv[])
                     }
                   }
                   else
-                    my_beep(&toggle);
+                    my_beep(&toggles);
                 }
               }
               free(w);
@@ -10935,12 +10935,12 @@ main(int argc, char * argv[])
                 /* """""""""""""""""""""""""""""""" */
                 set_new_first_column(&win, &term);
 
-                nl = disp_lines(&win, &toggle, current, count, search_mode,
+                nl = disp_lines(&win, &toggles, current, count, search_mode,
                                 &search_data, &term, last_line, tmp_word,
                                 &langinfo);
               }
               else
-                my_beep(&toggle);
+                my_beep(&toggles);
             }
             else /* SUBSTRING. */
             {
@@ -10993,7 +10993,7 @@ main(int argc, char * argv[])
               {
                 if (search_data.len == old_len && matches_count == 1
                     && buffer[0] != 0x08 && buffer[0] != 0x7f)
-                  my_beep(&toggle);
+                  my_beep(&toggles);
                 else
                 {
                   if (search_data.only_starting)
@@ -11014,14 +11014,14 @@ main(int argc, char * argv[])
                   /* """""""""""""""""""""""""""""""" */
                   set_new_first_column(&win, &term);
 
-                  nl = disp_lines(&win, &toggle, current, count, search_mode,
+                  nl = disp_lines(&win, &toggles, current, count, search_mode,
                                   &search_data, &term, last_line, tmp_word,
                                   &langinfo);
                 }
               }
               else
               {
-                my_beep(&toggle);
+                my_beep(&toggles);
 
                 search_data.len = old_len;
                 search_data.utf8_len--;
