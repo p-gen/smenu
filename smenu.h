@@ -603,4 +603,8 @@ move_down(win_t * win, term_t * term, toggle_t * toggle,
           search_data_t * search_data, langinfo_t * langinfo, long * nl,
           long page, long last_selectable, long last_line, char * tmp_word);
 
+void
+init_main_ds(attr_t * init_attr, win_t * win, limits_t * limits,
+             timers_t * timers, toggle_t * toggle, misc_t * misc,
+             timeout_t * timeout, daccess_t * daccess);
 #endif

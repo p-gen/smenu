@@ -4757,6 +4757,122 @@ move_down(win_t * win, term_t * term, toggle_t * toggle,
                    last_line, tmp_word, langinfo);
 }
 
+/* ========================================= */
+/* Initialize some internal data structures. */
+/* ========================================= */
+void
+init_main_ds(attr_t * init_attr, win_t * win, limits_t * limits,
+             timers_t * timers, toggle_t * toggle, misc_t * misc,
+             timeout_t * timeout, daccess_t * daccess)
+{
+  int i;
+
+  /* Initial attribute settings-> */
+  /* """"""""""""""""""""""""""" */
+  init_attr->is_set    = UNSET;
+  init_attr->fg        = -1;
+  init_attr->bg        = -1;
+  init_attr->bold      = -1;
+  init_attr->dim       = -1;
+  init_attr->reverse   = -1;
+  init_attr->standout  = -1;
+  init_attr->underline = -1;
+  init_attr->italic    = -1;
+
+  /* Win fields initialization-> */
+  /* """""""""""""""""""""""""" */
+  win->max_lines       = 5;
+  win->message_lines   = 0;
+  win->asked_max_lines = -1;
+  win->center          = 0;
+  win->max_cols        = 0;
+  win->col_sep         = 0;
+  win->wide            = 0;
+  win->tab_mode        = 0;
+  win->col_mode        = 0;
+  win->line_mode       = 0;
+  win->first_column    = 0;
+  win->real_max_width  = 0;
+
+  win->cursor_attr           = *init_attr;
+  win->cursor_on_tag_attr    = *init_attr;
+  win->bar_attr              = *init_attr;
+  win->shift_attr            = *init_attr;
+  win->message_attr          = *init_attr;
+  win->search_field_attr     = *init_attr;
+  win->search_text_attr      = *init_attr;
+  win->search_err_field_attr = *init_attr;
+  win->search_err_text_attr  = *init_attr;
+  win->match_field_attr      = *init_attr;
+  win->match_text_attr       = *init_attr;
+  win->match_err_field_attr  = *init_attr;
+  win->match_err_text_attr   = *init_attr;
+  win->include_attr          = *init_attr;
+  win->exclude_attr          = *init_attr;
+  win->tag_attr              = *init_attr;
+  win->daccess_attr          = *init_attr;
+
+  win->sel_sep = NULL;
+
+  for (i = 0; i < 5; i++)
+    win->special_attr[i] = *init_attr;
+
+  /* Default limits initialization-> */
+  /* """""""""""""""""""""""""""""" */
+  limits->words       = 32767;
+  limits->cols        = 256;
+  limits->word_length = 512;
+
+  /* Default timers in 1/10 s-> */
+  /* """"""""""""""""""""""""" */
+  timers->search        = 100 * FREQ / 10;
+  timers->help          = 150 * FREQ / 10;
+  timers->winch         = 7 * FREQ / 10;
+  timers->direct_access = 6 * FREQ / 10;
+
+  /* Toggles initialization-> */
+  /* """"""""""""""""""""""" */
+  toggle->del_line            = 0;
+  toggle->enter_val_in_search = 0;
+  toggle->no_scrollbar        = 0;
+  toggle->blank_nonprintable  = 0;
+  toggle->keep_spaces         = 0;
+  toggle->taggable            = 0;
+  toggle->autotag             = 0;
+  toggle->pinable             = 0;
+  toggle->visual_bell         = 0;
+
+  /* misc default values-> */
+  /* """""""""""""""""""" */
+  misc->default_search_method = NONE;
+  misc->ignore_quotes         = 0;
+
+  /* Set the default timeout to 0 (no expiration). */
+  /* """"""""""""""""""""""""""""""""""""""""""""" */
+  timeout->initial_value = 0;
+  timeout->remain        = 0;
+  timeout->reached       = 0;
+
+  /* Initialize Direct Access settings-> */
+  /* """""""""""""""""""""""""""""""""" */
+  daccess->mode       = DA_TYPE_NONE;
+  daccess->left       = xstrdup(" ");
+  daccess->right      = xstrdup(")");
+  daccess->alignment  = 'r';
+  daccess->padding    = 'a';
+  daccess->head       = 'k'; /* Keep by default. */
+  daccess->length     = -2;
+  daccess->flength    = 0;
+  daccess->offset     = 0;
+  daccess->plus       = 0;
+  daccess->size       = 0;
+  daccess->ignore     = 0;
+  daccess->follow     = 'y';
+  daccess->missing    = 'y';
+  daccess->num_sep    = NULL;
+  daccess->def_number = -1;
+}
+
 /* *********************************** */
 /* ctxopt contexts callback functions. */
 /* *********************************** */
@@ -6121,83 +6237,10 @@ main(int argc, char * argv[])
   int row; /* absolute line position in terminal (1...)   */
   int col; /* absolute column position in terminal (1...) */
 
-  /* Win fields initialization. */
-  /* """""""""""""""""""""""""" */
-  win.max_lines       = 5;
-  win.message_lines   = 0;
-  win.asked_max_lines = -1;
-  win.center          = 0;
-  win.max_cols        = 0;
-  win.col_sep         = 0;
-  win.wide            = 0;
-  win.tab_mode        = 0;
-  win.col_mode        = 0;
-  win.line_mode       = 0;
-  win.first_column    = 0;
-  win.real_max_width  = 0;
-
-  init_attr.is_set    = UNSET;
-  init_attr.fg        = -1;
-  init_attr.bg        = -1;
-  init_attr.bold      = -1;
-  init_attr.dim       = -1;
-  init_attr.reverse   = -1;
-  init_attr.standout  = -1;
-  init_attr.underline = -1;
-  init_attr.italic    = -1;
-
-  win.cursor_attr           = init_attr;
-  win.cursor_on_tag_attr    = init_attr;
-  win.bar_attr              = init_attr;
-  win.shift_attr            = init_attr;
-  win.message_attr          = init_attr;
-  win.search_field_attr     = init_attr;
-  win.search_text_attr      = init_attr;
-  win.search_err_field_attr = init_attr;
-  win.search_err_text_attr  = init_attr;
-  win.match_field_attr      = init_attr;
-  win.match_text_attr       = init_attr;
-  win.match_err_field_attr  = init_attr;
-  win.match_err_text_attr   = init_attr;
-  win.include_attr          = init_attr;
-  win.exclude_attr          = init_attr;
-  win.tag_attr              = init_attr;
-  win.daccess_attr          = init_attr;
-
-  win.sel_sep = NULL;
-
-  for (index = 0; index < 5; index++)
-    win.special_attr[index] = init_attr;
-
-  /* Default limits initialization. */
-  /* """""""""""""""""""""""""""""" */
-  limits.words       = 32767;
-  limits.cols        = 256;
-  limits.word_length = 512;
-
-  /* Default timers in 1/10 s. */
-  /* """"""""""""""""""""""""" */
-  timers.search        = 100 * FREQ / 10;
-  timers.help          = 150 * FREQ / 10;
-  timers.winch         = 7 * FREQ / 10;
-  timers.direct_access = 6 * FREQ / 10;
-
-  /* Toggles initialization. */
-  /* """"""""""""""""""""""" */
-  toggle.del_line            = 0;
-  toggle.enter_val_in_search = 0;
-  toggle.no_scrollbar        = 0;
-  toggle.blank_nonprintable  = 0;
-  toggle.keep_spaces         = 0;
-  toggle.taggable            = 0;
-  toggle.autotag             = 0;
-  toggle.pinable             = 0;
-  toggle.visual_bell         = 0;
-
-  /* misc default values. */
-  /* """""""""""""""""""" */
-  misc.default_search_method = NONE;
-  misc.ignore_quotes         = 0;
+  /* Initialize some internal data structures. */
+  /* """"""""""""""""""""""""""""""""""""""""" */
+  init_main_ds(&init_attr, &win, &limits, &timers, &toggle, &misc, &timeout,
+               &daccess);
 
   /* direct access variable initialization. */
   /* """""""""""""""""""""""""""""""""""""" */
@@ -6292,31 +6335,6 @@ main(int argc, char * argv[])
     if (term.colors < 0)
       term.colors = 0;
   }
-
-  /* Set the default timeout to 0 (no expiration). */
-  /* """"""""""""""""""""""""""""""""""""""""""""" */
-  timeout.initial_value = 0;
-  timeout.remain        = 0;
-  timeout.reached       = 0;
-
-  /* Initialize Direct Access settings. */
-  /* """""""""""""""""""""""""""""""""" */
-  daccess.mode       = DA_TYPE_NONE;
-  daccess.left       = xstrdup(" ");
-  daccess.right      = xstrdup(")");
-  daccess.alignment  = 'r';
-  daccess.padding    = 'a';
-  daccess.head       = 'k'; /* Keep by default. */
-  daccess.length     = -2;
-  daccess.flength    = 0;
-  daccess.offset     = 0;
-  daccess.plus       = 0;
-  daccess.size       = 0;
-  daccess.ignore     = 0;
-  daccess.follow     = 'y';
-  daccess.missing    = 'y';
-  daccess.num_sep    = NULL;
-  daccess.def_number = -1;
 
   /* Ignore SIGTTIN. */
   /* """"""""""""""" */
