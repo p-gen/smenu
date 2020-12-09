@@ -4767,7 +4767,7 @@ init_main_ds(attr_t * init_attr, win_t * win, limit_t * limits,
 {
   int i;
 
-  /* Initial attribute settings-> */
+  /* Initial attribute settings. */
   /* """"""""""""""""""""""""""" */
   init_attr->is_set    = UNSET;
   init_attr->fg        = -1;
@@ -4779,7 +4779,7 @@ init_main_ds(attr_t * init_attr, win_t * win, limit_t * limits,
   init_attr->underline = -1;
   init_attr->italic    = -1;
 
-  /* Win fields initialization-> */
+  /* Win fields initialization. */
   /* """""""""""""""""""""""""" */
   win->max_lines       = 5;
   win->message_lines   = 0;
@@ -4817,21 +4817,21 @@ init_main_ds(attr_t * init_attr, win_t * win, limit_t * limits,
   for (i = 0; i < 5; i++)
     win->special_attr[i] = *init_attr;
 
-  /* Default limits initialization-> */
+  /* Default limits initialization. */
   /* """""""""""""""""""""""""""""" */
   limits->words       = 32767;
   limits->cols        = 256;
   limits->word_length = 512;
 
-  /* Default timers in 1/10 s-> */
+  /* Default timers in 1/10 s. */
   /* """"""""""""""""""""""""" */
   timers->search        = 100 * FREQ / 10;
   timers->help          = 150 * FREQ / 10;
   timers->winch         = 7 * FREQ / 10;
   timers->direct_access = 6 * FREQ / 10;
 
-  /* toggles initialization-> */
-  /* """""""""""""""""""""""" */
+  /* Toggles initialization. */
+  /* """"""""""""""""""""""" */
   toggles->del_line            = 0;
   toggles->enter_val_in_search = 0;
   toggles->no_scrollbar        = 0;
@@ -4842,7 +4842,7 @@ init_main_ds(attr_t * init_attr, win_t * win, limit_t * limits,
   toggles->pinable             = 0;
   toggles->visual_bell         = 0;
 
-  /* misc default values-> */
+  /* Misc default values. */
   /* """""""""""""""""""" */
   misc->default_search_method = NONE;
   misc->ignore_quotes         = 0;
@@ -4853,7 +4853,7 @@ init_main_ds(attr_t * init_attr, win_t * win, limit_t * limits,
   timeout->remain        = 0;
   timeout->reached       = 0;
 
-  /* Initialize Direct Access settings-> */
+  /* Initialize Direct Access settings. */
   /* """""""""""""""""""""""""""""""""" */
   daccess->mode       = DA_TYPE_NONE;
   daccess->left       = xstrdup(" ");
