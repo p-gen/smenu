@@ -16,6 +16,7 @@
 #include <string.h>
 #include <errno.h>
 
+#include "config.h"
 #include "xmalloc.h"
 
 /* ================== */
@@ -93,8 +94,19 @@ xstrdup(const char * p)
 {
   char * allocated;
 
+#ifdef HAVE_STRDUP
+  allocated = strdup(p);
+
+  if (allocated == NULL)
+  {
+    fprintf(stderr, "Error: Insufficient memory for strdup.\n");
+
+    exit(EXIT_FAILURE);
+  }
+#else
   allocated = xmalloc(strlen(p) + 1);
   strcpy(allocated, p);
+#endif
 
   return allocated;
 }
@@ -108,6 +120,16 @@ xstrndup(const char * str, size_t len)
 {
   char * p;
 
+#ifdef HAVE_STRNDUP
+  p = strndup(str, len);
+
+  if (p == NULL)
+  {
+    fprintf(stderr, "Error: Insufficient memory for strndup.\n");
+
+    exit(EXIT_FAILURE);
+  }
+#else
   p = memchr(str, '\0', len);
 
   if (p)
@@ -116,6 +138,7 @@ xstrndup(const char * str, size_t len)
   p = xmalloc(len + 1);
   memcpy(p, str, len);
   p[len] = '\0';
+#endif
 
   return p;
 }

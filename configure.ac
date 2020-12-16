@@ -35,7 +35,7 @@ AC_TYPE_SIZE_T
 AC_FUNC_MALLOC
 AC_FUNC_REALLOC
 AC_CHECK_FUNCS([mblen memset nl_langinfo pathconf regcomp setlocale])
-AC_CHECK_FUNCS([strchr strrchr strspn strcasecmp])
+AC_CHECK_FUNCS([strchr strrchr strspn strcasecmp strdup strndup])
 
 AC_CANONICAL_HOST
 # OS-specific tests
