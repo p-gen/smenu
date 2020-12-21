@@ -17,7 +17,7 @@ database.
 
 Please use the included man page to learn more about this little program.
 
-The wiki (https://github.com/p-gen/smenu/wiki) contains screenshots and
+The `wiki <https://github.com/p-gen/smenu/wiki>`_ contains screenshots and
 animations that detail some concepts and features of **smenu**.
 
 How to build it?
@@ -38,6 +38,28 @@ How to install it?
 ==================
 Once the build process has finished, a simple ``make install`` with the
 appropriate privileges will do it.
+
+Issue vs Discussion.
+====================
+I have enabled `discussions <https://github.com/p-gen/smenu/discussions>`_
+on this repository.
+
+I am aware there may be some confusion when deciding where you should
+communicate when reporting issues, asking questions or raising feature
+requests so this section aims to help us align on that.
+
+Please `raise an issue <https://github.com/p-gen/smenu/issues>`_ if:
+
+- You have found a bug.
+- You have a feature request and can clearly describe your request.
+
+Please `open a discussion <https://github.com/p-gen/smenu/discussions>`_ if:
+
+- You have a question.
+- You're not sure how to achieve something with smenu.
+- You have an idea but don't quite know how you would like it to work.
+- You have achieved something cool with smenu and want to show it off.
+- Anything else!
 
 Some examples.
 ==============
