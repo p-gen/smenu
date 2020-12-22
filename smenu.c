@@ -2145,7 +2145,8 @@ strip_ansi_color(char * s, toggle_t * toggles, misc_t * misc)
 }
 
 /* ================================================================= */
-/* Callback to add a word index in the sorted list of matched words/ */
+/* Callback function to insert the index of a matching word index in */
+/* the sorted list of the already matched words.                     */
 /* ================================================================= */
 int
 set_matching_flag(void * elem)
