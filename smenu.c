@@ -850,7 +850,7 @@ my_beep(toggle_t * toggles)
     tputs(TPARM1(cursor_visible), 1, outch);
 
     ts.tv_sec  = 0;
-    ts.tv_nsec = 200000000;
+    ts.tv_nsec = 200000000; /* 0.2s */
 
     errno = 0;
     rc    = nanosleep(&ts, &rem);
@@ -1158,7 +1158,7 @@ update_bitmaps(search_mode_t mode, search_data_t * data,
 
 /* ====================================================== */
 /* Find the next word index in the list of matching words */
-/* returns -1 of not found.                               */
+/* returns -1 if not found.                               */
 /* ====================================================== */
 long
 find_next_matching_word(long * array, long nb, long value, long * index)
@@ -1211,7 +1211,7 @@ find_next_matching_word(long * array, long nb, long value, long * index)
 
 /* ========================================================== */
 /* Find the previous word index in the list of matching words */
-/* returns -1 of not found.                                   */
+/* returns -1 if not found.                                   */
 /* ========================================================== */
 long
 find_prev_matching_word(long * array, long nb, long value, long * index)
@@ -1268,9 +1268,9 @@ find_prev_matching_word(long * array, long nb, long value, long * index)
   }
 }
 
-/* ================================================================= */
-/* Remove all traces of the matched words and redisplay the windows. */
-/* ================================================================= */
+/* ============================================================= */
+/* Remove all traces of matched words and redisplay the windows. */
+/* ============================================================= */
 void
 clean_matches(search_data_t * search_data, long size)
 {
@@ -1768,6 +1768,7 @@ parse_selectors(char * str, filters_t * filter, char * unparsed,
 
 /* ========================================================= */
 /* Parse the sed like string passed as argument to -S/-I/-E. */
+/* Update the sed parameter.                                 */
 /* ========================================================= */
 int
 parse_sed_like_string(sed_t * sed)
@@ -9681,7 +9682,9 @@ main(int argc, char * argv[])
 
           exit(EXIT_SUCCESS);
 
-        case 0x0c: /* ^L */
+        case 0x0c:
+          /* Form feed (^L) is a traditional method to redraw a screen. */
+          /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
           if (current < win.start || current > win.end)
             last_line = build_metadata(&term, count, &win);
 
@@ -10397,6 +10400,9 @@ main(int argc, char * argv[])
           break;
 
         kins:
+          /* The INS key has been pressed to tag a word if */
+          /* tagging is enabled.                           */
+          /* """"""""""""""""""""""""""""""""""""""""""""" */
           if (toggles.taggable)
           {
             if (word_a[current].is_tagged == 0)
@@ -10415,6 +10421,9 @@ main(int argc, char * argv[])
           break;
 
         kdel:
+          /* The DEL key has been pressed to untag a word if */
+          /* tagging is enabled.                             */
+          /* """"""""""""""""""""""""""""""""""""""""""""""" */
           if (toggles.taggable)
           {
             if (word_a[current].is_tagged == 1)
@@ -10430,6 +10439,9 @@ main(int argc, char * argv[])
           break;
 
         case 't':
+          /* t has been pressed to tag/untag a word if */
+          /* tagging is enabled.                       */
+          /* """"""""""""""""""""""""""""""""""""""""" */
           if (search_mode == NONE)
           {
             if (toggles.taggable)
@@ -10457,6 +10469,9 @@ main(int argc, char * argv[])
           break;
 
         case 'T':
+          /* T has been pressed to tag all matching words resulting */
+          /* from a previous search if tagging is enabled.          */
+          /* """""""""""""""""""""""""""""""""""""""""""""""""""""" */
           if (search_mode == NONE)
           {
             if (toggles.taggable)
@@ -10486,6 +10501,9 @@ main(int argc, char * argv[])
           break;
 
         case 'U':
+          /* U has been pressed to untag all matching words resulting */
+          /* from a previous search if tagging is enabled.            */
+          /* """""""""""""""""""""""""""""""""""""""""""""""""""""""" */
           if (search_mode == NONE)
           {
             if (toggles.taggable)
@@ -10521,47 +10539,33 @@ main(int argc, char * argv[])
         case '7':
         case '8':
         case '9':
-        {
-          if (search_mode == NONE && daccess.mode != DA_TYPE_NONE)
+          /* A digit has been pressed to build a number to be used for */
+          /* A direct acces to a words if direct access is enabled.    */
+          /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""" */
           {
-            wchar_t * w;
-            long *    pos;
-
-            /* Set prev_current to the initial current word to be    */
-            /* able to return here if the first direct access fails. */
-            /* """"""""""""""""""""""""""""""""""""""""""""""""""""" */
-            if (daccess_stack_head == 0)
-              prev_current = current;
-
-            if (daccess_stack_head == daccess.length)
-              break;
-
-            daccess_stack[daccess_stack_head] = buffer[0];
-            daccess_stack_head++;
-            w   = utf8_strtowcs(daccess_stack);
-            pos = tst_search(tst_daccess, w);
-            free(w);
-
-            if (pos != NULL)
+            if (search_mode == NONE && daccess.mode != DA_TYPE_NONE)
             {
-              current = *pos;
+              wchar_t * w;
+              long *    pos;
 
-              if (current < win.start || current > win.end)
-                last_line = build_metadata(&term, count, &win);
+              /* Set prev_current to the initial current word to be    */
+              /* able to return here if the first direct access fails. */
+              /* """"""""""""""""""""""""""""""""""""""""""""""""""""" */
+              if (daccess_stack_head == 0)
+                prev_current = current;
 
-              /* Set new first column to display. */
-              /* """""""""""""""""""""""""""""""" */
-              set_new_first_column(&win, &term);
+              if (daccess_stack_head == daccess.length)
+                break;
 
-              nl = disp_lines(&win, &toggles, current, count, search_mode,
-                              &search_data, &term, last_line, tmp_word,
-                              &langinfo);
-            }
-            else
-            {
-              if (current != prev_current)
+              daccess_stack[daccess_stack_head] = buffer[0];
+              daccess_stack_head++;
+              w   = utf8_strtowcs(daccess_stack);
+              pos = tst_search(tst_daccess, w);
+              free(w);
+
+              if (pos != NULL)
               {
-                current = prev_current;
+                current = *pos;
 
                 if (current < win.start || current > win.end)
                   last_line = build_metadata(&term, count, &win);
@@ -10574,94 +10578,111 @@ main(int argc, char * argv[])
                                 &search_data, &term, last_line, tmp_word,
                                 &langinfo);
               }
-            }
+              else
+              {
+                if (current != prev_current)
+                {
+                  current = prev_current;
 
-            daccess_timer = timers.direct_access;
+                  if (current < win.start || current > win.end)
+                    last_line = build_metadata(&term, count, &win);
+
+                  /* Set new first column to display. */
+                  /* """""""""""""""""""""""""""""""" */
+                  set_new_first_column(&win, &term);
+
+                  nl = disp_lines(&win, &toggles, current, count, search_mode,
+                                  &search_data, &term, last_line, tmp_word,
+                                  &langinfo);
+                }
+              }
+
+              daccess_timer = timers.direct_access;
+            }
+            else
+              goto special_cmds_when_searching;
           }
-          else
-            goto special_cmds_when_searching;
-        }
-        break;
+          break;
 
         case 0x08: /* ^H */
         case 0x7f: /* BS */
-        {
-          long i;
-
-          /* Backspace or CTRL-H. */
-          /* """""""""""""""""""" */
-          if (daccess_stack_head > 0)
-            daccess_stack[--daccess_stack_head] = '\0';
-
-          if (search_mode != NONE)
+          /* backspace/CTRL-H management. */
+          /* """""""""""""""""""""""""""" */
           {
-            if (search_data.utf8_len > 0)
+            long i;
+
+            if (daccess_stack_head > 0)
+              daccess_stack[--daccess_stack_head] = '\0';
+
+            if (search_mode != NONE)
             {
-              char * prev;
-
-              prev = utf8_prev(search_data.buf,
-                               search_data.buf + search_data.len - 1);
-
-              if (search_data.utf8_len == search_data.fuzzy_err_pos - 1)
+              if (search_data.utf8_len > 0)
               {
-                search_data.fuzzy_err     = 0;
-                search_data.fuzzy_err_pos = -1;
-              }
-              search_data.utf8_len--;
+                char * prev;
 
-              if (prev)
-              {
-                *(utf8_next(prev)) = '\0';
-                search_data.len    = prev - search_data.buf + 1;
+                prev = utf8_prev(search_data.buf,
+                                 search_data.buf + search_data.len - 1);
+
+                if (search_data.utf8_len == search_data.fuzzy_err_pos - 1)
+                {
+                  search_data.fuzzy_err     = 0;
+                  search_data.fuzzy_err_pos = -1;
+                }
+                search_data.utf8_len--;
+
+                if (prev)
+                {
+                  *(utf8_next(prev)) = '\0';
+                  search_data.len    = prev - search_data.buf + 1;
+                }
+                else
+                {
+                  *search_data.buf = '\0';
+                  search_data.len  = 0;
+
+                  for (i = 0; i < matches_count; i++)
+                  {
+                    long n = matching_words_a[i];
+
+                    word_a[n].is_matching = 0;
+
+                    memset(word_a[n].bitmap, '\0',
+                           (word_a[n].mb - daccess.flength) / CHAR_BIT + 1);
+                  }
+
+                  matches_count = 0;
+
+                  nl = disp_lines(&win, &toggles, current, count, search_mode,
+                                  &search_data, &term, last_line, tmp_word,
+                                  &langinfo);
+                }
               }
               else
+                my_beep(&toggles);
+
+              if (search_data.utf8_len > 0)
+                goto special_cmds_when_searching;
+              else
+                /* When there is only one glyph in the search list in       */
+                /* FUZZY and SUBSTRING mode then all is already done except */
+                /* the cleanup of the first level of the tst_search_list.   */
+                /* """""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+                if (search_mode != PREFIX)
               {
-                *search_data.buf = '\0';
-                search_data.len  = 0;
+                sub_tst_t * sub_tst_data;
+                ll_node_t * node;
 
-                for (i = 0; i < matches_count; i++)
-                {
-                  long n = matching_words_a[i];
+                node         = tst_search_list->tail;
+                sub_tst_data = (sub_tst_t *)(node->data);
 
-                  word_a[n].is_matching = 0;
+                search_data.fuzzy_err = 0;
 
-                  memset(word_a[n].bitmap, '\0',
-                         (word_a[n].mb - daccess.flength) / CHAR_BIT + 1);
-                }
-
-                matches_count = 0;
-
-                nl = disp_lines(&win, &toggles, current, count, search_mode,
-                                &search_data, &term, last_line, tmp_word,
-                                &langinfo);
+                sub_tst_data->count = 0;
               }
             }
-            else
-              my_beep(&toggles);
-
-            if (search_data.utf8_len > 0)
-              goto special_cmds_when_searching;
-            else
-              /* When there is only one glyph in the search list in       */
-              /* FUZZY and SUBSTRING mode then all is already done except */
-              /* the cleanup of the first level of the tst_search_list.   */
-              /* """""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-              if (search_mode != PREFIX)
-            {
-              sub_tst_t * sub_tst_data;
-              ll_node_t * node;
-
-              node         = tst_search_list->tail;
-              sub_tst_data = (sub_tst_t *)(node->data);
-
-              search_data.fuzzy_err = 0;
-
-              sub_tst_data->count = 0;
-            }
           }
-        }
 
-        break;
+          break;
 
         case '?':
           /* Help mode. */
