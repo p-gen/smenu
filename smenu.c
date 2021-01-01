@@ -93,6 +93,7 @@ char * sbar_down       = "\xe2\x94\x98"; /* box_drawings_light_up_and_left   */
 char * sbar_curs       = "\xe2\x95\x91"; /* box_drawings_double_vertical     */
 char * sbar_arr_up     = "\xe2\x96\xb2"; /* black_up_pointing_triangle       */
 char * sbar_arr_down   = "\xe2\x96\xbc"; /* black_down_pointing_triangle     */
+char * msg_arr_down    = "\xe2\x96\xbc"; /* black_down_pointing_triangle     */
 
 /* Variables used to manage the direct access entries. */
 /* """"""""""""""""""""""""""""""""""""""""""""""""""" */
@@ -3415,7 +3416,8 @@ disp_word(long pos, search_mode_t search_mode, search_data_t * search_data,
 /* ======================================== */
 void
 disp_message(ll_t * message_lines_list, long message_max_width,
-             long message_max_len, term_t * term, win_t * win)
+             long message_max_len, term_t * term, win_t * win,
+             langinfo_t * langinfo)
 {
   ll_node_t * node;
   char *      line;
@@ -3447,7 +3449,7 @@ disp_message(ll_t * message_lines_list, long message_max_width,
 
   /* Follow the message lines list and display each line. */
   /* """""""""""""""""""""""""""""""""""""""""""""""""""" */
-  while (node != NULL)
+  while (node != NULL && win->message_lines < term->nlines - 2)
   {
     long i;
 
@@ -3479,7 +3481,15 @@ disp_message(ll_t * message_lines_list, long message_max_width,
 
     /* Print the line without the ending \n. */
     /* ''''''''''''''''''''''''''''''''''''' */
-    printf("%s", buf);
+    if (win->message_lines >= term->nlines - 3)
+    {
+      if (langinfo->utf8)
+        fputs(msg_arr_down, stdout);
+      else
+        fputc('v', stdout);
+    }
+    else
+      printf("%s", buf);
 
     /* Complete the short line with spaces until it reach the */
     /* message max size.                                      */
@@ -3493,8 +3503,11 @@ disp_message(ll_t * message_lines_list, long message_max_width,
 
     /* Drop the attributes and print a \n. */
     /* ''''''''''''''''''''''''''''''''''' */
-    tputs(TPARM1(exit_attribute_mode), 1, outch);
-    puts("");
+    if (term->nlines > 2)
+    {
+      tputs(TPARM1(exit_attribute_mode), 1, outch);
+      puts("");
+    }
 
     node = node->next;
     win->message_lines++;
@@ -7205,7 +7218,10 @@ main(int argc, char * argv[])
   /* Force the maximum number of window's line if -n is used. */
   /* """""""""""""""""""""""""""""""""""""""""""""""""""""""" */
   if (term.nlines <= win.message_lines)
-    win.max_lines = 0;
+  {
+    win.message_lines = term.nlines - 1;
+    win.max_lines     = 1;
+  }
   else if (win.asked_max_lines >= 0)
   {
     if (win.asked_max_lines == 0)
@@ -7218,7 +7234,7 @@ main(int argc, char * argv[])
         win.max_lines = win.asked_max_lines;
     }
   }
-  else
+  else /* -n was not used. Set win.asked_max_lines to its default value. */
     win.asked_max_lines = win.max_lines;
 
   /* Allocate the memory for our words structures. */
@@ -8992,7 +9008,7 @@ main(int argc, char * argv[])
   /* Display the words window and its title for the first time. */
   /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
   disp_message(message_lines_list, message_max_width, message_max_len, &term,
-               &win);
+               &win, &langinfo);
 
   /* Before displaying the word windows for the first time when ins   */
   /* column or line mode, we need to ensure that the word under the   */
@@ -9180,7 +9196,10 @@ main(int argc, char * argv[])
       /* Reset the number of lines if the terminal has enough lines. */
       /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
       if (term.nlines <= win.message_lines)
-        win.max_lines = 0;
+      {
+        win.message_lines = term.nlines - 1;
+        win.max_lines     = 1;
+      }
       else if (win.max_lines < term.nlines - win.message_lines)
       {
         if (win.asked_max_lines == 0)
@@ -9248,7 +9267,7 @@ main(int argc, char * argv[])
       }
 
       disp_message(message_lines_list, message_max_width, message_max_len,
-                   &term, &win);
+                   &term, &win, &langinfo);
 
       nl = disp_lines(&win, &toggles, current, count, search_mode, &search_data,
                       &term, last_line, tmp_word, &langinfo);
@@ -9311,7 +9330,7 @@ main(int argc, char * argv[])
           /* Display the words window and its title for the first time. */
           /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
           disp_message(message_lines_list, message_max_width, message_max_len,
-                       &term, &win);
+                       &term, &win, &langinfo);
         }
         /* The timeout has expired. */
         /* """""""""""""""""""""""" */
@@ -9370,7 +9389,7 @@ main(int argc, char * argv[])
           /* Display the words window and its title for the first time. */
           /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
           disp_message(message_lines_list, message_max_width, message_max_len,
-                       &term, &win);
+                       &term, &win, &langinfo);
         }
 
         setitimer(ITIMER_REAL, &periodic_itv, NULL);

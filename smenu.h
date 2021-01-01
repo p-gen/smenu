@@ -491,7 +491,7 @@ get_message_lines(char * message, ll_t * message_lines_list,
 
 void
 disp_message(ll_t * message_lines_list, long width, long max_len, term_t * term,
-             win_t * win);
+             win_t * win, langinfo_t * langinfo);
 
 int
 check_integer_constraint(int nb_args, char ** args, char * value, char * par);
