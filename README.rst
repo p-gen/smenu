@@ -1,5 +1,9 @@
 .. image:: smenu.gif
 
+|
+
+.. image:: simple_menu.gif
+
 What is it?
 ===========
 **smenu** is a selection filter just like ``sed`` is an editing filter.
