@@ -4851,7 +4851,7 @@ init_main_ds(attr_t * init_attr, win_t * win, limit_t * limits,
   /* """"""""""""""""""""""""" */
   timers->search        = 100 * FREQ / 10;
   timers->help          = 150 * FREQ / 10;
-  timers->winch         = 7 * FREQ / 10;
+  timers->winch         = 10 * FREQ / 10;
   timers->direct_access = 6 * FREQ / 10;
 
   /* Toggles initialization. */
@@ -9170,8 +9170,9 @@ main(int argc, char * argv[])
 
     if (got_winch)
     {
-      got_winch   = 0;
-      winch_timer = timers.winch; /* default 7 / FREQ s */
+      got_winch      = 0;
+      got_winch_alrm = 0;
+      winch_timer    = timers.winch; /* Rearm the refresh timer. */
     }
 
     /* If the timeout is set then decrement its remaining value   */
@@ -9184,22 +9185,16 @@ main(int argc, char * argv[])
       int  nlines, ncolumns;
       int  line, column;
 
-      /* Re-arm the timer. */
-      /* """"""""""""""""" */
-      winch_timer = timers.winch; /* default 7 / FREQ s */
+      got_winch_alrm = 0; /* Reset the flag signaling the need for a refresh. */
+      winch_timer    = -1; /* Disarm the timer used for this refresh.         */
 
       get_terminal_size(&nlines, &ncolumns, &term);
 
-      got_winch_alrm = 0;
-
-      if (got_winch || term.nlines != nlines || term.ncolumns != ncolumns)
-      {
-        term.nlines   = nlines;
-        term.ncolumns = ncolumns;
-        continue;
-      }
-
-      winch_timer = -1;
+      /* Update term with the new number of lines and columns */
+      /* of the real terminal.                                */
+      /* """""""""""""""""""""""""""""""""""""""""""""""""""" */
+      term.nlines   = nlines;
+      term.ncolumns = ncolumns;
 
       /* Reset the number of lines if the terminal has enough lines. */
       /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
