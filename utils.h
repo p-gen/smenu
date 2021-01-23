@@ -68,7 +68,4 @@ xwcscasecmp(const wchar_t * w1s, const wchar_t * w2s);
 int
 is_integer(const char * const s);
 
-ssize_t
-xread(int fd, void * buf, size_t n);
-
 #endif

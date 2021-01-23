@@ -1415,14 +1415,19 @@ int
 get_cursor_position(int * const r, int * const c)
 {
   char   buf[32];
-  size_t i     = 0;
-  int    count = 64;
-  int    v;
-  int    rc = 1;
+  char * s;
+
+  int count = 64;
+  int v;
+  int rc = 1;
+
+  int ask; /* Number of asked characters.    */
+  int got; /* Number of characters obtained. */
+
+  int buf_size = sizeof(buf);
 
   /* Report cursor location. */
   /* """"""""""""""""""""""" */
-  errno = 0;
   while ((v = write(STDOUT_FILENO, "\x1b[6n", 4)) == -1 && count)
   {
     if (errno == EINTR)
@@ -1443,17 +1448,20 @@ read:
 
   /* Read the response: ESC [ rows ; cols R. */
   /* """"""""""""""""""""""""""""""""""""""" */
-  while (i < sizeof(buf) - 1)
+  *(s = buf) = 0;
+
+  do
   {
-    if (xread(STDIN_FILENO, buf + i, 1) != 1)
+    ask = buf_size - 1 - (s - buf);
+    got = read(STDIN_FILENO, s, ask);
+
+    if (got < 0 && errno == EINTR)
+      got = 0;
+    else if (got == 0)
       break;
 
-    i++;
-
-    if (buf[i - 1] == 'R')
-      break;
-  }
-  buf[i] = '\0';
+    s += got;
+  } while (strchr(buf, 'R') == 0);
 
   /* Parse it. */
   /* """"""""" */
