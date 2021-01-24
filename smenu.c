@@ -1414,7 +1414,7 @@ get_terminal_size(int * const r, int * const c, term_t * term)
 int
 get_cursor_position(int * const r, int * const c)
 {
-  char   buf[32];
+  char   buf[32] = { 0 };
   char * s;
 
   int count = 64;
