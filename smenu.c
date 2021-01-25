@@ -3439,6 +3439,11 @@ disp_message(ll_t * message_lines_list, long message_max_width,
 
   win->message_lines = 0;
 
+  /* Do nothing if there is no message to display. */
+  /* """"""""""""""""""""""""""""""""""""""""""""" */
+  if (message_lines_list == NULL)
+    return;
+
   /* Deactivate the periodic timer to prevent the interruptions to corrupt */
   /* screen by altering the timing of the decoding of the terminfo         */
   /* capabilities.                                                         */
@@ -3446,11 +3451,6 @@ disp_message(ll_t * message_lines_list, long message_max_width,
   sigemptyset(&mask);
   sigaddset(&mask, SIGALRM);
   sigprocmask(SIG_BLOCK, &mask, NULL);
-
-  /* Do nothing if there is no message to display. */
-  /* """"""""""""""""""""""""""""""""""""""""""""" */
-  if (message_lines_list == NULL)
-    return;
 
   node = message_lines_list->head;
   buf  = xmalloc(message_max_len + 1);
