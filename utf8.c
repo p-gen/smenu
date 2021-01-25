@@ -66,14 +66,14 @@ cptoutf8(char * utf8_str, uint32_t c)
 }
 
 /* ======================================================================= */
-/* Unicode (UTF-8) ascii representation interpreter.                       */
+/* Unicode (UTF-8) ASCII representation interpreter.                       */
 /* The string passed will be altered but its address will not change.      */
 /* All hexadecimal sequences of \uxx, \uxxxx, \uxxxxxx and \uxxxxxxxx will */
 /* be replaced by the corresponding UTF-8 character when possible.         */
 /* All hexadecimal sequences of \Uxxxxxx will be replaced with the UTF-8   */
 /* sequence corresponding to the given UCS-4 codepoint.                    */
 /* When not possible the substitution character is substituted in place.   */
-/* Returns 0 if the conversion has faild else 1.                           */
+/* Returns 0 if the conversion has failed else 1.                          */
 /* ======================================================================= */
 int
 utf8_interpret(char * s, langinfo_t * langinfo, char substitute)
@@ -104,7 +104,7 @@ utf8_interpret(char * s, langinfo_t * langinfo, char substitute)
     int      len;
     int      n;
     uint32_t cp;
-    int      subst; /* 0, the \U sequance is valid, else 1. */
+    int      subst; /* 0, the \U sequence is valid, else 1. */
 
     utf8_to_eos_len = strlen(utf8_str);
     utf8_str_len    = 0;
@@ -170,8 +170,8 @@ utf8_interpret(char * s, langinfo_t * langinfo, char substitute)
       unsigned byte;
       char *   utf8_seq_offset = utf8_str + 2;
 
-      /* Get the first 2 utf8 bytes. */
-      /* """"""""""""""""""""""""""" */
+      /* Get the first 2 UTF-8 bytes. */
+      /* """""""""""""""""""""""""""" */
       *tmp       = *utf8_seq_offset;
       *(tmp + 1) = *(utf8_seq_offset + 1);
       *(tmp + 2) = '\0';

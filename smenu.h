@@ -267,7 +267,7 @@ struct word_s
   char *        orig;          /* NULL or original string if is had been   *
                                 * shortened for being displayed or altered *
                                 * by is expansion.                         */
-  char *        bitmap;        /* used to store the the position of the    *
+  char *        bitmap;        /* used to store the position of the        *
                                 * currently searched chars in a word. The  *
                                 * objective is to speed their display      */
   unsigned char is_matching;
@@ -359,8 +359,8 @@ struct output_s
   char * output_str; /* The pinned word itself                               */
 };
 
-/* Structure describing the formating of the automatic direct access entries */
-/* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+/* Structure describing the formatting of the automatic direct access entries */
+/* """""""""""""""""""""""""""""""'"""""""""""""""""""""""""""""""""""""""""" */
 struct daccess_s
 {
   da_mode_t mode; /* DA_TYPE_NONE (0), DA_TYPE_AUTO, DA_TYPE_POS          */
@@ -372,7 +372,7 @@ struct daccess_s
   char   padding;    /* a: all; i: only included words are padded         */
   char   head;       /* What to do with chars before the embedded number  */
   int    length;     /* selector size (5 max)                             */
-  int    flength;    /* 0 or length + 3 (full prefix lengh                */
+  int    flength;    /* 0 or length + 3 (full prefix length               */
   size_t offset;     /* offset to the start of the selector               */
   char   missing;    /* y: number missing embedded numbers                */
   int    plus;       /* 1 if we can look for the number to extract after  *

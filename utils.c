@@ -256,9 +256,9 @@ my_strcasecmp(const char * str1, const char * str2)
 #endif
 }
 
-/* ============================================ */
-/* memmove based strcpy (tolerates overlaping). */
-/* ============================================ */
+/* ============================================= */
+/* memmove based strcpy (tolerates overlapping). */
+/* ============================================= */
 char *
 my_strcpy(char * str1, char * str2)
 {
@@ -291,7 +291,7 @@ isprint8(int i)
 }
 
 /* ==================================================== */
-/* Private implementation of wcscasecmp wimming in c99. */
+/* Private implementation of wcscasecmp missing in c99. */
 /* ==================================================== */
 int
 xwcscasecmp(const wchar_t * s1, const wchar_t * s2)

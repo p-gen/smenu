@@ -5097,7 +5097,7 @@ toggle_action(char * ctx_name, char * opt_name, char * param, int nb_values,
     toggles->enter_val_in_search = 1;
   else if (strcmp(opt_name, "blank_nonprintable") == 0)
     toggles->blank_nonprintable = 1;
-  else if (strcmp(opt_name, "no_scoll_bar") == 0)
+  else if (strcmp(opt_name, "no_scroll_bar") == 0)
     toggles->no_scrollbar = 1;
   else if (strcmp(opt_name, "auto_tag") == 0)
     toggles->autotag = 1;
@@ -5803,7 +5803,7 @@ da_options_action(char * ctx_name, char * opt_name, char * param, int nb_values,
         break;
 
       case 'i': /* Number of UTF-8 glyphs to ignore after the *
-                 * selector to extrac.                        */
+                 * selector to extract.                       */
         if (sscanf(value + 2, "%zu%n", &daccess.ignore, &pos) != 1)
         {
           fprintf(stderr, "%s: Bad value after i:\n", param);
@@ -6081,7 +6081,7 @@ main(int argc, char * argv[])
   long message_max_len   = 0; /* max number of bytes taken by a message      *
                                * line.                                       */
 
-  char * int_string = NULL; /* String to be output when typeing ^C.          */
+  char * int_string = NULL; /* String to be output when typing ^C.           */
   int    int_as_in_shell = 1; /* CTRL-C mimics the shell behaviour.          */
 
   FILE * input_file; /* The name of the file passed as argument if any.      */
@@ -6441,7 +6441,7 @@ main(int argc, char * argv[])
                    "[clean] "
                    "[keep_spaces] "
                    "[word_separators #bytes] "
-                   "[no_scoll_bar] "
+                   "[no_scroll_bar] "
                    "[post_subst_all... #/regex/repl/opts] "
                    "[post_subst_included... #/regex/repl/opts] "
                    "[post_subst_excluded... #/regex/repl/opts] "
@@ -6580,7 +6580,7 @@ main(int argc, char * argv[])
   ctxopt_add_opt_settings(parameters, "line_separators",
                           "-L -ls -ld -line-delimiters -line_separators");
   ctxopt_add_opt_settings(parameters, "zapped_glyphs", "-z -zap -zap-glyphs");
-  ctxopt_add_opt_settings(parameters, "no_scoll_bar",
+  ctxopt_add_opt_settings(parameters, "no_scroll_bar",
                           "-q -no_bar -no-scroll_bar");
   ctxopt_add_opt_settings(parameters, "post_subst_all", "-S -subst");
   ctxopt_add_opt_settings(parameters, "post_subst_included",
@@ -6659,7 +6659,7 @@ main(int argc, char * argv[])
   ctxopt_add_opt_settings(actions, "keep_spaces", toggle_action, &toggles,
                           (char *)0);
   ctxopt_add_opt_settings(actions, "lines", lines_action, &win, (char *)0);
-  ctxopt_add_opt_settings(actions, "no_scoll_bar", toggle_action, &toggles,
+  ctxopt_add_opt_settings(actions, "no_scroll_bar", toggle_action, &toggles,
                           (char *)0);
   ctxopt_add_opt_settings(actions, "start_pattern", set_pattern_action,
                           &pre_selection_index, &langinfo, &misc, (char *)0);
