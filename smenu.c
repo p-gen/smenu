@@ -3434,6 +3434,8 @@ disp_message(ll_t * message_lines_list, long message_max_width,
   long        size;
   long        offset;
   wchar_t *   w;
+  int         n   = 0; /* Counter used to display message lines. */
+  int         cut = 0; /* Will be 1 if the message is shortened. */
 
   sigset_t mask;
 
@@ -3443,6 +3445,21 @@ disp_message(ll_t * message_lines_list, long message_max_width,
   /* """"""""""""""""""""""""""""""""""""""""""""" */
   if (message_lines_list == NULL)
     return;
+
+  /* Recalculate the number of to-be-displayed lines in the messages */
+  /* if space is missing.                                            */
+  /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+  if (term->nlines < 3)
+    return;
+
+  win->message_lines = message_lines_list->len;
+  if (win->message_lines > term->nlines - 2)
+  {
+    win->message_lines = term->nlines - 2;
+    win->max_lines     = term->nlines - win->message_lines - 1;
+    cut                = 1;
+  }
+  win->message_lines++;
 
   /* Deactivate the periodic timer to prevent the interruptions to corrupt */
   /* screen by altering the timing of the decoding of the terminfo         */
@@ -3457,7 +3474,7 @@ disp_message(ll_t * message_lines_list, long message_max_width,
 
   /* Follow the message lines list and display each line. */
   /* """""""""""""""""""""""""""""""""""""""""""""""""""" */
-  while (node != NULL && win->message_lines < term->nlines - 2)
+  for (n = 1; n < win->message_lines; n++)
   {
     long i;
 
@@ -3489,7 +3506,7 @@ disp_message(ll_t * message_lines_list, long message_max_width,
 
     /* Print the line without the ending \n. */
     /* ''''''''''''''''''''''''''''''''''''' */
-    if (win->message_lines >= term->nlines - 3)
+    if (n > 1 && cut && n == win->message_lines - 1)
     {
       if (langinfo->utf8)
         fputs(msg_arr_down, stdout);
@@ -3518,14 +3535,12 @@ disp_message(ll_t * message_lines_list, long message_max_width,
     }
 
     node = node->next;
-    win->message_lines++;
   }
 
   /* Add an empty line without attribute to separate the menu title */
   /* and the menu content.                                          */
   /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
   puts("");
-  win->message_lines++;
 
   free(buf);
 
@@ -3817,7 +3832,8 @@ sig_handler(int s)
     /* Terminal resize. */
     /* """""""""""""""" */
     case SIGWINCH:
-      got_winch = 1;
+      got_winch      = 1;
+      got_winch_alrm = 0;
       break;
 
     /* Alarm triggered, This signal is used by the search mechanism to     */
@@ -9184,9 +9200,15 @@ main(int argc, char * argv[])
       long i; /* generic index in this block */
       int  nlines, ncolumns;
       int  line, column;
+      int  original_message_lines;
 
       got_winch_alrm = 0; /* Reset the flag signaling the need for a refresh. */
       winch_timer    = -1; /* Disarm the timer used for this refresh.         */
+
+      if (message_lines_list != NULL && message_lines_list->len > 0)
+        original_message_lines = message_lines_list->len + 1;
+      else
+        original_message_lines = 0;
 
       get_terminal_size(&nlines, &ncolumns, &term);
 
@@ -9197,26 +9219,34 @@ main(int argc, char * argv[])
       term.ncolumns = ncolumns;
 
       /* Reset the number of lines if the terminal has enough lines. */
+      /* message_lines_list->len+1 is used here instead of           */
+      /* win.message_lines because win.message_lines may have been   */
+      /* altered by a previous scrolling and not yet recalculated.   */
       /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-      if (term.nlines <= win.message_lines)
+      if (term.nlines <= original_message_lines)
       {
         win.message_lines = term.nlines - 1;
         win.max_lines     = 1;
       }
-      else if (win.max_lines < term.nlines - win.message_lines)
+      else
       {
-        if (win.asked_max_lines == 0)
-          win.max_lines = term.nlines - win.message_lines;
-        else
+        win.message_lines = original_message_lines;
+
+        if (win.max_lines < term.nlines - win.message_lines)
         {
-          if (win.asked_max_lines > term.nlines - win.message_lines)
+          if (win.asked_max_lines == 0)
             win.max_lines = term.nlines - win.message_lines;
           else
-            win.max_lines = win.asked_max_lines;
+          {
+            if (win.asked_max_lines > term.nlines - win.message_lines)
+              win.max_lines = term.nlines - win.message_lines;
+            else
+              win.max_lines = win.asked_max_lines;
+          }
         }
+        else
+          win.max_lines = term.nlines - win.message_lines;
       }
-      else
-        win.max_lines = term.nlines - win.message_lines;
 
       /* Erase the visible part of the displayed window. */
       /* """"""""""""""""""""""""""""""""""""""""""""""" */
