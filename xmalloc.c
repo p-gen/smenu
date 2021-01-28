@@ -19,6 +19,39 @@
 #include "config.h"
 #include "xmalloc.h"
 
+/* The following rpl_* function are necessary for AIX which doesn't     */
+/* provide 'GNU compatible' allocation functions.                       */
+/* Every call to malloc()/realloc() is then replaced by a call to       */
+/* rpl_malloc()/rpl_realloc() as defined in the GNU generated config.h. */
+/* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+
+#ifdef malloc
+
+#undef malloc
+extern void * malloc(size_t);
+
+void *
+rpl_malloc(size_t size)
+{
+  if (!size)
+    size++;
+  return malloc(size);
+}
+
+#undef realloc
+extern void *
+realloc(void *, size_t);
+
+void *
+rpl_realloc(void * ptr, size_t size)
+{
+  if (!size)
+    size++;
+  return (ptr ? realloc(ptr, size) : malloc(size));
+}
+
+#endif
+
 /* ================== */
 /* Customized malloc. */
 /* ================== */

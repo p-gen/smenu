@@ -26,7 +26,7 @@
 #include <unistd.h>
 #include <locale.h>
 #include <langinfo.h>
-#if defined(__sun) && defined(__SVR4)
+#if (defined(__sun) && defined(__SVR4)) || defined(_AIX)
 #include <curses.h>
 #endif
 #include <term.h>
@@ -263,7 +263,7 @@ help(win_t * win, term_t * term, long last_line, toggle_t * toggles)
 /* toggle is found else 0.           */
 /* ================================= */
 int
-decode_attr_toggles(char * s, attr_t * attr)
+decode_attr_toggles(char * s, attrib_t * attr)
 {
   int rc = 1;
 
@@ -316,7 +316,7 @@ decode_attr_toggles(char * s, attr_t * attr)
 /* attr will be filled by the function.                     */
 /* =========================================================*/
 int
-parse_attr(char * str, attr_t * attr, short max_color)
+parse_attr(char * str, attrib_t * attr, short max_color)
 {
   int    n;
   char * pos;
@@ -384,7 +384,7 @@ parse_attr(char * str, attr_t * attr, short max_color)
 /* Set the terminal attributes according to attr. */
 /* ============================================== */
 void
-apply_attr(term_t * term, attr_t attr)
+apply_attr(term_t * term, attrib_t attr)
 {
   if (attr.fg >= 0)
     set_foreground_color(term, attr.fg);
@@ -430,7 +430,7 @@ ini_cb(win_t * win, term_t * term, limit_t * limits, ticker_t * timers,
 
   if (strcmp(section, "colors") == 0)
   {
-    attr_t v = { UNSET, -1, -1, -1, -1, -1, -1, -1, -1 };
+    attrib_t v = { UNSET, -1, -1, -1, -1, -1, -1, -1, -1 };
 
 #define CHECK_ATTR(x)                             \
   else if (strcmp(name, #x) == 0)                 \
@@ -2762,16 +2762,48 @@ get_word(FILE * input, ll_t * word_delims_list, ll_t * record_delims_list,
   return temp;
 }
 
+/* ================================================================ */
+/* Convert the 8 first colors from setf/setaf coding to setaf/setf. */
+/* ================================================================ */
+short
+color_transcode(short color)
+{
+  switch (color)
+  {
+    case 1:
+      return 4;
+    case 3:
+      return 6;
+    case 4:
+      return 1;
+    case 6:
+      return 3;
+    default:
+      return color;
+  }
+}
+
 /* ========================================================== */
 /* Set a foreground color according to terminal capabilities. */
 /* ========================================================== */
 void
 set_foreground_color(term_t * term, short color)
 {
-  if (term->color_method == 0 && term->has_setf)
-    tputs(TPARM2(set_foreground, color), 1, outch);
-  else if (term->color_method == 1 && term->has_setaf)
-    tputs(TPARM2(set_a_foreground, color), 1, outch);
+  if (term->color_method == 0)
+  {
+    if (term->has_setf)
+      tputs(TPARM2(set_foreground, color), 1, outch);
+    if (term->has_setaf)
+      tputs(TPARM2(set_a_foreground, color_transcode(color)), 1, outch);
+  }
+
+  else if (term->color_method == 1)
+  {
+    if (term->has_setaf)
+      tputs(TPARM2(set_a_foreground, color), 1, outch);
+    if (term->has_setf)
+      tputs(TPARM2(set_foreground, color_transcode(color)), 1, outch);
+  }
 }
 
 /* ========================================================== */
@@ -2780,10 +2812,21 @@ set_foreground_color(term_t * term, short color)
 void
 set_background_color(term_t * term, short color)
 {
-  if (term->color_method == 0 && term->has_setb)
-    tputs(TPARM2(set_background, color), 1, outch);
-  else if (term->color_method == 1 && term->has_setab)
-    tputs(TPARM2(set_a_background, color), 1, outch);
+  if (term->color_method == 0)
+  {
+    if (term->has_setb)
+      tputs(TPARM2(set_background, color), 1, outch);
+    if (term->has_setab)
+      tputs(TPARM2(set_a_background, color_transcode(color)), 1, outch);
+  }
+
+  else if (term->color_method == 1)
+  {
+    if (term->has_setab)
+      tputs(TPARM2(set_a_background, color), 1, outch);
+    if (term->has_setb)
+      tputs(TPARM2(set_background, color_transcode(color)), 1, outch);
+  }
 }
 
 /* ======================================================= */
@@ -4801,7 +4844,7 @@ move_down(win_t * win, term_t * term, toggle_t * toggles,
 /* Initialize some internal data structures. */
 /* ========================================= */
 void
-init_main_ds(attr_t * init_attr, win_t * win, limit_t * limits,
+init_main_ds(attrib_t * init_attr, win_t * win, limit_t * limits,
              ticker_t * timers, toggle_t * toggles, misc_t * misc,
              timeout_t * timeout, daccess_t * daccess)
 {
@@ -5314,12 +5357,12 @@ special_level_action(char * ctx_name, char * opt_name, char * param,
   win_t *      win             = opt_data[1];
   term_t *     term            = opt_data[2];
   langinfo_t * langinfo        = opt_data[3];
-  attr_t *     init_attr       = opt_data[4];
+  attrib_t *   init_attr       = opt_data[4];
   misc_t *     misc            = opt_data[5];
 
-  attr_t attr = *init_attr;
-  char   opt  = param[strlen(param) - 1]; /* last character of param. */
-  int    i;
+  attrib_t attr = *init_attr;
+  char     opt  = param[strlen(param) - 1]; /* last character of param. */
+  int      i;
 
   special_pattern[opt - '1'] = xstrdup(values[0]);
   utf8_interpret(special_pattern[opt - '1'], langinfo,
@@ -5351,16 +5394,16 @@ attributes_action(char * ctx_name, char * opt_name, char * param, int nb_values,
                   char ** values, int nb_opt_data, void ** opt_data,
                   int nb_ctx_data, void ** ctx_data)
 {
-  win_t *  win       = opt_data[0];
-  term_t * term      = opt_data[1];
-  attr_t * init_attr = opt_data[2];
+  win_t *    win       = opt_data[0];
+  term_t *   term      = opt_data[1];
+  attrib_t * init_attr = opt_data[2];
 
   long i, a;       /* loop index.                               */
   long offset = 0; /* nb of chars to ship to find the attribute *
                     * representation (prefix size).             */
 
-  attr_t   attr;
-  attr_t * attr_to_set = NULL;
+  attrib_t   attr;
+  attrib_t * attr_to_set = NULL;
 
   /* Flags to check if an attribute is already set */
   /* """"""""""""""""""""""""""""""""""""""""""""" */
@@ -5382,11 +5425,11 @@ attributes_action(char * ctx_name, char * opt_name, char * param, int nb_values,
   /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
   struct
   {
-    attr_t * attr;
-    char *   msg;
-    int *    flag;
-    char *   prefix;
-    int      prefix_len;
+    attrib_t * attr;
+    char *     msg;
+    int *      flag;
+    char *     prefix;
+    int        prefix_len;
   } attr_infos[] = {
     { &win->exclude_attr, "The exclude attribute is already set.",
       &exc_attr_set, "e:", 2 },
@@ -5964,6 +6007,7 @@ main(int argc, char * argv[])
     { "roman8", 8 },
     { "r8", 8 },
 
+    { "ISO8859-1", 8 },
     { "ISO-8859-1", 8 },
     { "ISO-IR-100", 8 },
     { "ISO_8859-1:1987", 8 },
@@ -5973,6 +6017,7 @@ main(int argc, char * argv[])
     { "IBM819", 8 },
     { "CP819", 8 },
 
+    { "ISO8859-2", 8 },
     { "ISO-8859-2", 8 },
     { "ISO-IR-101", 8 },
     { "ISO_8859-2:1987", 8 },
@@ -5981,6 +6026,7 @@ main(int argc, char * argv[])
     { "L2", 8 },
     { "CP28592", 8 },
 
+    { "ISO8859-3", 8 },
     { "ISO-8859-3", 8 },
     { "ISO-IR-109", 8 },
     { "ISO_8859-3:1988", 8 },
@@ -5989,6 +6035,7 @@ main(int argc, char * argv[])
     { "L3", 8 },
     { "CP28593", 8 },
 
+    { "ISO8859-4", 8 },
     { "ISO-8859-4", 8 },
     { "ISO-IR-110", 8 },
     { "ISO_8859-4:1988", 8 },
@@ -5996,6 +6043,7 @@ main(int argc, char * argv[])
     { "L4", 8 },
     { "CP28594", 8 },
 
+    { "ISO8859-5", 8 },
     { "ISO-8859-5", 8 },
     { "ISO-IR-144", 8 },
     { "ISO_8859-5:1988", 8 },
@@ -6006,6 +6054,7 @@ main(int argc, char * argv[])
     { "KOI8-RU", 8 },
     { "KOI8-U", 8 },
 
+    { "ISO8859-6", 8 },
     { "ISO-8859-6", 8 },
     { "ISO-IR-127", 8 },
     { "ISO_8859-6:1987", 8 },
@@ -6014,6 +6063,7 @@ main(int argc, char * argv[])
     { "ARABIC", 8 },
     { "CP28596", 8 },
 
+    { "ISO8859-7", 8 },
     { "ISO-8859-7", 8 },
     { "ISO-IR-126", 8 },
     { "ISO_8859-7:2003", 8 },
@@ -6024,12 +6074,14 @@ main(int argc, char * argv[])
     { "GREEK8", 8 },
     { "CP28597", 8 },
 
+    { "ISO8859-8", 8 },
     { "ISO-8859-8", 8 },
     { "ISO-IR-138", 8 },
     { "ISO_8859-8:1988", 8 },
     { "HEBREW", 8 },
     { "CP28598", 8 },
 
+    { "ISO8859-9", 8 },
     { "ISO-8859-9", 8 },
     { "ISO-IR-148", 8 },
     { "ISO_8859-9:1989", 8 },
@@ -6037,6 +6089,7 @@ main(int argc, char * argv[])
     { "L5", 8 },
     { "CP28599", 8 },
 
+    { "ISO8859-10", 8 },
     { "ISO-8859-10", 8 },
     { "ISO-IR-157", 8 },
     { "ISO_8859-10:1992", 8 },
@@ -6044,6 +6097,7 @@ main(int argc, char * argv[])
     { "L6", 8 },
     { "CP28600", 8 },
 
+    { "ISO8859-11", 8 },
     { "ISO-8859-11", 8 },
     { "ISO-8859-11:2001", 8 },
     { "ISO-IR-166", 8 },
@@ -6058,20 +6112,24 @@ main(int argc, char * argv[])
     /* ISO-8859-12 was abandoned in 1997. */
     /* """""""""""""""""""""""""""""""""" */
 
+    { "ISO8859-13", 8 },
     { "ISO-8859-13", 8 },
     { "ISO-IR-179", 8 },
     { "LATIN7", 8 },
     { "L7", 8 },
     { "CP28603", 8 },
 
+    { "ISO8859-14", 8 },
     { "ISO-8859-14", 8 },
     { "LATIN8", 8 },
     { "L8", 8 },
 
+    { "ISO8859-15", 8 },
     { "ISO-8859-15", 8 },
     { "LATIN-9", 8 },
     { "CP28605", 8 },
 
+    { "ISO8859-16", 8 },
     { "ISO-8859-16", 8 },
     { "ISO-IR-226", 8 },
     { "ISO_8859-16:2001", 8 },
@@ -6251,7 +6309,7 @@ main(int argc, char * argv[])
 
   long line_count = 0; /* Only used when -R is selected.                     */
 
-  attr_t init_attr;
+  attrib_t init_attr;
 
   ll_node_t * inc_interval_node = NULL; /* one node of this list.            */
   ll_node_t * exc_interval_node = NULL; /* one node of this list.            */

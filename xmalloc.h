@@ -2,6 +2,12 @@
 #define XMALLOC_H
 
 void *
+rpl_malloc(size_t size);
+
+void *
+rpl_realloc(void * ptr, size_t size);
+
+void *
 xmalloc(size_t size);
 
 void *

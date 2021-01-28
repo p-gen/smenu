@@ -41,7 +41,7 @@ typedef struct term_s        term_t;
 typedef struct toggle_s      toggle_t;
 typedef struct win_s         win_t;
 typedef struct word_s        word_t;
-typedef struct attr_s        attr_t;
+typedef struct attrib_s      attrib_t;
 typedef struct limit_s       limit_t;
 typedef struct ticker_s      ticker_t;
 typedef struct misc_s        misc_t;
@@ -207,7 +207,7 @@ int search_timer  = -1;
 
 /* Structure containing the attributes components */
 /* """""""""""""""""""""""""""""""""""""""""""""" */
-struct attr_s
+struct attrib_s
 {
   attr_set_t  is_set;
   short       fg;
@@ -306,24 +306,24 @@ struct win_s
   unsigned char wide;      /* -w */
   unsigned char center;    /* -M */
 
-  attr_t cursor_attr;           /* current cursor attributes          */
-  attr_t cursor_on_tag_attr;    /* current cursor on tag attributes   */
-  attr_t bar_attr;              /* scrollbar attributes               */
-  attr_t shift_attr;            /* shift indicator attributes         */
-  attr_t message_attr;          /* message (title) attributes         */
-  attr_t search_field_attr;     /* search mode field attributes       */
-  attr_t search_text_attr;      /* search mode text attributes        */
-  attr_t search_err_field_attr; /* bad search mode field attributes   */
-  attr_t search_err_text_attr;  /* bad search mode text attributes    */
-  attr_t match_field_attr;      /* matching word field attributes     */
-  attr_t match_text_attr;       /* matching word text attributes      */
-  attr_t match_err_field_attr;  /* bad matching word field attributes */
-  attr_t match_err_text_attr;   /* bad matching word text attributes  */
-  attr_t include_attr;          /* selectable words attributes        */
-  attr_t exclude_attr;          /* non-selectable words attributes    */
-  attr_t tag_attr;              /* non-selectable words attributes    */
-  attr_t daccess_attr;          /* direct access tag attributes       */
-  attr_t special_attr[5];       /* special (-1,...) words attributes  */
+  attrib_t cursor_attr;           /* current cursor attributes          */
+  attrib_t cursor_on_tag_attr;    /* current cursor on tag attributes   */
+  attrib_t bar_attr;              /* scrollbar attributes               */
+  attrib_t shift_attr;            /* shift indicator attributes         */
+  attrib_t message_attr;          /* message (title) attributes         */
+  attrib_t search_field_attr;     /* search mode field attributes       */
+  attrib_t search_text_attr;      /* search mode text attributes        */
+  attrib_t search_err_field_attr; /* bad search mode field attributes   */
+  attrib_t search_err_text_attr;  /* bad search mode text attributes    */
+  attrib_t match_field_attr;      /* matching word field attributes     */
+  attrib_t match_text_attr;       /* matching word text attributes      */
+  attrib_t match_err_field_attr;  /* bad matching word field attributes */
+  attrib_t match_err_text_attr;   /* bad matching word text attributes  */
+  attrib_t include_attr;          /* selectable words attributes        */
+  attrib_t exclude_attr;          /* non-selectable words attributes    */
+  attrib_t tag_attr;              /* non-selectable words attributes    */
+  attrib_t daccess_attr;          /* direct access tag attributes       */
+  attrib_t special_attr[5];       /* special (-1,...) words attributes  */
 };
 
 /* Sed like node structure */
@@ -467,6 +467,9 @@ ini_cb(win_t * win, term_t * term, limit_t * limits, ticker_t * timers,
 char *
 make_ini_path(char * name, char * base);
 
+short
+color_transcode(short color);
+
 void
 set_foreground_color(term_t * term, short color);
 
@@ -563,13 +566,13 @@ int
 replace(char * orig, sed_t * sed);
 
 int
-decode_attr_toggles(char * s, attr_t * attr);
+decode_attr_toggles(char * s, attrib_t * attr);
 
 int
-parse_attr(char * str, attr_t * attr, short max_color);
+parse_attr(char * str, attrib_t * attr, short max_color);
 
 void
-apply_attr(term_t * term, attr_t attr);
+apply_attr(term_t * term, attrib_t attr);
 
 int
 delims_cmp(const void * a, const void * b);
@@ -604,7 +607,7 @@ move_down(win_t * win, term_t * term, toggle_t * toggles,
           long page, long last_selectable, long last_line, char * tmp_word);
 
 void
-init_main_ds(attr_t * init_attr, win_t * win, limit_t * limits,
+init_main_ds(attrib_t * init_attr, win_t * win, limit_t * limits,
              ticker_t * timers, toggle_t * toggles, misc_t * misc,
              timeout_t * timeout, daccess_t * daccess);
 #endif
