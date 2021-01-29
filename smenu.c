@@ -3875,8 +3875,7 @@ sig_handler(int s)
     /* Terminal resize. */
     /* """""""""""""""" */
     case SIGWINCH:
-      got_winch      = 1;
-      got_winch_alrm = 0;
+      got_winch = 1;
       break;
 
     /* Alarm triggered, This signal is used by the search mechanism to     */
@@ -4910,7 +4909,7 @@ init_main_ds(attrib_t * init_attr, win_t * win, limit_t * limits,
   /* """"""""""""""""""""""""" */
   timers->search        = 100 * FREQ / 10;
   timers->help          = 150 * FREQ / 10;
-  timers->winch         = 10 * FREQ / 10;
+  timers->winch         = 20 * FREQ / 10;
   timers->direct_access = 6 * FREQ / 10;
 
   /* Toggles initialization. */
@@ -9445,7 +9444,8 @@ main(int argc, char * argv[])
 
     sc = get_scancode(buffer, 15);
 
-    if (sc)
+    if (sc && winch_timer < 0) /* Do not allow input when a window *
+                                * refresh is scheduled.            */
     {
       if (timeout.initial_value && buffer[0] != 0x0d && buffer[0] != 'q'
           && buffer[0] != 'Q' && buffer[0] != 3)
