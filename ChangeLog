@@ -1,3 +1,28 @@
+- Version 0.9.17
+* Fixes:
+  * The method to get the cursor location has been fixed and improved.
+  * A display problem when the title takes too many lines has been fixed.
+  * A failure when reopening /dev/tty is now fatal.
+  * Interesting signals are now trapped only when needed.
+  * The refresh mechanism when resizing the terminal has been fixed
+    and improved.
+  * \U does not need too be escaped anymore.
+* Improvements:
+  * The -Q|-ignore_quotes option has been added to provide a way to
+    ignore quotes when splitting the input stream/file into words.
+  * The -!|-int|-int_string option has been added to define a string to
+    be displayed on stdout when ^C is entered during a smenu session.
+  * The usage text is now displayed in case of an error on the command
+    line.
+  * The code to create include/exclude RE patterns has been simplified.
+  * smenu now mimics the Unix shell signal processing.
+* Misc:
+  * The availability of str(n)dup is now checked at compile time.
+  * Tests for RE patterns/inv. character have bee added.
+  * The obsolete autogen.sh script has been removed.
+  * github's ctxopt commit f779fb8 is now used.
+  * The code is now a little more readable.
+
 - Version 0.9.16
 * Bug fixes:
   * The SIGINT handling has been fixed.
