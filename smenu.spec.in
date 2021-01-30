@@ -28,6 +28,7 @@ make %{?_smp_mflags}
 %package tests
 Summary:        Testing system for %{name}
 Group:          Productivity/Text/Utilities
+Requires:       smenu
 
 %description tests
 This packages contains some scripts and a number of tests to check the
