@@ -8694,7 +8694,7 @@ main(int argc, char * argv[])
     long offset;
 
     offset = 0;
-    for (wi = 0; wi < count; wi++)
+    for (wi = 0; wi < count - offset; wi++)
     {
       while (wi + offset < count
              && isempty(word_a[wi + offset].str + daccess.flength))
