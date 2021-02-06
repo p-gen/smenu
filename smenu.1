@@ -57,6 +57,7 @@ and outputs the selection to stdout.
   [\fB-X\fP|\fB-htmout\fP|\fB-hidden_timeout\fP \fItype\fP [\fIword\fP] \
 \fIdelay\fP]
   [\fB-r\fP|\fB-auto_validate\fP]
+  [\fB-is\fP|\fB-incremental_search\fP]
   [\fB-v\fP|\fB-vb\fP|\fB-visual_bell\fP]
   [\fB-Q\fP|\fB-ignore_quotes\fP]
 
@@ -1503,6 +1504,16 @@ is displayed above the selection window.
 (Allowed in all contexts.)
 
 Enables \fBENTER\fP to validate the selection even in search mode.
+.IP "\fB-is\fP|\fB-incremental_search\fP"
+(Allowed in all contexts.)
+
+By default, when a new search session is initiated, the current search
+buffer is reset.
+When this parameter is set, the next search will start where the last
+search ended, except if \fBESC\fP was hit before.
+
+This option instructs not to clean the previous search buffer each time
+a new search session is started.
 .IP "\fB-v\fP|\fB-vb\fP|\fB-visual_bell\fP"
 (Allowed in all contexts.)
 

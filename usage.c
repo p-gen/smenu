@@ -74,6 +74,9 @@ common_help(void)
   printf("  sets a timeout and specifies what to do when it expires.\n");
   printf("-r|-auto_validate\n");
   printf("  enables ENTER to validate the selection even in search mode.\n");
+  printf("-is|-incremental_search\n");
+  printf("  the search buffer is not reset when starting a new search "
+         "session.\n");
   printf("-v|-vb|-visual_bell\n");
   printf("  makes the bell visual (fuzzy search with error).\n");
   printf("-Q|-ignore_quotes\n");

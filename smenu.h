@@ -161,6 +161,8 @@ struct toggle_s
                             * not and we do no want an automatic tagging *
                             * when the users presses <ENTER>             */
   int visual_bell;         /* 1 to flash the window, 0 to make a sound   */
+  int incremental_search;  /* 1 makes the searching process incremental. *
+                            * 0 keeps it forgetful.                      */
 };
 
 /* Structure to store the default or imposed smenu limits */
@@ -610,4 +612,10 @@ void
 init_main_ds(attrib_t * init_attr, win_t * win, limit_t * limits,
              ticker_t * timers, toggle_t * toggles, misc_t * misc,
              timeout_t * timeout, daccess_t * daccess);
+
+void
+reset_search_buffer(win_t * win, search_data_t * search_data, ticker_t * timers,
+                    toggle_t * toggles, term_t * term, daccess_t * daccess,
+                    langinfo_t * langinfo, long last_line, char * tmp_word,
+                    long word_real_max_size);
 #endif

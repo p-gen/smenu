@@ -4923,6 +4923,7 @@ init_main_ds(attrib_t * init_attr, win_t * win, limit_t * limits,
   toggles->autotag             = 0;
   toggles->pinable             = 0;
   toggles->visual_bell         = 0;
+  toggles->incremental_search  = 0;
 
   /* Misc default values. */
   /* """""""""""""""""""" */
@@ -5159,6 +5160,8 @@ toggle_action(char * ctx_name, char * opt_name, char * param, int nb_values,
     toggles->no_scrollbar = 1;
   else if (strcmp(opt_name, "auto_tag") == 0)
     toggles->autotag = 1;
+  else if (strcmp(opt_name, "incremental_search") == 0)
+    toggles->incremental_search = 1;
 }
 
 void
@@ -5977,6 +5980,53 @@ ignore_quotes_action(char * ctx_name, char * opt_name, char * param,
   misc->ignore_quotes = 1;
 }
 
+/* =================================================================== */
+/* Cancels a search. Called when ESC is hit or a new search session is */
+/* initiated and the incremental_search option is not used.            */
+/* =================================================================== */
+void
+reset_search_buffer(win_t * win, search_data_t * search_data, ticker_t * timers,
+                    toggle_t * toggles, term_t * term, daccess_t * daccess,
+                    langinfo_t * langinfo, long last_line, char * tmp_word,
+                    long word_real_max_size)
+{
+  long nl;
+
+  /* ESC key has been pressed. */
+  /* """"""""""""""""""""""""" */
+  search_mode_t old_search_mode = search_mode;
+
+  /* Cancel the search timer. */
+  /* """""""""""""""""""""""" */
+  search_timer = 0;
+
+  search_data->fuzzy_err     = 0;
+  search_data->only_starting = 0;
+  search_data->only_ending   = 0;
+
+  if (help_mode)
+    nl = disp_lines(win, toggles, current, count, search_mode, search_data,
+                    term, last_line, tmp_word, langinfo);
+
+  /* Reset the direct access selector stack. */
+  /* """"""""""""""""""""""""""""""""""""""" */
+  memset(daccess_stack, '\0', 6);
+  daccess_stack_head = 0;
+  daccess_timer      = timers->direct_access;
+
+  /* Clean the potential matching words non empty list. */
+  /* """""""""""""""""""""""""""""""""""""""""""""""""" */
+  search_mode = NONE;
+
+  if (matches_count > 0 || old_search_mode != search_mode)
+  {
+    clean_matches(search_data, word_real_max_size);
+
+    nl = disp_lines(win, toggles, current, count, search_mode, search_data,
+                    term, last_line, tmp_word, langinfo);
+  }
+}
+
 /* ================= */
 /* Main entry point. */
 /* ================= */
@@ -6524,7 +6574,8 @@ main(int argc, char * argv[])
                    "[hidden_timeout #...] "
                    "[validate_in_search_mode] "
                    "[visual_bell] "
-                   "[ignore_quotes] "; /* Do not remove the last space. */
+                   "[ignore_quotes] "
+                   "[incremental_search] "; /* Do not remove the last space. */
 
   main_spec_options = "[*version] "
                       "[*long_help] "
@@ -6670,6 +6721,8 @@ main(int argc, char * argv[])
                           "-r -auto_validate");
   ctxopt_add_opt_settings(parameters, "visual_bell", "-v -vb -visual_bell");
   ctxopt_add_opt_settings(parameters, "ignore_quotes", "-Q -ignore_quotes");
+  ctxopt_add_opt_settings(parameters, "incremental_search",
+                          "-is -incremental_search");
 
   /* ctxopt options incompatibilities. */
   /* """"""""""""""""""""""""""""""""" */
@@ -6745,6 +6798,8 @@ main(int argc, char * argv[])
   ctxopt_add_opt_settings(actions, "version", version_action, (char *)0);
   ctxopt_add_opt_settings(actions, "visual_bell", toggle_action, &toggles,
                           (char *)0);
+  ctxopt_add_opt_settings(actions, "incremental_search", toggle_action,
+                          &toggles, (char *)0);
   ctxopt_add_opt_settings(actions, "wide_mode", wide_mode_action, &win,
                           (char *)0);
   ctxopt_add_opt_settings(actions, "post_subst_all", post_subst_action,
@@ -9693,39 +9748,9 @@ main(int argc, char * argv[])
           {
             /* ESC key has been pressed. */
             /* """"""""""""""""""""""""" */
-            search_mode_t old_search_mode = search_mode;
-
-            /* Cancel the search timer. */
-            /* """""""""""""""""""""""" */
-            search_timer = 0;
-
-            search_data.fuzzy_err     = 0;
-            search_data.only_starting = 0;
-            search_data.only_ending   = 0;
-
-            if (help_mode)
-              nl = disp_lines(&win, &toggles, current, count, search_mode,
-                              &search_data, &term, last_line, tmp_word,
-                              &langinfo);
-
-            /* Reset the direct access selector stack. */
-            /* """"""""""""""""""""""""""""""""""""""" */
-            memset(daccess_stack, '\0', 6);
-            daccess_stack_head = 0;
-            daccess_timer      = timers.direct_access;
-
-            /* Clean the potential matching words non empty list. */
-            /* """""""""""""""""""""""""""""""""""""""""""""""""" */
-            search_mode = NONE;
-
-            if (matches_count > 0 || old_search_mode != search_mode)
-            {
-              clean_matches(&search_data, word_real_max_size);
-
-              nl = disp_lines(&win, &toggles, current, count, search_mode,
-                              &search_data, &term, last_line, tmp_word,
-                              &langinfo);
-            }
+            reset_search_buffer(&win, &search_data, &timers, &toggles, &term,
+                                &daccess, &langinfo, last_line, tmp_word,
+                                word_real_max_size);
 
             break;
           }
@@ -10426,12 +10451,17 @@ main(int argc, char * argv[])
         /* """""""""""""""""""""""""""""""""" */
         fuzzy_method:
 
-          /* Set the search timer. */
-          /* """"""""""""""""""""" */
-          search_timer = timers.search; /* default 10 s. */
-
           if (search_mode == NONE)
           {
+            if (!toggles.incremental_search)
+              reset_search_buffer(&win, &search_data, &timers, &toggles, &term,
+                                  &daccess, &langinfo, last_line, tmp_word,
+                                  word_real_max_size);
+
+            /* Set the search timer. */
+            /* """"""""""""""""""""" */
+            search_timer = timers.search; /* default 10 s. */
+
             search_mode = FUZZY;
 
             if (old_search_mode != FUZZY)
@@ -10456,12 +10486,17 @@ main(int argc, char * argv[])
         /* """""""""""""""""""""""""""""""""""""" */
         substring_method:
 
-          /* Set the search timer. */
-          /* """"""""""""""""""""" */
-          search_timer = timers.search; /* default 10 s. */
-
           if (search_mode == NONE)
           {
+            if (!toggles.incremental_search)
+              reset_search_buffer(&win, &search_data, &timers, &toggles, &term,
+                                  &daccess, &langinfo, last_line, tmp_word,
+                                  word_real_max_size);
+
+            /* Set the search timer. */
+            /* """"""""""""""""""""" */
+            search_timer = timers.search; /* default 10 s. */
+
             search_mode = SUBSTRING;
 
             if (old_search_mode != SUBSTRING)
@@ -10486,12 +10521,17 @@ main(int argc, char * argv[])
         /* """"""""""""""""""""""""""""""""""" */
         prefix_method:
 
-          /* Set the search timer. */
-          /* """"""""""""""""""""" */
-          search_timer = timers.search; /* default 10 s. */
-
           if (search_mode == NONE)
           {
+            if (!toggles.incremental_search)
+              reset_search_buffer(&win, &search_data, &timers, &toggles, &term,
+                                  &daccess, &langinfo, last_line, tmp_word,
+                                  word_real_max_size);
+
+            /* Set the search timer. */
+            /* """"""""""""""""""""" */
+            search_timer = timers.search; /* default 10 s. */
+
             search_mode = PREFIX;
 
             if (old_search_mode != PREFIX)
