@@ -130,6 +130,24 @@ On mine (``LANG`` and ``LC_ALL`` set to ``POSIX``) it displays:
 
 Note the presence of a scrollbar.
 
+Bash example (CRTL-R replacement)
+---------------------------------
+Just add the following in your ``.bashrc``
+
+::
+
+  EOL=$'\n'
+  bind -x '"\C-r": READLINE_LINE=$(fc -lr 1                         \
+                                   | sed "s/[1-9][0-9]*..//"        \
+                                   | smenu -Q -l -a c:7/4b -W"$EOL")
+                   READLINE_POINT=${#READLINE_LINE}'
+
+Launch or relaunch **bash** and hit ``CTRL-R`` (``CTRL-C`` or ``q``
+to exit), enjoy!
+
+You can also add the parameter **-d** to instruct **smenu** to clean
+the selection window after selecting an entry.
+
 Warning for post v0.9.15 versions.
 ----------------------------------
 These versions use a new options system called **ctxopt** which
