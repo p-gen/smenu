@@ -602,10 +602,21 @@ The same mechanism occurs again as \fB-s\fP is also valid in column
 mode so the final understanding of the command line is: \fB-col\fP
 \fB-s\fP \fB_select\fP.
 
-In such a case, the user can set the environment variable
-\fBCTXOPT_DEBUG\fP which any non-empty content.
-When run again the following output will appear on the standard error:
-.PP
+Another example that illustrates the fact that long parameters have
+priority over short parameter combinations: \fB-is\fP will not select
+only words containing a "\fBs\fP", but will act in the same way as its
+alternative name (\fB-incremental_search\fP).
+
+If you really want to select only words containing a "\fBs\fP", simply
+add a space after the \fBi\fP as in \fB-i s\fP or use one of the other
+\fB-i\fP names such as \fB-inc\fP for example.
+
+In such cases, the user may set the \fBCTXOPT_DEBUG\fP environment
+variable which any non-empty content.
+
+If we reconsider the \fB-cols_select\fP example with \fBCTXOPT_DEBUG\fP set
+the ouput is now:
+
 .nf
 CTXOPT_DEBUG: Parameter: -cols_select. Evaluation context: Main.
 CTXOPT_DEBUG: Found a valid parameter as a prefix of -cols_select: -col.
@@ -616,13 +627,14 @@ CTXOPT_DEBUG: Found a valid parameter as a prefix of -s_select: -s.
 CTXOPT_DEBUG: Parameter: -s. Evaluation context: Columns.
 CTXOPT_DEBUG: Argument: _select.
 .fi
-.PP
-The command line: \fB-col\fP \fB-cols_select\fP \fB1\fP solves the
-issue in this case and indicates that only the first column should be
-selectable.
+
+In this case, adding a space in the command line: \fB-col\fP
+\fB-cols_select\fP \fB1\fP also solves the issue and indicates that only
+the first column should be selectable.
+
 Note, however, that at least one argument for \fB-cols_select\fP is
 now required:
-.PP
+
 .nf
 CTXOPT_DEBUG: Parameter: -col. Evaluation context: Main.
 CTXOPT_DEBUG: Switch to context Columns.
