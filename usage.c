@@ -81,6 +81,8 @@ common_help(void)
   printf("  makes the bell visual (fuzzy search with error).\n");
   printf("-Q|-ignore_quotes\n");
   printf("  treats single and double quotes as normal characters.\n");
+  printf("-lim|-limits\n");
+  printf("  overload the words number/max. word length/max columns limits.\n");
 }
 
 void

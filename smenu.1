@@ -60,6 +60,7 @@ and outputs the selection to stdout.
   [\fB-is\fP|\fB-incremental_search\fP]
   [\fB-v\fP|\fB-vb\fP|\fB-visual_bell\fP]
   [\fB-Q\fP|\fB-ignore_quotes\fP]
+  [\fB-lim\fP|\fB-limits\fP \fIlimit:value\fP...]
 
 
   selectors ::= \fIcol1\fP[-\fIcol2\fP],...|\fIrow1\fP[-\fIrow2\fP],...|\
@@ -1540,6 +1541,24 @@ Using this option will remove the word grouping feature from single and
 double quotes which will be considered normal characters.
 For example: \f(CB"a b"\fP will be considered by smenu as two words
 \fB"a\fP and \fBb"\fP and no more as a single word: \fBa b\fP.
+.IP "\fB-lim\fP|\fB-limits\fP \fIlimit:value\fP..."
+(Allowed in all contexts.)
+
+This option gives the possibility to modify the default maximum number
+of words or columns and the maximum permitted word length.
+
+The specified values overload the default settings and/or the settings
+given in the configuration files.
+
+In order to do that, three sub-options can be used:
+.RS
+.IP \fBl\fP:value
+to set the maximum word length allowed.
+.IP \fBw\fP:value
+to set the maximum number of words allowed.
+.IP \fBc\fP:value
+to set the maximum number of columns allowed.
+.RE
 
 .SH NOTES
 If tabulators (\fI\\t\fP) are embedded in the input, there is no way

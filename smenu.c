@@ -551,27 +551,27 @@ ini_cb(win_t * win, term_t * term, limit_t * limits, ticker_t * timers,
   }
   else if (strcmp(section, "limits") == 0)
   {
-    int v;
+    long v;
 
     /* [limits] section. */
     /* """"""""""""""""" */
     if (strcmp(name, "word_length") == 0)
     {
-      if ((error = !(sscanf(value, "%d", &v) == 1 && v > 0)))
+      if ((error = !(sscanf(value, "%ld", &v) == 1 && v > 0)))
         goto out;
       else
         limits->word_length = v;
     }
     else if (strcmp(name, "words") == 0)
     {
-      if ((error = !(sscanf(value, "%d", &v) == 1 && v > 0)))
+      if ((error = !(sscanf(value, "%ld", &v) == 1 && v > 0)))
         goto out;
       else
         limits->words = v;
     }
     else if (strcmp(name, "columns") == 0)
     {
-      if ((error = !(sscanf(value, "%d", &v) == 1 && v > 0)))
+      if ((error = !(sscanf(value, "%ld", &v) == 1 && v > 0)))
         goto out;
       else
         limits->cols = v;
@@ -5534,6 +5534,74 @@ attributes_action(char * ctx_name, char * opt_name, char * param, int nb_values,
 }
 
 void
+limits_action(char * ctx_name, char * opt_name, char * param, int nb_values,
+              char ** values, int nb_opt_data, void ** opt_data,
+              int nb_ctx_data, void ** ctx_data)
+{
+  limit_t * limits = opt_data[0];
+
+  long l;
+  long val;
+
+  char * lim;
+  char * endptr;
+  char * p;
+
+  /* Parse the arguments. */
+  /* """""""""""""""""""" */
+  for (l = 0; l < nb_values; l++)
+  {
+    errno = 0;
+    lim   = values[l];
+    p     = lim + 2;
+
+    switch (*lim)
+    {
+      case 'l': /* word length. */
+        val = strtol(p, &endptr, 0);
+        if (errno == ERANGE || (val == 0 && errno != 0) || endptr == p
+            || *endptr != '\0')
+        {
+          fprintf(stderr, "%s: Invalid word length limit. ", p);
+          fprintf(stderr, "Using the default value: %ld\n",
+                  limits->word_length);
+        }
+        else
+          limits->word_length = val;
+        break;
+
+      case 'w': /* max number of words. */
+        val = strtol(p, &endptr, 0);
+        if (errno == ERANGE || (val == 0 && errno != 0) || endptr == p
+            || *endptr != '\0')
+        {
+          fprintf(stderr, "%s: Invalid words number limit. ", p);
+          fprintf(stderr, "Using the default value: %ld\n", limits->words);
+        }
+        else
+          limits->words = val;
+        break;
+
+      case 'c': /* max number of words. */
+        val = strtol(p, &endptr, 0);
+        if (errno == ERANGE || (val == 0 && errno != 0) || endptr == p
+            || *endptr != '\0')
+        {
+          fprintf(stderr, "%s: Invalid columns number limit. ", p);
+          fprintf(stderr, "Using the default value: %ld\n", limits->cols);
+        }
+        else
+          limits->cols = val;
+        break;
+
+      default:
+        fprintf(stderr, "%s: Invalid limit keyword, should be l, w or c.\n", p);
+        break;
+    }
+  }
+}
+
+void
 version_action(char * ctx_name, char * opt_name, char * param, int nb_values,
                char ** values, int nb_opt_data, void ** opt_data,
                int nb_ctx_data, void ** ctx_data)
@@ -6575,7 +6643,8 @@ main(int argc, char * argv[])
                    "[validate_in_search_mode] "
                    "[visual_bell] "
                    "[ignore_quotes] "
-                   "[incremental_search] "; /* Do not remove the last space. */
+                   "[incremental_search] "
+                   "[limits #limit:value...] "; /* keep the last space! */
 
   main_spec_options = "[*version] "
                       "[*long_help] "
@@ -6723,6 +6792,7 @@ main(int argc, char * argv[])
   ctxopt_add_opt_settings(parameters, "ignore_quotes", "-Q -ignore_quotes");
   ctxopt_add_opt_settings(parameters, "incremental_search",
                           "-is -incremental_search");
+  ctxopt_add_opt_settings(parameters, "limits", "-lim -limits");
 
   /* ctxopt options incompatibilities. */
   /* """"""""""""""""""""""""""""""""" */
@@ -6855,6 +6925,7 @@ main(int argc, char * argv[])
                           &daccess_index, &misc, (char *)0);
   ctxopt_add_opt_settings(actions, "ignore_quotes", ignore_quotes_action, &misc,
                           (char *)0);
+  ctxopt_add_opt_settings(actions, "limits", limits_action, &limits, (char *)0);
 
   /* ctxopt constraints. */
   /* """"""""""""""""""" */
