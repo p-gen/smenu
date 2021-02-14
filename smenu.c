@@ -7495,7 +7495,7 @@ main(int argc, char * argv[])
   if (daccess_np
       && regcomp(&daccess_np_re, daccess_np, REG_EXTENDED | REG_NOSUB) != 0)
   {
-    fprintf(stderr, "Bad regular expression: %s.\n", daccess_np);
+    fprintf(stderr, "%s: Bad regular expression.\n", daccess_np);
 
     exit(EXIT_FAILURE);
   }
@@ -7503,7 +7503,7 @@ main(int argc, char * argv[])
   if (daccess_up
       && regcomp(&daccess_up_re, daccess_up, REG_EXTENDED | REG_NOSUB) != 0)
   {
-    fprintf(stderr, "Bad regular expression: %s.\n", daccess_up);
+    fprintf(stderr, "%s: Bad regular expression.\n", daccess_up);
 
     exit(EXIT_FAILURE);
   }
@@ -7511,7 +7511,7 @@ main(int argc, char * argv[])
   if (include_pattern
       && regcomp(&include_re, include_pattern, REG_EXTENDED | REG_NOSUB) != 0)
   {
-    fprintf(stderr, "Bad regular expression: %s.\n", include_pattern);
+    fprintf(stderr, "%s: Bad regular expression.\n", include_pattern);
 
     exit(EXIT_FAILURE);
   }
@@ -7519,7 +7519,7 @@ main(int argc, char * argv[])
   if (exclude_pattern
       && regcomp(&exclude_re, exclude_pattern, REG_EXTENDED | REG_NOSUB) != 0)
   {
-    fprintf(stderr, "Bad regular expression: %s.\n", exclude_pattern);
+    fprintf(stderr, "%s: Bad regular expression.\n", exclude_pattern);
 
     exit(EXIT_FAILURE);
   }
@@ -7528,7 +7528,7 @@ main(int argc, char * argv[])
       && regcomp(&first_word_re, first_word_pattern, REG_EXTENDED | REG_NOSUB)
            != 0)
   {
-    fprintf(stderr, "Bad regular expression: %s.\n", first_word_pattern);
+    fprintf(stderr, "%s: Bad regular expression.\n", first_word_pattern);
 
     exit(EXIT_FAILURE);
   }
@@ -7537,7 +7537,7 @@ main(int argc, char * argv[])
       && regcomp(&last_word_re, last_word_pattern, REG_EXTENDED | REG_NOSUB)
            != 0)
   {
-    fprintf(stderr, "Bad regular expression: %s.\n", last_word_pattern);
+    fprintf(stderr, "%s: Bad regular expression.\n", last_word_pattern);
 
     exit(EXIT_FAILURE);
   }
@@ -7549,7 +7549,7 @@ main(int argc, char * argv[])
                    REG_EXTENDED | REG_NOSUB)
              != 0)
     {
-      fprintf(stderr, "Bad regular expression: %s.\n", special_pattern[index]);
+      fprintf(stderr, "%s: Bad regular expression.\n", special_pattern[index]);
 
       exit(EXIT_FAILURE);
     }
@@ -7641,7 +7641,7 @@ main(int argc, char * argv[])
 
       if (*unparsed != '\0')
       {
-        fprintf(stderr, "Bad -R argument. Unparsed part: %s.\n", unparsed);
+        fprintf(stderr, "%s: Bad -R argument. Unparsed part.\n", unparsed);
 
         exit(EXIT_FAILURE);
       }
@@ -7681,7 +7681,7 @@ main(int argc, char * argv[])
 
       if (*unparsed != '\0')
       {
-        fprintf(stderr, "Bad -C argument. Unparsed part: %s.\n", unparsed);
+        fprintf(stderr, "%s: Bad -C argument. Unparsed part.\n", unparsed);
 
         exit(EXIT_FAILURE);
       }
@@ -8973,7 +8973,7 @@ main(int argc, char * argv[])
 
     if (regcomp(&re, pre_selection_index + 1, REG_EXTENDED | REG_NOSUB) != 0)
     {
-      fprintf(stderr, "Invalid regular expression :%s.\n", pre_selection_index);
+      fprintf(stderr, "%s: Invalid regular expression.\n", pre_selection_index);
 
       exit(EXIT_FAILURE);
     }
@@ -9064,7 +9064,7 @@ main(int argc, char * argv[])
         current = last_selectable;
       else
       {
-        fprintf(stderr, "Invalid index: %s.\n", ptr);
+        fprintf(stderr, "%s: Invalid index.\n", ptr);
 
         exit(EXIT_FAILURE);
       }
