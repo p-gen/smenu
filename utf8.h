@@ -42,8 +42,8 @@ cptoutf8(char * utf8_str, uint32_t c);
 int
 utf8_interpret(char * s, langinfo_t * langinfo, char sc);
 
-int
-utf8_validate(const char * str, size_t length);
+unsigned char *
+utf8_validate(unsigned char * str);
 
 char *
 utf8_prev(const char * str, const char * p);

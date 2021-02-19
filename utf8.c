@@ -240,7 +240,7 @@ utf8_interpret(char * s, langinfo_t * langinfo, char substitute)
 
         /* Does they form a valid UTF-8 char? */
         /* '''''''''''''''''''''''''''''''''' */
-        if (utf8_validate(tmp, utf8_ascii_len / 2))
+        if (utf8_validate(tmp) == NULL)
         {
           /* Put them back in the original string and move */
           /* the remaining bytes after them.               */
@@ -382,102 +382,74 @@ utf8_sanitize(char * s, char substitute)
   }
 }
 
-static const char trailing_bytes_for_utf8[256] = {
-  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-  1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
-  2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 3, 3, 4, 4, 4, 4, 5, 5, 5, 5
-};
-
-/* =================================================================== */
-/* UTF-8 validation routine inspired by Jeff Bezanson                  */
-/*   placed in the public domain Fall 2005                             */
-/*   (https://github.com/JeffBezanson/cutef8).                         */
-/*                                                                     */
-/* Returns 1 if str contains a valid UTF-8 byte sequence, 0 otherwise. */
-/* =================================================================== */
-int
-utf8_validate(const char * str, size_t length)
+/* ======================================================================= */
+/* The utf8_validate() function scans the '\0'-terminated string starting  */
+/* at s.                                                                   */
+/* It returns a pointer to the first byte of the first malformed           */
+/* or overlong UTF-8 sequence found, or NULL if the string contains only   */
+/* correct UTF-8.                                                          */
+/* It also spots UTF-8 sequences that could cause trouble if converted to  */
+/* UTF-16, namely surrogate characters (U+D800..U+DFFF) and non-Unicode    */
+/* positions (U+FFFE..U+FFFF).                                             */
+/* This routine is very likely to find a malformed sequence if the input   */
+/* uses any other encoding than UTF-8.                                     */
+/* It therefore can be used as a very effective heuristic for              */
+/* distinguishing between UTF-8 and other encodings.                       */
+/*                                                                         */
+/* I wrote this code mainly as a specification of functionality; there     */
+/* are no doubt performance optimizations possible for certain CPUs.       */
+/*                                                                         */
+/* Markus Kuhn <http://www.cl.cam.ac.uk/~mgk25/> -- 2005-03-30             */
+/* License: http://www.cl.cam.ac.uk/~mgk25/short-license.html              */
+/* ======================================================================= */
+unsigned char *
+utf8_validate(unsigned char * s)
 {
-  const unsigned char *p, *pend = (const unsigned char *)str + length;
-  unsigned char        c;
-  size_t               ab;
-
-  for (p = (const unsigned char *)str; p < pend; p++)
+  /* clang-format off */
+  while (*s)
   {
-    c = *p;
-    if (c < 128)
-      continue;
-    if ((c & 0xc0) != 0xc0)
-      return 0;
-    ab = trailing_bytes_for_utf8[c];
-    if (length < ab)
-      return 0;
-    length -= ab;
-
-    p++;
-    /* Check top bits in the second byte. */
-    /* """""""""""""""""""""""""""""""""" */
-    if ((*p & 0xc0) != 0x80)
-      return 0;
-
-    /* Check for overlong sequences for each different length. */
-    /* """"""""""""""""""""""""""""""""""""""""""""""""""""""" */
-    switch (ab)
+    if (*s < 0x80)
+      /* 0xxxxxxx */
+      s++;
+    else if ((s[0] & 0xe0) == 0xc0)
     {
-      /* Check for xx00 000x. */
-      /* """""""""""""""""""" */
-      case 1:
-        if ((c & 0x3e) == 0)
-          return 0;
-        continue; /* We know there aren't any more bytes to check. */
-
-      /* Check for 1110 0000, xx0x xxxx. */
-      /* """"""""""""""""""""""""""""""" */
-      case 2:
-        if (c == 0xe0 && (*p & 0x20) == 0)
-          return 0;
-        break;
-
-      /* Check for 1111 0000, xx00 xxxx. */
-      /* """"""""""""""""""""""""""""""" */
-      case 3:
-        if (c == 0xf0 && (*p & 0x30) == 0)
-          return 0;
-        break;
-
-      /* Check for 1111 1000, xx00 0xxx. */
-      /* """"""""""""""""""""""""""""""" */
-      case 4:
-        if (c == 0xf8 && (*p & 0x38) == 0)
-          return 0;
-        break;
-
-      /* Check for leading 0xfe or 0xff,    */
-      /* and then for 1111 1100, xx00 00xx. */
-      /* """""""""""""""""""""""""""""""""" */
-      case 5:
-        if (c == 0xfe || c == 0xff || (c == 0xfc && (*p & 0x3c) == 0))
-          return 0;
-        break;
+      /* 110XXXXx 10xxxxxx */
+      if ((s[1] & 0xc0) != 0x80 || (s[0] & 0xfe) == 0xc0) /* overlong? */
+        return s;
+      else
+        s += 2;
     }
-
-    /* Check for valid bytes after the 2nd, if any; all must start with 10. */
-    /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-    while (--ab > 0)
+    else if ((s[0] & 0xf0) == 0xe0)
     {
-      if ((*(++p) & 0xc0) != 0x80)
-        return 0;
+      /* 1110XXXX 10Xxxxxx 10xxxxxx */
+      if ((s[1] & 0xc0) != 0x80 ||
+          (s[2] & 0xc0) != 0x80 ||
+          (s[0] == 0xe0 && (s[1] & 0xe0) == 0x80) || /* overlong?         */
+          (s[0] == 0xed && (s[1] & 0xe0) == 0xa0) || /* surrogate?        */
+          (s[0] == 0xef && s[1] == 0xbf &&
+            (s[2] & 0xfe) == 0xbe))                  /* U+FFFE or U+FFFF? */
+        return s;
+      else
+        s += 3;
     }
+    else if ((s[0] & 0xf8) == 0xf0)
+    {
+      /* 11110XXX 10XXxxxx 10xxxxxx 10xxxxxx */
+      if ((s[1] & 0xc0) != 0x80 ||
+          (s[2] & 0xc0) != 0x80 ||
+          (s[3] & 0xc0) != 0x80 ||
+          (s[0] == 0xf0 && (s[1] & 0xf0) == 0x80) ||    /* overlong?   */
+          (s[0] == 0xf4 && s[1] > 0x8f) || s[0] > 0xf4) /* > U+10FFFF? */
+        return s;
+      else
+        s += 4;
+    }
+    else
+      return s;
   }
+  /* clang-format on */
 
-  return 1;
+  return NULL;
 }
 
 /* ======================= */

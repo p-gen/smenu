@@ -2398,7 +2398,7 @@ get_bytes(FILE * input, char * utf8_buffer, ll_t * zapped_glyphs_list,
     /* In this case the original sequence is lost (unsupported  */
     /* encoding).                                               */
     /* """""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-    if (langinfo->utf8 && !utf8_validate(utf8_buffer, last))
+    if (langinfo->utf8 && utf8_validate(utf8_buffer) != NULL)
     {
       byte = utf8_buffer[0] = misc->invalid_char_substitute;
       utf8_buffer[1]        = '\0';
@@ -3025,6 +3025,8 @@ build_metadata(term_t * term, long count, win_t * win)
   while (i < count)
   {
     /* Determine the number of screen positions used by the word. */
+    /* Note: mbstowcs will always succeed here as word_a[i].str   */
+    /*       has already been utf8_validated/repaired.            */
     /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
     word_len   = mbstowcs(NULL, word_a[i].str, 0);
     word_width = wcswidth((w = utf8_strtowcs(word_a[i].str)), word_len);
