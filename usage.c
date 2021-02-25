@@ -1,3 +1,8 @@
+/* ########################################################### */
+/* This Software is licensed under the GPL licensed Version 2, */
+/* please read http://www.gnu.org/copyleft/gpl.html.           */
+/* ########################################################### */
+
 /* **************** */
 /* Usage functions. */
 /* **************** */
