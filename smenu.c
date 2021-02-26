@@ -258,6 +258,7 @@ help(win_t * win, term_t * term, long last_line, toggle_t * toggles)
 /* s -> standout                     */
 /* u -> underline                    */
 /* i -> italic                       */
+/* l -> blink                        */
 /*                                   */
 /* Returns 0 if some unexpected.     */
 /* toggle is found else 0.           */
@@ -268,7 +269,7 @@ decode_attr_toggles(char * s, attrib_t * attr)
   int rc = 1;
 
   attr->bold = attr->dim = attr->reverse = 0;
-  attr->standout = attr->underline = attr->italic = 0;
+  attr->standout = attr->underline = attr->italic = attr->blink = 0;
 
   while (*s != '\0')
   {
@@ -296,6 +297,10 @@ decode_attr_toggles(char * s, attrib_t * attr)
         break;
       case 'i':
         attr->italic = 1;
+        attr->is_set = SET;
+        break;
+      case 'l':
+        attr->blink  = 1;
         attr->is_set = SET;
         break;
       default:
@@ -409,6 +414,9 @@ apply_attr(term_t * term, attrib_t attr)
 
   if (attr.italic > 0)
     tputs(TPARM1(enter_italics_mode), 1, outch);
+
+  if (attr.blink > 0)
+    tputs(TPARM1(enter_blink_mode), 1, outch);
 }
 
 /* ********************* */
@@ -459,6 +467,8 @@ ini_cb(win_t * win, term_t * term, limit_t * limits, ticker_t * timers,
           win->x##_attr.underline = v.underline;  \
         if (v.italic >= 0)                        \
           win->x##_attr.italic = v.italic;        \
+        if (v.blink >= 0)                         \
+          win->x##_attr.blink = v.blink;          \
       }                                           \
     }                                             \
   }
@@ -490,6 +500,8 @@ ini_cb(win_t * win, term_t * term, limit_t * limits, ticker_t * timers,
           win->x##_attr[y - 1].underline = v.underline; \
         if (v.italic >= 0)                              \
           win->x##_attr[y - 1].italic = v.italic;       \
+        if (v.blink >= 0)                               \
+          win->x##_attr[y - 1].blink = v.blink;         \
       }                                                 \
     }                                                   \
   }
@@ -4862,6 +4874,7 @@ init_main_ds(attrib_t * init_attr, win_t * win, limit_t * limits,
   init_attr->standout  = -1;
   init_attr->underline = -1;
   init_attr->italic    = -1;
+  init_attr->blink     = -1;
 
   /* Win fields initialization. */
   /* """""""""""""""""""""""""" */
@@ -5389,6 +5402,7 @@ special_level_action(char * ctx_name, char * opt_name, char * param,
       win->special_attr[opt - '1'].standout  = attr.standout;
       win->special_attr[opt - '1'].underline = attr.underline;
       win->special_attr[opt - '1'].italic    = attr.italic;
+      win->special_attr[opt - '1'].blink     = attr.blink;
     }
   }
 }
@@ -5526,6 +5540,7 @@ attributes_action(char * ctx_name, char * opt_name, char * param, int nb_values,
       attr_to_set->standout  = attr.standout;
       attr_to_set->underline = attr.underline;
       attr_to_set->italic    = attr.italic;
+      attr_to_set->blink     = attr.blink;
     }
     else
     {
@@ -7044,6 +7059,8 @@ main(int argc, char * argv[])
     term.has_standout          = (str == (char *)-1 || str == NULL) ? 0 : 1;
     str                        = tigetstr("sitm");
     term.has_italic            = (str == (char *)-1 || str == NULL) ? 0 : 1;
+    str                        = tigetstr("blink");
+    term.has_blink             = (str == (char *)-1 || str == NULL) ? 0 : 1;
   }
 
   if (!term.has_cursor_up || !term.has_cursor_down || !term.has_cursor_left

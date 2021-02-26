@@ -220,6 +220,7 @@ struct attrib_s
   signed char standout;
   signed char underline;
   signed char italic;
+  signed char blink;
 };
 
 /* Structure containing some terminal characteristics */
@@ -252,6 +253,7 @@ struct term_s
   char has_underline;         /* has underline mode                     */
   char has_standout;          /* has standout mode                      */
   char has_italic;            /* has italic mode                        */
+  char has_blink;             /* has blink mode                         */
 };
 
 /* Structure describing a word */
