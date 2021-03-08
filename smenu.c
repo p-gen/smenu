@@ -886,7 +886,7 @@ check_integer_constraint(int nb_args, char ** args, char * value, char * par)
 {
   if (!is_integer(value))
   {
-    fprintf(stderr, "This argument of %s is not an integer: %s", par, value);
+    fprintf(stderr, "The argument of %s is not an integer: %s", par, value);
     return 0;
   }
   return 1;
