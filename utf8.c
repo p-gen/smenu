@@ -535,6 +535,7 @@ utf8_strtowcs(char * s)
 }
 
 /* ============================================================== */
+/* Poor man UTF-8 aware strtolower version.                       */
 /* Replaces all ASCII characters in src by its lowercase version. */
 /* dst must be preallocated before the call.                      */
 /* ============================================================== */
