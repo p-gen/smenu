@@ -265,7 +265,7 @@ struct word_s
   size_t        mb;            /* number of UTF-8 glyphs to display        */
   long          tag_order;     /* each time a word is tagged, this value   *
                                 * is increased                             */
-  size_t        special_level; /* can vary from 0 to 5; 0 meaning normal   */
+  size_t        special_level; /* can vary from 0 to 9; 0 meaning normal   */
   char *        str;           /* display string associated with this word */
   size_t        len;           /* number of bytes of str (for trimming)    */
   char *        orig;          /* NULL or original string if is had been   *
@@ -327,7 +327,7 @@ struct win_s
   attrib_t exclude_attr;          /* non-selectable words attributes    */
   attrib_t tag_attr;              /* non-selectable words attributes    */
   attrib_t daccess_attr;          /* direct access tag attributes       */
-  attrib_t special_attr[5];       /* special (-1,...) words attributes  */
+  attrib_t special_attr[9];       /* special (-1,...) words attributes  */
 };
 
 /* Sed like node structure */

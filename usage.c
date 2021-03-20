@@ -38,7 +38,7 @@ common_help(void)
   printf("  outputs an optional string when ^C is typed.\n");
   printf("-a|-attr|-attributes\n");
   printf("  sets the attributes for the various displayed elements.\n");
-  printf("-1|-l1|-level1,-2|-l2|-level2,...,-5|-l5|-level5\n");
+  printf("-1|-l1|-level1,-2|-l2|-level2,...,-9|-l9|-level9\n");
   printf("  gives specific colors to up to 5 classes of "
          "selectable words.\n");
   printf("-z|-zap|-zap_glyphs bytes\n");

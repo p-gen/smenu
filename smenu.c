@@ -544,6 +544,10 @@ ini_cb(win_t * win, term_t * term, limit_t * limits, ticker_t * timers,
       CHECK_ATT_ATTR(special, 3)
       CHECK_ATT_ATTR(special, 4)
       CHECK_ATT_ATTR(special, 5)
+      CHECK_ATT_ATTR(special, 6)
+      CHECK_ATT_ATTR(special, 7)
+      CHECK_ATT_ATTR(special, 8)
+      CHECK_ATT_ATTR(special, 9)
       /* clang-format on */
     }
   }
@@ -4911,7 +4915,7 @@ init_main_ds(attrib_t * init_attr, win_t * win, limit_t * limits,
 
   win->sel_sep = NULL;
 
-  for (i = 0; i < 5; i++)
+  for (i = 0; i < 9; i++)
     win->special_attr[i] = *init_attr;
 
   /* Default limits initialization. */
@@ -6338,8 +6342,9 @@ main(int argc, char * argv[])
   regex_t first_word_re;
   regex_t last_word_re;
 
-  char *  special_pattern[5] = { NULL, NULL, NULL, NULL, NULL }; /* -1 .. -5 */
-  regex_t special_re[5];
+  char *  special_pattern[9] = { NULL, NULL, NULL, NULL, NULL,
+                                NULL, NULL, NULL, NULL }; /* -1 .. -9 */
+  regex_t special_re[9];
 
   int include_visual_only = 0; /* If set to 1, the original word which is    *
                                 * read from stdin will be output even if its */
@@ -6641,6 +6646,10 @@ main(int argc, char * argv[])
                    "[special_level_3 #...<3] "
                    "[special_level_4 #...<3] "
                    "[special_level_5 #...<3] "
+                   "[special_level_6 #...<3] "
+                   "[special_level_7 #...<3] "
+                   "[special_level_8 #...<3] "
+                   "[special_level_9 #...<3] "
                    "[zapped_glyphs #bytes] "
                    "[lines [#height]] "
                    "[blank_nonprintable] "
@@ -6755,6 +6764,10 @@ main(int argc, char * argv[])
   ctxopt_add_opt_settings(parameters, "special_level_3", "-3 -l3 -level3");
   ctxopt_add_opt_settings(parameters, "special_level_4", "-4 -l4 -level4");
   ctxopt_add_opt_settings(parameters, "special_level_5", "-5 -l5 -level5");
+  ctxopt_add_opt_settings(parameters, "special_level_6", "-6 -l6 -level6");
+  ctxopt_add_opt_settings(parameters, "special_level_7", "-7 -l7 -level7");
+  ctxopt_add_opt_settings(parameters, "special_level_8", "-8 -l8 -level8");
+  ctxopt_add_opt_settings(parameters, "special_level_9", "-9 -l9 -level9");
   ctxopt_add_opt_settings(parameters, "tag_mode", "-T -tm -tag -tag_mode");
   ctxopt_add_opt_settings(parameters, "pin_mode", "-P -pm -pin -pin_mode");
   ctxopt_add_opt_settings(parameters, "auto_tag", "-p -at -auto_tag");
@@ -6908,6 +6921,18 @@ main(int argc, char * argv[])
                           special_pattern, &win, &term, &langinfo, &init_attr,
                           &misc, (char *)0);
   ctxopt_add_opt_settings(actions, "special_level_5", special_level_action,
+                          special_pattern, &win, &term, &langinfo, &init_attr,
+                          &misc, (char *)0);
+  ctxopt_add_opt_settings(actions, "special_level_6", special_level_action,
+                          special_pattern, &win, &term, &langinfo, &init_attr,
+                          &misc, (char *)0);
+  ctxopt_add_opt_settings(actions, "special_level_7", special_level_action,
+                          special_pattern, &win, &term, &langinfo, &init_attr,
+                          &misc, (char *)0);
+  ctxopt_add_opt_settings(actions, "special_level_8", special_level_action,
+                          special_pattern, &win, &term, &langinfo, &init_attr,
+                          &misc, (char *)0);
+  ctxopt_add_opt_settings(actions, "special_level_9", special_level_action,
                           special_pattern, &win, &term, &langinfo, &init_attr,
                           &misc, (char *)0);
   ctxopt_add_opt_settings(actions, "attributes", attributes_action, &win, &term,
@@ -7085,7 +7110,7 @@ main(int argc, char * argv[])
   /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
   if (term.colors > 7)
   {
-    int special_def_attr[5] = { 1, 2, 3, 5, 6 };
+    int special_def_attr[9] = { 1, 2, 3, 5, 6, 7, 7, 7, 7 };
 
     if (!win.cursor_attr.is_set)
     {
@@ -7222,7 +7247,7 @@ main(int argc, char * argv[])
       win.daccess_attr.is_set = SET;
     }
 
-    for (index = 0; index < 5; index++)
+    for (index = 0; index < 9; index++)
     {
       if (!win.special_attr[index].is_set)
       {
@@ -7364,7 +7389,7 @@ main(int argc, char * argv[])
       win.daccess_attr.is_set = SET;
     }
 
-    for (index = 0; index < 5; index++)
+    for (index = 0; index < 9; index++)
     {
       if (!win.special_attr[index].is_set)
       {
@@ -7632,7 +7657,7 @@ main(int argc, char * argv[])
     exit(EXIT_FAILURE);
   }
 
-  for (index = 0; index < 5; index++)
+  for (index = 0; index < 9; index++)
   {
     if (special_pattern[index]
         && regcomp(&special_re[index], special_pattern[index],
@@ -7908,7 +7933,7 @@ main(int argc, char * argv[])
     /* Check if the word is special. */
     /* """"""""""""""""""""""""""""" */
     special_level = 0;
-    for (index = 0; index < 5; index++)
+    for (index = 0; index < 9; index++)
     {
       if (special_pattern[index] != NULL
           && regexec(&special_re[index], word, (int)0, NULL, 0) == 0)

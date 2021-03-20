@@ -19,6 +19,10 @@ and outputs the selection to stdout.
   [\fB-3\fP|\fB-l3\fP|\fB-level3\fP \fIregex\fP [\fIattr\fP]]
   [\fB-4\fP|\fB-l4\fP|\fB-level4\fP \fIregex\fP [\fIattr\fP]]
   [\fB-5\fP|\fB-l5\fP|\fB-level5\fP \fIregex\fP [\fIattr\fP]]
+  [\fB-6\fP|\fB-l6\fP|\fB-level6\fP \fIregex\fP [\fIattr\fP]]
+  [\fB-7\fP|\fB-l7\fP|\fB-level7\fP \fIregex\fP [\fIattr\fP]]
+  [\fB-8\fP|\fB-l8\fP|\fB-level8\fP \fIregex\fP [\fIattr\fP]]
+  [\fB-9\fP|\fB-l9\fP|\fB-level9\fP \fIregex\fP [\fIattr\fP]]
   [\fB-T\fP|\fB-tm\fP|\fB-tag\fP|\fB-tag_mode\fP [\fIdelim\fP]]
   [\fB-z\fP|\fB-zap\fP|\fB-zap_glyphs\fP \fIbytes\fP]
   [\fB-P\fP|\fB-pm\fP|\fB-pin\fP|\fB-pin_mode\fP [\fIdelim\fP]]
@@ -505,6 +509,7 @@ allowed:
   special3 = /3,b         ; attributes for the special level 3
   special4 = 7/4          ; attributes for the special level 4
   special5 = 7/2,b        ; attributes for the special level 5
+  special9 = 2,rb         ; attributes for the special level 9
 
 [window]
   lines = 7               ; default number of lines of the window
@@ -812,6 +817,10 @@ description of the attributes syntax after the colon and an example.
 .IP "\fB-3\fP|\fB-l3\fP|\fB-level3\fP \fIregex\fP [\fIattr\fP]"
 .IP "\fB-4\fP|\fB-l4\fP|\fB-level4\fP \fIregex\fP [\fIattr\fP]"
 .IP "\fB-5\fP|\fB-l5\fP|\fB-level5\fP \fIregex\fP [\fIattr\fP]"
+.IP "\fB-6\fP|\fB-l6\fP|\fB-level6\fP \fIregex\fP [\fIattr\fP]"
+.IP "\fB-7\fP|\fB-l7\fP|\fB-level7\fP \fIregex\fP [\fIattr\fP]"
+.IP "\fB-8\fP|\fB-l8\fP|\fB-level8\fP \fIregex\fP [\fIattr\fP]"
+.IP "\fB-9\fP|\fB-l9\fP|\fB-level9\fP \fIregex\fP [\fIattr\fP]"
 (Allowed in all contexts.)
 
 Allows one to give a special display color to up to 5 classes of words
@@ -819,8 +828,9 @@ specified by regular expressions.
 They are called \fBspecial levels\fP.
 Only selectable words will be considered.
 
-By default, the 5 special levels have their foreground color set to
-red, green, brown/yellow, purple and cyan.
+By default, the first 5 special levels have their foreground color set
+to red, green, brown/yellow, purple and cyan and the remaining 4 levels
+are set to white.
 All these colors also can be set or modified permanently in the
 configuration files.
 See the example file above for an example.
