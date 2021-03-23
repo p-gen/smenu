@@ -26,6 +26,7 @@ and outputs the selection to stdout.
   [\fB-T\fP|\fB-tm\fP|\fB-tag\fP|\fB-tag_mode\fP [\fIdelim\fP]]
   [\fB-z\fP|\fB-zap\fP|\fB-zap_glyphs\fP \fIbytes\fP]
   [\fB-P\fP|\fB-pm\fP|\fB-pin\fP|\fB-pin_mode\fP [\fIdelim\fP]]
+  [\fB-0\fP|\fB-noat\fP|\fB-no_auto_tag\fP]
   [\fB-p\fP|\fB-at\fP|\fB-auto_tag\fP]
   [\fB-N\fP|\fB-number\fP... [\fIregex\fP...]]
   [\fB-U\fP|\fB-unnumber\fP... [\fIregex\fP...]]
@@ -878,6 +879,9 @@ is pressed to complete the selection process if the
 \fB-p\fP|\fB-at\fP|\fB-auto_tag\fP option is
 also set or if no word has been tagged.
 
+Note that nothing is selected when no words are tagged and the
+\fB-0\fP|\fB-noat\fP|\fB-no_auto_tag\fP option is also set.
+
 All the tagged words (and possibly the world under the cursor) will
 be sent to stdout separated by the optional argument given after the
 option \fB-T\fP|\fB-tm\fP|\fB-tag\fP|\fB-tag_mode\fP.
@@ -906,8 +910,22 @@ second tagged word comes next, and so on.
 This option modifies the default behavior of the
 \fB-T\fP|\fB-tm\fP|\fB-tag\fP|\fB-tag_mode\fP
 and \fB-P\fP|\fB-pm\fP|\fB-pin\fP|\fB-pin_mode\fP options.
+
 An untagged word under the cursor will be automatically tagged when
 \fBENTER\fP is pressed.
+.IP "\fB-0\fP|\fB-noat\fP|\fB-no-auto_tag\fP"
+(Allowed in the "Tagging" context.)
+
+This option modifies the default behavior of the
+\fB-T\fP|\fB-tm\fP|\fB-tag\fP|\fB-tag_mode\fP
+and \fB-P\fP|\fB-pm\fP|\fB-pin\fP|\fB-pin_mode\fP options.
+
+An untagged word under the cursor will \fBnot\fP be automatically tagged
+when \fBENTER\fP is pressed \fBand\fP no other words are tagged.
+This is true even when the option \fB-p\fP|\fB-at\fP|\fB-auto_tag\fP is
+also set.
+
+It is ignored if at least one other word is tagged at that time.
 .IP "\fB-N\fP|\fB-number\fP>da_ctx... [\fIregex\fP]"
 (Allowed in the following contexts: "Main", "Columns", "Lines" and
 "Tabulation".)

@@ -290,6 +290,9 @@ tagging_help(void)
 
   printf("-p|-at|-auto_tag\n");
   printf("  activates the auto-tagging.\n");
+  printf("-0|-noat|-no_auto_tag\n");
+  printf("  do not auto-tag the word under the cursor when in tagged mode\n");
+  printf("  and no other word is selected.\n");
 
   exit(EXIT_FAILURE);
 }

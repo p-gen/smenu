@@ -4940,6 +4940,7 @@ init_main_ds(attrib_t * init_attr, win_t * win, limit_t * limits,
   toggles->keep_spaces         = 0;
   toggles->taggable            = 0;
   toggles->autotag             = 0;
+  toggles->noautotag           = 0;
   toggles->pinable             = 0;
   toggles->visual_bell         = 0;
   toggles->incremental_search  = 0;
@@ -5179,6 +5180,8 @@ toggle_action(char * ctx_name, char * opt_name, char * param, int nb_values,
     toggles->no_scrollbar = 1;
   else if (strcmp(opt_name, "auto_tag") == 0)
     toggles->autotag = 1;
+  else if (strcmp(opt_name, "no_auto_tag") == 0)
+    toggles->noautotag = 1;
   else if (strcmp(opt_name, "incremental_search") == 0)
     toggles->incremental_search = 1;
 }
@@ -6722,6 +6725,7 @@ main(int argc, char * argv[])
                      "[force_last_column #regex]";
 
   tag_spec_options = "[auto_tag] "
+                     "[no_auto_tag] "
                      "[column_mode>Columns] "
                      "[line_mode>Lines] "
                      "[tab_mode>Tabulations [#cols]]";
@@ -6771,6 +6775,7 @@ main(int argc, char * argv[])
   ctxopt_add_opt_settings(parameters, "tag_mode", "-T -tm -tag -tag_mode");
   ctxopt_add_opt_settings(parameters, "pin_mode", "-P -pm -pin -pin_mode");
   ctxopt_add_opt_settings(parameters, "auto_tag", "-p -at -auto_tag");
+  ctxopt_add_opt_settings(parameters, "no_auto_tag", "-0 -noat -no_auto_tag");
   ctxopt_add_opt_settings(parameters, "auto_da_number", "-N -number");
   ctxopt_add_opt_settings(parameters, "auto_da_unnumber", "-U -unnumber");
   ctxopt_add_opt_settings(parameters, "field_da_number",
@@ -6853,6 +6858,8 @@ main(int argc, char * argv[])
   /* """"""""""""""" */
 
   ctxopt_add_opt_settings(actions, "auto_tag", toggle_action, &toggles,
+                          (char *)0);
+  ctxopt_add_opt_settings(actions, "no_auto_tag", toggle_action, &toggles,
                           (char *)0);
   ctxopt_add_opt_settings(actions, "invalid_character", invalid_char_action,
                           &misc, (char *)0);
@@ -10156,11 +10163,19 @@ main(int argc, char * argv[])
               {
                 if (word_a[wi].is_tagged || wi == current)
                 {
-                  /* If the -p option is not used we do not take into */
-                  /* account an untagged word under the cursor.       */
-                  /* """""""""""""""""""""""""""""""""""""""""""""""" */
+                  /* If the -p option is not used we do not take into      */
+                  /* account an untagged word under the cursor if at least */
+                  /* on word is tagged.                                    */
+                  /* """"""""""""""""""""""""""""""""""""""""""""""""""""" */
                   if (wi == current && tagged_words > 0 && !toggles.autotag
                       && !word_a[wi].is_tagged)
+                    continue;
+
+                  /* In tagged mode, do not autotag the word under the cursor */
+                  /* if toggles.noautotag is set and no word are tagged.      */
+                  /* """""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+                  if (tagged_words == 0 && toggles.taggable
+                      && toggles.noautotag)
                     continue;
 
                   /* Chose the original string to print if the current one */

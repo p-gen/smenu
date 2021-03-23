@@ -160,6 +160,8 @@ struct toggle_s
   int autotag;             /* 1 if tagging is selected and pinning is    *
                             * not and we do no want an automatic tagging *
                             * when the users presses <ENTER>             */
+  int noautotag;           /* 1 if the word under the cursor must not be *
+                            * autotagged when no other word are tagged.  */
   int visual_bell;         /* 1 to flash the window, 0 to make a sound   */
   int incremental_search;  /* 1 makes the searching process incremental. *
                             * 0 keeps it forgetful.                      */
