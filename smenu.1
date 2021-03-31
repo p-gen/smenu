@@ -1484,16 +1484,19 @@ excluded word is selected if it exists, otherwise the first non excluded
 word is selected.
 
 If this number if greater than the number of words, the cursor will be
-set on the latest selectable position.
+placed on the latest selectable position.
 .IP * 2
 A single \fB#\fP or the string \fB#last\fP to set the initial
-cursor position to the latest selectable word position.
+cursor position on the latest selectable word position.
 .IP * 2
 A string starting with a \fB/\fP indicating that we want the cursor
-to be set to the first word matching the given regular expression.
+to be placed on the first word matching the given regular expression.
 .IP * 2
-A \fBprefix\fP string indicating that we want the cursor to be set on the
-first word matching the string given (\fBa\fP will match \fBCancel\fP
+A string starting with a \fB=\fP indicating than we want the cursor
+to be placed on that exact word.
+.IP * 2
+A normal string. In this case the cursor will be placed on the
+first word starting with that string (\fBCa\fP will match \fBCancel\fP
 by example).
 .PP
 Warning, when searching for a prefix or a regular expression, smenu
