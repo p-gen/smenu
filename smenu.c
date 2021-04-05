@@ -8728,7 +8728,14 @@ main(int argc, char * argv[])
     /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
     if (win.col_mode)
     {
-      if (*(word->str + daccess.flength) == '\0')
+      long len;
+
+      if (daccess.padding == 'a')
+        len = daccess.flength;
+      else
+        len = 0;
+
+      if (*(word->str + len) == '\0')
         exit(EXIT_FAILURE);
     }
 
@@ -8873,9 +8880,18 @@ main(int argc, char * argv[])
     offset = 0;
     for (wi = 0; wi < count - offset; wi++)
     {
-      while (wi + offset < count
-             && isempty(word_a[wi + offset].str + daccess.flength))
+      long len;
+
+      while (wi + offset < count)
       {
+        if (daccess.padding == 'a' || word_a[wi + offset].is_numbered)
+          len = daccess.flength;
+        else
+          len = 0;
+
+        if (!isempty(word_a[wi + offset].str + len))
+          break;
+
         /* Keep non selectable empty words to allow special effects. */
         /* ''''''''''''''''''''''''''''''''''''''''''''''''''''''''' */
         if (word_a[wi + offset].is_selectable == SOFT_EXCLUDE_MARK
@@ -9057,8 +9073,16 @@ main(int argc, char * argv[])
   /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
 
   for (wi = 0; wi < count; wi++)
-    word_a[wi].bitmap = xcalloc(1, (word_a[wi].mb - daccess.flength) / CHAR_BIT
-                                     + 1);
+  {
+    long len;
+
+    if (daccess.padding == 'a' || word_a[wi].is_numbered)
+      len = daccess.flength;
+    else
+      len = 0;
+
+    word_a[wi].bitmap = xcalloc(1, (word_a[wi].mb - len) / CHAR_BIT + 1);
+  }
 
   /* Find the first selectable word (if any) in the input stream. */
   /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
