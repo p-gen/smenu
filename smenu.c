@@ -3125,11 +3125,10 @@ build_metadata(term_t * term, long count, win_t * win)
   return last;
 }
 
-/* ==================================================================== */
-/* Helper function used by disp_word to print a matching word under the */
-/* cursor when not in search mode with the matching characters of the   */
-/* word highlighted.                                                    */
-/* ==================================================================== */
+/* ======================================================================= */
+/* Helper function used by disp_word to print the cursor with the matching */
+/* characters of the word highlighted.                                     */
+/* ======================================================================= */
 void
 disp_cursor_word(long pos, win_t * win, term_t * term, int err)
 {
@@ -3194,28 +3193,37 @@ disp_cursor_word(long pos, win_t * win, term_t * term, int err)
   }
 }
 
-/* ==================================================================== */
-/* Helper function used by disp_word to print a matching word NOT under */
-/* the cursor with the matching characters of the word highlighted.     */
-/* ==================================================================== */
+/* ========================================================== */
+/* Helper function used by disp_word to print a matching word */
+/* with the matching characters of the word highlighted.      */
+/* ========================================================== */
 void
-disp_matching_word(long pos, win_t * win, term_t * term, int is_cursor, int err)
+disp_matching_word(long pos, win_t * win, term_t * term, int is_current,
+                   int err)
 {
   size_t i;
   int    att_set = 0;
   char * p       = word_a[pos].str + daccess.flength;
   char * np;
+  long   level = 0;
+
+  level = word_a[pos].special_level;
 
   /* Set the search cursor attribute. */
   /* """""""""""""""""""""""""""""""" */
   tputs(TPARM1(exit_attribute_mode), 1, outch);
 
-  if (is_cursor)
+  if (!is_current)
   {
     if (err)
       apply_attr(term, win->match_err_field_attr);
     else
-      apply_attr(term, win->match_field_attr);
+    {
+      if (level > 0)
+        apply_attr(term, win->special_attr[level - 1]);
+      else
+        apply_attr(term, win->match_field_attr);
+    }
   }
   else
   {
@@ -3239,7 +3247,7 @@ disp_matching_word(long pos, win_t * win, term_t * term, int is_cursor, int err)
         /* Set the buffer display attribute. */
         /* """"""""""""""""""""""""""""""""" */
         tputs(TPARM1(exit_attribute_mode), 1, outch);
-        if (is_cursor)
+        if (!is_current)
         {
           if (err)
             apply_attr(term, win->match_err_text_attr);
@@ -3262,12 +3270,17 @@ disp_matching_word(long pos, win_t * win, term_t * term, int is_cursor, int err)
         /* Set the search cursor attribute. */
         /* """""""""""""""""""""""""""""""" */
         tputs(TPARM1(exit_attribute_mode), 1, outch);
-        if (is_cursor)
+        if (!is_current)
         {
           if (err)
             apply_attr(term, win->match_err_field_attr);
           else
-            apply_attr(term, win->match_field_attr);
+          {
+            if (level > 0)
+              apply_attr(term, win->special_attr[level - 1]);
+            else
+              apply_attr(term, win->match_field_attr);
+          }
         }
         else
         {
@@ -3369,7 +3382,7 @@ disp_word(long pos, search_mode_t search_mode, search_data_t * search_data,
         else
           apply_attr(term, win->search_field_attr);
 
-        disp_matching_word(pos, win, term, 0, search_data->fuzzy_err);
+        disp_matching_word(pos, win, term, 1, search_data->fuzzy_err);
       }
     }
     else
@@ -3463,7 +3476,7 @@ disp_word(long pos, search_mode_t search_mode, search_data_t * search_data,
       apply_attr(term, win->include_attr);
 
     if (word_a[pos].is_matching)
-      disp_matching_word(pos, win, term, 1, search_data->fuzzy_err);
+      disp_matching_word(pos, win, term, 0, search_data->fuzzy_err);
     else
     {
       if (word_a[pos].is_tagged)
