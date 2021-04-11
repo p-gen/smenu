@@ -6336,6 +6336,8 @@ main(int argc, char * argv[])
   regex_t include_re; /* variable to store the compiled include (-i) REs.    */
   regex_t exclude_re; /* variable to store the compiled exclude (-e) REs.    */
 
+  ll_t * early_sed_list   = NULL; /* List of sed like string representation  *
+                                   * of regex given after (-ES).             */
   ll_t * sed_list         = NULL; /* List of sed like string representation  *
                                    * of regex given after (-S).              */
   ll_t * include_sed_list = NULL; /* idem for -I.                            */
@@ -6675,6 +6677,7 @@ main(int argc, char * argv[])
                    "[keep_spaces] "
                    "[word_separators #bytes] "
                    "[no_scroll_bar] "
+                   "[early_subst_all... #/regex/repl/opts] "
                    "[post_subst_all... #/regex/repl/opts] "
                    "[post_subst_included... #/regex/repl/opts] "
                    "[post_subst_excluded... #/regex/repl/opts] "
@@ -6823,6 +6826,7 @@ main(int argc, char * argv[])
   ctxopt_add_opt_settings(parameters, "zapped_glyphs", "-z -zap -zap-glyphs");
   ctxopt_add_opt_settings(parameters, "no_scroll_bar",
                           "-q -no_bar -no-scroll_bar");
+  ctxopt_add_opt_settings(parameters, "early_subst_all", "-ES -early_subst");
   ctxopt_add_opt_settings(parameters, "post_subst_all", "-S -subst");
   ctxopt_add_opt_settings(parameters, "post_subst_included",
                           "-I -si -subst_included");
@@ -6922,6 +6926,8 @@ main(int argc, char * argv[])
                           &toggles, (char *)0);
   ctxopt_add_opt_settings(actions, "wide_mode", wide_mode_action, &win,
                           (char *)0);
+  ctxopt_add_opt_settings(actions, "early_subst_all", post_subst_action,
+                          &early_sed_list, &langinfo, &misc, (char *)0);
   ctxopt_add_opt_settings(actions, "post_subst_all", post_subst_action,
                           &sed_list, &langinfo, &misc, (char *)0);
   ctxopt_add_opt_settings(actions, "post_subst_included", post_subst_action,
@@ -7692,6 +7698,24 @@ main(int argc, char * argv[])
 
   /* Parse the post-processing patterns and extract its values. */
   /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+  if (early_sed_list != NULL)
+  {
+    ll_node_t * node = early_sed_list->head;
+
+    while (node != NULL)
+    {
+      if (!parse_sed_like_string((sed_t *)(node->data)))
+      {
+        fprintf(stderr, "Bad -ES argument. Must be something like: "
+                        "/regex/repl_string/[g][v][s][i].\n");
+
+        exit(EXIT_FAILURE);
+      }
+
+      node = node->next;
+    }
+  }
+
   if (sed_list != NULL)
   {
     ll_node_t * node = sed_list->head;
@@ -7928,10 +7952,41 @@ main(int argc, char * argv[])
                           &langinfo, &win, &limits, &misc))
          != NULL)
   {
-    int selectable;
-    int is_first = 0;
-    int special_level;
-    int row_inc_matched = 0;
+    int         selectable;
+    int         is_first = 0;
+    int         special_level;
+    int         row_inc_matched = 0;
+    ll_node_t * node;
+
+    if (*word == '\0')
+      continue;
+
+    /* Early substitution. */
+    /* """"""""""""""""""" */
+    if (early_sed_list != NULL)
+    {
+      char * tmp;
+
+      node = early_sed_list->head;
+
+      while (node != NULL)
+      {
+        tmp = xstrdup(word);
+        if (replace(word, (sed_t *)(node->data)))
+        {
+
+          free(word);
+          word = xstrdup(word_buffer);
+
+          if (((sed_t *)(node->data))->stop)
+            break;
+        }
+
+        *word_buffer = '\0';
+        node         = node->next;
+        free(tmp);
+      }
+    }
 
     if (*word == '\0')
       continue;

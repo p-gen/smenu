@@ -56,6 +56,7 @@ and outputs the selection to stdout.
   [\fB-S\fP|\fB-subst\fP... \fI/regex/repl/opts\fP]
   [\fB-I\fP|\fB-si\fP|\fB-subst_included\fP... \fI/regex/repl/opts\fP]
   [\fB-E\fP|\fB-se\fP|\fB-subst_excluded\fP... \fI/regex/repl/opts\fP]
+  [\fB-ES\fP|\fB-early_subst\fP... \fI/regex/repl/opts\fP]
   [\fB-/\fP|\fB-search_method\fP \fIprefix\fP|\fIsubstring\fP|\fIfuzzy\fP]
   [\fB-s\fP|\fB-sp\fP|\fB-start\fP|\fB-start_pattern\fP \fIpattern\fP]
   [\fB-x\fP|\fB-tmout\fP|\fB-timeout\fP \fItype\fP [\fIword\fP] \fIdelay\fP]
@@ -1462,6 +1463,26 @@ utility.
 .IP "otherwise:"
 The word is simply removed.
 .RE
+.IP "\fB-ES\fP|\fB-subst\fP... \
+/\fIregex\fP/\fIrepl\fP/[\fIg\fP][\fIv\fP][\fIs\fP]"
+(Allowed in all contexts.)
+
+Pre-processes words by applying a substitution based on a regular expression.
+The argument must be formatted as in the \fBsed\fP editor.
+
+The substitutions are made, as the name of the option indicates, before
+any other selection or coloring actions are made.
+
+This option can be used more than once.
+Each substitution will be applied in sequence on each word.
+This sequence can be stopped if a \fBstop\fP flag is encountered.
+
+In summary, this option is similar to the \fB-S\fP|\fB-subst\fP option
+previously described, except that the substitutions are made earlier and
+certain flags like \fBvisual\fP are ignored.
+
+Note that this option can be used in conjunction with the other
+substitution options mentioned above.
 .IP "\fB-/\fP|\fB-search_method\fP \fIsearch_method\fP"
 (Allowed in all contexts.)
 

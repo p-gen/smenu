@@ -63,13 +63,19 @@ common_help(void)
   printf("-q|-no_bar|-no-scroll_bar\n");
   printf("  prevents the display of the scroll bar.\n");
   printf("-S|-subst\n");
-  printf("  sets the post-processing action to apply to all words.\n");
+  printf("  sets the post substitution treatment action to be applied to all "
+         "words.\n");
   printf("-I|-si|-subst_included\n");
-  printf("  sets the post-processing action to apply to selectable "
-         "words only.\n");
+  printf("  sets the post substitution treatment action to be applied to "
+         "selectable\n");
+  printf("  words only.\n");
   printf("-E|-se|-subst_excluded\n");
-  printf("  sets the post-processing action to apply to non-selectable "
-         "words only.\n");
+  printf("  sets the post substitution treatment action to be applied to "
+         "non-selectable\n");
+  printf("-ES|-early_subst\n");
+  printf("  sets the early substitution treatment action to be applied to "
+         "all words.\n");
+  printf("  words only.\n");
   printf("-/|-search_method\n");
   printf("  changes the affectation of the / key (default fuzzy search).\n");
   printf("-s|-sp|-start|-start_pattern\n");
