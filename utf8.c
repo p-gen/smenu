@@ -402,50 +402,52 @@ utf8_sanitize(char * s, char substitute)
 /* Markus Kuhn <http://www.cl.cam.ac.uk/~mgk25/> -- 2005-03-30             */
 /* License: http://www.cl.cam.ac.uk/~mgk25/short-license.html              */
 /* ======================================================================= */
-unsigned char *
-utf8_validate(unsigned char * s)
+char *
+utf8_validate(char * s)
 {
+  unsigned char * us = (unsigned char *)s;
+
   /* clang-format off */
-  while (*s)
+  while (*us)
   {
-    if (*s < 0x80)
+    if (*us < 0x80)
       /* 0xxxxxxx */
-      s++;
-    else if ((s[0] & 0xe0) == 0xc0)
+      us++;
+    else if ((us[0] & 0xe0) == 0xc0)
     {
       /* 110XXXXx 10xxxxxx */
-      if ((s[1] & 0xc0) != 0x80 || (s[0] & 0xfe) == 0xc0) /* overlong? */
-        return s;
+      if ((us[1] & 0xc0) != 0x80 || (us[0] & 0xfe) == 0xc0) /* overlong? */
+        return (char *)us;
       else
-        s += 2;
+        us += 2;
     }
-    else if ((s[0] & 0xf0) == 0xe0)
+    else if ((us[0] & 0xf0) == 0xe0)
     {
       /* 1110XXXX 10Xxxxxx 10xxxxxx */
-      if ((s[1] & 0xc0) != 0x80 ||
-          (s[2] & 0xc0) != 0x80 ||
-          (s[0] == 0xe0 && (s[1] & 0xe0) == 0x80) || /* overlong?         */
-          (s[0] == 0xed && (s[1] & 0xe0) == 0xa0) || /* surrogate?        */
-          (s[0] == 0xef && s[1] == 0xbf &&
-            (s[2] & 0xfe) == 0xbe))                  /* U+FFFE or U+FFFF? */
-        return s;
+      if ((us[1] & 0xc0) != 0x80 ||
+          (us[2] & 0xc0) != 0x80 ||
+          (us[0] == 0xe0 && (us[1] & 0xe0) == 0x80) || /* overlong?         */
+          (us[0] == 0xed && (us[1] & 0xe0) == 0xa0) || /* surrogate?        */
+          (us[0] == 0xef && us[1] == 0xbf &&
+            (us[2] & 0xfe) == 0xbe))                  /* U+FFFE or U+FFFF? */
+        return (char *)us;
       else
-        s += 3;
+        us += 3;
     }
-    else if ((s[0] & 0xf8) == 0xf0)
+    else if ((us[0] & 0xf8) == 0xf0)
     {
       /* 11110XXX 10XXxxxx 10xxxxxx 10xxxxxx */
-      if ((s[1] & 0xc0) != 0x80 ||
-          (s[2] & 0xc0) != 0x80 ||
-          (s[3] & 0xc0) != 0x80 ||
-          (s[0] == 0xf0 && (s[1] & 0xf0) == 0x80) ||    /* overlong?   */
-          (s[0] == 0xf4 && s[1] > 0x8f) || s[0] > 0xf4) /* > U+10FFFF? */
-        return s;
+      if ((us[1] & 0xc0) != 0x80 ||
+          (us[2] & 0xc0) != 0x80 ||
+          (us[3] & 0xc0) != 0x80 ||
+          (us[0] == 0xf0 && (us[1] & 0xf0) == 0x80) ||    /* overlong?   */
+          (us[0] == 0xf4 && us[1] > 0x8f) || us[0] > 0xf4) /* > U+10FFFF? */
+        return (char *)us;
       else
-        s += 4;
+        us += 4;
     }
     else
-      return s;
+      return (char *)us;
   }
   /* clang-format on */
 
