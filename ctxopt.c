@@ -4458,7 +4458,7 @@ ctxopt_add_global_settings(settings s, ...)
 void
 ctxopt_add_opt_settings(settings s, ...)
 {
-  opt_t * opt;
+  opt_t * opt = NULL;
   void *  ptr = NULL;
 
   va_list(args);
