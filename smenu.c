@@ -438,7 +438,7 @@ ini_cb(win_t * win, term_t * term, limit_t * limits, ticker_t * timers,
 
   if (strcmp(section, "colors") == 0)
   {
-    attrib_t v = { UNSET, -1, -1, -1, -1, -1, -1, -1, -1 };
+    attrib_t v = { UNSET, -1, -1, -1, -1, -1, -1, -1, -1, -1 };
 
 #define CHECK_ATTR(x)                             \
   else if (strcmp(name, #x) == 0)                 \
