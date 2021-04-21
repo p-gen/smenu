@@ -211,6 +211,16 @@ removing it (substituted by nothing) afterward using
 
 \fB-E\fP|\fB-se\fP|\fB-subst_excluded\fP gives another way to do that,
 see below or more.
+.SS "Changing input words"
+smenu offers the possibility to modify the input words in a sed-like way.
+Words can be modified at two points: just after they have been read
+and after other operations have been applied, such as enabling,
+disabling or coloring.
+
+The related options are \fB-ES\fP|\fB-subst\fP,
+\fB-S\fP|\fB-subst\fP, \fB-I\fP|\fB-si\fP|\fB-subst_included\fP and
+\fB-E\fP|\fB-se\fP|\fB-subst_excluded\fP their descriptions can be found
+in the \fBOPTIONS\fP section.
 .SS "Searching for words"
 A word can be searched using different algorithms: \fIprefix\fP,
 \fIsubstring\fP of \fIfuzzy\fP.
@@ -412,14 +422,14 @@ pressed.
 .SS Scroll bar
 A scroll bar is displayed at the right of the scrolling window.
 Its appearance is meant to be classical but it has some particularities:
-.IP * 2
+.IP \(bu 2
 The scroll bar is not displayed if all the input words fit on only one
 line.
-.IP * 2
+.IP \(bu 2
 Otherwise, the scroll bar is always displayed except when the \fB-q\fP
 option is set.
 This option completely disables the scroll bar display.
-.IP * 2
+.IP \(bu 2
 When the scrolling window has only one line, the scroll bar has only 3
 states:
 .RS 2
@@ -431,7 +441,7 @@ to see more.
 .IP - 2
 \fB|\fP otherwise.
 .RE
-.IP * 2
+.IP \(bu 2
 When there is more than one line to display, \fB/\fP means that the window
 displays the first line, \fB\\\fP the last line.
 \fB|\fP is used to fill the gap, see below the different possible
@@ -535,7 +545,7 @@ allowed:
 --8<------------------------------------------------------------------
 \fP
 .fi
-.IP * 2
+.IP \(bu 2
 The \fBmethod\fP keyword can take the two possible values displayed
 above and determines if you want to use the native method (limited to 8
 colors) of the \fBansi\fP method (ISO 8613-6) if your terminal supports
@@ -549,12 +559,12 @@ color and \fBtoggles\fP is a strings which can contain the characters
 \fIb\fP, \fId\fP, \fIr\fP, \fIs\fP, \fIu\fP, \fIi\fP and \fIl\fP standing
 for \fIb\fPold, \fId\fPim, \fIr\fPeverse, \fIs\fPtandout, \fIu\fPnderline,
 \fIi\fPtalic and b\fIl\fPink.
-.IP * 2
+.IP \(bu 2
 Spaces are allowed anywhere in the lines and between them, even around
 the \fB=\fP.
-.IP * 2
+.IP \(bu 2
 Everything following a \fB;\fP is ignored.
-.IP * 2
+.IP \(bu 2
 When undefined, the default limits are:
 .TS
 tab(@);
@@ -663,15 +673,15 @@ You may nevertheless have to adjust some scripts using the old smenu
 releases as I did in the lvm_menu example.
 .PP
 Some of the advantages of this new system of options are:
-.IP * 2
+.IP \(bu 2
 Long parameter names are allowed
 One dash is enough, but two are also allowed for compatibility reasons.
-.IP * 2
+.IP \(bu 2
 An option can be referenced by any number of parameters with short or
 long names.
-.IP * 2
+.IP \(bu 2
 Auto checking of missing mandatory options, duplicated option,...
-.IP * 2
+.IP \(bu 2
 Only options usable in the current context are allowed.
 .PP
 This option management system is explained in more detail at
@@ -1397,18 +1407,18 @@ This sequence can be stopped if a \fBstop\fP flag is encountered.
 
 .RS
 \fBflags:\fP
-.IP * 2
+.IP \(bu 2
 The optional trailing \fBg\fP (for \fIg\fPlobal) means that all matching
 occurrences shall be replaced and not only the first one.
-.IP * 2
+.IP \(bu 2
 The optional trailing \fBv\fP (for \fIv\fPisual) means that the altered
 words will only be used for display and search.
 The modifications will \fInot\fP be reflected in the returned word.
-.IP * 2
+.IP \(bu 2
 The optional trailing \fBs\fP (for \fIs\fPtop) means that no
 more substitution will be allowed on this word even if another
 \fB-S\fP|\fB-subst\fP is used.
-.IP * 2
+.IP \(bu 2
 The optional trailing \fBi\fP (for \fIi\fPgnore case) means that the
 string search operation should ignore the case for this pattern.
 
@@ -1496,7 +1506,7 @@ Place the cursor on the first word corresponding to the specified pattern.
 
 \fIpattern\fP can be:
 .RS
-.IP * 2
+.IP \(bu 2
 A \fB#\fP immediately followed by a \fBnumber\fP giving the initial
 position of the cursor (counting from 0).
 
@@ -1506,16 +1516,16 @@ word is selected.
 
 If this number if greater than the number of words, the cursor will be
 placed on the latest selectable position.
-.IP * 2
+.IP \(bu 2
 A single \fB#\fP or the string \fB#last\fP to set the initial
 cursor position on the latest selectable word position.
-.IP * 2
+.IP \(bu 2
 A string starting with a \fB/\fP indicating that we want the cursor
 to be placed on the first word matching the given regular expression.
-.IP * 2
+.IP \(bu 2
 A string starting with a \fB=\fP indicating than we want the cursor
 to be placed on that exact word.
-.IP * 2
+.IP \(bu 2
 A normal string. In this case the cursor will be placed on the
 first word starting with that string (\fBCa\fP will match \fBCancel\fP
 by example).
