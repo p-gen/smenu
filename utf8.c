@@ -471,11 +471,11 @@ utf8_strlen(char * str)
   return j;
 }
 
-/* =================================================================== */
-/* Multibytes extraction of the prefix of n UTF-8 glyphs from a string */
-/* The destination string d must have been allocated before.           */
-/* pos is updated to reflect the position AFTER the prefix.            */
-/* =================================================================== */
+/* ==================================================================== */
+/* Multibytes extraction of the prefix of n UTF-8 glyphs from a string. */
+/* The destination string d must have been allocated before.            */
+/* pos is updated to reflect the position AFTER the prefix.             */
+/* ==================================================================== */
 char *
 utf8_strprefix(char * d, char * s, long n, long * pos)
 {

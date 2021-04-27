@@ -84,16 +84,16 @@ char * left_arrow      = "\xe2\x86\x90";
 char * up_arrow        = "\xe2\x86\x91";
 char * right_arrow     = "\xe2\x86\x92";
 char * down_arrow      = "\xe2\x86\x93";
-char * vertical_bar    = "\xe2\x94\x82"; /* box drawings light vertical      */
-char * shift_left_sym  = "\xe2\x97\x80"; /* leftwards_arrow                  */
-char * shift_right_sym = "\xe2\x96\xb6"; /* rightwards_arrow                 */
-char * sbar_line       = "\xe2\x94\x82"; /* box_drawings_light_vertical      */
-char * sbar_top        = "\xe2\x94\x90"; /* box_drawings_light_down_and_left */
-char * sbar_down       = "\xe2\x94\x98"; /* box_drawings_light_up_and_left   */
-char * sbar_curs       = "\xe2\x95\x91"; /* box_drawings_double_vertical     */
-char * sbar_arr_up     = "\xe2\x96\xb2"; /* black_up_pointing_triangle       */
-char * sbar_arr_down   = "\xe2\x96\xbc"; /* black_down_pointing_triangle     */
-char * msg_arr_down    = "\xe2\x96\xbc"; /* black_down_pointing_triangle     */
+char * vertical_bar    = "\xe2\x94\x82"; /* box drawings light vertical.      */
+char * shift_left_sym  = "\xe2\x97\x80"; /* leftwards_arrow.                  */
+char * shift_right_sym = "\xe2\x96\xb6"; /* rightwards_arrow.                 */
+char * sbar_line       = "\xe2\x94\x82"; /* box_drawings_light_vertical.      */
+char * sbar_top        = "\xe2\x94\x90"; /* box_drawings_light_down_and_left. */
+char * sbar_down       = "\xe2\x94\x98"; /* box_drawings_light_up_and_left.   */
+char * sbar_curs       = "\xe2\x95\x91"; /* box_drawings_double_vertical.     */
+char * sbar_arr_up     = "\xe2\x96\xb2"; /* black_up_pointing_triangle.       */
+char * sbar_arr_down   = "\xe2\x96\xbc"; /* black_down_pointing_triangle.     */
+char * msg_arr_down    = "\xe2\x96\xbc"; /* black_down_pointing_triangle.     */
 
 /* Variables used to manage the direct access entries. */
 /* """"""""""""""""""""""""""""""""""""""""""""""""""" */
@@ -193,8 +193,8 @@ help(win_t * win, term_t * term, long last_line, toggle_t * toggles)
   /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
   tputs(TPARM1(save_cursor), 1, outch);
 
-  /* Center the help line if the -M (Middle option is set. */
-  /* """"""""""""""""""""""""""""""""""""""""""""""""""""" */
+  /* Center the help line if the -M (Middle) option is set. */
+  /* """""""""""""""""""""""""""""""""""""""""""""""""""""" */
   if (win->offset > 0)
     if ((offset = win->offset + win->max_width / 2 - help_len / 2) > 0)
     {
@@ -241,7 +241,7 @@ help(win_t * win, term_t * term, long last_line, toggle_t * toggles)
   tputs(TPARM1(exit_attribute_mode), 1, outch);
   tputs(TPARM1(clr_eol), 1, outch);
 
-  /* Relocate the cursor to its saved position. */
+  /* Put back the cursor to its saved position. */
   /* """""""""""""""""""""""""""""""""""""""""" */
   tputs(TPARM1(restore_cursor), 1, outch);
 }
@@ -653,7 +653,7 @@ out:
 
 /* ======================================================================== */
 /* Load an .ini format file.                                                */
-/* filename - path to a file                                                */
+/* filename - path to a file.                                               */
 /* report   - callback can return non-zero to stop, the callback error code */
 /*            returned from this function.                                  */
 /* return   - return 0 on success.                                          */
@@ -905,7 +905,7 @@ void
 update_bitmaps(search_mode_t mode, search_data_t * data,
                bitmap_affinity_t affinity)
 {
-  long i, j, n; /* work variables */
+  long i, j, n; /* work variables.                                        */
 
   long lmg; /* position of the last matching glyph of the search buffer   *
              * in a word.                                                 */
@@ -979,7 +979,7 @@ update_bitmaps(search_mode_t mode, search_data_t * data,
       start = str;
       lmg   = 0;
 
-      /* starts points to the first UTF-8 glyph of the word. */
+      /* start points to the first UTF-8 glyph of the word. */
       /* """"""""""""""""""""""""""""""""""""""""""""""""""" */
       while ((size_t)(start - str) < word_a[n].len - daccess.flength)
       {
@@ -1053,11 +1053,11 @@ update_bitmaps(search_mode_t mode, search_data_t * data,
 
         free(str);
 
-        /* We know that the first non blank glyph is part of the pattern,   */
-        /* so highlight it if it is not and unhighlight the next occurrence */
-        /* that must be here because this word has already been filtered    */
-        /* by select_starting_pattern().                                    */
-        /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+        /* We know that the first non blank glyph is part of the pattern, */
+        /* so highlight it if it is not and suppresses the highlighting   */
+        /* of the next occurrence that must be here because this word has */
+        /* already been filtered by select_starting_pattern().            */
+        /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
         if (affinity == START_AFFINITY)
         {
           char *ptr1, *ptr2;
@@ -1182,7 +1182,7 @@ find_next_matching_word(long * array, long nb, long value, long * index)
 {
   long left = 0, right = nb, middle;
 
-  /* Use the cached value when possible" */
+  /* Use the cached value when possible. */
   /* """"""""""""""""""""""""""""""""""" */
   if (*index >= 0 && *index < nb - 1 && array[*index] == value)
     return (array[++(*index)]);
@@ -1550,17 +1550,17 @@ parse_regex_selector_part(char * str, filters_t filter, ll_t ** inc_regex_list,
 /* <letter><range1>,<range2>,...                                         */
 /* <range> is n1-n2 | n1 where n1 starts with 1.                         */
 /*                                                                       */
-/* <letter> is a|A|s|S|r|R|u|U where                                     */
-/* a|A is for Add                                                        */
-/* s|S is for Select (same as Add)                                       */
-/* r|R is for Remove                                                     */
-/* d|D is for Deselect (same as Remove)                                  */
+/* <letter> is a|A|s|S|r|R|u|U where:                                    */
+/* a|A is for Add.                                                       */
+/* s|S is for Select (same as Add).                                      */
+/* r|R is for Remove.                                                    */
+/* d|D is for Deselect (same as Remove).                                 */
 /*                                                                       */
-/* str               (in)  string to parse                               */
+/* str               (in)  string to parse.                              */
 /* filter            (out) is INCLUDE_FILTER or EXCLUDE_FILTER according */
-/*                         to <letter>                                   */
+/*                         to <letter>.                                  */
 /* unparsed          (out) is empty on success and contains the unparsed */
-/*                         part on failure                               */
+/*                         part on failure.                              */
 /* inc_interval_list (out) is a list of the interval of elements to      */
 /*                         be included.                                  */
 /* inc_regex_list    (out) is a list of extended regular expressions of  */
@@ -1882,7 +1882,7 @@ err:
 }
 
 /* ===================================================================== */
-/* Utility function used by replace to expand the replacement string     */
+/* Utility function used by replace to expand the replacement string.    */
 /* IN:                                                                   */
 /* orig:            matching part of the original string to be replaced. */
 /* repl:            string containing the replacement directives         */
@@ -2267,7 +2267,7 @@ tst_cb_cli(void * elem)
     insert_sorted_index(&matching_words_a, &matching_words_a_size,
                         &matches_count, pos);
 
-    /* We already are at the last word, report the finding.*/
+    /* We already are at the last word, report the finding. */
     /* """""""""""""""""""""""""""""""""""""""""""""""""""" */
     if (pos == count - 1)
       return 1;
@@ -2311,8 +2311,8 @@ get_scancode(unsigned char * s, size_t max)
   if ((c = my_fgetc(stdin)) == EOF)
     return 0;
 
-  /* Initialize the string with the first byte */
-  /* """"""""""""""""""""""""""""""""""""""""" */
+  /* Initialize the string with the first byte. */
+  /* """""""""""""""""""""""""""""""""""""""""" */
   memset(s, '\0', max);
   s[0] = c;
 
@@ -5449,7 +5449,7 @@ attributes_action(char * ctx_name, char * opt_name, char * param, int nb_values,
   int exc_attr_set           = 0; /* excluded words.                  */
   int cur_attr_set           = 0; /* highlighted word (cursor).       */
   int bar_attr_set           = 0; /* scroll bar.                      */
-  int shift_attr_set         = 0; /* hor. scrolling arrows.           */
+  int shift_attr_set         = 0; /* horizontal scrolling arrows.     */
   int message_attr_set       = 0; /* message (title).                 */
   int tag_attr_set           = 0; /* selected (tagged) words.         */
   int cursor_on_tag_attr_set = 0; /* selected words under the cursor. */
@@ -11188,8 +11188,8 @@ main(int argc, char * argv[])
               /* """""""""""""""""""""""""""""""""""""""""""""""""""""" */
               wchar_t * w = utf8_strtowcs(search_data.buf + old_len);
 
-              /* zero previous matching indicators */
-              /* """"""""""""""""""""""""""""""""" */
+              /* zero previous matching indicators. */
+              /* """""""""""""""""""""""""""""""""" */
               for (i = 0; i < matches_count; i++)
               {
                 long n = matching_words_a[i];
