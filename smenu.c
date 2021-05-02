@@ -10443,6 +10443,9 @@ main(int argc, char * argv[])
           if (search_mode != NONE)
             search_mode = NONE;
 
+          /* Fall through. */
+          /* """"""""""""" */
+
         case 'H':
           if (search_mode == NONE)
           {
@@ -10469,6 +10472,9 @@ main(int argc, char * argv[])
           if (search_mode != NONE)
             search_mode = NONE;
 
+          /* Fall through. */
+          /* """"""""""""" */
+
         case 'h':
           if (search_mode == NONE)
             move_left(&win, &term, &toggles, &search_data, &langinfo, &nl,
@@ -10483,6 +10489,9 @@ main(int argc, char * argv[])
           /* """""""""""""""""""""""""" */
           if (search_mode != NONE)
             search_mode = NONE;
+
+          /* Fall through. */
+          /* """"""""""""" */
 
         case 'L':
           if (search_mode == NONE)
@@ -10512,6 +10521,9 @@ main(int argc, char * argv[])
           if (search_mode != NONE)
             search_mode = NONE;
 
+          /* Fall through. */
+          /* """"""""""""" */
+
         case 'l':
           if (search_mode == NONE)
             move_right(&win, &term, &toggles, &search_data, &langinfo, &nl,
@@ -10540,6 +10552,9 @@ main(int argc, char * argv[])
           /* """"""""""""""""""""""""""""""" */
           if (search_mode != NONE)
             search_mode = NONE;
+
+          /* Fall through. */
+          /* """"""""""""" */
 
         case 'k':
           if (search_mode == NONE)
@@ -10607,6 +10622,9 @@ main(int argc, char * argv[])
           /* """"""""""""""""""""""""""""""""" */
           if (search_mode != NONE)
             search_mode = NONE;
+
+          /* Fall through. */
+          /* """"""""""""" */
 
         case 'j':
           if (search_mode == NONE)
