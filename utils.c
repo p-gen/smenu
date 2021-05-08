@@ -215,11 +215,15 @@ ltrim(char * str, const char * trim_str)
       str[i - begin] = str[i];
 }
 
-/* ================================================= */
-/* Trims trailing characters.                        */
-/* The resulting string will have at least min bytes */
-/* even if trailing spaces remain.                   */
-/* ================================================= */
+/* ==================================================================== */
+/* Trims trailing characters.                                           */
+/* All (ASCII) characters in trim_str will be removed.                  */
+/* The min argument guarantees that the length of the resulting string  */
+/* will not be smaller than this size if it was larger before, 0 is the */
+/* usual value here.                                                    */
+/* Note that when min is greater than 0, tail characters intended to be */
+/* deleted may remain.                                                  */
+/* ==================================================================== */
 void
 rtrim(char * str, const char * trim_str, size_t min)
 {
