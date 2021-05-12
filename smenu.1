@@ -123,14 +123,14 @@ of interpretation of sequences starting with \fI\\u\fP.
 
 \fI\\u\fP can be followed by 2,4,6 or 8 hexadecimal characters composing
 an UTF-8 bytestring.
-Here is an example of using \fI\\u\fP to compose a lowercase latin
-e with acute accent: \fI\\uc3a9\fP.
+Here is an example of using \fI\\u\fP to compose a \fBLatin Small Letter E
+with Acute\fP: \fI\\uc3a9\fP.
 
-\fI\\U\fP must be followed by exactly 6 hexadecimal digits, including
-leading zeros, that represent a unicode codepoint according to ISO
+\fI\\U\fP must be followed by exactly 6 hexadecimal digits, \fBincluding\fP
+leading zeros, that represent a Unicode codepoint according to ISO
 10646 UCS-4.
-The lowercase latin e with acute of the previous example (codepoint
-\fBU+00E9\fP) can then be represented using the notation: \fI\\U0000e9\fP.
+The \fBLatin Small Letter E with Acute\fP of the previous example
+(codepoint \fBU+00E9\fP) can then be represented as \fI\\U0000e9\fP.
 .PP
 Note that with most shells, the \fI\\\fP before \fIu\fP and \fIU\fP
 need to be protected or escaped.
