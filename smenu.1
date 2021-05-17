@@ -115,14 +115,15 @@ Special character sequences formed by a \fI\\\fP followed by one of the
 characters \fIa\fP \fIb\fP \fIt\fP \fIn\fP \fIv\fP \fIf\fP \fIr\fP and
 \fI\\\fP are understood and have their traditional meanings.
 
-UTF-8 sequences introduced by \fI\\u\fP and \fI\\U\fP are also understood.
+\fBUTF-8\fP sequences introduced by \fI\\u\fP and \fI\\U\fP are also
+understood.
 
 \fBWarning\fP, when used together, it is important to know that all
-sequences starting with \fI\\U\fP will be interpreted before the start
-of interpretation of sequences starting with \fI\\u\fP.
+sequences beginning with \fI\\U\fP will be interpreted before the
+beginning of the interpretation of sequences beginning with \fI\\u\fP.
 
 \fI\\u\fP can be followed by 2,4,6 or 8 hexadecimal characters composing
-an UTF-8 bytestring.
+an \fBUTF-8\fP bytestring.
 Here is an example of using \fI\\u\fP to compose a \fBLatin Small Letter E
 with Acute\fP: \fI\\uc3a9\fP.
 
@@ -142,7 +143,7 @@ Non printable characters in words that are not delimiters are
 converted to their traditional form (\fI\\n\fP for end-of-line,
 \fI\\t\fP for tabulation...) by default.
 .PP
-An invalid UTF-8 sequence or other non-printable character will be
+An invalid \fBUTF-8\fP sequence or other non-printable character will be
 replaced by a dot (\fI.\fP) by default.
 .PP
 There is nevertheless a possibility to change this substitution character
@@ -158,7 +159,7 @@ substitution, are also rejected unless they are not selectable.
 This allows special effects like creating blank lines for example.
 These words are also kept in column mode, selectable or not.
 .PP
-smenu has an option to define a set of characters or UTF-8 sequences
+smenu has an option to define a set of characters or \fBUTF-8\fP sequences
 which should be ignored when reading words.
 This can be very useful when dealing with inputs where the EOL sequence
 consists in more than one character.
@@ -751,7 +752,7 @@ by \fB-I\fP|\fB-si\fP|\fB-subst_included\fP or
 (Allowed in all contexts.)
 
 Displays a message (title) above the window.
-If the current locale is not \fIUTF-8\fP, then all \fIUTF-8\fP characters
+If the current locale is not \fBUTF-8\fP, then all \fBUTF-8\fP characters
 will be replaced by the substitution character.
 
 \fI\\u\fP and \fI\\U\fP sequences can be used in the message.
@@ -868,8 +869,8 @@ Examples of possible attributes are:
 .IP "\fB-z\fP|\fB-zap\fP|\fB-zap_glyphs\fP \fIbytes\fP"
 (Allowed in all contexts.)
 
-Initializes a set of UTF-8 characters to be ignored when reading words from
-stdin or a file.
+Initializes a set of \fBUTF-8\fP characters to be ignored when reading
+words from stdin or a file.
 
 Example: The argument \f(CR'\\u0d\\ue282ac,'\fP means: ignore all commas,
 Euro signs and carriage return characters when reading from stdin or
@@ -881,27 +882,30 @@ bytes set.
 (Allowed in the following contexts: "Main", "Columns", "Lines", and
 "Tabulations", switches to the "Tagging" context.)
 
-Enables multiple selections or tag mode.
+Allows multiple selections and switches to \fBtag\fP mode.
 In this mode, several selectable words can be selected without leaving
 the program.
+
+Tagged words are highlighted (underlined by default).
 
 The current word can be automatically tagged when the \fBENTER\fP key
 is pressed to complete the selection process if the
 \fB-p\fP|\fB-at\fP|\fB-auto_tag\fP option is
 also set or if no word has been tagged.
 
-Note that nothing is selected when no words are tagged and the
+Note that nothing is selected when no word is tagged and when the
 \fB-0\fP|\fB-noat\fP|\fB-no_auto_tag\fP option is also set.
 
-All the tagged words (and possibly the world under the cursor) will
-be sent to stdout separated by the optional argument given after the
-option \fB-T\fP|\fB-tm\fP|\fB-tag\fP|\fB-tag_mode\fP.
+All tagged words (and possibly the world under the cursor) will be sent
+to the standard output separated by the optional argument given after
+the option \fB-T\fP|\fB-tm\fP|\fB-tag\fP|\fB-tag_mode\fP.
 
-Note than this \fIseparator\fP can have more than one character, contain
-UTF-8 characters (in native or \fI\\u\fP or \fI\\U\fP form) and can even
-contain control character as in \f(CB$'\\n'\fP.
+Note that this \fIseparator\fP can have more than one character, can
+contain \fBUTF-8\fP characters (in native or \fI\\u\fP or \fI\\U\fP form)
+and can even contain control character as in \f(CB$'\\n'\fP.
 
-A space is used as the default separator if none is given.
+A single space character is used as the default separator if none
+is given.
 
 \fBCaution\fP: To get exactly the same behavior as in version 0.9.11
 and earlier, you must also use the \fB-p\fP|\fB-at\fP|\fB-auto_tag\fP
@@ -1019,15 +1023,15 @@ format \fBx\fP:\fBy\fP where \fBx\fP can be:
 .TP
 \f(CBl\fP (\fB-F\fP|\fB-en\fP|\fB-embedded_number\fP, \
 \fB-N\fP|\fB-number\fP and \fB-U\fP|\fB-unnumber\fP options)
-Here \fBy\fP is the UTF-8 character (in native or \fI\\u\fP or \fI\\U\fP
-form) to print before the number.
+Here \fBy\fP is the \fBUTF-8\fP character (in native or \fI\\u\fP or
+\fI\\U\fP form) to print before the number.
 The default is a single space.
 .
 .TP
 \f(CBr\fP (\fB-F\fP|\fB-en\fP|\fB-embedded_number\fP, \
 \fB-N\fP|\fB-number\fP and \fB-U\fP|\fB-unnumber\fP options)
-Here \fBy\fP is the UTF-8 character (in native or \fI\\u\fP or \fI\\U\fP
-form) to print after the number.
+Here \fBy\fP is the \fBUTF-8\fP character (in native or \fI\\u\fP or
+\fI\\U\fP form) to print after the number.
 The default is \f(CB)\fP.
 .
 .TP
@@ -1259,7 +1263,7 @@ more than one argument.
 Regular expressions and column numbers can be freely mixed.
 
 Regular expression in \fB-C\fP|\fB-cs\fP|\fB-cols\fP|\fB-cols_select\fP and
-\fB-R\fP|\fB-rs\fP|\fB-rows\fP|\fB-rows_select\fP can contain \fIUTF-8\fP
+\fB-R\fP|\fB-rs\fP|\fB-rows\fP|\fB-rows_select\fP can contain \fBUTF-8\fP
 characters either directly or by using the \fI\\u\fP or \fI\\U\fP notation.
 
 Example of columns selection: \f(CB-Ci2,3,/X./,5-7\fP forces the cursor
@@ -1329,7 +1333,7 @@ If there are more columns that gutter characters then the last character
 is used for the remaining columns.
 
 When not given, the separator defaults to a vertical bar \fI|\fP (or a
-full height vertical bar if the locale is set to UTF-8).
+full height vertical bar if the locale is set to \fBUTF-8\fP).
 
 Each character can be given in normal or \fI\\u\fP or \fI\\U\fP form in
 the \fIstring\fP argument.
@@ -1349,7 +1353,7 @@ This option forces them to be retained.
 This option can be used to specify the characters (or multibyte
 sequences) which will be used to delimit the input words.
 
-Multibyte sequences (UTF-8) can be natives of using the same ASCII
+Multibyte sequences (\fBUTF-8\fP) can be natives of using the same ASCII
 representation used in words (a leading \fI\\u\fP or \fI\\U\fP following
 by up to 8 hexadecimal characters for the former and 6 hexadecimal
 characters for the latter).
@@ -1366,7 +1370,7 @@ The default delimiters are: \fISPACE\fP, \fI$'\\t'\fP and \fI$'\\n'\fP.
 This option can be used to specify the characters (or multibyte
 sequences) which will be used to delimit the lines in the input stream.
 
-Multibyte sequences (UTF-8) can be natives of using the same ASCII
+Multibyte sequences (\fBUTF-8\fP) can be natives of using the same ASCII
 representation used in words (a leading \fI\\u\fP or \fI\\U\fP following
 by up to 8 hexadecimal characters for the former and 6 hexadecimal
 characters for the latter).
