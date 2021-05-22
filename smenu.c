@@ -65,9 +65,9 @@ long     new_current;  /* final cur. position, (used in search function). */
 long     prev_current; /* prev. position stored when using direct access. */
 
 long * line_nb_of_word_a;    /* array containing the line number (from 0)   *
-                              * of each word read.                          */
+                              | of each word read.                          */
 long * first_word_in_line_a; /* array containing the index of the first     *
-                              * word of each lines.                         */
+                              | word of each lines.                         */
 
 search_mode_t search_mode     = NONE;
 search_mode_t old_search_mode = NONE;
@@ -129,7 +129,7 @@ volatile sig_atomic_t got_sighup       = 0;
 timeout_t timeout;
 char *    timeout_word;      /* printed word when the timeout type is WORD. */
 char *    timeout_seconds;   /* string containing the number of remaining   *
-                              * seconds.                                    */
+                              | seconds.                                    */
 int       quiet_timeout = 0; /* 1 when we want no message to be displayed.  */
 
 /* *************** */
@@ -146,7 +146,7 @@ help(win_t * win, term_t * term, long last_line, toggle_t * toggles)
   int line   = 0; /* number of windows lines used by the help line.   */
   int len    = 0; /* length of the help line.                         */
   int offset = 0; /* offset from the first column of the terminal to  *
-                   * the start of the help line.                      */
+                   | the start of the help line.                      */
   int entries_nb; /* number of help entries to display.               */
   int help_len;   /* total length of the help line.                   */
 
@@ -908,15 +908,15 @@ update_bitmaps(search_mode_t mode, search_data_t * data,
   long i, j, n; /* work variables.                                        */
 
   long lmg; /* position of the last matching glyph of the search buffer   *
-             * in a word.                                                 */
+             | in a word.                                                 */
 
   long sg; /* index going from lmg backward to 0 of the tested glyphs     *
-            * of the search buffer (searched glyph).                      */
+            | of the search buffer (searched glyph).                      */
 
   long bm_len; /* number of chars taken by the bitmask.                   */
 
   char * start; /* pointer on the position of the matching position       *
-                 * of the last search buffer glyph in the word.           */
+                 | of the last search buffer glyph in the word.           */
 
   char * bm; /* the word's current bitmap.                                */
 
@@ -928,11 +928,11 @@ update_bitmaps(search_mode_t mode, search_data_t * data,
   char * sb_orig = data->buf; /* sb: search buffer.                       */
   char * sb;
   long * o    = data->utf8_off_a;   /* array of the offsets of the search *
-                                     * buffer glyphs.                     */
+                                     | buffer glyphs.                     */
   long * l    = data->utf8_len_a;   /* array of the lengths in bytes of   *
-                                     * the search buffer glyphs.          */
+                                     | the search buffer glyphs.          */
   long   last = data->utf8_len - 1; /* offset of the last glyph in the    *
-                                     * search buffer.                     */
+                                     | search buffer.                     */
 
   long badness = 0; /* number of 0s between two 1s.                       */
 
@@ -994,7 +994,7 @@ update_bitmaps(search_mode_t mode, search_data_t * data,
         if (memcmp(start, sb + o[last], l[last]) == 0)
         {
           char * p; /* Pointer to the beginning of an UTF-8 glyph in *
-                     * the potential lowercase version of the word.  */
+                     | the potential lowercase version of the word.  */
 
           if (last == 0)
           {
@@ -1012,7 +1012,7 @@ update_bitmaps(search_mode_t mode, search_data_t * data,
           /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
           p = start;
           j = last; /* j counts the number of glyphs in the search buffer *
-                     * not found in the word.                             */
+                     | not found in the word.                             */
 
           /* Proceed backwards from the position of last glyph of the      */
           /* search to check if all the previous glyphs can be fond before */
@@ -1906,7 +1906,7 @@ build_repl_string(char * orig, char * repl, long match_start, long match_end,
   char * str       = xmalloc(allocated);
   int    special   = 0;
   long   offset    = match * subs_nb; /* offset of the 1st sub       *
-                                       * corresponding to the match. */
+                                       | corresponding to the match. */
 
   if (*repl == '\0')
     str = xstrdup("");
@@ -2020,7 +2020,7 @@ replace(char * orig, sed_t * sed)
 {
   size_t match_nb   = 0; /* number of matches in the original string. */
   int    sub_nb     = 0; /* number of remembered matches in the       *
-                          * original sting.                           */
+                          | original sting.                           */
   size_t target_len = 0; /* length of the resulting string.           */
   size_t subs_max   = 0;
 
@@ -2032,7 +2032,7 @@ replace(char * orig, sed_t * sed)
 
   const char * p = orig; /* points to the end of the previous match. */
   regmatch_t   m[10];    /* array containing the start/end offsets   *
-                          * of the matches found.                    */
+                          | of the matches found.                    */
 
   while (1)
   {
@@ -3025,7 +3025,7 @@ build_metadata(term_t * term, long count, win_t * win)
   long      last = 0;
   long      word_width;
   long      tab_count; /* Current number of words in the line, *
-                        * used in tab_mode.                    */
+                        | used in tab_mode.                    */
   wchar_t * w;
 
   line_nb_of_word_a[0]    = 0;
@@ -3080,7 +3080,7 @@ build_metadata(term_t * term, long count, win_t * win)
 
       len           = word_width + 1; /* Resets the current line length.    */
       tab_count     = 1;              /* Resets the current number of words *
-                                       * in the line.                       */
+                                       | in the line.                       */
       word_a[i].end = word_width - 1;
       word_a[i].mb  = word_len;
     }
@@ -4555,10 +4555,10 @@ move_up(win_t * win, term_t * term, toggle_t * toggles,
   long cur_line;              /* The line of the cursor.                    */
   long nlines;                /* Number of line in the window.              */
   long first_selectable_line; /* the line containing the first              *
-                               * selectable word.                           */
+                               | selectable word.                           */
   long lines_skipped; /* The number of line between the target line and the *
-                       * first line containing a selectable word in case of *
-                       * exclusions.                                        */
+                       | first line containing a selectable word in case of *
+                       | exclusions.                                        */
   long last_word;     /* The last word on the target line.                  */
   long s, e;          /* Starting and ending terminal position of a word.   */
   int  found;         /* 1 if a line could be fond else 0.                  */
@@ -4718,10 +4718,10 @@ move_down(win_t * win, term_t * term, toggle_t * toggles,
   long cur_line;             /* The line of the cursor.                     */
   long nlines;               /* Number of line in the window.               */
   long last_selectable_line; /* the line containing the last                *
-                              * selectable word.                            */
+                              | selectable word.                            */
   long lines_skipped; /* The number of line between the target line and the *
-                       * first line containing a selectable word in case of *
-                       * exclusions.                                        */
+                       | first line containing a selectable word in case of *
+                       | exclusions.                                        */
   long last_word;     /* The last word on the target line.                  */
   long s, e;          /* Starting and ending terminal position of a word.   */
   int  found;         /* 1 if a line could be fond in the next page else 0. */
@@ -5061,7 +5061,7 @@ tab_mode_action(char * ctx_name, char * opt_name, char * param, int nb_values,
   if (nb_values == 1)
   {
     sscanf(values[0], "%ld", &max_cols); /* Numericity and range were  *
-                                          * already checked by ctxopt. */
+                                          | already checked by ctxopt. */
     win->max_cols = max_cols;
   }
 
@@ -5252,7 +5252,7 @@ gutter_action(char * ctx_name, char * opt_name, char * param, int nb_values,
 
     utf8_interpret(gutter, langinfo,
                    misc->invalid_char_substitute); /* Guarantees a well    *
-                                                    * formed UTF-8 string/ */
+                                                    | formed UTF-8 string/ */
 
     win->gutter_nb = utf8_strlen(gutter);
     win->gutter_a  = xmalloc(win->gutter_nb * sizeof(char *));
@@ -5438,7 +5438,7 @@ attributes_action(char * ctx_name, char * opt_name, char * param, int nb_values,
 
   long i, a;       /* loop index.                               */
   long offset = 0; /* nb of chars to ship to find the attribute *
-                    * representation (prefix size).             */
+                    | representation (prefix size).             */
 
   attrib_t   attr;
   attrib_t * attr_to_set = NULL;
@@ -5536,7 +5536,7 @@ attributes_action(char * ctx_name, char * opt_name, char * param, int nb_values,
         *attr_infos[i].flag = 1;
         offset              = attr_infos[i].prefix_len;
         break; /* We have found a matching prefix, *
-                * no need to continue.             */
+                | no need to continue.             */
       }
       i++;
     }
@@ -5969,7 +5969,7 @@ da_options_action(char * ctx_name, char * opt_name, char * param, int nb_values,
         break;
 
       case 'i': /* Number of UTF-8 glyphs to ignore after the *
-                 * selector to extract.                       */
+                 | selector to extract.                       */
         if (sscanf(value + 2, "%zu%n", &daccess.ignore, &pos) != 1)
         {
           fprintf(stderr, "%s: Bad value after i:\n", param);
@@ -6302,12 +6302,12 @@ main(int argc, char * argv[])
   char ** rem_args    = NULL;
 
   char * message = NULL; /* message to be displayed above the selection      *
-                          * window.                                          */
+                          | window.                                          */
   ll_t * message_lines_list = NULL; /* list of the lines in the message to   *
-                                     * be displayed.                         */
+                                     | be displayed.                         */
   long message_max_width = 0; /* total width of the message (longest line).  */
   long message_max_len   = 0; /* max number of bytes taken by a message      *
-                               * line.                                       */
+                               | line.                                       */
 
   char * int_string = NULL; /* String to be output when typing ^C.           */
   int    int_as_in_shell = 1; /* CTRL-C mimics the shell behaviour.          */
@@ -6320,26 +6320,26 @@ main(int argc, char * argv[])
 
   char *  daccess_np = NULL; /* direct access numbered pattern.              */
   regex_t daccess_np_re; /* variable to store the compiled direct access     *
-                          * pattern (-N) RE.                                 */
+                          | pattern (-N) RE.                                 */
 
   char *  daccess_up = NULL; /* direct access not numbered pattern.          */
   regex_t daccess_up_re; /* variable to store the compiled direct access     *
-                          * pattern (-U) RE.                                 */
+                          | pattern (-U) RE.                                 */
 
   char *  include_pattern     = NULL;
   char *  exclude_pattern     = NULL;
   int     pattern_def_include = -1; /* Set to -1 until an -i or -e option    *
-                                     * is specified, This variable remembers *
-                                     * if the words not matched will be      *
-                                     * included (value 1) or excluded        *
-                                     * (value 0) by default.                 */
+                                     | is specified, This variable remembers *
+                                     | if the words not matched will be      *
+                                     | included (value 1) or excluded        *
+                                     | (value 0) by default.                 */
   regex_t include_re; /* variable to store the compiled include (-i) REs.    */
   regex_t exclude_re; /* variable to store the compiled exclude (-e) REs.    */
 
   ll_t * early_sed_list   = NULL; /* List of sed like string representation  *
-                                   * of regex given after (-ES).             */
+                                   | of regex given after (-ES).             */
   ll_t * sed_list         = NULL; /* List of sed like string representation  *
-                                   * of regex given after (-S).              */
+                                   | of regex given after (-S).              */
   ll_t * include_sed_list = NULL; /* idem for -I.                            */
   ll_t * exclude_sed_list = NULL; /* idem for -E.                            */
 
@@ -6365,9 +6365,9 @@ main(int argc, char * argv[])
   regex_t special_re[9];
 
   int include_visual_only = 0; /* If set to 1, the original word which is    *
-                                * read from stdin will be output even if its */
+                                | read from stdin will be output even if its */
   int exclude_visual_only = 0; /* visual representation was modified via     *
-                                * -S/-I/-E.                                  */
+                                | -S/-I/-E.                                  */
 
   ll_t * cols_selector_list = NULL;
   char * cols_selector      = NULL;
@@ -6385,7 +6385,7 @@ main(int argc, char * argv[])
   long   page;     /* Step for the vertical cursor moves.                    */
   char * word;     /* Temporary variable to work on words.                   */
   char * tmp_word; /* Temporary variable able to contain  the beginning of   *
-                    * the word to be displayed.                              */
+                    | the word to be displayed.                              */
 
   long     last_line = 0; /* last logical line number (from 0).              */
   win_t    win;
@@ -6401,19 +6401,19 @@ main(int argc, char * argv[])
 
   long nl;     /* Number of lines displayed in the window.                   */
   long offset; /* Used to correctly put the cursor at the start of the       *
-                * selection window, even after a terminal vertical scroll.   */
+                | selection window, even after a terminal vertical scroll.   */
 
   long first_selectable; /* Index of the first selectable word in the input  *
-                          * stream.                                          */
+                          | stream.                                          */
   long last_selectable;  /* Index of the last selectable word in the input   *
-                          * stream.                                          */
+                          | stream.                                          */
 
   long min_size; /* Minimum screen width of a column in tabular mode.        */
 
   long tab_max_size;      /* Maximum screen width of a column in tabular     *
-                           * mode.                                           */
+                           | mode.                                           */
   long tab_real_max_size; /* Maximum size in bytes of a column in tabular    *
-                           * mode.                                           */
+                           | mode.                                           */
 
   long * col_real_max_size = NULL; /* Array of maximum sizes (bytes) of each */
                                    /* column in column mode.                 */
@@ -6422,28 +6422,28 @@ main(int argc, char * argv[])
 
   long word_real_max_size = 0; /* size of the longer word after expansion.   */
   long cols_real_max_size = 0; /* Max real width of all columns used when    *
-                                * -w and -c are both set.                    */
+                                | -w and -c are both set.                    */
   long cols_max_size      = 0; /* Same as above for the columns widths       */
 
   long col_index   = 0; /* Index of the current column when reading words,   *
-                         * used  in column mode.                             */
+                         | used  in column mode.                             */
   long cols_number = 0; /* Number of columns in column mode.                 */
 
   char * pre_selection_index = NULL; /* pattern used to set the initial      *
-                                      * cursor position.                     */
+                                      | cursor position.                     */
   unsigned char buffer[16];          /* Input buffer.                        */
 
   search_data_t search_data;
   search_data.buf = NULL;    /* Search buffer                                */
   search_data.len = 0;       /* Current position in the search buffer        */
   search_data.utf8_len  = 0; /* Current position in the search buffer in     *
-                              * UTF-8 units.                                 */
+                              | UTF-8 units.                                 */
   search_data.fuzzy_err = 0; /* reset the error indicator.                   */
   search_data.fuzzy_err_pos = -1; /* no last error position in search        *
                                   buffer.                                    */
 
   long matching_word_cur_index = -1; /* cache for the next/previous moves    *
-                                      * in the matching words array.         */
+                                      | in the matching words array.         */
 
   struct sigaction sa; /* Signal structure.                                  */
 
@@ -6453,7 +6453,7 @@ main(int argc, char * argv[])
   ll_t * record_delims_list = NULL;
 
   char utf8_buffer[5]; /* buffer to store the bytes of a UTF-8 glyph         *
-                        * (4 chars max).                                     */
+                        | (4 chars max).                                     */
   unsigned char is_last;
   char *        charset;
 
@@ -8549,14 +8549,14 @@ main(int argc, char * argv[])
                          <= utf8_strlen(word->str))
                 {
                   unsigned selector_value;  /* numerical value of the         *
-                                             * extracted selector.            */
+                                             | extracted selector.            */
                   long     selector_offset; /* offset in byte to the selector *
-                                             * to extract.                    */
+                                             | to extract.                    */
                   char *   ptr;             /* points just after the selector *
-                                             * to extract.                    */
+                                             | to extract.                    */
                   long     plus_offset;     /* points to the first occurrence *
-                                             * of a number in word->str after *
-                                             * the offset given.              */
+                                             | of a number in word->str after *
+                                             | the offset given.              */
 
                   selector_offset = utf8_offset(word->str, daccess.offset);
 
@@ -9126,7 +9126,7 @@ main(int argc, char * argv[])
   search_data.utf8_len_a = xmalloc(word_real_max_size * sizeof(long));
 
   win.start = 0; /* index of the first element in the    *
-                  * words array to be  displayed.        */
+                  | words array to be  displayed.        */
 
   /* We can now build the first metadata. */
   /* """""""""""""""""""""""""""""""""""" */
@@ -9709,12 +9709,12 @@ main(int argc, char * argv[])
     /* Pressed keys scancodes processing. */
     /* """""""""""""""""""""""""""""""""" */
     page = 1; /* Default number of lines to do down/up *
-               * with PgDn/PgUp.                       */
+               | with PgDn/PgUp.                       */
 
     sc = get_scancode(buffer, 15);
 
     if (sc && winch_timer < 0) /* Do not allow input when a window *
-                                * refresh is scheduled.            */
+                                | refresh is scheduled.            */
     {
       if (timeout.initial_value && buffer[0] != 0x0d && buffer[0] != 'q'
           && buffer[0] != 'Q' && buffer[0] != 3)
