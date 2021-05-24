@@ -1477,7 +1477,7 @@ read:
       break;
 
     s += got;
-  } while (strchr(buf, 'R') == 0);
+  } while (strchr(buf, 'R') == NULL);
 
   /* Parse it. */
   /* """"""""" */
