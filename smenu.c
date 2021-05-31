@@ -6095,8 +6095,6 @@ reset_search_buffer(win_t * win, search_data_t * search_data, ticker_t * timers,
                     langinfo_t * langinfo, long last_line, char * tmp_word,
                     long word_real_max_size)
 {
-  long nl;
-
   /* ESC key has been pressed. */
   /* """"""""""""""""""""""""" */
   search_mode_t old_search_mode = search_mode;
@@ -6110,8 +6108,8 @@ reset_search_buffer(win_t * win, search_data_t * search_data, ticker_t * timers,
   search_data->only_ending   = 0;
 
   if (help_mode)
-    nl = disp_lines(win, toggles, current, count, search_mode, search_data,
-                    term, last_line, tmp_word, langinfo);
+    disp_lines(win, toggles, current, count, search_mode, search_data, term,
+               last_line, tmp_word, langinfo);
 
   /* Reset the direct access selector stack. */
   /* """"""""""""""""""""""""""""""""""""""" */
@@ -6127,8 +6125,8 @@ reset_search_buffer(win_t * win, search_data_t * search_data, ticker_t * timers,
   {
     clean_matches(search_data, word_real_max_size);
 
-    nl = disp_lines(win, toggles, current, count, search_mode, search_data,
-                    term, last_line, tmp_word, langinfo);
+    disp_lines(win, toggles, current, count, search_mode, search_data, term,
+               last_line, tmp_word, langinfo);
   }
 }
 
