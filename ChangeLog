@@ -1,3 +1,26 @@
+- Version 0.9.18
+* Fixes:
+  * A mismatch between signed and unsigned chars has been corrected.
+  * A fatal error in the direct access code has been corrected.
+  * A logic error that could cause a crash has been fixed.
+* Improvements:
+  * The user manual has been updated.
+  * An early substitution option -ES similar to -S has been added.
+  * Special levels are now considered when displaying searched words.
+  * An option to change the behaviour of the multi-selection mode has
+    been added.
+  * 4 more special levels (-6, -7, -8 and -9) are now available.
+  * The missing blink attribute has been added.
+  * The possibility to overload initial limits has been added.
+  * A new search session now starts from scratch by default.
+  * The integer checking function is now more reliable.
+  * A better code for validating UTF-8 byte sequences is now used.
+  * Tests have been added.
+* Misc:
+  * A missing licence reminder in the usage.c file has been added.
+  * An example in the README file has been added.
+  * Error messages are now more consistent.
+
 - Version 0.9.17
 * Fixes:
   * The method to get the cursor location has been fixed and improved.
