@@ -100,7 +100,7 @@ am__CONFIG_DISTCLEAN_FILES = config.status config.cache config.log \
  configure.lineno config.status.lineno
 mkinstalldirs = $(install_sh) -d
 CONFIG_HEADER = config.h
-CONFIG_CLEAN_FILES = smenu.spec
+CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
 am__installdirs = "$(DESTDIR)$(bindir)" "$(DESTDIR)$(man1dir)"
 PROGRAMS = $(bin_PROGRAMS)
@@ -201,8 +201,7 @@ CTAGS = ctags
 CSCOPE = cscope
 AM_RECURSIVE_TARGETS = cscope
 am__DIST_COMMON = $(dist_man_MANS) $(srcdir)/Makefile.in \
-	$(srcdir)/config.h.in $(srcdir)/smenu.spec.in \
-	$(top_srcdir)/build-aux/compile \
+	$(srcdir)/config.h.in $(top_srcdir)/build-aux/compile \
 	$(top_srcdir)/build-aux/config.guess \
 	$(top_srcdir)/build-aux/config.sub \
 	$(top_srcdir)/build-aux/depcomp \
@@ -326,13 +325,12 @@ top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 smenu_SOURCES = smenu.c smenu.h list.c list.h xmalloc.c xmalloc.h \
-                index.c index.h utf8.c utf8.h fgetc.c fgetc.h     \
+		index.c index.h utf8.c utf8.h fgetc.c fgetc.h     \
 		utils.c utils.h usage.c usage.h ctxopt.h ctxopt.c
 
 dist_man_MANS = smenu.1
-EXTRA_DIST = smenu.spec.in smenu.spec ChangeLog build.sh version  \
-	COPYRIGHT LICENSE.rst README.rst examples build-aux tests \
-	FAQ
+EXTRA_DIST = ChangeLog build.sh version COPYRIGHT LICENSE.rst README.rst \
+		examples build-aux tests FAQ
 
 all: config.h
 	$(MAKE) $(AM_MAKEFLAGS) all-am
@@ -387,8 +385,6 @@ $(srcdir)/config.h.in:  $(am__configure_deps)
 
 distclean-hdr:
 	-rm -f config.h stamp-h1
-smenu.spec: $(top_builddir)/config.status $(srcdir)/smenu.spec.in
-	cd $(top_builddir) && $(SHELL) ./config.status $@
 install-binPROGRAMS: $(bin_PROGRAMS)
 	@$(NORMAL_INSTALL)
 	@list='$(bin_PROGRAMS)'; test -n "$(bindir)" || list=; \

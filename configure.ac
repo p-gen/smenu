@@ -58,4 +58,4 @@ case "${host_os}" in
 esac
 
 AC_CONFIG_FILES([Makefile])
-AC_OUTPUT([smenu.spec])
+AC_OUTPUT
