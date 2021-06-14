@@ -1,4 +1,12 @@
-Terminal utility that allows you to use words coming from the standard
-input to create a nice selection window just below the cursor.
+Advanced terminal-based selection tool.
 
-Once done, your selection will be sent to standard output.
+The items to be selected can come from a file or from the standard input.
+The selected item is printed on the standard output.
+
+The items are often ordinary words, but can be more complex.
+
+The selection area can be browsed easily and even disappear once the
+selection is made.
+
+Initially designed to facilitate the creation of menus, smenu quickly
+became a much more general selection tool.
