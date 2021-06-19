@@ -5338,15 +5338,15 @@ exclude_re_action(char * ctx_name, char * opt_name, char * param, int nb_values,
                   char ** values, int nb_opt_data, void ** opt_data,
                   int nb_ctx_data, void ** ctx_data)
 {
-  int *        pattern_def_exclude = opt_data[0];
+  int *        pattern_def_include = opt_data[0];
   char **      exclude_pattern     = opt_data[1];
   langinfo_t * langinfo            = opt_data[2];
   misc_t *     misc                = opt_data[3];
 
   /* Set the default behaviour if not already set. */
   /* """"""""""""""""""""""""""""""""""""""""""""" */
-  if (*pattern_def_exclude == -1)
-    *pattern_def_exclude = 0;
+  if (*pattern_def_include == -1)
+    *pattern_def_include = 1;
 
   if (*exclude_pattern == NULL)
     *exclude_pattern = concat("(", values[0], ")", (char *)0);
