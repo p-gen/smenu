@@ -6485,8 +6485,8 @@ main(int argc, char * argv[])
   char * tab_options, *tab_spec_options;
   char * tag_options, *tag_spec_options;
 
-  /* Used to check the usablility of the DSR terminal feature. */
-  /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+  /* Used to check if we can get the cursor position in the terminal. */
+  /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
   int row; /* absolute line position in terminal (1...)   */
   int col; /* absolute column position in terminal (1...) */
 
@@ -10929,7 +10929,7 @@ main(int argc, char * argv[])
         case '8':
         case '9':
           /* A digit has been pressed to build a number to be used for */
-          /* A direct acces to a words if direct access is enabled.    */
+          /* A direct access to a words if direct access is enabled.   */
           /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""" */
           {
             if (search_mode == NONE && daccess.mode != DA_TYPE_NONE)
