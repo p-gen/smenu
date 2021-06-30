@@ -169,7 +169,7 @@ tst_fuzzy_traverse(tst_node_t * p, int (*callback)(void *), int first_call,
   w1s[0] = p->splitchar;
   w2s[0] = w;
 
-  if (xwcscasecmp(w1s, w2s) == 0)
+  if (my_wcscasecmp(w1s, w2s) == 0)
   {
     ll_node_t * node;
     sub_tst_t * sub_tst_data;

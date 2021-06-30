@@ -6307,7 +6307,7 @@ main(int argc, char * argv[])
   long message_max_len   = 0; /* max number of bytes taken by a message      *
                                | line.                                       */
 
-  char * int_string = NULL; /* String to be output when typing ^C.           */
+  char * int_string      = NULL; /* String to be output when typing ^C.      */
   int    int_as_in_shell = 1; /* CTRL-C mimics the shell behaviour.          */
 
   FILE * input_file; /* The name of the file passed as argument if any.      */
@@ -6644,7 +6644,7 @@ main(int argc, char * argv[])
   free(home_ini_file);
   free(local_ini_file);
 
-  /* Command line options setting using ctxopt. */
+  /* Command line option settings using ctxopt. */
   /* """""""""""""""""""""""""""""""""""""""""" */
   ctxopt_init(argv[0], "stop_if_non_option=No "
                        "allow_abbreviations=No "
@@ -6687,7 +6687,7 @@ main(int argc, char * argv[])
                    "[visual_bell] "
                    "[ignore_quotes] "
                    "[incremental_search] "
-                   "[limits #limit:value...] "; /* keep the last space! */
+                   "[limits #limit:value...] "; /* don't remove this space! */
 
   main_spec_options = "[*version] "
                       "[*long_help] "

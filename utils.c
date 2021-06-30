@@ -298,7 +298,7 @@ isprint8(int i)
 /* Private implementation of wcscasecmp missing in c99. */
 /* ==================================================== */
 int
-xwcscasecmp(const wchar_t * s1, const wchar_t * s2)
+my_wcscasecmp(const wchar_t * s1, const wchar_t * s2)
 {
   wchar_t c1, c2;
 

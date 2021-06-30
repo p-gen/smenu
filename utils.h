@@ -6,8 +6,8 @@
 #ifndef UTILS_H
 #define UTILS_H
 
-# include <errno.h>
-# include <unistd.h>
+#include <errno.h>
+#include <unistd.h>
 
 typedef struct interval_s interval_t;
 typedef struct range_s    range_t;
@@ -63,7 +63,7 @@ int
 isprint8(int i);
 
 int
-xwcscasecmp(const wchar_t * w1s, const wchar_t * w2s);
+my_wcscasecmp(const wchar_t * w1s, const wchar_t * w2s);
 
 int
 is_integer(const char * const s);
