@@ -27,39 +27,33 @@
 int
 cptoutf8(char * utf8_str, uint32_t c)
 {
-  int len   = 0;
-  int first = 0;
-  int i;
+  int len = 0;
 
   if (c < 0x80)
   {
-    first = 0;
-    len   = 1;
+    utf8_str[0] = c;
+    len         = 1;
   }
   else if (c < 0x800)
   {
-    first = 0xc0;
-    len   = 2;
+    utf8_str[0] = 0xC0 | ((c >> 6) & 0x1F);
+    utf8_str[1] = 0x80 | (c & 0x3F);
+    len         = 2;
   }
   else if (c < 0x10000)
   {
-    first = 0xe0;
-    len   = 3;
+    utf8_str[0] = 0xE0 | ((c >> 12) & 0x0F);
+    utf8_str[1] = 0x80 | ((c >> 6) & 0x3F);
+    utf8_str[2] = 0x80 | (c & 0x3F);
+    len         = 3;
   }
-  else if (c < 0x200000)
+  else if (c < 0x110000)
   {
-    first = 0xf0;
-    len   = 4;
-  }
-
-  if (utf8_str)
-  {
-    for (i = len - 1; i > 0; --i)
-    {
-      utf8_str[i] = (c & 0x3f) | 0x80;
-      c >>= 6;
-    }
-    utf8_str[0] = c | first;
+    utf8_str[0] = 0xF0 | ((c >> 18) & 0x07);
+    utf8_str[1] = 0x80 | ((c >> 12) & 0x3F);
+    utf8_str[2] = 0x80 | ((c >> 6) & 0x3F);
+    utf8_str[3] = 0x80 | (c & 0x3F);
+    len         = 4;
   }
 
   return len;
