@@ -2755,10 +2755,10 @@ get_word(FILE * input, ll_t * word_delims_list, ll_t * record_delims_list,
 
       pos = strlen(utf8_buffer);
       while (pos > 0)
-        my_ungetc(utf8_buffer[--pos]);
+        my_ungetc(utf8_buffer[--pos], input);
     }
     else
-      my_ungetc(byte);
+      my_ungetc(byte, input);
   }
 
   /* Mark it as the last word of a record if its sequence matches a */

@@ -32,11 +32,16 @@ my_fgetc(FILE * input)
 /* Pushes character back on input. */
 /* =============================== */
 void
-my_ungetc(int c)
+my_ungetc(int c, FILE * input)
 {
   if (next_buffer_pos >= GETC_BUFF_SIZE)
     fprintf(stderr, "Error: cannot push back more than %d characters\n",
             GETC_BUFF_SIZE);
   else
+  {
     getc_buffer[next_buffer_pos++] = c;
+
+    if (feof(input))
+      clearerr(input); /* No more EOF. */
+  }
 }

@@ -10,6 +10,6 @@ int
 my_fgetc(FILE * input);
 
 void
-my_ungetc(int c);
+my_ungetc(int c, FILE * input);
 
 #endif
