@@ -9,7 +9,7 @@
 int
 my_fgetc(FILE * input);
 
-void
+int
 my_ungetc(int c, FILE * input);
 
 #endif

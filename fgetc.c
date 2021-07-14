@@ -15,7 +15,7 @@ enum
   GETC_BUFF_SIZE = 16
 };
 
-static char getc_buffer[GETC_BUFF_SIZE] = { '\0' };
+static unsigned char getc_buffer[GETC_BUFF_SIZE] = { '\0' };
 
 static long next_buffer_pos = 0; /* Next free position in the getc buffer. */
 
@@ -31,17 +31,24 @@ my_fgetc(FILE * input)
 /* =============================== */
 /* Pushes character back on input. */
 /* =============================== */
-void
+int
 my_ungetc(int c, FILE * input)
 {
+  int rc;
+
   if (next_buffer_pos >= GETC_BUFF_SIZE)
+  {
     fprintf(stderr, "Error: cannot push back more than %d characters\n",
             GETC_BUFF_SIZE);
+    rc = EOF;
+  }
   else
   {
-    getc_buffer[next_buffer_pos++] = c;
+    rc = getc_buffer[next_buffer_pos++] = (unsigned char)c;
 
     if (feof(input))
       clearerr(input); /* No more EOF. */
   }
+
+  return rc;
 }
