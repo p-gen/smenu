@@ -4428,7 +4428,7 @@ find_best_word_upward(long last_word, long s, long e)
   }
 
   /* If the word is not selectable, try to find a selectable word */
-  /* in the line.                                                 */
+  /* in its line.                                                 */
   /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
   if (!word_a[current].is_selectable)
   {
@@ -4508,7 +4508,7 @@ find_best_word_downward(long last_word, long s, long e)
   }
 
   /* If the word is not selectable, try to find a selectable word */
-  /* in ts line.                                                  */
+  /* in its line.                                                 */
   /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
   if (!word_a[current].is_selectable)
   {

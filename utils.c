@@ -131,9 +131,9 @@ merge_intervals(ll_t * list)
   }
 }
 
-/* ****************** */
-/* Strings functions. */
-/* ****************** */
+/* ***************** */
+/* String functions. */
+/* ***************** */
 
 /* ========================================================================= */
 /* Allocates memory and safely concatenate strings. Stolen from a public     */

@@ -10,7 +10,7 @@
 /* will not try to allocate or free this data pointer.                   */
 /*                                                                       */
 /* Also accessors are not provided, the user has to directly manipulate  */
-/* the structure members (head, tail, len, data, prev, next).             */
+/* the structure members (head, tail, len, data, prev, next).            */
 /* ********************************************************************* */
 
 #include <stdio.h>
