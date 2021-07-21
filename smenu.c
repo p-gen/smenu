@@ -244,6 +244,8 @@ help(win_t * win, term_t * term, long last_line, toggle_t * toggles)
   /* Put back the cursor to its saved position. */
   /* """""""""""""""""""""""""""""""""""""""""" */
   tputs(TPARM1(restore_cursor), 1, outch);
+
+  free(arrows);
 }
 
 /* *********************************** */
