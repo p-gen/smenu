@@ -161,26 +161,22 @@ help(win_t * win, term_t * term, long last_line, toggle_t * toggles)
                          (char *)0);
 
   struct entry_s entries[] = {
-    { 'n', "Move:", 5 }, { 'b', arrows, 4 },   { 'n', "|", 1 },
-    { 'b', "h", 1 },     { 'b', "j", 1 },      { 'b', "k", 1 },
-    { 'b', "l", 1 },     { 'n', ",", 1 },      { 'b', "PgUp", 4 },
-    { 'n', "/", 1 },     { 'b', "PgDn", 4 },   { 'n', "/", 1 },
-    { 'b', "Home", 4 },  { 'n', "/", 1 },      { 'b', "End", 3 },
-    { 'n', " ", 1 },     { 'n', "Abort:", 6 }, { 'b', "q", 1 },
-    { 'n', " ", 1 },     { 'n', "Find:", 5 },  { 'b', "/", 1 },
-    { 'n', "|", 1 },     { 'b', "\"\'", 2 },   { 'n', "|", 1 },
-    { 'b', "~*", 2 },    { 'n', "|", 1 },      { 'b', "=^", 2 },
-    { 'n', ",", 1 },     { 'b', "SP", 2 },     { 'n', "|", 1 },
-    { 'b', "nN", 2 },    { 'n', " ", 1 },      { 'n', "Select:", 7 },
-    { 'b', "CR", 2 },    { 'n', "|", 1 },      { 'b', "tTU", 3 }
+    { 'r', "Move:", 5 }, { 'b', arrows, 4 },    { 'n', " ", 1 },
+    { 'b', "h", 1 },     { 'b', "j", 1 },       { 'b', "k", 1 },
+    { 'b', "l", 1 },     { 'n', " ", 1 },       { 'b', "PgUp", 4 },
+    { 'n', " ", 1 },     { 'b', "PgDn", 4 },    { 'n', " ", 1 },
+    { 'b', "Home", 4 },  { 'n', " ", 1 },       { 'b', "End", 3 },
+    { 'n', " ", 1 },     { 'r', "Abort:", 6 },  { 'b', "q", 1 },
+    { 'n', " ", 1 },     { 'n', "^C", 2 },      { 'n', " ", 1 },
+    { 'r', "Find:", 5 }, { 'b', "/", 1 },       { 'n', " ", 1 },
+    { 'b', "\"\'", 2 },  { 'n', " ", 1 },       { 'b', "~*", 2 },
+    { 'n', " ", 1 },     { 'b', "=^", 2 },      { 'n', ",", 1 },
+    { 'b', "SP", 2 },    { 'n', " ", 1 },       { 'b', "nN", 2 },
+    { 'n', " ", 1 },     { 'r', "Select:", 7 }, { 'b', "CR", 2 },
+    { 'n', " ", 1 },     { 'r', "Cancel:", 7 }, { 'n', "ESC", 3 }
   };
 
   entries_nb = sizeof(entries) / sizeof(struct entry_s);
-
-  /* Remove the last two entries if tagging is not enabled. */
-  /* """""""""""""""""""""""""""""""""""""""""""""""""""""" */
-  if (!toggles->taggable)
-    entries_nb -= 2;
 
   /* Get the total length of the help line. */
   /* """""""""""""""""""""""""""""""""""""" */
@@ -222,10 +218,12 @@ help(win_t * win, term_t * term, long last_line, toggle_t * toggles)
     switch (entries[index].attr)
     {
       case 'b':
+        tputs(TPARM1(exit_attribute_mode), 1, outch);
         if (term->has_bold)
           tputs(TPARM1(enter_bold_mode), 1, outch);
         break;
       case 'r':
+        tputs(TPARM1(exit_attribute_mode), 1, outch);
         if (term->has_reverse)
           tputs(TPARM1(enter_reverse_mode), 1, outch);
         else if (term->has_standout)
@@ -4942,7 +4940,7 @@ init_main_ds(attrib_t * init_attr, win_t * win, limit_t * limits,
   /* Default timers in 1/10 s. */
   /* """"""""""""""""""""""""" */
   timers->search        = 100 * FREQ / 10;
-  timers->help          = 150 * FREQ / 10;
+  timers->help          = 300 * FREQ / 10;
   timers->winch         = 20 * FREQ / 10;
   timers->direct_access = 6 * FREQ / 10;
 
@@ -11085,7 +11083,7 @@ main(int argc, char * argv[])
 
             /* Arm the help timer. */
             /* """"""""""""""""""" */
-            help_timer = timers.help; /* default 15 s. */
+            help_timer = timers.help; /* default 30 s. */
           }
           else
             goto special_cmds_when_searching;
