@@ -10435,8 +10435,7 @@ main(int argc, char * argv[])
         ksol:
           /* Go to the start of the line. */
           /* """""""""""""""""""""""""""" */
-          if (search_mode != NONE)
-            search_mode = NONE;
+          search_mode = NONE;
 
           /* Fall through. */
           /* """"""""""""" */
@@ -10464,8 +10463,7 @@ main(int argc, char * argv[])
         kl:
           /* Cursor Left key has been pressed. */
           /* """"""""""""""""""""""""""""""""" */
-          if (search_mode != NONE)
-            search_mode = NONE;
+          search_mode = NONE;
 
           /* Fall through. */
           /* """"""""""""" */
@@ -10482,8 +10480,7 @@ main(int argc, char * argv[])
         keol:
           /* Go to the end of the line. */
           /* """""""""""""""""""""""""" */
-          if (search_mode != NONE)
-            search_mode = NONE;
+          search_mode = NONE;
 
           /* Fall through. */
           /* """"""""""""" */
@@ -10513,8 +10510,7 @@ main(int argc, char * argv[])
         kr:
           /* Right key has been pressed. */
           /* """"""""""""""""""""""""""" */
-          if (search_mode != NONE)
-            search_mode = NONE;
+          search_mode = NONE;
 
           /* Fall through. */
           /* """"""""""""" */
@@ -10545,8 +10541,7 @@ main(int argc, char * argv[])
         ku:
           /* Cursor Up key has been pressed. */
           /* """"""""""""""""""""""""""""""" */
-          if (search_mode != NONE)
-            search_mode = NONE;
+          search_mode = NONE;
 
           /* Fall through. */
           /* """"""""""""" */
@@ -10565,8 +10560,7 @@ main(int argc, char * argv[])
           /* """""""""""""""""""""""""""""""" */
           current = 0;
 
-          if (search_mode != NONE)
-            search_mode = NONE;
+          search_mode = NONE;
 
           /* Find the first selectable word. */
           /* """"""""""""""""""""""""""""""" */
@@ -10615,8 +10609,7 @@ main(int argc, char * argv[])
         kd:
           /* Cursor Down key has been pressed. */
           /* """"""""""""""""""""""""""""""""" */
-          if (search_mode != NONE)
-            search_mode = NONE;
+          search_mode = NONE;
 
           /* Fall through. */
           /* """"""""""""" */
@@ -10635,8 +10628,7 @@ main(int argc, char * argv[])
           /* """"""""""""""""""""""""""""""" */
           current = count - 1;
 
-          if (search_mode != NONE)
-            search_mode = NONE;
+          search_mode = NONE;
 
           /* Find the first selectable word. */
           /* """"""""""""""""""""""""""""""" */
