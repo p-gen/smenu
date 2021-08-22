@@ -87,17 +87,16 @@ entered in the command line to be accepted.
 This small utility acts as a filter when no input file is given
 (reads from stdin and writes to stdout) or takes its inputs from that file.
 
-All the words read are presented in a scrolling window on the terminal
-\fBat the current cursor position\fP without having previously cleared
-the screen.
+All words read are presented in a scrolling window on the terminal \fBat
+the current cursor position\fP, without clearing the screen first.
 .PP
 The selection cursor is initially positioned on the first selectable word
 by default.
 .PP
 There are options to explicitly or implicitly include or exclude words
 using extended regular expressions.
-Note that when some words are explicitly excluded they can no longer be
-re-included after.
+Note that once certain words are explicitly excluded, they cannot be
+re-included later.
 .PP
 Excluded words are skipped when the selection cursor is moved and cannot
 be searched for.
@@ -115,6 +114,7 @@ Special character sequences formed by a \fI\\\fP followed by one of the
 characters \fIa\fP \fIb\fP \fIt\fP \fIn\fP \fIv\fP \fIf\fP \fIr\fP and
 \fI\\\fP are understood and have their traditional meanings.
 
+smenu strives to support UTF-8 encoding, both as input and output.
 \fBUTF-8\fP sequences introduced by \fI\\u\fP and \fI\\U\fP are also
 understood.
 
