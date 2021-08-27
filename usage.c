@@ -94,6 +94,8 @@ common_help(void)
   printf("  treats single and double quotes as normal characters.\n");
   printf("-lim|-limits\n");
   printf("  overload the words number/max. word length/max columns limits.\n");
+  printf("f|-forgotten_timeout|-global_timeout");
+  printf("  defines a global inactivity timeout, defaults to 15 min.\n");
 }
 
 void

@@ -181,6 +181,7 @@ struct limit_s
 struct ticker_s
 {
   int search;
+  int forgotten;
   int help;
   int winch;
   int direct_access;
@@ -204,10 +205,11 @@ struct termios old_in_attrs;
 /* """"""""""""""""""""" */
 struct itimerval periodic_itv; /* refresh rate for the timeout counter. */
 
-int help_timer    = -1;
-int winch_timer   = -1;
-int daccess_timer = -1;
-int search_timer  = -1;
+int forgotten_timer = -1;
+int help_timer      = -1;
+int winch_timer     = -1;
+int daccess_timer   = -1;
+int search_timer    = -1;
 
 /* Structure containing the attributes components. */
 /* """"""""""""""""""""""""""""""""""""""""""""""" */

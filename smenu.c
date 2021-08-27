@@ -114,15 +114,16 @@ long   alt_matches_count;
 
 /* Variables used in signal handlers. */
 /* """""""""""""""""""""""""""""""""" */
-volatile sig_atomic_t got_winch        = 0;
-volatile sig_atomic_t got_winch_alrm   = 0;
-volatile sig_atomic_t got_help_alrm    = 0;
-volatile sig_atomic_t got_daccess_alrm = 0;
-volatile sig_atomic_t got_search_alrm  = 0;
-volatile sig_atomic_t got_timeout_tick = 0;
-volatile sig_atomic_t got_sigsegv      = 0;
-volatile sig_atomic_t got_sigterm      = 0;
-volatile sig_atomic_t got_sighup       = 0;
+volatile sig_atomic_t got_winch          = 0;
+volatile sig_atomic_t got_winch_alrm     = 0;
+volatile sig_atomic_t got_forgotten_alrm = 0;
+volatile sig_atomic_t got_help_alrm      = 0;
+volatile sig_atomic_t got_daccess_alrm   = 0;
+volatile sig_atomic_t got_search_alrm    = 0;
+volatile sig_atomic_t got_timeout_tick   = 0;
+volatile sig_atomic_t got_sigsegv        = 0;
+volatile sig_atomic_t got_sigterm        = 0;
+volatile sig_atomic_t got_sighup         = 0;
 
 /* Variables used when a timeout is set (option -x). */
 /* """"""""""""""""""""""""""""""""""""""""""""""""" */
@@ -3916,6 +3917,12 @@ sig_handler(int s)
       if (timeout.initial_value > 0)
         got_timeout_tick = 1;
 
+      if (forgotten_timer > 0)
+        forgotten_timer--;
+
+      if (forgotten_timer == 0)
+        got_forgotten_alrm = 1;
+
       if (help_timer > 0)
         help_timer--;
 
@@ -4937,6 +4944,7 @@ init_main_ds(attrib_t * init_attr, win_t * win, limit_t * limits,
   /* Default timers in 1/10 s. */
   /* """"""""""""""""""""""""" */
   timers->search        = 100 * FREQ / 10;
+  timers->forgotten     = 9000 * FREQ / 10;
   timers->help          = 300 * FREQ / 10;
   timers->winch         = 20 * FREQ / 10;
   timers->direct_access = 6 * FREQ / 10;
@@ -6082,6 +6090,39 @@ ignore_quotes_action(char * ctx_name, char * opt_name, char * param,
   misc->ignore_quotes = 1;
 }
 
+void
+forgotten_action(char * ctx_name, char * opt_name, char * param, int nb_values,
+                 char ** values, int nb_opt_data, void ** opt_data,
+                 int nb_ctx_data, void ** ctx_data)
+{
+  ticker_t * timers = opt_data[0];
+
+  long   val;
+  char * endptr;
+  char * p;
+  size_t l = strlen(values[0]);
+
+  /* Add a 0 at the end of the parameter to multiply it by 10 */
+  /* as the timer values must be in tenths of seconds.        */
+  /* """""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+  p    = xmalloc(l + 2);
+  p    = strcpy(p, values[0]);
+  p[l] = '0';
+
+  val = strtol(p, &endptr, 0);
+  if (errno == ERANGE || (val == 0 && errno != 0) || endptr == p
+      || *endptr != '\0')
+  {
+    fprintf(stderr, "%s: Invalid timeout delay\n", values[0]);
+    free(p);
+    ctxopt_ctx_disp_usage(ctx_name, exit_after);
+  }
+  else
+    timers->forgotten = (int)val;
+
+  free(p);
+}
+
 /* =================================================================== */
 /* Cancels a search. Called when ESC is hit or a new search session is */
 /* initiated and the incremental_search option is not used.            */
@@ -6647,44 +6688,46 @@ main(int argc, char * argv[])
                        "allow_abbreviations=No "
                        "display_usage_on_error=Yes ");
 
-  common_options = "[*help] "
-                   "[*usage] "
-                   "[include_re... #regex] "
-                   "[exclude_re... #regex] "
-                   "[title #message] "
-                   "[int [#string]] "
-                   "[attributes #prefix:attr...] "
-                   "[special_level_1 #...<3] "
-                   "[special_level_2 #...<3] "
-                   "[special_level_3 #...<3] "
-                   "[special_level_4 #...<3] "
-                   "[special_level_5 #...<3] "
-                   "[special_level_6 #...<3] "
-                   "[special_level_7 #...<3] "
-                   "[special_level_8 #...<3] "
-                   "[special_level_9 #...<3] "
-                   "[zapped_glyphs #bytes] "
-                   "[lines [#height]] "
-                   "[blank_nonprintable] "
-                   "[*invalid_character #invalid_char_subst] "
-                   "[center_mode] "
-                   "[clean] "
-                   "[keep_spaces] "
-                   "[word_separators #bytes] "
-                   "[no_scroll_bar] "
-                   "[early_subst_all... #/regex/repl/opts] "
-                   "[post_subst_all... #/regex/repl/opts] "
-                   "[post_subst_included... #/regex/repl/opts] "
-                   "[post_subst_excluded... #/regex/repl/opts] "
-                   "[search_method #prefix|substring|fuzzy] "
-                   "[start_pattern #pattern] "
-                   "[timeout #...] "
-                   "[hidden_timeout #...] "
-                   "[validate_in_search_mode] "
-                   "[visual_bell] "
-                   "[ignore_quotes] "
-                   "[incremental_search] "
-                   "[limits #limit:value...] "; /* don't remove this space! */
+  common_options =
+    "[*help] "
+    "[*usage] "
+    "[include_re... #regex] "
+    "[exclude_re... #regex] "
+    "[title #message] "
+    "[int [#string]] "
+    "[attributes #prefix:attr...] "
+    "[special_level_1 #...<3] "
+    "[special_level_2 #...<3] "
+    "[special_level_3 #...<3] "
+    "[special_level_4 #...<3] "
+    "[special_level_5 #...<3] "
+    "[special_level_6 #...<3] "
+    "[special_level_7 #...<3] "
+    "[special_level_8 #...<3] "
+    "[special_level_9 #...<3] "
+    "[zapped_glyphs #bytes] "
+    "[lines [#height]] "
+    "[blank_nonprintable] "
+    "[*invalid_character #invalid_char_subst] "
+    "[center_mode] "
+    "[clean] "
+    "[keep_spaces] "
+    "[word_separators #bytes] "
+    "[no_scroll_bar] "
+    "[early_subst_all... #/regex/repl/opts] "
+    "[post_subst_all... #/regex/repl/opts] "
+    "[post_subst_included... #/regex/repl/opts] "
+    "[post_subst_excluded... #/regex/repl/opts] "
+    "[search_method #prefix|substring|fuzzy] "
+    "[start_pattern #pattern] "
+    "[timeout #...] "
+    "[hidden_timeout #...] "
+    "[validate_in_search_mode] "
+    "[visual_bell] "
+    "[ignore_quotes] "
+    "[incremental_search] "
+    "[limits #limit:value...] "
+    "[forgotten_timeout #timeout] "; /* don't remove this space! */
 
   main_spec_options = "[*version] "
                       "[*long_help] "
@@ -6840,6 +6883,8 @@ main(int argc, char * argv[])
   ctxopt_add_opt_settings(parameters, "incremental_search",
                           "-is -incremental_search");
   ctxopt_add_opt_settings(parameters, "limits", "-lim -limits");
+  ctxopt_add_opt_settings(parameters, "forgotten_timeout",
+                          "-f -forgotten_timeout -global_timeout");
 
   /* ctxopt options incompatibilities. */
   /* """"""""""""""""""""""""""""""""" */
@@ -6989,6 +7034,8 @@ main(int argc, char * argv[])
   ctxopt_add_opt_settings(actions, "ignore_quotes", ignore_quotes_action, &misc,
                           (char *)0);
   ctxopt_add_opt_settings(actions, "limits", limits_action, &limits, (char *)0);
+  ctxopt_add_opt_settings(actions, "forgotten_timeout", forgotten_action,
+                          &timers, (char *)0);
 
   /* ctxopt constraints. */
   /* """"""""""""""""""" */
@@ -7423,6 +7470,10 @@ main(int argc, char * argv[])
       }
     }
   }
+
+  /* Initialize and arm the global (forgotten) timer. */
+  /* """""""""""""""""""""""""""""""""""""""""""""""" */
+  forgotten_timer = timers.forgotten;
 
   /* Initialize the timeout message when the x/X option is set. */
   /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
@@ -9464,6 +9515,17 @@ main(int argc, char * argv[])
         exit(128 + SIGHUP);
     }
 
+    /* If this alarm is triggered, then gracefully exit. */
+    /* """"""""""""""""""""""""""""""""""""""""""""""""" */
+    if (got_forgotten_alrm)
+    {
+      tputs(TPARM1(carriage_return), 1, outch);
+      tputs(TPARM1(cursor_normal), 1, outch);
+      restore_term(fileno(stdin));
+
+      exit(0);
+    }
+
     /* If this alarm is triggered, then redisplay the window */
     /* to remove the help message and disable this timer.    */
     /* """"""""""""""""""""""""""""""""""""""""""""""""""""" */
@@ -9711,6 +9773,10 @@ main(int argc, char * argv[])
     if (sc && winch_timer < 0) /* Do not allow input when a window *
                                 | refresh is scheduled.            */
     {
+      /* Rearm the forgotten timer. */
+      /* """""""""""""""""""""""""" */
+      forgotten_timer = timers.forgotten; /* default 900 s (15 min). */
+
       if (timeout.initial_value && buffer[0] != 0x0d && buffer[0] != 'q'
           && buffer[0] != 'Q' && buffer[0] != 3)
       {

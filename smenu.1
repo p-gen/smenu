@@ -67,6 +67,7 @@ and outputs the selection to stdout.
   [\fB-v\fP|\fB-vb\fP|\fB-visual_bell\fP]
   [\fB-Q\fP|\fB-ignore_quotes\fP]
   [\fB-lim\fP|\fB-limits\fP \fIlimit:value\fP...]
+  [\fB-f\fP|\fB-forgotten_timeout\fP|\fB-global_timeout\fP \fItimeout\fP]
 
 
   selectors ::= \fIcol1\fP[-\fIcol2\fP],...|\fIrow1\fP[-\fIrow2\fP],...|\
@@ -1627,6 +1628,15 @@ to set the maximum number of words allowed.
 to set the maximum number of columns allowed.
 .RE
 
+.IP "[\fB-f\fP|\fB-forgotten_timeout\fP|\fB-global_timeout\fP \fItimeout\fP]"
+(Allowed in all contexts.)
+
+This option defines a global timeout in seconds.
+The program will end without error after this period of inactivity.
+
+This timer is rearmed to its initial value on every keystroke.
+
+Its default value is 900 seconds (15 minutes).
 .SH NOTES
 If tabulators (\fI\\t\fP) are embedded in the input, there is no way
 to replace them with the original number of spaces.
