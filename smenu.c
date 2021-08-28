@@ -604,6 +604,13 @@ ini_cb(win_t * win, term_t * term, limit_t * limits, ticker_t * timers,
       else
         timers->help = v;
     }
+    else if (strcmp(name, "forgotten") == 0)
+    {
+      if ((error = !(sscanf(value, "%d", &v) == 1 && v > 0)))
+        goto out;
+      else
+        timers->forgotten = v;
+    }
     else if (strcmp(name, "window") == 0)
     {
       if ((error = !(sscanf(value, "%d", &v) == 1 && v > 0)))
@@ -4944,7 +4951,7 @@ init_main_ds(attrib_t * init_attr, win_t * win, limit_t * limits,
   /* Default timers in 1/10 s. */
   /* """"""""""""""""""""""""" */
   timers->search        = 100 * FREQ / 10;
-  timers->forgotten     = 9000 * FREQ / 10;
+  timers->forgotten     = -1; /*  Disabled by default. */
   timers->help          = 300 * FREQ / 10;
   timers->winch         = 20 * FREQ / 10;
   timers->direct_access = 6 * FREQ / 10;
@@ -6109,14 +6116,17 @@ forgotten_action(char * ctx_name, char * opt_name, char * param, int nb_values,
   p    = strcpy(p, values[0]);
   p[l] = '0';
 
-  val = strtol(p, &endptr, 0);
+  errno = 0;
+  val   = strtol(p, &endptr, 0);
   if (errno == ERANGE || (val == 0 && errno != 0) || endptr == p
       || *endptr != '\0')
   {
-    fprintf(stderr, "%s: Invalid timeout delay\n", values[0]);
+    fprintf(stderr, "%s: Invalid timeout delay.\n", values[0]);
     free(p);
     ctxopt_ctx_disp_usage(ctx_name, exit_after);
   }
+  else if (val == 0)
+    timers->forgotten = -1; /* Explicitly disable the timers. */
   else
     timers->forgotten = (int)val;
 
@@ -9523,7 +9533,7 @@ main(int argc, char * argv[])
       tputs(TPARM1(cursor_normal), 1, outch);
       restore_term(fileno(stdin));
 
-      exit(0);
+      exit(EXIT_SUCCESS);
     }
 
     /* If this alarm is triggered, then redisplay the window */

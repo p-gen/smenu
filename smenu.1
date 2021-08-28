@@ -541,6 +541,10 @@ allowed:
                           ; terminal's window change in 1/10 s
   direct_access = 6       ; duration allowed to add a new digit to
                           ; the direct word access number in 1/10 s
+  forgotten = 9000        ; the number of time (in 1/10 s) before a
+                          ; forced program termination as if "q' has been
+                          ; pressed.
+                          ; Useful when one forgot to make a selection.
 
 [misc]
   default_search_method = substring
@@ -1634,9 +1638,15 @@ to set the maximum number of columns allowed.
 This option defines a global timeout in seconds.
 The program will end without error after this period of inactivity.
 
-This timer is rearmed to its initial value on every keystroke.
+This timer is reset to its initial value each time a key is pressed.
 
-Its default value is 900 seconds (15 minutes).
+Its default value is "unlimited", but it can be changed by assigning a
+number (in tenths of seconds) to the "forgotten" entry in the [timers]
+section of the optional configuration file.
+See the example in the configuration sub-section.
+
+A value of 0 as an argument disables this timer and replaces the default
+value.
 .SH NOTES
 If tabulators (\fI\\t\fP) are embedded in the input, there is no way
 to replace them with the original number of spaces.
