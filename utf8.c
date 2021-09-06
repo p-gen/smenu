@@ -91,7 +91,9 @@ utf8_interpret(char * s, langinfo_t * langinfo, char substitute)
 
   /* Manage \U codepoints. */
   /* """"""""""""""""""""" */
-  while ((utf8_str = strstr(s, "\\U")) != NULL)
+  while ((utf8_str = strstr(s, "\\"
+                               "U"))
+         != NULL)
   {
     char     str[7];
     int      utf8_str_len;
@@ -149,7 +151,9 @@ utf8_interpret(char * s, langinfo_t * langinfo, char substitute)
 
   /* Manage \u UTF-8 byte sequences. */
   /* """"""""""""""""""""""""""""""" */
-  while ((utf8_str = strstr(s, "\\u")) != NULL)
+  while ((utf8_str = strstr(s, "\\"
+                               "u"))
+         != NULL)
   {
     utf8_to_eos_len = strlen(utf8_str);
     if (utf8_to_eos_len < 4) /* string too short to contain *
