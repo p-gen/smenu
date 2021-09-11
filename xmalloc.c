@@ -52,9 +52,10 @@ rpl_realloc(void * ptr, size_t size)
 
 #endif
 
-/* ================== */
-/* Customized malloc. */
-/* ================== */
+/* ================================================================== */
+/* Customized malloc.                                                 */
+/* Displays an error message and exits gracefully if an error occurs. */
+/* ================================================================== */
 void *
 xmalloc(size_t size)
 {
@@ -75,9 +76,10 @@ xmalloc(size_t size)
   return allocated;
 }
 
-/* ================== */
-/* Customized calloc. */
-/* ================== */
+/* ================================================================== */
+/* Customized calloc.                                                 */
+/* Displays an error message and exits gracefully if an error occurs. */
+/* ================================================================== */
 void *
 xcalloc(size_t n, size_t size)
 {
@@ -98,9 +100,10 @@ xcalloc(size_t n, size_t size)
   return allocated;
 }
 
-/* =================== */
-/* Customized realloc. */
-/* =================== */
+/* ================================================================== */
+/* Customized realloc.                                                */
+/* Displays an error message and exits gracefully if an error occurs. */
+/* ================================================================== */
 void *
 xrealloc(void * p, size_t size)
 {
@@ -119,9 +122,10 @@ xrealloc(void * p, size_t size)
   return allocated;
 }
 
-/* ==================================== */
-/* strdup implementation using xmalloc. */
-/* ==================================== */
+/* ================================================================== */
+/* strdup implementation using xmalloc.                               */
+/* Displays an error message and exits gracefully if an error occurs. */
+/* ================================================================== */
 char *
 xstrdup(const char * p)
 {
@@ -144,10 +148,11 @@ xstrdup(const char * p)
   return allocated;
 }
 
-/* =================================================== */
-/* strndup implementation using xmalloc.               */
-/* This version guarantees that there is a final '\0'. */
-/* =================================================== */
+/* ================================================================== */
+/* strndup implementation using xmalloc.                              */
+/* This version guarantees that there is a final '\0'.                */
+/* Displays an error message and exits gracefully if an error occurs. */
+/* ================================================================== */
 char *
 xstrndup(const char * str, size_t len)
 {
