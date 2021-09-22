@@ -904,9 +904,9 @@ All tagged words (and possibly the world under the cursor) will be sent
 to the standard output separated by the optional argument given after
 the option \fB-T\fP|\fB-tm\fP|\fB-tag\fP|\fB-tag_mode\fP.
 
-Note that this \fIseparator\fP can have more than one character, can
-contain \fBUTF-8\fP characters (in native or \fI\\u\fP or \fI\\U\fP form)
-and can even contain control character as in \f(CB$'\\n'\fP.
+Note that the \fIdelim\fP argument can contain more than one character,
+can contain \fBUTF-8\fP characters (in native or \fI\\u\fP or \fI\\U\fP
+form) and can even contain control character as in \f(CB$'\\n'\fP.
 
 A single space character is used as the default separator if none
 is given.
@@ -1085,13 +1085,13 @@ The possible values are \f(CByes\fP and \f(CBno\fP but can be abbreviated.
 Tells what to do with the characters present before the embedded number if
 any.
 
-The allowed directives are: '\f(CBtrim\fP' which discads them if they
+The allowed directives are: '\f(CBtrim\fP' which discards them if they
 form an empty word (only made of spaces and tabulations), '\f(CBcut\fP'
 which unconditionally discards them and '\f(CBkeep\fP' which places them
 at the beginning of the resulting word.
 
 The default value for this directive is '\f(CBkeep\fP', these keywords
-can be abbeviated.
+can be abbreviated.
 .
 .TP
 \f(CBo\fP (\fB-F\fP|\fB-en\fP|\fB-embedded_number\fP option)
