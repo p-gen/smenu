@@ -37,11 +37,7 @@ my_ungetc(int c, FILE * input)
   int rc;
 
   if (next_buffer_pos >= GETC_BUFF_SIZE)
-  {
-    fprintf(stderr, "Error: cannot push back more than %d characters\n",
-            GETC_BUFF_SIZE);
     rc = EOF;
-  }
   else
   {
     rc = getc_buffer[next_buffer_pos++] = (unsigned char)c;
