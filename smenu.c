@@ -6122,7 +6122,6 @@ forgotten_action(char * ctx_name, char * opt_name, char * param, int nb_values,
       || *endptr != '\0')
   {
     fprintf(stderr, "%s: Invalid timeout delay.\n", values[0]);
-    free(p);
     ctxopt_ctx_disp_usage(ctx_name, exit_after);
   }
   else if (val == 0)
