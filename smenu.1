@@ -1462,7 +1462,7 @@ substituted by any other character except \fISPACE\fP, \fI\\t\fP,
 .PP
 In the three previous options, \fIregex\fP is a \fBPOSIX\fP
 \fBE\fPxtended \fBR\fPegular \fBE\fPxpression.
-For details, please refer to the \fBregex\fP manual page.
+For details, please refer to the \fBregex(7)\fP manual page.
 .PP
 Additionally \fI\\u\fP and \fI\\U\fP sequences can also be used in
 the regexp.
@@ -1470,7 +1470,7 @@ the regexp.
 .RE
 If a post-processing action
 (\fB-S\fP|\fB-subst\fP, \fB-I\fP|\fB-si\fP|\fB-subst_included\fP, \
-\fB-E\fP|\fB-se\fP|\fB-subst_excluded\fP) results in an empty (length 0)
+\fB-E\fP|\fB-se\fP|\fB-subst_excluded\fP) results in an empty (length = 0)
 word, then we have two cases:
 .RS
 .IP "in column mode:"
@@ -1571,7 +1571,7 @@ the standard input.
 Each type can be be shortened as a prefix of its full name ("cur" for
 "current" of "q" for "quit" per example).
 
-The delay must be set in seconds and cannot be above 99999 seconds.
+The delay must be set in seconds and cannot be greater than 99999 seconds.
 
 The remaining time (in seconds) is added at the end of the message
 displayed above the selection window and is updated in real time each
