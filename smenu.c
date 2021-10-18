@@ -4030,11 +4030,16 @@ select_ending_matches(win_t * win, term_t * term, search_data_t * search_data,
       ptr = str + strlen(str);
 
       nb = 0;
-      while ((ptr = utf8_prev(str, ptr)) != NULL && isblank(*ptr))
+      while ((ptr = utf8_prev(str, ptr)) && isblank(*ptr))
         if (ptr - str > 0)
           nb++;
         else
           break;
+
+      /* NOTE: utf8_prev cannot return NULL in the previous loop */
+      /* because str always contains at least one UTF-8 valid    */
+      /* sequence, so does ptr.                                  */
+      /* """"""""""""""""""""""""""""""""""""""""""""""""""""""" */
 
       /* Check the bit corresponding to the last non blank glyph  */
       /* If set we add the index to an alternate array, if not we */
@@ -11121,17 +11126,17 @@ main(int argc, char * argv[])
                 /* the cleanup of the first level of the tst_search_list.   */
                 /* """""""""""""""""""""""""""""""""""""""""""""""""""""""" */
                 if (search_mode != PREFIX)
-              {
-                sub_tst_t * sub_tst_data;
-                ll_node_t * node;
+                {
+                  sub_tst_t * sub_tst_data;
+                  ll_node_t * node;
 
-                node         = tst_search_list->tail;
-                sub_tst_data = (sub_tst_t *)(node->data);
+                  node         = tst_search_list->tail;
+                  sub_tst_data = (sub_tst_t *)(node->data);
 
-                search_data.fuzzy_err = 0;
+                  search_data.fuzzy_err = 0;
 
-                sub_tst_data->count = 0;
-              }
+                  sub_tst_data->count = 0;
+                }
             }
           }
 
