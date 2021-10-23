@@ -1438,7 +1438,7 @@ get_cursor_position(int * const r, int * const c)
   char   buf[32] = { 0 };
   char * s;
 
-  int count = 64;
+  int attempts = 64;
   int v;
   int rc = 1;
 
@@ -1449,10 +1449,10 @@ get_cursor_position(int * const r, int * const c)
 
   /* Report cursor location. */
   /* """"""""""""""""""""""" */
-  while ((v = write(STDOUT_FILENO, "\x1b[6n", 4)) == -1 && count)
+  while ((v = write(STDOUT_FILENO, "\x1b[6n", 4)) == -1 && attempts)
   {
     if (errno == EINTR)
-      count--;
+      attempts--;
     else
     {
       rc = 0;
@@ -6051,11 +6051,11 @@ da_options_action(char * ctx_name, char * opt_name, char * param, int nb_values,
 
       case 's': /* Start index. */
       {
-        long pos;
+        long index;
 
-        if (sscanf(value + 2, "%ld%ln", daccess_index, &pos) == 1)
+        if (sscanf(value + 2, "%ld%ln", daccess_index, &index) == 1)
         {
-          if (*daccess_index < 0 || *(value + 2 + pos) != '\0')
+          if (*daccess_index < 0 || *(value + 2 + index) != '\0')
             *daccess_index = 1;
         }
         else
@@ -6149,7 +6149,7 @@ reset_search_buffer(win_t * win, search_data_t * search_data, ticker_t * timers,
 {
   /* ESC key has been pressed. */
   /* """"""""""""""""""""""""" */
-  search_mode_t old_search_mode = search_mode;
+  search_mode_t saved_search_mode = search_mode;
 
   /* Cancel the search timer. */
   /* """""""""""""""""""""""" */
@@ -6173,7 +6173,7 @@ reset_search_buffer(win_t * win, search_data_t * search_data, ticker_t * timers,
   /* """""""""""""""""""""""""""""""""""""""""""""""""" */
   search_mode = NONE;
 
-  if (matches_count > 0 || old_search_mode != search_mode)
+  if (matches_count > 0 || saved_search_mode != search_mode)
   {
     clean_matches(search_data, word_real_max_size);
 
