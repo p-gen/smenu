@@ -12,14 +12,17 @@ This tool takes words from standard input or from a file and presents
 them on the screen in different layouts in a scrolling window.
 A cursor that you can easily move lets you select one or more of them.
 
-Note that the screen is not previously cleared when the scrolling window
-of **smenu** is displayed.
+Note that the screen is not cleared at the beginning and end of the
+**smenu** execution. The selection window is displayed at the cursor
+position and the previous contents of the terminal are not changed
+or lost.
 
 I tried to make its use as simple as possible. It supports the ``UTF-8``
 encoding and should work on all terminals managed by the ``terminfo``
 database.
 
-Please use the included man page to learn more about this little program.
+Please refer to the included man page to learn more about this little
+program.
 
 The `wiki <https://github.com/p-gen/smenu/wiki>`_ contains screenshots and
 animations that detail some concepts and features of **smenu**.
@@ -31,12 +34,8 @@ development platform is available. This includes every Unix and
 Unix-like system I am aware of.
 
 Please use the provided ``build.sh`` script to build the executable.
-This script accepts the same arguments as the GNU ``configure`` script,
-type ``build.sh --help`` to see them.
-
-The script ``autogen.sh`` is also provided if you need to generate a
-new ``configure`` script from ``configure.ac`` and ``Makefile.am``. The
-GNU **autotools** will need to be installed for this script to work.
+This script uses and accepts the same arguments as the GNU ``configure``
+script, type ``build.sh --help`` to see them.
 
 How to install it?
 ==================
@@ -174,8 +173,8 @@ explained by differences in posix/libc/... implementations.  This can
 notably occur when some specific regular expressions or uncommon ``UTF-8``
 byte sequences are used.
 
-If a test fails for unknown reason, then please send me its directory
-name and the relevant ``.bad`` file.
+If a test fails for an unknown reason, please send me the name of its
+directory nd the corresponding ``.bad`` file.
 
 If you are hit by a bug that no test covers, then you can create a new
 test in the ``tests`` directory in an existing or new directory: read the

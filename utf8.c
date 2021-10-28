@@ -381,8 +381,7 @@ utf8_sanitize(char * s, char substitute)
 }
 
 /* ======================================================================= */
-/* The utf8_validate() function scans the '\0'-terminated string starting  */
-/* at s.                                                                   */
+/* This function scans the '\0'-terminated string starting at s.           */
 /* It returns a pointer to the first byte of the first malformed           */
 /* or overlong UTF-8 sequence found, or NULL if the string contains only   */
 /* correct UTF-8.                                                          */
