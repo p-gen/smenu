@@ -1372,6 +1372,8 @@ outch(int c)
 void
 setup_term(int const fd)
 {
+  int error;
+
   /* Save the terminal parameters and configure it in row mode. */
   /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
   tcgetattr(fd, &old_in_attrs);
@@ -1384,7 +1386,15 @@ setup_term(int const fd)
   new_in_attrs.c_cc[VMIN]  = 1; /* wait for at least 1 byte. */
   new_in_attrs.c_cc[VTIME] = 0; /* no timeout.               */
 
-  tcsetattr(fd, TCSANOW, &new_in_attrs);
+  while (((error = tcsetattr(fd, TCSANOW, &new_in_attrs)) == -1)
+         && (errno == EINTR))
+    ;
+
+  if (error == -1)
+  {
+    perror("smenu");
+    exit(EXIT_FAILURE);
+  }
 }
 
 /* ====================================== */
@@ -1393,7 +1403,17 @@ setup_term(int const fd)
 void
 restore_term(int const fd)
 {
-  tcsetattr(fd, TCSANOW, &old_in_attrs);
+  int error;
+
+  while (((error = tcsetattr(fd, TCSANOW, &old_in_attrs)) == -1)
+         && (errno == EINTR))
+    ;
+
+  if (error == -1)
+  {
+    perror("smenu");
+    exit(EXIT_FAILURE);
+  }
 }
 
 /* ============================================== */
@@ -2329,12 +2349,17 @@ get_scancode(unsigned char * s, size_t max)
     /* Save the terminal parameters and configure getchar() */
     /* to return immediately.                               */
     /* """""""""""""""""""""""""""""""""""""""""""""""""""" */
+    int error;
+
     tcgetattr(0, &original_ts);
     nowait_ts = original_ts;
     nowait_ts.c_lflag &= ~ISIG;
     nowait_ts.c_cc[VMIN]  = 0;
     nowait_ts.c_cc[VTIME] = 0;
-    tcsetattr(0, TCSADRAIN, &nowait_ts);
+
+    while (((error = tcsetattr(0, TCSADRAIN, &nowait_ts)) == -1)
+           && (errno == EINTR))
+      ;
 
     /* Check if additional code is available after 0x1b. */
     /* """"""""""""""""""""""""""""""""""""""""""""""""" */
@@ -2354,7 +2379,9 @@ get_scancode(unsigned char * s, size_t max)
 
     /* Restore the save terminal parameters. */
     /* """"""""""""""""""""""""""""""""""""" */
-    tcsetattr(0, TCSADRAIN, &original_ts);
+    while (((error = tcsetattr(0, TCSADRAIN, &original_ts)) == -1)
+           && (errno == EINTR))
+      ;
 
     /* Ignore EOF when a scancode contains an escape sequence. */
     /* """"""""""""""""""""""""""""""""""""""""""""""""""""""" */
