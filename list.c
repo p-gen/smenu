@@ -203,18 +203,20 @@ ll_partition(ll_node_t * l, ll_node_t * h, int (*comp)(void *, void *),
     {
       i = (i == NULL) ? l : i->next;
 
-      swap(i->data, j->data);
+      swap(&(i->data), &(j->data));
     }
   }
 
   i = (i == NULL) ? l : i->next;
-  swap(i->data, h->data);
+  swap(&(i->data), &(h->data));
 
   return i;
 }
 
 /* ======================================================== */
 /* A recursive implementation of quicksort for linked list. */
+/* Based on code found here:                                */
+/* http://www.geeksforgeeks.org/quicksort-for-linked-list   */
 /* ======================================================== */
 void
 ll_quicksort(ll_node_t * l, ll_node_t * h, int (*comp)(void *, void *),

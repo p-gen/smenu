@@ -69,8 +69,8 @@ interval_comp(void * a, void * b)
 void
 interval_swap(void * a, void * b)
 {
-  interval_t * ia = (interval_t *)a;
-  interval_t * ib = (interval_t *)b;
+  interval_t * ia = *(interval_t **)a;
+  interval_t * ib = *(interval_t **)b;
   long         tmp;
 
   tmp     = ia->low;

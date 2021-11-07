@@ -822,8 +822,8 @@ tag_comp(void * a, void * b)
 void
 tag_swap(void * a, void * b)
 {
-  output_t * oa = (output_t *)a;
-  output_t * ob = (output_t *)b;
+  output_t * oa = *(output_t **)a;
+  output_t * ob = *(output_t **)b;
   char *     tmp_str;
   long       tmp_order;
 
