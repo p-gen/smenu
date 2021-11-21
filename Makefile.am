@@ -1,7 +1,8 @@
 bin_PROGRAMS = smenu
 smenu_SOURCES = smenu.c smenu.h list.c list.h xmalloc.c xmalloc.h \
 		index.c index.h utf8.c utf8.h fgetc.c fgetc.h     \
-		utils.c utils.h usage.c usage.h ctxopt.h ctxopt.c
+		utils.c utils.h usage.c usage.h ctxopt.h ctxopt.c \
+		safe.h safe.c
 dist_man_MANS = smenu.1
 EXTRA_DIST =	ChangeLog build.sh version COPYRIGHT LICENSE.rst README.rst \
 		examples build-aux tests FAQ
@@ -17,4 +18,4 @@ dist-hook:
 	| cpio -o > tests.cpio 2>/dev/null
 	@gzip -f9 $(distdir)/tests/tests.cpio
 	@find $(distdir)/tests/* -type d           \
-                                 -exec rm -rf {} +
+				 -exec rm -rf {} +

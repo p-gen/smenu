@@ -46,6 +46,7 @@
 #include "utils.h"
 #include "ctxopt.h"
 #include "usage.h"
+#include "safe.h"
 #include "smenu.h"
 
 /* ***************** */
@@ -195,7 +196,7 @@ help(win_t * win, term_t * term, long last_line, toggle_t * toggles)
       int i;
 
       for (i = 0; i < offset; i++)
-        fputc(' ', stdout);
+        fputc_safe(' ', stdout);
     }
 
   /* Print the different objects forming the help line. */
@@ -210,7 +211,7 @@ help(win_t * win, term_t * term, long last_line, toggle_t * toggles)
         break;
 
       len = entries[index].len;
-      fputc('\n', stdout);
+      fputc_safe('\n', stdout);
     }
 
     switch (entries[index].attr)
@@ -231,7 +232,7 @@ help(win_t * win, term_t * term, long last_line, toggle_t * toggles)
         (void)tputs(TPARM1(exit_attribute_mode), 1, outch);
         break;
     }
-    fputs(entries[index].str, stdout);
+    fputs_safe(entries[index].str, stdout);
   }
 
   (void)tputs(TPARM1(exit_attribute_mode), 1, outch);
@@ -689,7 +690,7 @@ ini_load(const char * filename, win_t * win, term_t * term, limit_t * limits,
 
   /* We do that if the file is not readable as well. */
   /* """"""""""""""""""""""""""""""""""""""""""""""" */
-  f = fopen(filename, "r");
+  f = fopen_safe(filename, "r");
   if (!f)
     return 0; /* Returns success as the presence of this file *
                | is optional.                                 */
@@ -866,7 +867,7 @@ my_beep(toggle_t * toggles)
   int             rc;
 
   if (!toggles->visual_bell)
-    fputc('\a', stdout);
+    fputc_safe('\a', stdout);
   else
   {
     (void)tputs(TPARM1(cursor_visible), 1, outch);
@@ -1386,9 +1387,7 @@ setup_term(int const fd)
   new_in_attrs.c_cc[VMIN]  = 1; /* wait for at least 1 byte. */
   new_in_attrs.c_cc[VTIME] = 0; /* no timeout.               */
 
-  while (((error = tcsetattr(fd, TCSANOW, &new_in_attrs)) == -1)
-         && (errno == EINTR))
-    ;
+  error = tcsetattr_safe(fd, TCSANOW, &new_in_attrs);
 
   if (error == -1)
   {
@@ -1405,9 +1404,7 @@ restore_term(int const fd)
 {
   int error;
 
-  while (((error = tcsetattr(fd, TCSANOW, &old_in_attrs)) == -1)
-         && (errno == EINTR))
-    ;
+  error = tcsetattr_safe(fd, TCSANOW, &old_in_attrs);
 
   if (error == -1)
   {
@@ -2357,9 +2354,7 @@ get_scancode(unsigned char * s, size_t max)
     nowait_ts.c_cc[VMIN]  = 0;
     nowait_ts.c_cc[VTIME] = 0;
 
-    while (((error = tcsetattr(0, TCSADRAIN, &nowait_ts)) == -1)
-           && (errno == EINTR))
-      ;
+    error = tcsetattr_safe(0, TCSADRAIN, &nowait_ts);
 
     /* Check if additional code is available after 0x1b. */
     /* """"""""""""""""""""""""""""""""""""""""""""""""" */
@@ -2379,9 +2374,7 @@ get_scancode(unsigned char * s, size_t max)
 
     /* Restore the save terminal parameters. */
     /* """"""""""""""""""""""""""""""""""""" */
-    while (((error = tcsetattr(0, TCSADRAIN, &original_ts)) == -1)
-           && (errno == EINTR))
-      ;
+    error = tcsetattr_safe(0, TCSADRAIN, &original_ts);
 
     /* Ignore EOF when a scancode contains an escape sequence. */
     /* """"""""""""""""""""""""""""""""""""""""""""""""""""""" */
@@ -2888,7 +2881,7 @@ left_margin_putp(char * s, term_t * term, win_t * win)
   /* We won't print this symbol when not in column mode. */
   /* """"""""""""""""""""""""""""""""""""""""""""""""""" */
   if (*s != '\0')
-    fputs(s, stdout);
+    fputs_safe(s, stdout);
 
   (void)tputs(TPARM1(exit_attribute_mode), 1, outch);
 }
@@ -2910,7 +2903,7 @@ right_margin_putp(char * s1, char * s2, langinfo_t * langinfo, term_t * term,
                 1, outch);
   else if (term->has_parm_right_cursor)
   {
-    fputc('\r', stdout);
+    fputc_safe('\r', stdout);
     (void)tputs(TPARM2(parm_right_cursor, offset + win->max_width + 1), 1,
                 outch);
   }
@@ -2918,15 +2911,15 @@ right_margin_putp(char * s1, char * s2, langinfo_t * langinfo, term_t * term,
   {
     long i;
 
-    fputc('\r', stdout);
+    fputc_safe('\r', stdout);
     for (i = 0; i < offset + win->max_width + 1; i++)
       (void)tputs(TPARM1(cursor_right), 1, outch);
   }
 
   if (langinfo->utf8)
-    fputs(s1, stdout);
+    fputs_safe(s1, stdout);
   else
-    fputs(s2, stdout);
+    fputs_safe(s2, stdout);
 
   (void)tputs(TPARM1(exit_attribute_mode), 1, outch);
 }
@@ -3219,7 +3212,7 @@ disp_cursor_word(long pos, win_t * win, term_t * term, int err)
     }
     np = utf8_next(p);
     if (np == NULL)
-      fputs(p, stdout);
+      fputs_safe(p, stdout);
     else
       printf("%.*s", (int)(np - p), p);
     p = np;
@@ -3330,7 +3323,7 @@ disp_matching_word(long pos, win_t * win, term_t * term, int is_current,
 
     np = utf8_next(p);
     if (np == NULL)
-      fputs(p, stdout);
+      fputs_safe(p, stdout);
     else
       printf("%.*s", (int)(np - p), p);
     p = np;
@@ -3367,11 +3360,11 @@ disp_word(long pos, search_mode_t search_mode, search_data_t * search_data,
 
         /* And print it. */
         /* """"""""""""" */
-        fputs(daccess.left, stdout);
+        fputs_safe(daccess.left, stdout);
         printf("%.*s", daccess.length, tmp_word + 1);
-        fputs(daccess.right, stdout);
+        fputs_safe(daccess.right, stdout);
         (void)tputs(TPARM1(exit_attribute_mode), 1, outch);
-        fputc(' ', stdout);
+        fputc_safe(' ', stdout);
       }
       else if (daccess.length > 0)
       {
@@ -3395,7 +3388,7 @@ disp_word(long pos, search_mode_t search_mode, search_data_t * search_data,
 
       /* Print the word part. */
       /* """""""""""""""""""" */
-      fputs(tmp_word + daccess.flength, stdout);
+      fputs_safe(tmp_word + daccess.flength, stdout);
 
       if (buffer[0] != '\0')
       {
@@ -3432,7 +3425,7 @@ disp_word(long pos, search_mode_t search_mode, search_data_t * search_data,
           (void)tputs(TPARM1(exit_attribute_mode), 1, outch);
           printf("%.*s", daccess.flength - 1, word_a[pos].str);
           (void)tputs(TPARM1(exit_attribute_mode), 1, outch);
-          fputc(' ', stdout);
+          fputc_safe(' ', stdout);
         }
         else
         {
@@ -3440,11 +3433,11 @@ disp_word(long pos, search_mode_t search_mode, search_data_t * search_data,
 
           /* Print the non significant part of the word. */
           /* """"""""""""""""""""""""""""""""""""""""""" */
-          fputs(daccess.left, stdout);
+          fputs_safe(daccess.left, stdout);
           printf("%.*s", daccess.length, word_a[pos].str + 1);
-          fputs(daccess.right, stdout);
+          fputs_safe(daccess.right, stdout);
           (void)tputs(TPARM1(exit_attribute_mode), 1, outch);
-          fputc(' ', stdout);
+          fputc_safe(' ', stdout);
         }
       }
 
@@ -3460,7 +3453,7 @@ disp_word(long pos, search_mode_t search_mode, search_data_t * search_data,
         else
           apply_attr(term, win->cursor_attr);
 
-        fputs(tmp_word + daccess.flength, stdout);
+        fputs_safe(tmp_word + daccess.flength, stdout);
       }
     }
     (void)tputs(TPARM1(exit_attribute_mode), 1, outch);
@@ -3477,12 +3470,12 @@ disp_word(long pos, search_mode_t search_mode, search_data_t * search_data,
     {
       apply_attr(term, win->daccess_attr);
 
-      fputs(daccess.left, stdout);
+      fputs_safe(daccess.left, stdout);
       printf("%.*s", daccess.length, tmp_word + 1);
-      fputs(daccess.right, stdout);
+      fputs_safe(daccess.right, stdout);
 
       (void)tputs(TPARM1(exit_attribute_mode), 1, outch);
-      fputc(' ', stdout);
+      fputc_safe(' ', stdout);
     }
     else if (daccess.length > 0)
     {
@@ -3494,7 +3487,7 @@ disp_word(long pos, search_mode_t search_mode, search_data_t * search_data,
       (void)tputs(TPARM1(exit_attribute_mode), 1, outch);
       if (daccess.padding == 'a')
         for (i = 0; i < daccess.flength; i++)
-          fputc(' ', stdout);
+          fputc_safe(' ', stdout);
     }
 
     if (!word_a[pos].is_selectable)
@@ -3517,9 +3510,9 @@ disp_word(long pos, search_mode_t search_mode, search_data_t * search_data,
 
       if ((daccess.length > 0 && daccess.padding == 'a')
           || word_a[pos].is_numbered)
-        fputs(tmp_word + daccess.flength, stdout);
+        fputs_safe(tmp_word + daccess.flength, stdout);
       else
-        fputs(tmp_word, stdout);
+        fputs_safe(tmp_word, stdout);
     }
 
     (void)tputs(TPARM1(exit_attribute_mode), 1, outch);
@@ -3603,7 +3596,7 @@ disp_message(ll_t * message_lines_list, long message_max_width,
 
     if (win->center && offset > 0)
       for (i = 0; i < offset; i++)
-        fputc(' ', stdout);
+        fputc_safe(' ', stdout);
 
     apply_attr(term, win->message_attr);
 
@@ -3616,9 +3609,9 @@ disp_message(ll_t * message_lines_list, long message_max_width,
     if (n > 1 && cut && n == win->message_lines - 1)
     {
       if (langinfo->utf8)
-        fputs(msg_arr_down, stdout);
+        fputs_safe(msg_arr_down, stdout);
       else
-        fputc('v', stdout);
+        fputc_safe('v', stdout);
     }
     else
       printf("%s", buf);
@@ -3630,7 +3623,7 @@ disp_message(ll_t * message_lines_list, long message_max_width,
     {
       if (i + (offset < 0 ? 0 : offset) >= term->ncolumns)
         break;
-      fputc(' ', stdout);
+      fputc_safe(' ', stdout);
     }
 
     /* Drop the attributes and print a \n. */
@@ -3732,7 +3725,7 @@ disp_lines(win_t * win, toggle_t * toggles, long current, long count,
   {
     long i;
     for (i = 0; i < win->offset; i++)
-      fputc(' ', stdout);
+      fputc_safe(' ', stdout);
   }
 
   left_margin_putp(scroll_symbol, term, win);
@@ -3753,9 +3746,9 @@ disp_lines(win_t * win, toggle_t * toggles, long current, long count,
         apply_attr(term, win->shift_attr);
 
         if (langinfo->utf8)
-          fputs(shift_right_sym, stdout);
+          fputs_safe(shift_right_sym, stdout);
         else
-          fputc('>', stdout);
+          fputc_safe('>', stdout);
 
         (void)tputs(TPARM1(exit_attribute_mode), 1, outch);
       }
@@ -3773,14 +3766,14 @@ disp_lines(win_t * win, toggle_t * toggles, long current, long count,
         pos = i - first_word_in_line_a[line_nb_of_word_a[i]];
 
         if (pos >= win->gutter_nb) /* Use the last gutter character. */
-          fputs(win->gutter_a[win->gutter_nb - 1], stdout);
+          fputs_safe(win->gutter_a[win->gutter_nb - 1], stdout);
         else
-          fputs(win->gutter_a[pos], stdout);
+          fputs_safe(win->gutter_a[pos], stdout);
       }
       else
         /* Else just display a space. */
         /* """""""""""""""""""""""""" */
-        fputc(' ', stdout);
+        fputc_safe(' ', stdout);
     }
 
     /* Mark the line as the current line, the line containing the cursor. */
@@ -3840,13 +3833,13 @@ disp_lines(win_t * win, toggle_t * toggles, long current, long count,
         /* """"""""""""""""""""""""""""""""""""""""""""""""""""" */
         if (i < count - 1 && lines_disp < win->max_lines)
         {
-          fputc('\n', stdout);
+          fputc_safe('\n', stdout);
 
           if (win->offset > 0)
           {
             long i;
             for (i = 0; i < win->offset; i++)
-              fputc(' ', stdout);
+              fputc_safe(' ', stdout);
           }
 
           left_margin_putp(scroll_symbol, term, win);
@@ -5572,8 +5565,8 @@ attributes_action(char * ctx_name, char * opt_name, char * param, int nb_values,
         if (*attr_infos[i].flag)
         {
           fprintf(stderr, "%s: ", param);
-          fputs(attr_infos[i].msg, stderr);
-          fputs("\n", stderr);
+          fputs_safe(attr_infos[i].msg, stderr);
+          fputs_safe("\n", stderr);
           ctxopt_ctx_disp_usage(ctx_name, exit_after);
         }
 
@@ -5688,7 +5681,7 @@ version_action(char * ctx_name, char * opt_name, char * param, int nb_values,
                char ** values, int nb_opt_data, void ** opt_data,
                int nb_ctx_data, void ** ctx_data)
 {
-  fputs("Version: " VERSION "\n", stdout);
+  fputs_safe("Version: " VERSION "\n", stdout);
   exit(EXIT_SUCCESS);
 }
 
@@ -7114,7 +7107,7 @@ main(int argc, char * argv[])
   /* """""""""""""""""""""""""""""""""""""""""""""""""""" */
   if (nb_rem_args == 1)
   {
-    input_file = fopen(rem_args[0], "r");
+    input_file = fopen_safe(rem_args[0], "r");
     if (input_file == NULL)
     {
       fprintf(stderr, "The file \"%s\" does not exist or cannot be read.\n",
@@ -9533,7 +9526,7 @@ main(int argc, char * argv[])
     /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
     if (got_sigsegv)
     {
-      fputs("SIGSEGV received!\n", stderr);
+      fputs_safe("SIGSEGV received!\n", stderr);
       (void)tputs(TPARM1(carriage_return), 1, outch);
       (void)tputs(TPARM1(cursor_normal), 1, outch);
       restore_term(fileno(stdin));
@@ -9546,7 +9539,7 @@ main(int argc, char * argv[])
     /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
     if (got_sigterm || got_sighup)
     {
-      fputs("Interrupted!\n", stderr);
+      fputs_safe("Interrupted!\n", stderr);
       (void)tputs(TPARM1(carriage_return), 1, outch);
       (void)tputs(TPARM1(cursor_normal), 1, outch);
       restore_term(fileno(stdin));
