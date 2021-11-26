@@ -267,39 +267,44 @@ decode_attr_toggles(char * s, attrib_t * attr)
 {
   int rc = 1;
 
-  attr->bold = attr->dim = attr->reverse = 0;
-  attr->standout = attr->underline = attr->italic = attr->blink = 0;
+  attr->bold      = (signed char)0;
+  attr->dim       = (signed char)0;
+  attr->reverse   = (signed char)0;
+  attr->standout  = (signed char)0;
+  attr->underline = (signed char)0;
+  attr->italic    = (signed char)0;
+  attr->blink     = (signed char)0;
 
   while (*s != '\0')
   {
     switch (*s)
     {
       case 'b':
-        attr->bold   = 1;
+        attr->bold   = (signed char)1;
         attr->is_set = SET;
         break;
       case 'd':
-        attr->dim    = 1;
+        attr->dim    = (signed char)1;
         attr->is_set = SET;
         break;
       case 'r':
-        attr->reverse = 1;
+        attr->reverse = (signed char)1;
         attr->is_set  = SET;
         break;
       case 's':
-        attr->standout = 1;
+        attr->standout = (signed char)1;
         attr->is_set   = SET;
         break;
       case 'u':
-        attr->underline = 1;
+        attr->underline = (signed char)1;
         attr->is_set    = SET;
         break;
       case 'i':
-        attr->italic = 1;
+        attr->italic = (signed char)1;
         attr->is_set = SET;
         break;
       case 'l':
-        attr->blink  = 1;
+        attr->blink  = (signed char)1;
         attr->is_set = SET;
         break;
       default:
@@ -324,8 +329,8 @@ parse_attr(char * str, attrib_t * attr, short max_color)
 {
   int    n;
   char * pos;
-  char   s1[12] = { 0 };
-  char   s2[7]  = { 0 };
+  char   s1[12] = { (char)0 };
+  char   s2[7]  = { (char)0 };
   short  d1 = -1, d2 = -1;
   int    rc = 1;
 
@@ -396,25 +401,25 @@ apply_attr(term_t * term, attrib_t attr)
   if (attr.bg >= 0)
     set_background_color(term, attr.bg);
 
-  if (attr.bold > 0)
+  if (attr.bold > (signed char)0)
     (void)tputs(TPARM1(enter_bold_mode), 1, outch);
 
-  if (attr.dim > 0)
+  if (attr.dim > (signed char)0)
     (void)tputs(TPARM1(enter_dim_mode), 1, outch);
 
-  if (attr.reverse > 0)
+  if (attr.reverse > (signed char)0)
     (void)tputs(TPARM1(enter_reverse_mode), 1, outch);
 
-  if (attr.standout > 0)
+  if (attr.standout > (signed char)0)
     (void)tputs(TPARM1(enter_standout_mode), 1, outch);
 
-  if (attr.underline > 0)
+  if (attr.underline > (signed char)0)
     (void)tputs(TPARM1(enter_underline_mode), 1, outch);
 
-  if (attr.italic > 0)
+  if (attr.italic > (signed char)0)
     (void)tputs(TPARM1(enter_italics_mode), 1, outch);
 
-  if (attr.blink > 0)
+  if (attr.blink > (signed char)0)
     (void)tputs(TPARM1(enter_blink_mode), 1, outch);
 }
 
@@ -437,7 +442,16 @@ ini_cb(win_t * win, term_t * term, limit_t * limits, ticker_t * timers,
 
   if (strcmp(section, "colors") == 0)
   {
-    attrib_t v = { UNSET, -1, -1, -1, -1, -1, -1, -1, -1, -1 };
+    attrib_t v = { UNSET,
+                   -1,
+                   -1,
+                   (signed char)-1,
+                   (signed char)-1,
+                   (signed char)-1,
+                   (signed char)-1,
+                   (signed char)-1,
+                   (signed char)-1,
+                   (signed char)-1 };
 
 #define CHECK_ATTR(x)                             \
   else if (strcmp(name, #x) == 0)                 \
@@ -454,19 +468,19 @@ ini_cb(win_t * win, term_t * term, limit_t * limits, ticker_t * timers,
           win->x##_attr.fg = v.fg;                \
         if (v.bg >= 0)                            \
           win->x##_attr.bg = v.bg;                \
-        if (v.bold >= 0)                          \
+        if (v.bold >= (signed char)0)             \
           win->x##_attr.bold = v.bold;            \
-        if (v.dim >= 0)                           \
+        if (v.dim >= (signed char)0)              \
           win->x##_attr.dim = v.dim;              \
-        if (v.reverse >= 0)                       \
+        if (v.reverse >= (signed char)0)          \
           win->x##_attr.reverse = v.reverse;      \
-        if (v.standout >= 0)                      \
+        if (v.standout >= (signed char)0)         \
           win->x##_attr.standout = v.standout;    \
-        if (v.underline >= 0)                     \
+        if (v.underline >= (signed char)0)        \
           win->x##_attr.underline = v.underline;  \
-        if (v.italic >= 0)                        \
+        if (v.italic >= (signed char)0)           \
           win->x##_attr.italic = v.italic;        \
-        if (v.blink >= 0)                         \
+        if (v.blink >= (signed char)0)            \
           win->x##_attr.blink = v.blink;          \
       }                                           \
     }                                             \
@@ -487,19 +501,19 @@ ini_cb(win_t * win, term_t * term, limit_t * limits, ticker_t * timers,
           win->x##_attr[y - 1].fg = v.fg;               \
         if (v.bg >= 0)                                  \
           win->x##_attr[y - 1].bg = v.bg;               \
-        if (v.bold >= 0)                                \
+        if (v.bold >= (signed char)0)                   \
           win->x##_attr[y - 1].bold = v.bold;           \
-        if (v.dim >= 0)                                 \
+        if (v.dim >= (signed char)0)                    \
           win->x##_attr[y - 1].dim = v.dim;             \
-        if (v.reverse >= 0)                             \
+        if (v.reverse >= (signed char)0)                \
           win->x##_attr[y - 1].reverse = v.reverse;     \
-        if (v.standout >= 0)                            \
+        if (v.standout >= (signed char)0)               \
           win->x##_attr[y - 1].standout = v.standout;   \
-        if (v.underline >= 0)                           \
+        if (v.underline >= (signed char)0)              \
           win->x##_attr[y - 1].underline = v.underline; \
-        if (v.italic >= 0)                              \
+        if (v.italic >= (signed char)0)                 \
           win->x##_attr[y - 1].italic = v.italic;       \
-        if (v.blink >= 0)                               \
+        if (v.blink >= (signed char)0)                  \
           win->x##_attr[y - 1].blink = v.blink;         \
       }                                                 \
     }                                                   \
@@ -1821,13 +1835,13 @@ parse_selectors(char * str, filters_t * filter, char * unparsed,
 int
 parse_sed_like_string(sed_t * sed)
 {
-  char   sep;
-  char * first_sep_pos;
-  char * last_sep_pos;
-  char * buf;
-  long   index;
-  int    icase;
-  char   c;
+  char          sep;
+  char *        first_sep_pos;
+  char *        last_sep_pos;
+  char *        buf;
+  long          index;
+  unsigned char icase;
+  char          c;
 
   if (strlen(sed->pattern) < 4)
     return 0;
@@ -1862,19 +1876,19 @@ parse_sed_like_string(sed_t * sed)
   /* and the visual indicator (trailing v) */
   /* and the stop indicator (trailing s).  */
   /* """"""""""""""""""""""""""""""""""""" */
-  sed->global = sed->visual = icase = 0;
+  sed->global = sed->visual = icase = (unsigned char)0;
 
   index = 1;
   while ((c = *(last_sep_pos + index)) != '\0')
   {
     if (c == 'g')
-      sed->global = 1;
+      sed->global = (unsigned char)1;
     else if (c == 'v')
-      sed->visual = 1;
+      sed->visual = (unsigned char)1;
     else if (c == 's')
-      sed->stop = 1;
+      sed->stop = (unsigned char)1;
     else if (c == 'i')
-      icase = 1;
+      icase = (unsigned char)1;
     else
       goto err;
 
@@ -4922,13 +4936,13 @@ init_main_ds(attrib_t * init_attr, win_t * win, limit_t * limits,
   init_attr->is_set    = UNSET;
   init_attr->fg        = -1;
   init_attr->bg        = -1;
-  init_attr->bold      = -1;
-  init_attr->dim       = -1;
-  init_attr->reverse   = -1;
-  init_attr->standout  = -1;
-  init_attr->underline = -1;
-  init_attr->italic    = -1;
-  init_attr->blink     = -1;
+  init_attr->bold      = (signed char)-1;
+  init_attr->dim       = (signed char)-1;
+  init_attr->reverse   = (signed char)-1;
+  init_attr->standout  = (signed char)-1;
+  init_attr->underline = (signed char)-1;
+  init_attr->italic    = (signed char)-1;
+  init_attr->blink     = (signed char)-1;
 
   /* Win fields initialization. */
   /* """""""""""""""""""""""""" */
