@@ -142,7 +142,7 @@ int       quiet_timeout = 0; /* 1 when we want no message to be displayed.  */
 /* Help message display. */
 /* ===================== */
 void
-help(win_t * win, term_t * term, long last_line, toggle_t * toggles)
+help(win_t * win, term_t * term, long last_line)
 {
   int index;      /* used to identify the objects long the help line. */
   int line   = 0; /* number of windows lines used by the help line.   */
@@ -434,8 +434,7 @@ apply_attr(term_t * term, attrib_t attr)
 /* ===================================================== */
 int
 ini_cb(win_t * win, term_t * term, limit_t * limits, ticker_t * timers,
-       misc_t * misc, langinfo_t * langinfo, const char * section,
-       const char * name, char * value)
+       misc_t * misc, const char * section, const char * name, char * value)
 {
   int error      = 0;
   int has_colors = (term->colors > 7);
@@ -683,10 +682,10 @@ out:
 /* ======================================================================== */
 int
 ini_load(const char * filename, win_t * win, term_t * term, limit_t * limits,
-         ticker_t * timers, misc_t * misc, langinfo_t * langinfo,
+         ticker_t * timers, misc_t * misc,
          int (*report)(win_t * win, term_t * term, limit_t * limits,
-                       ticker_t * timers, misc_t * misc, langinfo_t * langinfo,
-                       const char * section, const char * name, char * value))
+                       ticker_t * timers, misc_t * misc, const char * section,
+                       const char * name, char * value))
 {
   char   name[64]     = "";
   char   value[256]   = "";
@@ -737,8 +736,7 @@ ini_load(const char * filename, win_t * win, term_t * term, limit_t * limits,
 
       /* Callback function calling. */
       /* """""""""""""""""""""""""" */
-      error = report(win, term, limits, timers, misc, langinfo, section, name,
-                     value);
+      error = report(win, term, limits, timers, misc, section, name, value);
 
       if (error)
         goto out;
@@ -6720,12 +6718,10 @@ main(int argc, char * argv[])
 
   /* Set the attributes from the configuration file if possible. */
   /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-  if (ini_load(home_ini_file, &win, &term, &limits, &timers, &misc, &langinfo,
-               ini_cb))
+  if (ini_load(home_ini_file, &win, &term, &limits, &timers, &misc, ini_cb))
     exit(EXIT_FAILURE);
 
-  if (ini_load(local_ini_file, &win, &term, &limits, &timers, &misc, &langinfo,
-               ini_cb))
+  if (ini_load(local_ini_file, &win, &term, &limits, &timers, &misc, ini_cb))
     exit(EXIT_FAILURE);
 
   free(home_ini_file);
@@ -11182,7 +11178,7 @@ main(int argc, char * argv[])
           /* """""""""" */
           if (search_mode == NONE)
           {
-            help(&win, &term, last_line, &toggles);
+            help(&win, &term, last_line);
             help_mode = 1;
 
             /* Arm the help timer. */

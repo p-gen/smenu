@@ -422,7 +422,7 @@ struct search_data_s
 /* *********** */
 
 void
-help(win_t * win, term_t * term, long last_line, toggle_t * toggles);
+help(win_t * win, term_t * term, long last_line);
 
 int
 tag_comp(void * a, void * b);
@@ -466,15 +466,14 @@ tst_cb_cli(void * elem);
 
 int
 ini_load(const char * filename, win_t * win, term_t * term, limit_t * limits,
-         ticker_t * timers, misc_t * misc, langinfo_t * langinfo,
+         ticker_t * timers, misc_t * misc,
          int (*report)(win_t * win, term_t * term, limit_t * limits,
-                       ticker_t * timers, misc_t * misc, langinfo_t * langinfo,
-                       const char * section, const char * name, char * value));
+                       ticker_t * timers, misc_t * misc, const char * section,
+                       const char * name, char * value));
 
 int
 ini_cb(win_t * win, term_t * term, limit_t * limits, ticker_t * timers,
-       misc_t * misc, langinfo_t * langinfo, const char * section,
-       const char * name, char * value);
+       misc_t * misc, const char * section, const char * name, char * value);
 
 char *
 make_ini_path(char * name, char * base);
