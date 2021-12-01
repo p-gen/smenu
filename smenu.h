@@ -585,9 +585,6 @@ parse_attr(char * str, attrib_t * attr, short max_color);
 void
 apply_attr(term_t * term, attrib_t attr);
 
-int
-delims_cmp(const void * a, const void * b);
-
 long
 get_line_last_word(long line, long last_line);
 

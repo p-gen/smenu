@@ -19,9 +19,6 @@ void
 tabulations_help(void);
 
 void
-direct_access_help(void);
-
-void
 tagging_help(void);
 
 #endif
