@@ -111,7 +111,6 @@ long * best_matching_words_a;
 long   best_matching_words_a_size;
 long   best_matches_count;
 long * alt_matching_words_a = NULL;
-long   alt_matches_count;
 
 /* Variables used in signal handlers. */
 /* """""""""""""""""""""""""""""""""" */
