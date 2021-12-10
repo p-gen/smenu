@@ -1,4 +1,4 @@
-- Up to now.
+- Version 0.9.19
 * Fixes:
   * Prevent an attempt to free memory that has already been freed.
   * Prevent memory leaks when requesting help.

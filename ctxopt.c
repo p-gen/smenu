@@ -2371,7 +2371,7 @@ check_for_requirement_issues(ctx_inst_t * ctx_inst)
         req_opt          = req_node->data;
         tmp_seen_opt.opt = req_opt;
         needed_params    = strappend(needed_params, req_opt->params, "\n  ",
-                                  (char *)0);
+                                     (char *)0);
 
         bst_node = bst_find(&tmp_seen_opt, &(ctx_inst->seen_opt_bst),
                             seen_opt_compare);

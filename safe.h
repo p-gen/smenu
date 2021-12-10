@@ -11,8 +11,8 @@ fputs_safe(const char * restrict s, FILE * restrict stream);
 
 int
 fputc_safe(int c, FILE * stream);
-int
 
+int
 tcsetattr_safe(int fildes, int optional_actions,
                const struct termios * termios_p);
 
