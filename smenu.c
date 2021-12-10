@@ -8273,7 +8273,7 @@ main(int argc, char * argv[])
     else
     {
       if (line_selected_by_regex)
-        selectable = (row_def_selectable == ROW_REGEX_EXCLUDE)
+        selectable = (row_def_selectable == EXCLUDE_MARK)
                        ? SOFT_EXCLUDE_MARK
                        : INCLUDE_MARK;
 

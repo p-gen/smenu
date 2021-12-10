@@ -110,14 +110,6 @@ typedef enum bitmap_affinities
   START_AFFINITY
 } bitmap_affinity_t;
 
-/* Used when managing the -R option. */
-/* """"""""""""""""""""""""""""""""" */
-enum
-{
-  ROW_REGEX_EXCLUDE = 0, /* must be 0 (boolean value). */
-  ROW_REGEX_INCLUDE = 1
-};
-
 /* Used when managing the -C option. */
 /* """"""""""""""""""""""""""""""""" */
 enum
