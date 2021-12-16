@@ -81,11 +81,11 @@ int (*my_isprint)(int);
 
 /* UTF-8 useful symbols. */
 /* """"""""""""""""""""" */
-char * left_arrow      = "\xe2\x86\x90";
-char * up_arrow        = "\xe2\x86\x91";
-char * right_arrow     = "\xe2\x86\x92";
-char * down_arrow      = "\xe2\x86\x93";
-char * vertical_bar    = "\xe2\x94\x82"; /* box drawings light vertical.      */
+char * left_arrow   = "\xe2\x86\x90"; /* ← leftwards arrow.                */
+char * up_arrow     = "\xe2\x86\x91"; /* ↑ upwards arrow.                  */
+char * right_arrow  = "\xe2\x86\x92"; /* → rightwards arrow.               */
+char * down_arrow   = "\xe2\x86\x93"; /* ↓ downwards arrow.                */
+char * vertical_bar = "\xe2\x94\x82"; /* box drawings light vertical.      */
 char * shift_left_sym  = "\xe2\x97\x80"; /* leftwards_arrow.                  */
 char * shift_right_sym = "\xe2\x96\xb6"; /* rightwards_arrow.                 */
 char * sbar_line       = "\xe2\x94\x82"; /* box_drawings_light_vertical.      */
@@ -8273,9 +8273,8 @@ main(int argc, char * argv[])
     else
     {
       if (line_selected_by_regex)
-        selectable = (row_def_selectable == EXCLUDE_MARK)
-                       ? SOFT_EXCLUDE_MARK
-                       : INCLUDE_MARK;
+        selectable = (row_def_selectable == EXCLUDE_MARK) ? SOFT_EXCLUDE_MARK
+                                                          : INCLUDE_MARK;
 
       /* Check if the current word is matching an include or exclude */
       /* pattern                                                     */
@@ -11111,6 +11110,9 @@ main(int argc, char * argv[])
                 prev = utf8_prev(search_data.buf,
                                  search_data.buf + search_data.len - 1);
 
+                /* Reset the error indicator if we erase the first non */
+                /* matching element of the search buffer.              */
+                /* """"""""""""""""""""""""""""""""""""""""""""""""""" */
                 if (search_data.utf8_len == search_data.fuzzy_err_pos - 1)
                 {
                   search_data.fuzzy_err     = 0;
@@ -11151,6 +11153,7 @@ main(int argc, char * argv[])
               if (search_data.utf8_len > 0)
                 goto special_cmds_when_searching;
               else
+              {
                 /* When there is only one glyph in the search list in       */
                 /* FUZZY and SUBSTRING mode then all is already done except */
                 /* the cleanup of the first level of the tst_search_list.   */
@@ -11167,6 +11170,7 @@ main(int argc, char * argv[])
 
                   sub_tst_data->count = 0;
                 }
+              }
             }
           }
 
@@ -11254,7 +11258,7 @@ main(int argc, char * argv[])
 
               tst_prefix_search(tst_word, ws, tst_cb);
 
-              /* Latches_count is updated by tst_cb. */
+              /* matches_count is updated by tst_cb. */
               /* """"""""""""""""""""""""""""""""""" */
               if (matches_count > 0)
               {
@@ -11330,12 +11334,6 @@ main(int argc, char * argv[])
                   free(sub_tst_data);
 
                   ll_delete(tst_search_list, tst_search_list->tail);
-                }
-
-                if (search_data.utf8_len == search_data.fuzzy_err_pos - 1)
-                {
-                  search_data.fuzzy_err     = 0;
-                  search_data.fuzzy_err_pos = -1;
                 }
               }
               else
