@@ -3918,9 +3918,10 @@ disp_lines(win_t * win, toggle_t * toggles, long current, long count,
   return lines_disp;
 }
 
-/* ============================================= */
-/* Signal handler. Manages SIGWINCH and SIGALRM. */
-/* ============================================= */
+/* ======================================================= */
+/* Signal handler.                                         */
+/* Manages SIGSEGV, SIGTERM, SIGHUP, SIGWINCH and SIGALRM. */
+/* ======================================================= */
 void
 sig_handler(int s)
 {
