@@ -50,10 +50,6 @@ ll_insert_after(ll_t * const list, ll_node_t * node, void * const data);
 #endif
 
 void
-ll_quicksort(ll_node_t * l, ll_node_t * h, int (*comp)(void *, void *),
-             void (*swap)(void * a, void *));
-
-void
 ll_sort(ll_t * list, int (*comp)(void *, void *),
         void (*swap)(void * a, void *));
 

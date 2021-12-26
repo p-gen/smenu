@@ -26,6 +26,10 @@ static ll_node_t *
 ll_partition(ll_node_t * l, ll_node_t * h, int (*comp)(void *, void *),
              void (*swap)(void *, void *));
 
+static void
+ll_quicksort(ll_node_t * l, ll_node_t * h, int (*comp)(void *, void *),
+             void (*swap)(void * a, void *));
+
 /* ========================== */
 /* Creates a new linked list. */
 /* ========================== */
@@ -218,7 +222,7 @@ ll_partition(ll_node_t * l, ll_node_t * h, int (*comp)(void *, void *),
 /* Based on code found here:                                */
 /* http://www.geeksforgeeks.org/quicksort-for-linked-list   */
 /* ======================================================== */
-void
+static void
 ll_quicksort(ll_node_t * l, ll_node_t * h, int (*comp)(void *, void *),
              void (*swap)(void * a, void *))
 {
