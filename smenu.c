@@ -81,20 +81,22 @@ int (*my_isprint)(int);
 
 /* UTF-8 useful symbols. */
 /* """"""""""""""""""""" */
-char * left_arrow   = "\xe2\x86\x90"; /* ← leftwards arrow.                */
-char * up_arrow     = "\xe2\x86\x91"; /* ↑ upwards arrow.                  */
-char * right_arrow  = "\xe2\x86\x92"; /* → rightwards arrow.               */
-char * down_arrow   = "\xe2\x86\x93"; /* ↓ downwards arrow.                */
-char * vertical_bar = "\xe2\x94\x82"; /* box drawings light vertical.      */
-char * shift_left_sym  = "\xe2\x97\x80"; /* leftwards_arrow.                  */
-char * shift_right_sym = "\xe2\x96\xb6"; /* rightwards_arrow.                 */
-char * sbar_line       = "\xe2\x94\x82"; /* box_drawings_light_vertical.      */
-char * sbar_top        = "\xe2\x94\x90"; /* box_drawings_light_down_and_left. */
-char * sbar_down       = "\xe2\x94\x98"; /* box_drawings_light_up_and_left.   */
-char * sbar_curs       = "\xe2\x95\x91"; /* box_drawings_double_vertical.     */
-char * sbar_arr_up     = "\xe2\x96\xb2"; /* black_up_pointing_triangle.       */
-char * sbar_arr_down   = "\xe2\x96\xbc"; /* black_down_pointing_triangle.     */
-char * msg_arr_down    = "\xe2\x96\xbc"; /* black_down_pointing_triangle.     */
+/* clang-format off */
+char * left_arrow      = "\xe2\x86\x90"; /* ← leftwards arrow.               */
+char * up_arrow        = "\xe2\x86\x91"; /* ↑ upwards arrow.                 */
+char * right_arrow     = "\xe2\x86\x92"; /* → rightwards arrow.              */
+char * down_arrow      = "\xe2\x86\x93"; /* ↓ downwards arrow.               */
+char * vertical_bar    = "\xe2\x94\x82"; /* │ box drawings light vertical.   */
+char * shift_left_sym  = "\xe2\x97\x80"; /* ◀ leftwards_arrow.               */
+char * shift_right_sym = "\xe2\x96\xb6"; /* ▶ rightwards_arrow.              */
+char * sbar_line       = "\xe2\x94\x82"; /* │ box_drawings_light_vertical.   */
+char * sbar_top        = "\xe2\x94\x90"; /* ┐ box_drawings_light_down_and_l. */
+char * sbar_down       = "\xe2\x94\x98"; /* ┘ box_drawings_light_up_and_l.   */
+char * sbar_curs       = "\xe2\x95\x91"; /* ║ box_drawings_double_vertical.  */
+char * sbar_arr_up     = "\xe2\x96\xb2"; /* ▲ black_up_pointing_triangle.    */
+char * sbar_arr_down   = "\xe2\x96\xbc"; /* ▼ black_down_pointing_triangle.  */
+char * msg_arr_down    = "\xe2\x96\xbc"; /* ▼ black_down_pointing_triangle.  */
+/* clang-format on */
 
 /* Variables used to manage the direct access entries. */
 /* """"""""""""""""""""""""""""""""""""""""""""""""""" */
