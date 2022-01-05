@@ -3062,9 +3062,9 @@ build_metadata(term_t * term, long count, win_t * win)
   long      word_len;
   long      len  = 0;
   long      last = 0;
-  long      word_width;
-  long      tab_count; /* Current number of words in the line, *
-                        | used in tab_mode.                    */
+  long      word_width; /* Number of screen positions taken by the word. */
+  long      tab_count;  /* Current number of words in the line, used in  *
+                         | tab_mode.                                     */
   wchar_t * w;
 
   line_nb_of_word_a[0]    = 0;
@@ -3079,10 +3079,10 @@ build_metadata(term_t * term, long count, win_t * win)
   tab_count = 0;
   while (i < count)
   {
-    /* Determine the number of screen positions used by the word. */
-    /* Note: mbstowcs will always succeed here as word_a[i].str   */
-    /*       has already been utf8_validated/repaired.            */
-    /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+    /* Determine the number of screen positions taken by the word. */
+    /* Note: mbstowcs will always succeed here as word_a[i].str    */
+    /*       has already been utf8_validated/repaired.             */
+    /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
     word_len   = mbstowcs(NULL, word_a[i].str, 0);
     word_width = wcswidth((w = utf8_strtowcs(word_a[i].str)), word_len);
 
@@ -3139,18 +3139,24 @@ build_metadata(term_t * term, long count, win_t * win)
     /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
     if (len > win->max_width)
     {
+      /* Update the effective line width. */
+      /* '''''''''''''''''''''''''''''''' */
       if (len > term->ncolumns)
         win->max_width = term->ncolumns - 2;
       else
         win->max_width = len;
     }
 
+    /* Update the real line width. */
+    /* ''''''''''''''''''''''''''' */
     if (len > win->real_max_width)
       win->real_max_width = len;
 
     i++;
   }
 
+  /* Set the left margin when in centered mode. */
+  /* """""""""""""""""""""""""""""""""""""""""" */
   if (!win->center || win->max_width > term->ncolumns - 2)
     win->offset = 0;
   else

@@ -294,7 +294,7 @@ struct win_s
   long    message_lines;   /* number of lines taken by the messages    *
                             | (updated by disp_message.                */
   long    max_width;       /* max usable line width or the terminal.   */
-  long    offset;          /* window offset user when centered.        */
+  long    offset;          /* Left margin, used in centered mode.      */
   char *  sel_sep;         /* output separator when tags are enabled.  */
   char ** gutter_a;        /* array of UTF-8 gutter glyphs.            */
   long    gutter_nb;       /* number of UTF-8 gutter glyphs.           */
