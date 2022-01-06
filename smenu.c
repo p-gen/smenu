@@ -2616,16 +2616,13 @@ get_word(FILE * input, ll_t * word_delims_list, ll_t * record_delims_list,
 
   /* Skip leading delimiters. */
   /* """""""""""""""""""""""" */
-  byte = get_bytes(input, utf8_buffer, zapped_glyphs_list, langinfo, misc);
-
-  while (byte == EOF
-         || ll_find(word_delims_list, utf8_buffer, buffer_cmp) != NULL)
-  {
-    if (byte == EOF)
-      return NULL;
-
+  do
     byte = get_bytes(input, utf8_buffer, zapped_glyphs_list, langinfo, misc);
-  }
+  while (byte != EOF
+         && ll_find(word_delims_list, utf8_buffer, buffer_cmp) != NULL);
+
+  if (byte == EOF)
+    return NULL;
 
   /* Allocate initial word storage space. */
   /* """""""""""""""""""""""""""""""""""" */
