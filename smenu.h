@@ -91,6 +91,14 @@ typedef enum attribute_settings
   FORCED /* an attribute setting has been given in the command line. */
 } attr_set_t;
 
+/* Method used to interpret the color numbers. */
+/* """"""""""""""""""""""""""""""""""""""""""" */
+typedef enum color_method
+{
+  CLASSIC,
+  ANSI
+} color_method_t;
+
 /* Constant to distinguish between the various search modes. */
 /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""" */
 typedef enum search_modes
@@ -223,12 +231,12 @@ struct attrib_s
 /* """"""""""""""""""""""""""""""""""""""""""""""""""" */
 struct term_s
 {
-  int   ncolumns;     /* number of columns.                      */
-  int   nlines;       /* number of lines.                        */
-  int   curs_column;  /* current cursor column.                  */
-  int   curs_line;    /* current cursor line.                    */
-  short colors;       /* number of available colors.             */
-  short color_method; /* color method (0=classic (0-7), 1=ANSI). */
+  int            ncolumns;     /* number of columns.                     */
+  int            nlines;       /* number of lines.                       */
+  int            curs_column;  /* current cursor column.                 */
+  int            curs_line;    /* current cursor line.                   */
+  short          colors;       /* number of available colors.            */
+  color_method_t color_method; /* color method (CLASSIC (0-7), ANSI).    */
 
   char has_cursor_up;         /* has cuu1 terminfo capability.           */
   char has_cursor_down;       /* has cud1 terminfo capability.           */

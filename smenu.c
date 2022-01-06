@@ -526,9 +526,9 @@ ini_cb(win_t * win, term_t * term, limit_t * limits, ticker_t * timers,
       if (strcmp(name, "method") == 0)
       {
         if (strcmp(value, "classic") == 0)
-          term->color_method = 0;
+          term->color_method = CLASSIC;
         else if (strcmp(value, "ansi") == 0)
-          term->color_method = 1;
+          term->color_method = ANSI;
         else
         {
           error = 1;
@@ -2843,7 +2843,7 @@ color_transcode(short color)
 void
 set_foreground_color(term_t * term, short color)
 {
-  if (term->color_method == 0)
+  if (term->color_method == CLASSIC)
   {
     if (term->has_setf)
       (void)tputs(TPARM2(set_foreground, color), 1, outch);
@@ -2851,7 +2851,7 @@ set_foreground_color(term_t * term, short color)
       (void)tputs(TPARM2(set_a_foreground, color_transcode(color)), 1, outch);
   }
 
-  else if (term->color_method == 1)
+  else if (term->color_method == ANSI)
   {
     if (term->has_setaf)
       (void)tputs(TPARM2(set_a_foreground, color), 1, outch);
@@ -2866,7 +2866,7 @@ set_foreground_color(term_t * term, short color)
 void
 set_background_color(term_t * term, short color)
 {
-  if (term->color_method == 0)
+  if (term->color_method == CLASSIC)
   {
     if (term->has_setb)
       (void)tputs(TPARM2(set_background, color), 1, outch);
@@ -2874,7 +2874,7 @@ set_background_color(term_t * term, short color)
       (void)tputs(TPARM2(set_a_background, color_transcode(color)), 1, outch);
   }
 
-  else if (term->color_method == 1)
+  else if (term->color_method == ANSI)
   {
     if (term->has_setab)
       (void)tputs(TPARM2(set_a_background, color), 1, outch);
@@ -7161,7 +7161,7 @@ main(int argc, char * argv[])
 
   win.start = 0;
 
-  term.color_method = 1; /* We default to setaf/setbf to set colors. */
+  term.color_method = ANSI; /* We default to setaf/setbf to set colors. */
   term.curs_line = term.curs_column = 0;
 
   {
