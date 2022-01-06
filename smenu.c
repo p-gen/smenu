@@ -123,6 +123,7 @@ volatile sig_atomic_t got_help_alrm      = 0;
 volatile sig_atomic_t got_daccess_alrm   = 0;
 volatile sig_atomic_t got_search_alrm    = 0;
 volatile sig_atomic_t got_timeout_tick   = 0;
+volatile sig_atomic_t got_sigpipe        = 0;
 volatile sig_atomic_t got_sigsegv        = 0;
 volatile sig_atomic_t got_sigterm        = 0;
 volatile sig_atomic_t got_sighup         = 0;
@@ -3934,6 +3935,10 @@ sig_handler(int s)
   {
     /* Standard termination signals. */
     /* """"""""""""""""""""""""""""" */
+    case SIGPIPE:
+      got_sigpipe = 1;
+      break;
+
     case SIGSEGV:
       got_sigsegv = 1;
       break;
@@ -9528,12 +9533,25 @@ main(int argc, char * argv[])
   sigaction(SIGTERM, &sa, NULL);
   sigaction(SIGHUP, &sa, NULL);
   sigaction(SIGSEGV, &sa, NULL);
+  sigaction(SIGPIPE, &sa, NULL);
 
   /* Main loop. */
   /* """""""""" */
   while (1)
   {
     int sc = 0; /* scancode */
+
+    /* Manage the case of a broken pipe by exiting failure and restoring */
+    /* the terminal and the cursor.                                      */
+    /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+    if (got_sigpipe)
+    {
+      (void)tputs(TPARM1(carriage_return), 1, outch);
+      (void)tputs(TPARM1(cursor_normal), 1, outch);
+      restore_term(fileno(stdin));
+
+      exit(128 + SIGPIPE);
+    }
 
     /* Manage a segmentation fault by exiting with failure and restoring */
     /* the terminal and the cursor.                                      */
