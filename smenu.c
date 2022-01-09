@@ -1080,9 +1080,9 @@ update_bitmaps(search_mode_t mode, search_data_t * data,
         /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
         if (affinity == START_AFFINITY)
         {
-          char *ptr1, *ptr2;
-          long  i;
-          long  utf8_len;
+          char * ptr1, *ptr2;
+          size_t i;
+          long   utf8_len;
 
           /* Skip leading spaces and tabs. */
           /* """"""""""""""""""""""""""""" */
@@ -4163,7 +4163,7 @@ select_starting_matches(win_t * win, term_t * term, search_data_t * search_data,
     long   i;
     long   j = 0;
     long   index;
-    long   nb;
+    size_t nb;
     long * tmp;
     long   pos;
     char * first_glyph;
