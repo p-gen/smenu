@@ -201,8 +201,11 @@ help(win_t * win, term_t * term, long last_line)
         fputc_safe(' ', stdout);
     }
 
-  /* Print the different objects forming the help line. */
-  /* """""""""""""""""""""""""""""""""""""""""""""""""" */
+  /* Print the different objects forming the help line.                  */
+  /* A new line is added each time the next entry does not fit in the    */
+  /* width of the window. This is done as long as there is space left in */
+  /* the window.                                                         */
+  /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
   for (index = 0; index < entries_nb; index++)
   {
     if ((len += entries[index].len) >= term->ncolumns - 1)
@@ -218,19 +221,19 @@ help(win_t * win, term_t * term, long last_line)
 
     switch (entries[index].attr)
     {
-      case 'b':
+      case 'b': /* bold. */
         (void)tputs(TPARM1(exit_attribute_mode), 1, outch);
         if (term->has_bold)
           (void)tputs(TPARM1(enter_bold_mode), 1, outch);
         break;
-      case 'r':
+      case 'r': /* reverse. */
         (void)tputs(TPARM1(exit_attribute_mode), 1, outch);
         if (term->has_reverse)
           (void)tputs(TPARM1(enter_reverse_mode), 1, outch);
         else if (term->has_standout)
           (void)tputs(TPARM1(enter_standout_mode), 1, outch);
         break;
-      case 'n':
+      case 'n': /* no attributes. */
         (void)tputs(TPARM1(exit_attribute_mode), 1, outch);
         break;
     }
@@ -335,10 +338,14 @@ parse_attr(char * str, attrib_t * attr, short max_color)
   char   s2[7]  = { (char)0 };
   short  d1 = -1, d2 = -1;
   int    rc = 1;
+  char   c;
 
-  n = sscanf(str, "%11[^,],%6s", s1, s2);
+  /* 11: 4 type+colon,2x3 for colors, 1 for slash.     */
+  /* 6 : max size for the concatenation of attributes. */
+  /* """"""""""""""""""""""""""""""""""""""""""""""""" */
+  n = sscanf(str, "%11[^,],%6s%c", s1, s2, &c);
 
-  if (n == 0)
+  if (n == 0 || c != '\0')
     return 0;
 
   if ((pos = strchr(s1, '/')))
@@ -352,6 +359,8 @@ parse_attr(char * str, attrib_t * attr, short max_color)
         if (n == 1)
           return 0;
       }
+      else if (d2 < 0)
+        return 0;
     }
     else if (sscanf(s1, "%hd/%hd", &d1, &d2) < 2)
     {
@@ -359,6 +368,8 @@ parse_attr(char * str, attrib_t * attr, short max_color)
       if (n == 1)
         return 0;
     }
+    else if (d1 < 0 || d2 < 0)
+      return 0;
   }
   else /* no / in the first string. */
   {
@@ -370,9 +381,6 @@ parse_attr(char * str, attrib_t * attr, short max_color)
         return 0;
     }
   }
-
-  if (d1 < -1 || d2 < -1)
-    return 0;
 
   if (max_color == 0)
   {
