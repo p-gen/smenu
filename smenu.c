@@ -106,13 +106,26 @@ int       daccess_stack_head;
 
 /* Variables used for fuzzy and substring searching. */
 /* """"""""""""""""""""""""""""""""""""""""""""""""" */
-long * matching_words_a;
-long   matching_words_a_size;
-long   matches_count;
-long * best_matching_words_a;
-long   best_matching_words_a_size;
-long   best_matches_count;
-long * alt_matching_words_a = NULL;
+long matches_count; /* Number of all matching words. */
+
+long * matching_words_a; /* Array containing the index of all matching *
+                          | words.                                     */
+
+long matching_words_a_size; /* Allocated size for the previous array. */
+
+long best_matches_count; /* Number of matching words whose matching   *
+                          | part form a consecutive suite of matching *
+                          | glyphs.                                   */
+
+long * best_matching_words_a; /* Array containing the index of matching  *
+                               | words containing a consecutive suite of *
+                               | matching glyphs.                        */
+
+long best_matching_words_a_size; /* Allocated size for the previous array. */
+
+long * alt_matching_words_a = NULL; /* Alternate array to contain only the    *
+                                     | matching candidates having potentially *
+                                     | a starting/ending pattern.             */
 
 /* Variables used in signal handlers. */
 /* """""""""""""""""""""""""""""""""" */
