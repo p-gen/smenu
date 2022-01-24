@@ -937,11 +937,18 @@ check_integer_constraint(int nb_args, char ** args, char * value, char * par)
   return 1;
 }
 
-/* ======================================================================== */
-/* Update the bitmap associated with a word. This bitmap indicates the      */
-/* positions of the UFT-8 glyphs of the search buffer in each word.         */
-/* The disp_word function will use it to display these special characters.  */
-/* ======================================================================== */
+/* ======================================================================= */
+/* Update the bitmap associated with a word. The bits set to 1 in this     */
+/* bitmap indicate the positions of the UFT-8 glyphs of the search buffer  */
+/* in the word.                                                            */
+/*                                                                         */
+/* The disp_word function will use it to display these special characters. */
+/*                                                                         */
+/* mode     is the search method.                                          */
+/* data     contains informations about the search buffer.                 */
+/* affinity determines if we must only consider matches that occur at      */
+/*          the start, the end or if we just don't care.                   */
+/* ======================================================================= */
 void
 update_bitmaps(search_mode_t mode, search_data_t * data,
                bitmap_affinity_t affinity)
@@ -967,7 +974,8 @@ update_bitmaps(search_mode_t mode, search_data_t * data,
   char * first_glyph;
 
   char * sb_orig = data->buf; /* sb: search buffer.                       */
-  char * sb;
+  char * sb;                  /* a pointer to sb_orig.                    */
+
   long * o    = data->utf8_off_a;   /* array of the offsets of the search *
                                      | buffer glyphs.                     */
   long * l    = data->utf8_len_a;   /* array of the lengths in bytes of   *
