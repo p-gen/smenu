@@ -1781,6 +1781,9 @@ parse_selectors(char * str, filters_t * filter, char * unparsed,
 
     if (is_range)
     {
+      /* We must parse 2 numbers separated by a dash. */
+      /* """""""""""""""""""""""""""""""""""""""""""" */
+
       int rc;
       int pos;
 
@@ -1816,8 +1819,9 @@ parse_selectors(char * str, filters_t * filter, char * unparsed,
     }
     else
     {
-      /* Read the number given. */
-      /* """""""""""""""""""""" */
+      /* We must parse a single number. */
+      /* """""""""""""""""""""""""""""" */
+
       if (sscanf(str + start, "%zu", &first) != 1)
       {
         my_strcpy(unparsed, str + start);
@@ -1859,7 +1863,7 @@ parse_selectors(char * str, filters_t * filter, char * unparsed,
 
 /* ========================================================= */
 /* Parse the sed like string passed as argument to -S/-I/-E. */
-/* Update the sed parameter.                                 */
+/* This updates the sed parameter.                           */
 /* ========================================================= */
 int
 parse_sed_like_string(sed_t * sed)
@@ -1901,10 +1905,10 @@ parse_sed_like_string(sed_t * sed)
 
   sed->substitution = xstrdup(first_sep_pos + 1);
 
-  /* Get the global indicator (trailing g) */
-  /* and the visual indicator (trailing v) */
-  /* and the stop indicator (trailing s).  */
-  /* """"""""""""""""""""""""""""""""""""" */
+  /* Get the global indicator (trailing g)  */
+  /* and the visual indicator (trailing v)  */
+  /* and the stop indicator   (trailing s). */
+  /* """""""""""""""""""""""""""""""""""""" */
   sed->global = sed->visual = icase = (unsigned char)0;
 
   index = 1;
@@ -2495,7 +2499,13 @@ get_bytes(FILE * input, char * utf8_buffer, ll_t * zapped_glyphs_list,
 /* =======================================================================*/
 /* Expand the string str by replacing all its embedded special characters */
 /* by their corresponding escape sequence.                                */
+/*                                                                        */
 /* dest must be long enough to contain the expanded string.               */
+/*                                                                        */
+/* Replace also UTF-8 glyphs by the substitution character if the         */
+/* current locale if not UTF-8.                                           */
+/*                                                                        */
+/* Return the number of resulting glyphs.                                 */
 /* ====================================================================== */
 size_t
 expand(char * src, char * dest, langinfo_t * langinfo, toggle_t * toggles,
@@ -2509,8 +2519,8 @@ expand(char * src, char * dest, langinfo_t * langinfo, toggle_t * toggles,
 
   while ((c = *(src++)))
   {
-    /* UTF-8 codepoints take more than on character. */
-    /* """"""""""""""""""""""""""""""""""""""""""""" */
+    /* UTF-8 codepoints may take more than on character. */
+    /* """"""""""""""""""""""""""""""""""""""""""""""""" */
     if ((n = utf8_get_length(c)) > 1)
     {
       all_spaces = 0;
@@ -2525,9 +2535,9 @@ expand(char * src, char * dest, langinfo_t * langinfo, toggle_t * toggles,
         } while (--n && (c = *(src++)));
       else
       {
-        /* If not, ignore the bytes composing the UTF-8 */
-        /* glyph and replace them with a single '.'.    */
-        /* """""""""""""""""""""""""""""""""""""""""""" */
+        /* If not, ignore the bytes composing the UTF-8 glyph and replace */
+        /* them with the substitution character.                          */
+        /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
         do
         {
           /* Skip this byte. */
@@ -2539,8 +2549,8 @@ expand(char * src, char * dest, langinfo_t * langinfo, toggle_t * toggles,
       }
     }
     else
-      /* This is not an UTF-8 glyph. */
-      /* """"""""""""""""""""""""""" */
+      /* This is not a multibyte UTF-8 glyph. */
+      /* """""""""""""""""""""""""""""""""""" */
       switch (c)
       {
         case '\a':
