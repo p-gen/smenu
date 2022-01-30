@@ -290,11 +290,16 @@ insert_sorted_index(long ** array, long * size, long * nb, long value)
     *array = xrealloc(*array, *size * sizeof(long));
   }
 
+  /* Shift remaining array elements at position pos to position pos+1 */
+  /* (shift right one position).                                      */
+  /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
   if (*nb > pos)
     memmove((*array) + pos + 1, (*array) + pos, sizeof(value) * (*nb - pos));
 
   (*nb)++;
 
+  /* Set the value of the element at position pos in the passed array. */
+  /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
   (*array)[pos] = value;
 }
 

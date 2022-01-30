@@ -2226,7 +2226,7 @@ strip_ansi_color(char * s, toggle_t * toggles, misc_t * misc)
     else if (*s == 0x1b)
     {
       if (toggles->blank_nonprintable && len > 1)
-        *s++ = ' ';
+        *s++ = ' '; /* Non printable character -> ' '. */
       else
         *s++ = misc->invalid_char_substitute;
       p++;
@@ -2268,11 +2268,14 @@ set_matching_flag(void * elem)
 }
 
 /* ======================================================================= */
-/* Callback function used by tst_traverse.                                 */
-/* Iterate the linked list attached to the string containing the index of  */
-/* the words in the input flow. Each page number is then added in a sorted */
-/* array avoiding duplications keeping the array sorted.                   */
-/* Mark the identified words as a matching word.                           */
+/* Callback function used by tst_traverse applied to tst_word so this      */
+/* function is applied on each node of this tst.                           */
+/*                                                                         */
+/* Each node of this tst contains a linked list storing the indexes of     */
+/* the words in the input flow.                                            */
+/* Each position in this list is used to:                                  */
+/* - mark the word at that position as matching,                           */
+/* - add this position in the sorted array matching_words_a.               */
 /* ======================================================================= */
 int
 tst_cb(void * elem)
@@ -2297,26 +2300,21 @@ tst_cb(void * elem)
 
     node = node->next;
   }
-  return 1;
+  return 1; /* OK. */
 }
 
-/* ======================================================================= */
-/* Callback function used by tst_traverse.                                 */
-/* Iterate the linked list attached to the string containing the index of  */
-/* the words in the input flow. Each page number is then used to determine */
-/* the lower page greater than the cursor position                         */
-/* ----------------------------------------------------------------------- */
-/* This is a special version of tst_cb which permit to find the first      */
-/* word.                                                                   */
-/* ----------------------------------------------------------------------- */
-/* Require new_current to be set to count - 1 at start.                   */
-/* Update new_current to the smallest greater position than current.       */
-/* ======================================================================= */
+/* ================================================================== */
+/* This is a special version of tst_cb above used only when searching */
+/* the first word having a given prefix.                              */
+/* Only used when the -s option is set.                               */
+/* ------------------------------------------------------------------ */
+/* Require new_current to be set to count - 1 at start.               */
+/* Update new_current to the smallest greater position than current.  */
+/* ================================================================== */
 int
 tst_cb_cli(void * elem)
 {
-  long n  = 0;
-  int  rc = 0;
+  int rc = 0;
 
   /* The data attached to the string in the tst is a linked list of   */
   /* position of the string in the input flow, This list is naturally */
@@ -2326,7 +2324,7 @@ tst_cb_cli(void * elem)
 
   ll_node_t * node = list->head;
 
-  while (n++ < list->len)
+  while (node)
   {
     long pos;
 
@@ -2610,7 +2608,7 @@ expand(char * src, char * dest, langinfo_t * langinfo, toggle_t * toggles,
           else
           {
             if (toggles->blank_nonprintable)
-              *(ptr++) = ' ';
+              *(ptr++) = ' '; /* Non printable character -> ' '. */
             else
             {
               *(ptr++)   = misc->invalid_char_substitute;
@@ -9429,8 +9427,8 @@ main(int argc, char * argv[])
       wchar_t * w;
 
       new_current = last_selectable;
-      if (NULL
-          != tst_prefix_search(tst_word, w = utf8_strtowcs(ptr), tst_cb_cli))
+      if (tst_prefix_search(tst_word, w = utf8_strtowcs(ptr), tst_cb_cli)
+          != NULL)
         current = new_current;
       else
         current = first_selectable;
