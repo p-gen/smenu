@@ -2303,62 +2303,6 @@ tst_cb(void * elem)
   return 1; /* OK. */
 }
 
-/* ================================================================== */
-/* This is a special version of tst_cb above used only when searching */
-/* the first word having a given prefix.                              */
-/* Only used when the -s option is set.                               */
-/* ------------------------------------------------------------------ */
-/* Require new_current to be set to count - 1 at start.               */
-/* Update new_current to the smallest greater position than current.  */
-/* ================================================================== */
-int
-tst_cb_cli(void * elem)
-{
-  int rc = 0;
-
-  /* The data attached to the string in the tst is a linked list of   */
-  /* position of the string in the input flow, This list is naturally */
-  /* sorted.                                                          */
-  /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-  ll_t * list = (ll_t *)elem;
-
-  ll_node_t * node = list->head;
-
-  while (node)
-  {
-    long pos;
-
-    pos = *(long *)(node->data);
-
-    word_a[pos].is_matching = 1;
-    insert_sorted_index(&matching_words_a, &matching_words_a_size,
-                        &matches_count, pos);
-
-    /* We already are at the last word, report the finding. */
-    /* """""""""""""""""""""""""""""""""""""""""""""""""""" */
-    if (pos == count - 1)
-      return 1;
-
-    /* Only consider the indexes above the current cursor position. */
-    /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-    if (pos >= current) /* Enable the search of the current word. */
-    {
-      /* As the future new current index has been set to the highest */
-      /* possible value, each new possible position can only improve */
-      /* the estimation we set rc to 1 to mark that.                 */
-      /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-      if (pos < new_current)
-      {
-        new_current = pos;
-        rc          = 1;
-      }
-    }
-
-    node = node->next;
-  }
-  return rc;
-}
-
 /* **************** */
 /* Input functions. */
 /* **************** */
@@ -9424,15 +9368,17 @@ main(int argc, char * argv[])
     {
       /* A prefix is expected. */
       /* """"""""""""""""""""" */
-      wchar_t * w;
+      for (new_current = first_selectable; new_current < count; new_current++)
+      {
+        if (strprefix(word_a[new_current].str, ptr))
+          if (word_a[new_current].is_selectable)
+            break;
+      }
 
-      new_current = last_selectable;
-      if (tst_prefix_search(tst_word, w = utf8_strtowcs(ptr), tst_cb_cli)
-          != NULL)
-        current = new_current;
-      else
+      if (new_current == count)
         current = first_selectable;
-      free(w);
+      else
+        current = new_current;
     }
   }
   else
