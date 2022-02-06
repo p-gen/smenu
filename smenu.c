@@ -2583,7 +2583,7 @@ expand(char * src, char * dest, langinfo_t * langinfo, toggle_t * toggles,
 /*    On Failure: the return value will be set to NULL.                  */
 /* ===================================================================== */
 char *
-get_word(FILE * input, ll_t * word_delims_list, ll_t * record_delims_list,
+get_word(FILE * input, ll_t * word_delims_list, ll_t * line_delims_list,
          ll_t * zapped_glyphs_list, char * utf8_buffer, unsigned char * is_last,
          toggle_t * toggles, langinfo_t * langinfo, win_t * win,
          limit_t * limits, misc_t * misc)
@@ -2757,13 +2757,13 @@ get_word(FILE * input, ll_t * word_delims_list, ll_t * record_delims_list,
 
   /* Skip all field delimiters before a record delimiter. */
   /* """""""""""""""""""""""""""""""""""""""""""""""""""" */
-  if (ll_find(record_delims_list, utf8_buffer, buffer_cmp) == NULL)
+  if (ll_find(line_delims_list, utf8_buffer, buffer_cmp) == NULL)
   {
     byte = get_bytes(input, utf8_buffer, zapped_glyphs_list, langinfo, misc);
 
     while (byte != EOF
            && ll_find(word_delims_list, utf8_buffer, buffer_cmp) != NULL
-           && ll_find(record_delims_list, utf8_buffer, buffer_cmp) == NULL)
+           && ll_find(line_delims_list, utf8_buffer, buffer_cmp) == NULL)
       byte = get_bytes(input, utf8_buffer, zapped_glyphs_list, langinfo, misc);
 
     if (langinfo->utf8 && utf8_get_length(utf8_buffer[0]) > 1)
@@ -2783,7 +2783,7 @@ get_word(FILE * input, ll_t * word_delims_list, ll_t * record_delims_list,
   /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
   if (byte == EOF
       || ((win->col_mode || win->line_mode || win->tab_mode)
-          && ll_find(record_delims_list, utf8_buffer, buffer_cmp) != NULL))
+          && ll_find(line_delims_list, utf8_buffer, buffer_cmp) != NULL))
     *is_last = 1;
   else
     *is_last = 0;
@@ -6372,8 +6372,9 @@ main(int argc, char * argv[])
     { NULL, 0 }
   };
 
-  int     nb_rem_args = 0;
-  char ** rem_args    = NULL;
+  int     nb_rem_args = 0; /* Remaining non analyzed command line arguments. */
+  char ** rem_args    = NULL; /* Remaining non analyzed command line         *
+                               | arguments array.                            */
 
   char * message = NULL; /* message to be displayed above the selection      *
                           | window.                                          */
@@ -6431,12 +6432,12 @@ main(int argc, char * argv[])
 
   char *  first_word_pattern = NULL; /* used by -A/-Z.                       */
   char *  last_word_pattern  = NULL;
-  regex_t first_word_re;
-  regex_t last_word_re;
+  regex_t first_word_re; /* to hold the compiled first words RE.             */
+  regex_t last_word_re;  /* to hold the compiled last words RE.              */
 
   char *  special_pattern[9] = { NULL, NULL, NULL, NULL, NULL,
                                 NULL, NULL, NULL, NULL }; /* -1 .. -9 */
-  regex_t special_re[9];
+  regex_t special_re[9]; /* array to hold the compiled special patterns RE.  */
 
   int include_visual_only = 0; /* If set to 1, the original word which is    *
                                 | read from stdin will be output even if its */
@@ -6521,10 +6522,12 @@ main(int argc, char * argv[])
 
   struct sigaction sa; /* Signal structure.                                  */
 
-  char * iws = NULL, *ils = NULL, *zg = NULL;
-  ll_t * word_delims_list   = NULL;
+  char *iws = NULL, *ils = NULL, *zg = NULL; /* words/lines delimiters and   *
+                                               | zapped glyphs strings.      */
+
+  ll_t * word_delims_list   = NULL; /* and associated linked lists.          */
+  ll_t * line_delims_list   = NULL;
   ll_t * zapped_glyphs_list = NULL;
-  ll_t * record_delims_list = NULL;
 
   char utf8_buffer[5]; /* buffer to store the bytes of a UTF-8 glyph         *
                         | (4 chars max).                                     */
@@ -7665,13 +7668,13 @@ main(int argc, char * argv[])
   /* the standard delimiter (newline) is used. Each of its UTF-8       */
   /* sequences are stored in a linked list.                            */
   /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-  record_delims_list = ll_new();
+  line_delims_list = ll_new();
 
   /* A default line separator is set to '\n' except in tab_mode */
   /* where it should be explicitly set.                         */
   /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
   if (ils == NULL && !win.tab_mode)
-    ll_append(record_delims_list, "\n");
+    ll_append(line_delims_list, "\n");
   else
   {
     int    utf8_len;
@@ -7685,7 +7688,7 @@ main(int argc, char * argv[])
       tmp = xmalloc(utf8_len + 1);
       memcpy(tmp, ils_ptr, utf8_len);
       tmp[utf8_len] = '\0';
-      ll_append(record_delims_list, tmp);
+      ll_append(line_delims_list, tmp);
 
       /* Add this record delimiter as a word delimiter. */
       /* """""""""""""""""""""""""""""""""""""""""""""" */
@@ -8029,7 +8032,7 @@ main(int argc, char * argv[])
   /* - The -R is taken into account                               */
   /* - The first part of the -C option is done                    */
   /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-  while ((word = get_word(input_file, word_delims_list, record_delims_list,
+  while ((word = get_word(input_file, word_delims_list, line_delims_list,
                           zapped_glyphs_list, utf8_buffer, &is_last, &toggles,
                           &langinfo, &win, &limits, &misc))
          != NULL)

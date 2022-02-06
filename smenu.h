@@ -546,7 +546,7 @@ int
 get_scancode(unsigned char * s, size_t max);
 
 char *
-get_word(FILE * input, ll_t * word_delims_list, ll_t * record_delims_list,
+get_word(FILE * input, ll_t * word_delims_list, ll_t * line_delims_list,
          ll_t * ignored_glyphs_list, char * utf8_buffer,
          unsigned char * is_last, toggle_t * toggles, langinfo_t * langinfo,
          win_t * win, limit_t * limits, misc_t * misc);
