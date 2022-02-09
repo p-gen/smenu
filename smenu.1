@@ -570,11 +570,12 @@ more than 8 colors.
 The default value corresponds to \fBansi\fP.
 
 The attributes syntax is [fg][/bg][,toggles] where \fBfg\fP and
-\fBbg\fP are numbers representing the foreground and background
-color and \fBtoggles\fP is a strings which can contain the characters
-\fIb\fP, \fId\fP, \fIr\fP, \fIs\fP, \fIu\fP, \fIi\fP and \fIl\fP standing
-for \fIb\fPold, \fId\fPim, \fIr\fPeverse, \fIs\fPtandout, \fIu\fPnderline,
-\fIi\fPtalic and b\fIl\fPink.
+\fBbg\fP are numbers representing the foreground and background color
+and \fBtoggles\fP is a strings which can contain the characters \fIb\fP,
+\fId\fP, \fIr\fP, \fIs\fP, \fIu\fP, \fIi\fP, \fIn\fP and \fIl\fP
+representing respectively \fIb\fPold, \fId\fPim, \fIr\fPeverse,
+\fIs\fPtandout, \fIu\fPnderline, \fIi\fPtalic, i\fIn\fPvisible
+and b\fIl\fPink.
 .IP \(bu 2
 Spaces are allowed anywhere in the lines and between them, even around
 the \fB=\fP.
@@ -868,8 +869,8 @@ default or configured attributes of each class.
 Its syntax is the same as the one used in the configuration file:
 .nf
 [\fIfg\fP][/\fIbg\fP]\
-[,{\fIb\fP|\fId\fP|\fIr\fP|\fIs\fP|\fIu\fP|\fIi\fP|\fIl\fP}] \
-| [{\fIb\fP|\fId\fP|\fIr\fP|\fIs\fP|\fIu\fP|\fIi\fP|\fIl\fP}]
+[,{\fIb\fP|\fId\fP|\fIr\fP|\fIs\fP|\fIu\fP|\fIi\fP|\fIn\fP|\fIl\fP}] \
+| [{\fIb\fP|\fId\fP|\fIr\fP|\fIs\fP|\fIu\fP|\fIi\fP|\fIn\fP|\fIl\fP}]
 .fi
 
 Examples of possible attributes are:

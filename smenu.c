@@ -275,6 +275,7 @@ help(win_t * win, term_t * term, long last_line)
 /* s -> standout                     */
 /* u -> underline                    */
 /* i -> italic                       */
+/* x -> invis                        */
 /* l -> blink                        */
 /*                                   */
 /* Returns 0 if some unexpected.     */
@@ -291,6 +292,7 @@ decode_attr_toggles(char * s, attrib_t * attr)
   attr->standout  = (signed char)0;
   attr->underline = (signed char)0;
   attr->italic    = (signed char)0;
+  attr->invis     = (signed char)0;
   attr->blink     = (signed char)0;
 
   while (*s != '\0')
@@ -321,6 +323,9 @@ decode_attr_toggles(char * s, attrib_t * attr)
         attr->italic = (signed char)1;
         attr->is_set = SET;
         break;
+      case 'n':
+        attr->invis  = (signed char)1;
+        attr->is_set = SET;
       case 'l':
         attr->blink  = (signed char)1;
         attr->is_set = SET;
@@ -442,6 +447,9 @@ apply_attr(term_t * term, attrib_t attr)
   if (attr.italic > (signed char)0)
     (void)tputs(TPARM1(enter_italics_mode), 1, outch);
 
+  if (attr.invis > (signed char)0)
+    (void)tputs(TPARM1(enter_secure_mode), 1, outch);
+
   if (attr.blink > (signed char)0)
     (void)tputs(TPARM1(enter_blink_mode), 1, outch);
 }
@@ -502,6 +510,8 @@ ini_cb(win_t * win, term_t * term, limit_t * limits, ticker_t * timers,
           win->x##_attr.underline = v.underline;  \
         if (v.italic >= (signed char)0)           \
           win->x##_attr.italic = v.italic;        \
+        if (v.invis >= (signed char)0)            \
+          win->x##_attr.invis = v.invis;          \
         if (v.blink >= (signed char)0)            \
           win->x##_attr.blink = v.blink;          \
       }                                           \
@@ -535,6 +545,8 @@ ini_cb(win_t * win, term_t * term, limit_t * limits, ticker_t * timers,
           win->x##_attr[y - 1].underline = v.underline; \
         if (v.italic >= (signed char)0)                 \
           win->x##_attr[y - 1].italic = v.italic;       \
+        if (v.invis >= (signed char)0)                  \
+          win->x##_attr[y - 1].invis = v.invis;         \
         if (v.blink >= (signed char)0)                  \
           win->x##_attr[y - 1].blink = v.blink;         \
       }                                                 \
@@ -4931,6 +4943,7 @@ init_main_ds(attrib_t * init_attr, win_t * win, limit_t * limits,
   init_attr->standout  = (signed char)-1;
   init_attr->underline = (signed char)-1;
   init_attr->italic    = (signed char)-1;
+  init_attr->invis     = (signed char)-1;
   init_attr->blink     = (signed char)-1;
 
   /* Win fields initialization. */
@@ -5463,6 +5476,7 @@ special_level_action(char * ctx_name, char * opt_name, char * param,
       win->special_attr[opt - '1'].standout  = attr.standout;
       win->special_attr[opt - '1'].underline = attr.underline;
       win->special_attr[opt - '1'].italic    = attr.italic;
+      win->special_attr[opt - '1'].invis     = attr.invis;
       win->special_attr[opt - '1'].blink     = attr.blink;
     }
   }
@@ -5601,6 +5615,7 @@ attributes_action(char * ctx_name, char * opt_name, char * param, int nb_values,
       attr_to_set->standout  = attr.standout;
       attr_to_set->underline = attr.underline;
       attr_to_set->italic    = attr.italic;
+      attr_to_set->invis     = attr.invis;
       attr_to_set->blink     = attr.blink;
     }
     else
@@ -7191,6 +7206,8 @@ main(int argc, char * argv[])
     term.has_standout          = (str == (char *)-1 || str == NULL) ? 0 : 1;
     str                        = tigetstr("sitm");
     term.has_italic            = (str == (char *)-1 || str == NULL) ? 0 : 1;
+    str                        = tigetstr("invis");
+    term.has_invis             = (str == (char *)-1 || str == NULL) ? 0 : 1;
     str                        = tigetstr("blink");
     term.has_blink             = (str == (char *)-1 || str == NULL) ? 0 : 1;
   }
