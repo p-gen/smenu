@@ -481,6 +481,7 @@ ini_cb(win_t * win, term_t * term, limit_t * limits, ticker_t * timers,
                    (signed char)-1,
                    (signed char)-1,
                    (signed char)-1,
+                   (signed char)-1,
                    (signed char)-1 };
 
 #define CHECK_ATTR(x)                             \
