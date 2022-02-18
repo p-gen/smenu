@@ -2516,51 +2516,41 @@ expand(char * src, char * dest, langinfo_t * langinfo, toggle_t * toggles,
         case '\a':
           *(ptr++) = '\\';
           *(ptr++) = 'a';
-          len += 2;
-          all_spaces = 0;
-          break;
+          goto common_code;
         case '\b':
           *(ptr++) = '\\';
           *(ptr++) = 'b';
-          len += 2;
-          all_spaces = 0;
-          break;
+          goto common_code;
         case '\t':
           *(ptr++) = '\\';
           *(ptr++) = 't';
-          len += 2;
-          all_spaces = 0;
-          break;
+          goto common_code;
         case '\n':
           *(ptr++) = '\\';
           *(ptr++) = 'n';
-          len += 2;
-          all_spaces = 0;
-          break;
+          goto common_code;
         case '\v':
           *(ptr++) = '\\';
           *(ptr++) = 'v';
-          len += 2;
-          all_spaces = 0;
-          break;
+          goto common_code;
         case '\f':
           *(ptr++) = '\\';
           *(ptr++) = 'f';
-          len += 2;
-          all_spaces = 0;
-          break;
+          goto common_code;
         case '\r':
           *(ptr++) = '\\';
           *(ptr++) = 'r';
-          len += 2;
-          all_spaces = 0;
-          break;
+          goto common_code;
         case '\\':
           *(ptr++) = '\\';
           *(ptr++) = '\\';
+          goto common_code;
+
+        common_code:
           len += 2;
           all_spaces = 0;
           break;
+
         default:
           if (my_isprint(c))
           {
