@@ -1601,8 +1601,13 @@ parse_regex_selector_part(char * str, filters_t filter, ll_t ** inc_regex_list,
 {
   regex_t * regex;
 
+  /* Remove the last character of str (the delimiter).*/
+  /* """""""""""""""""""""""""""""""""""""""""""""""" */
   str[strlen(str) - 1] = '\0';
 
+  /* Ignore the first character of str (the delimiter).       */
+  /* compile it and add a compiled regex in a dedicated list. */
+  /* """""""""""""""""""""""""""""""""""""""""""""""""""""""" */
   regex = xmalloc(sizeof(regex_t));
   if (regcomp(regex, str + 1, REG_EXTENDED | REG_NOSUB) == 0)
   {
@@ -1767,7 +1772,7 @@ parse_selectors(char * str, filters_t * filter, char * unparsed,
     else if (ptr > str + start + 2)
       delim2 = *(ptr - 2);
 
-    /* Check is we have found a well describes regular expression. */
+    /* Check is we have found a well described regular expression. */
     /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
     if (ptr > str + start + 2 && delim1 == delim2 && isgraph(delim1)
         && isgraph(delim2) && !isdigit(delim1) && !isdigit(delim2))
@@ -9844,8 +9849,8 @@ main(int argc, char * argv[])
     if (sc && winch_timer < 0) /* Do not allow input when a window *
                                 | refresh is scheduled.            */
     {
-      /* Rearm the forgotten timer. */
-      /* """""""""""""""""""""""""" */
+      /* Rearm the timer named "forgotten". */
+      /* """""""""""""""""""""""""""""""""" */
       forgotten_timer = timers.forgotten; /* default 900 s (15 min). */
 
       if (timeout.initial_value && buffer[0] != 0x0d && buffer[0] != 'q'
