@@ -626,4 +626,6 @@ reset_search_buffer(win_t * win, search_data_t * search_data, ticker_t * timers,
                     toggle_t * toggles, term_t * term, daccess_t * daccess,
                     langinfo_t * langinfo, long last_line, char * tmp_word,
                     long word_real_max_size);
+int
+is_in_foreground_process_group(void);
 #endif

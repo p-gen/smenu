@@ -36,6 +36,8 @@
 #include <sys/ioctl.h>
 #include <sys/time.h>
 #include <sys/param.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 #include <wchar.h>
 
 #include "xmalloc.h"
@@ -6217,6 +6219,26 @@ reset_search_buffer(win_t * win, search_data_t * search_data, ticker_t * timers,
   }
 }
 
+/* =============================================================== */
+/* Detect if the current terminal belongs to the foreground group. */
+/* returns 1 if yes else returns 0.                                */
+/* =============================================================== */
+int
+is_in_foreground_process_group(void)
+{
+  int fd, fg;
+
+  fd = open("/dev/tty", O_RDONLY);
+  if (fd < 0)
+    return 0;
+
+  fg = (tcgetpgrp(fd) == getpgid(0));
+
+  close(fd);
+
+  return fg;
+}
+
 /* ================= */
 /* Main entry point. */
 /* ================= */
@@ -9425,6 +9447,14 @@ main(int argc, char * argv[])
   }
 
   setvbuf(stdout, NULL, _IONBF, 0);
+
+  /* Make sure smenu runs in foreground. */
+  /* """"""""""""""""""""""""""""""""""" */
+  if (!is_in_foreground_process_group())
+  {
+    fprintf(stderr, "smenu cannot be launched in background.\n");
+    exit(EXIT_FAILURE);
+  }
 
   /* Set the characteristics of the terminal. */
   /* """""""""""""""""""""""""""""""""""""""" */
