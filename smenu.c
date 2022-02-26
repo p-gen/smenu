@@ -3527,9 +3527,9 @@ disp_word(long pos, search_mode_t search_mode, search_data_t * search_data,
   }
 }
 
-/* ======================================== */
-/* Display a message line above the window. */
-/* ======================================== */
+/* =================================== */
+/* Display a message above the window. */
+/* =================================== */
 void
 disp_message(ll_t * message_lines_list, long message_max_width,
              long message_max_len, term_t * term, win_t * win,
@@ -3580,8 +3580,8 @@ disp_message(ll_t * message_lines_list, long message_max_width,
   node = message_lines_list->head;
   buf  = xmalloc(message_max_len + 1);
 
-  /* Follow the message lines list and display each line. */
-  /* """""""""""""""""""""""""""""""""""""""""""""""""""" */
+  /* Follow the list of message lines and display each line. */
+  /* """"""""""""""""""""""""""""""""""""""""""""""""""""""" */
   for (n = 1; n < win->message_lines; n++)
   {
     long i;
@@ -5096,6 +5096,9 @@ lines_action(char * ctx_name, char * opt_name, char * param, int nb_values,
   win_t * win = opt_data[0];
 
   if (nb_values == 1)
+    /* No need to validate if values are numeric here, they have      */
+    /* already been validated by the check_integer_constraint filter. */
+    /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
     sscanf(values[0], "%ld", &(win->asked_max_lines));
   else
     win->asked_max_lines = 0;
@@ -5112,8 +5115,11 @@ tab_mode_action(char * ctx_name, char * opt_name, char * param, int nb_values,
 
   if (nb_values == 1)
   {
-    sscanf(values[0], "%ld", &max_cols); /* Numericity and range were  *
-                                          | already checked by ctxopt. */
+    /* No need to validate if values are numeric or out of range here,  */
+    /* they have already been validated by the check_integer_constraint */
+    /* and ctxopt_range_constraint filters.                             */
+    /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+    sscanf(values[0], "%ld", &max_cols);
     win->max_cols = max_cols;
   }
 
@@ -5565,8 +5571,10 @@ attributes_action(char * ctx_name, char * opt_name, char * param, int nb_values,
     { NULL, NULL, NULL, NULL, 0 }
   };
 
-  /* Parse the arguments. */
-  /* """""""""""""""""""" */
+  /* Parse the arguments.                                               */
+  /* The syntax of the attributes has already been pre validated by the */
+  /* ctxopt_re_constraint filter.                                       */
+  /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
   for (a = 0; a < nb_values; a++)
   {
     attr = *init_attr;
@@ -5874,8 +5882,10 @@ da_options_action(char * ctx_name, char * opt_name, char * param, int nb_values,
   int       n;
   int       i;
 
-  /* Parse optional additional arguments. */
-  /* """""""""""""""""""""""""""""""""""" */
+  /* Parse optional additional arguments.                              */
+  /* The syntax of the arguments has already been pre validated by the */
+  /* ctxopt_re_constraint filter.                                      */
+  /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
   for (i = 0; i < nb_values; i++)
   {
     char * value = values[i];
