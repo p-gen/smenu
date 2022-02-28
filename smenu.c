@@ -6444,13 +6444,15 @@ main(int argc, char * argv[])
   regex_t daccess_up_re; /* variable to store the compiled direct access     *
                           | pattern (-U) RE.                                 */
 
-  char *  include_pattern     = NULL;
-  char *  exclude_pattern     = NULL;
-  int     pattern_def_include = -1; /* Set to -1 until an -i or -e option    *
-                                     | is specified, This variable remembers *
-                                     | if the words not matched will be      *
-                                     | included (value 1) or excluded        *
-                                     | (value 0) by default.                 */
+  char * include_pattern = NULL; /* ASCII version of the include RE          */
+  char * exclude_pattern = NULL; /* ASCII version of the exclude RE          */
+
+  int pattern_def_include = -1; /* Set to -1 until an -i or -e option is     *
+                                 | specified, This variable remembers  if    *
+                                 | the words not matched will be included    *
+                                 | (value 1) or excluded (value 0) by        *
+                                 | default.                                  */
+
   regex_t include_re; /* variable to store the compiled include (-i) REs.    */
   regex_t exclude_re; /* variable to store the compiled exclude (-e) REs.    */
 
@@ -6487,11 +6489,11 @@ main(int argc, char * argv[])
   int exclude_visual_only = 0; /* visual representation was modified via     *
                                 | -S/-I/-E.                                  */
 
-  ll_t * cols_selector_list = NULL;
-  char * cols_selector      = NULL;
+  ll_t * cols_selector_list = NULL; /* to store ASCII representations of     */
+  char * cols_selector      = NULL; /* RE to select some columns with -C.    */
 
-  ll_t * rows_selector_list = NULL;
-  char * rows_selector      = NULL;
+  ll_t * rows_selector_list = NULL; /* to store ASCII representations of     */
+  char * rows_selector      = NULL; /* RE to select some rows with -R.       */
 
   long wi; /* word index.                                                    */
 
