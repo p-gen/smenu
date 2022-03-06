@@ -829,7 +829,7 @@ make_ini_path(char * name, char * base)
   len      = strlen(home) + strlen(name) + 3;
 
   if (path_max < 0)
-    path_max = 4096; /* POSIX minimal value. */
+    path_max = 4096; /* POSIX minimal value. path_max >= 4096. */
 
   if (len <= path_max)
   {
@@ -840,7 +840,7 @@ make_ini_path(char * name, char * base)
     else
       conf = name;
 
-    snprintf(path, 4096, "%s/.%s", home, conf);
+    snprintf(path, len, "%s/.%s", home, conf);
   }
   else
     path = NULL;
