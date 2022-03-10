@@ -2355,15 +2355,15 @@ get_scancode(unsigned char * s, size_t max)
     /* Save the terminal parameters and configure getchar() */
     /* to return immediately.                               */
     /* """""""""""""""""""""""""""""""""""""""""""""""""""" */
-    int error;
-
     tcgetattr(0, &original_ts);
     nowait_ts = original_ts;
     nowait_ts.c_lflag &= ~ISIG;
     nowait_ts.c_cc[VMIN]  = 0;
     nowait_ts.c_cc[VTIME] = 0;
 
-    error = tcsetattr_safe(0, TCSADRAIN, &nowait_ts);
+    /* tcsetattr_safe cannot fail here. */
+    /* """""""""""""""""""""""""""""""" */
+    (void)tcsetattr_safe(0, TCSADRAIN, &nowait_ts);
 
     /* Check if additional code is available after 0x1b. */
     /* """"""""""""""""""""""""""""""""""""""""""""""""" */
@@ -2382,8 +2382,9 @@ get_scancode(unsigned char * s, size_t max)
     }
 
     /* Restore the save terminal parameters. */
+    /* tcsetattr_safe cannot fail here.      */
     /* """"""""""""""""""""""""""""""""""""" */
-    error = tcsetattr_safe(0, TCSADRAIN, &original_ts);
+    (void)tcsetattr_safe(0, TCSADRAIN, &original_ts);
 
     /* Ignore EOF when a scancode contains an escape sequence. */
     /* """"""""""""""""""""""""""""""""""""""""""""""""""""""" */
