@@ -328,6 +328,7 @@ decode_attr_toggles(char * s, attrib_t * attr)
       case 'n':
         attr->invis  = (signed char)1;
         attr->is_set = SET;
+        break;
       case 'l':
         attr->blink  = (signed char)1;
         attr->is_set = SET;
