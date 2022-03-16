@@ -67,8 +67,7 @@ xmalloc(size_t size)
   if (allocated == NULL)
   {
     fprintf(stderr,
-            "Error: Insufficient memory (attempt to malloc %lu bytes)\n",
-            (unsigned long int)size);
+            "Error: Insufficient memory (attempt to malloc %zu bytes)\n", size);
 
     exit(EXIT_FAILURE);
   }
@@ -91,8 +90,7 @@ xcalloc(size_t n, size_t size)
   if (allocated == NULL)
   {
     fprintf(stderr,
-            "Error: Insufficient memory (attempt to calloc %lu bytes)\n",
-            (unsigned long int)size);
+            "Error: Insufficient memory (attempt to calloc %zu bytes)\n", size);
 
     exit(EXIT_FAILURE);
   }
@@ -113,8 +111,8 @@ xrealloc(void * p, size_t size)
   if (allocated == NULL && size > 0)
   {
     fprintf(stderr,
-            "Error: Insufficient memory (attempt to xrealloc %lu bytes)\n",
-            (unsigned long int)size);
+            "Error: Insufficient memory (attempt to xrealloc %zu bytes)\n",
+            size);
 
     exit(EXIT_FAILURE);
   }
