@@ -2152,7 +2152,7 @@ abbrev_expand(char * par_name, ctx_t * ctx)
   /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
   if (user_rc == 1) /* The number of matching abbreviations. */
     return xstrdup(user_string);
-  else /* There is at least tho defined parameters starting with par_name. */
+  else /* There is at least two defined parameters starting with par_name. */
   {
     char *  s, *first_s;
     par_t * par;
@@ -2168,7 +2168,7 @@ abbrev_expand(char * par_name, ctx_t * ctx)
                                              | the first word.         */
     while (s != NULL)
     {
-      par = locate_par(s, ctx);
+      par = locate_par(s, ctx); /* par cannot be NULL here. */
       opt = par->opt;
 
       if (bst_find(opt, &tmp_opt_bst, opt_compare) == NULL)
@@ -2351,7 +2351,9 @@ check_for_requirement_issues(ctx_inst_t * ctx_inst)
     bst_node = bst_find(&tmp_seen_opt, &(ctx_inst->seen_opt_bst),
                         seen_opt_compare);
 
-    if (((seen_opt_t *)(bst_node->key))->seen != 0)
+    /* TODO: make sure bst_node cannot be NULL here. */
+
+    if (bst_node && ((seen_opt_t *)(bst_node->key))->seen != 0)
     {
       found    = 0;
       req_node = req->or_opt_list->head;
@@ -3426,7 +3428,7 @@ ctxopt_analyze(int nb_words, char ** words, int * nb_rem_args,
                             | 0 if ctxopt_debug_env is unset or empty.    */
 
   ctx_t *      ctx;
-  opt_t *      opt;
+  opt_t *      opt = NULL;
   par_t *      par;
   ctx_inst_t * ctx_inst;
   opt_inst_t * opt_inst;
@@ -4458,7 +4460,7 @@ ctxopt_add_global_settings(settings s, ...)
 void
 ctxopt_add_opt_settings(settings s, ...)
 {
-  opt_t * opt = NULL;
+  opt_t * opt;
   void *  ptr = NULL;
 
   va_list(args);
