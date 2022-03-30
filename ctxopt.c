@@ -321,7 +321,7 @@ fatal_internal(const char * format, ...)
 /* registered by the users for a given error identifier if any.           */
 /*                                                                        */
 /* e      : Error identifier responsible of the fatal error.              */
-/* errmsg : Users's provided string specific to the error e.              */
+/* errmsg : User's provided string specific to the error e.               */
 /*          Note that errmsg is not used in all cases.                    */
 /*                                                                        */
 /*          CTXOPTMISPAR Missing parameter.                               */
@@ -1406,7 +1406,7 @@ struct opt_s
   int multiple_args; /* 1 is option can appear more than once in a context   *
                       | instance.                                            */
 
-  int  opt_args_count_matter; /* 1 if count is rescticted, else 0.           */
+  int  opt_args_count_matter; /* 1 if count is restricted, else 0.           */
   char opt_args_count_oper;   /* <, = or >                                   */
   int  opt_args_count_mark;   /* Value to be compared to with                *
                                | opt_count_oper.                             */
@@ -1486,7 +1486,7 @@ struct constraint_s
   int     nb_args;
   char ** args;
   char *  to_free; /* pointer to the original string in which the array in *
-                    | args points to. This poinnter is kept there to allow *
+                    | args points to. This pointer is kept there to allow  *
                     | it to be freed.                                      */
 };
 
@@ -3204,7 +3204,7 @@ ctxopt_build_cmdline_list(int nb_words, char ** words)
   /* The analysis is divided into three passes, this is not optimal but  */
   /* must be done only one time. Doing that we privilege readability.    */
   /*                                                                     */
-  /* In the following, SG is the ascii character 1d (dec 29)             */
+  /* In the following, SG is the ASCII character 1d (dec 29)             */
   /*                                                                     */
   /* The first pass creates the list, extract the leading an trailing    */
   /*  SG '{' and '}' of each word and give them their own place in the   */
@@ -3402,7 +3402,7 @@ ctxopt_build_cmdline_list(int nb_words, char ** words)
 /* Build and analyze the command line list and create the linked data    */
 /* structures whose data will be evaluated later by ctxopt_evaluate.     */
 /* This function identifies the following errors and creates an array of */
-/* The remaining unanalyzed arguments.                                   */
+/* The remaining not yet analyzed arguments.                             */
 /* - detect missing arguments                                            */
 /* - detect too many arguments                                           */
 /* - detect unknown parameters in a context                              */
