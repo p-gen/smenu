@@ -28,7 +28,7 @@ ll_partition(ll_node_t * l, ll_node_t * h, int (*comp)(void *, void *),
 
 static void
 ll_quicksort(ll_node_t * l, ll_node_t * h, int (*comp)(void *, void *),
-             void (*swap)(void * a, void *));
+             void (*swap)(void *, void *));
 
 /* ========================== */
 /* Creates a new linked list. */
@@ -59,9 +59,7 @@ ll_init(ll_t * list)
 ll_node_t *
 ll_new_node(void)
 {
-  ll_node_t * ret = xmalloc(sizeof(ll_node_t));
-
-  return ret;
+  return xmalloc(sizeof(ll_node_t));
 }
 
 /* ====================================================================== */
@@ -224,7 +222,7 @@ ll_partition(ll_node_t * l, ll_node_t * h, int (*comp)(void *, void *),
 /* ======================================================== */
 static void
 ll_quicksort(ll_node_t * l, ll_node_t * h, int (*comp)(void *, void *),
-             void (*swap)(void * a, void *))
+             void (*swap)(void *, void *))
 {
   if (h != NULL && l != h && l != h->next)
   {
@@ -238,8 +236,7 @@ ll_quicksort(ll_node_t * l, ll_node_t * h, int (*comp)(void *, void *),
 /* A linked list sort function. */
 /* ============================ */
 void
-ll_sort(ll_t * list, int (*comp)(void *, void *),
-        void (*swap)(void * a, void *))
+ll_sort(ll_t * list, int (*comp)(void *, void *), void (*swap)(void *, void *))
 {
   /* Call the recursive ll_quicksort function. */
   /* """"""""""""""""""""""""""""""""""""""""" */
@@ -254,10 +251,10 @@ ll_delete(ll_t * const list, ll_node_t * node)
 {
   if (list->head == list->tail)
   {
-    if (list->head != NULL)
-      list->head = list->tail = NULL;
-    else
+    if (list->head == NULL)
       return 0;
+
+    list->head = list->tail = NULL;
   }
   else if (node->prev == NULL)
   {
@@ -289,7 +286,7 @@ ll_delete(ll_t * const list, ll_node_t * node)
 /* ==========================================================================*/
 ll_node_t *
 ll_find(ll_t * const list, void * const data,
-        int (*cmpfunc)(const void * a, const void * b))
+        int (*cmpfunc)(const void *, const void *))
 {
   ll_node_t * node;
 

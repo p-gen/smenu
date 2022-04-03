@@ -228,11 +228,11 @@ utf8_interpret(char * s, langinfo_t * langinfo, char substitute)
           else
             good = 0;
 
-          if (!good)
+          if (good)
+            *(tmp + i) = byte;
+          else
             utf8_ascii_len = 2 * i; /* Force the new length according to the *
                                      | number of valid UTF-8 bytes read.     */
-          else
-            *(tmp + i) = byte;
         }
         tmp[utf8_ascii_len / 2] = '\0';
 
@@ -298,8 +298,8 @@ utf8_get_length(unsigned char c)
     return 2;
   else if (c < 0xf0)
     return 3;
-  else
-    return 4;
+
+  return 4;
 }
 
 /* ==================================================== */
@@ -351,7 +351,8 @@ utf8_next(char * p)
     for (++p; (*p & 0xc0) == 0x80; ++p)
       ;
   }
-  return (*p == '\0' ? NULL : p);
+
+  return *p == '\0' ? NULL : p;
 }
 
 /* ============================================================= */
@@ -415,8 +416,8 @@ utf8_validate(char * s)
       /* 110XXXXx 10xxxxxx */
       if ((us[1] & 0xc0) != 0x80 || (us[0] & 0xfe) == 0xc0) /* overlong? */
         return (char *)us;
-      else
-        us += 2;
+
+      us += 2;
     }
     else if ((us[0] & 0xf0) == 0xe0)
     {
@@ -428,8 +429,8 @@ utf8_validate(char * s)
           (us[0] == 0xef && us[1] == 0xbf &&
             (us[2] & 0xfe) == 0xbe))                  /* U+FFFE or U+FFFF? */
         return (char *)us;
-      else
-        us += 3;
+
+      us += 3;
     }
     else if ((us[0] & 0xf8) == 0xf0)
     {
@@ -440,8 +441,8 @@ utf8_validate(char * s)
           (us[0] == 0xf0 && (us[1] & 0xf0) == 0x80) ||    /* overlong?   */
           (us[0] == 0xf4 && us[1] > 0x8f) || us[0] > 0xf4) /* > U+10FFFF? */
         return (char *)us;
-      else
-        us += 4;
+
+      us += 4;
     }
     else
       return (char *)us;

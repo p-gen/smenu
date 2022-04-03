@@ -206,15 +206,16 @@ help(win_t * win, term_t * term, long last_line)
   (void)tputs(TPARM1(save_cursor), 1, outch);
 
   /* Center the help line if the -M (Middle) option is set. */
+  /* May update the variable offset as a side  effect.      */
   /* """""""""""""""""""""""""""""""""""""""""""""""""""""" */
-  if (win->offset > 0)
-    if ((offset = win->offset + win->max_width / 2 - help_len / 2) > 0)
-    {
-      int i;
+  if (win->offset > 0
+      && ((offset = win->offset + win->max_width / 2 - help_len / 2) > 0))
+  {
+    int i;
 
-      for (i = 0; i < offset; i++)
-        fputc_safe(' ', stdout);
-    }
+    for (i = 0; i < offset; i++)
+      fputc_safe(' ', stdout);
+  }
 
   /* Print the different objects forming the help line.                  */
   /* A new line is added each time the next entry does not fit in the    */

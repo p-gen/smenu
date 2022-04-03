@@ -28,9 +28,7 @@
 interval_t *
 interval_new(void)
 {
-  interval_t * ret = xmalloc(sizeof(interval_t));
-
-  return ret;
+  return xmalloc(sizeof(interval_t));
 }
 
 /* ======================================= */
@@ -94,39 +92,37 @@ merge_intervals(ll_t * list)
 
   if (!list || list->len < 2)
     return;
-  else
+
+  /* Step 1: sort the intervals list. */
+  /* """""""""""""""""""""""""""""""" */
+  ll_sort(list, interval_comp, interval_swap);
+
+  /* Step 2: merge the list by merging the consecutive intervals. */
+  /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+  node1 = list->head;
+  node2 = node1->next;
+
+  while (node2)
   {
-    /* Step 1: sort the intervals list. */
-    /* """""""""""""""""""""""""""""""" */
-    ll_sort(list, interval_comp, interval_swap);
+    data1 = (interval_t *)(node1->data);
+    data2 = (interval_t *)(node2->data);
 
-    /* Step 2: merge the list by merging the consecutive intervals. */
-    /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-    node1 = list->head;
-    node2 = node1->next;
-
-    while (node2)
+    if (data1->high >= data2->low - 1)
     {
-      data1 = (interval_t *)(node1->data);
-      data2 = (interval_t *)(node2->data);
-
-      if (data1->high >= data2->low - 1)
-      {
-        /* Interval 1 overlaps interval 2. */
-        /* ''''''''''''''''''''''''''''''' */
-        if (data2->high >= data1->high)
-          data1->high = data2->high;
-        ll_delete(list, node2);
-        free(data2);
-        node2 = node1->next;
-      }
-      else
-      {
-        /* No overlap. */
-        /* ''''''''''' */
-        node1 = node2;
-        node2 = node2->next;
-      }
+      /* Interval 1 overlaps interval 2. */
+      /* ''''''''''''''''''''''''''''''' */
+      if (data2->high >= data1->high)
+        data1->high = data2->high;
+      ll_delete(list, node2);
+      free(data2);
+      node2 = node1->next;
+    }
+    else
+    {
+      /* No overlap. */
+      /* ''''''''''' */
+      node1 = node2;
+      node2 = node2->next;
     }
   }
 }
@@ -280,7 +276,7 @@ my_strcpy(char * str1, char * str2)
 int
 isprint7(int i)
 {
-  return (i >= 0x20 && i <= 0x7e);
+  return i >= 0x20 && i <= 0x7e;
 }
 
 /* ================================ */
@@ -313,7 +309,7 @@ my_wcscasecmp(const wchar_t * s1, const wchar_t * s2)
     s1++;
     s2++;
   }
-  return (-*s2);
+  return -*s2;
 }
 
 /* ==================================================================== */
@@ -331,6 +327,6 @@ is_integer(const char * const s)
 
   if (errno != ERANGE && n >= INT_MIN && n <= INT_MAX)
     return 1;
-  else
-    return 0;
+
+  return 0;
 }
