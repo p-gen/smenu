@@ -7574,10 +7574,12 @@ main(int argc, char * argv[])
         timeout_message = xstrdup(
           "[     s before quitting without selecting anything]");
         break;
+
       case CURRENT:
         timeout_message = xstrdup(
           "[     s before selecting the current highlighted word]");
         break;
+
       case WORD:
       {
         char * s = "[     s before selecting the word \"";
@@ -9824,46 +9826,44 @@ main(int argc, char * argv[])
     /* and possibly set its reached value.                      */
     /* The counter is frozen in search and help mode.           */
     /* """""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-    if (timeout.initial_value && search_mode == NONE && !help_mode)
+    if (timeout.initial_value && search_mode == NONE && !help_mode
+        && got_timeout_tick)
     {
-      if (got_timeout_tick)
+      long   i;
+      char * timeout_string;
+
+      got_timeout_tick = 0;
+
+      timeout.remain--;
+
+      if (!quiet_timeout && timeout.remain % FREQ == 0)
       {
-        long   i;
-        char * timeout_string;
+        sprintf(timeout_seconds, "%5u", timeout.remain / FREQ);
+        timeout_string =
+          (char *)(((ll_node_t *)(message_lines_list->tail))->data);
+        memcpy(timeout_string + 1, timeout_seconds, 5);
 
-        got_timeout_tick = 0;
-
-        timeout.remain--;
-
-        if (!quiet_timeout && timeout.remain % FREQ == 0)
+        /* Erase the current window. */
+        /* """"""""""""""""""""""""" */
+        for (i = 0; i < win.message_lines; i++)
         {
-          sprintf(timeout_seconds, "%5u", timeout.remain / FREQ);
-          timeout_string =
-            (char *)(((ll_node_t *)(message_lines_list->tail))->data);
-          memcpy(timeout_string + 1, timeout_seconds, 5);
-
-          /* Erase the current window. */
-          /* """"""""""""""""""""""""" */
-          for (i = 0; i < win.message_lines; i++)
-          {
-            (void)tputs(TPARM1(cursor_up), 1, outch);
-            (void)tputs(TPARM1(clr_bol), 1, outch);
-            (void)tputs(TPARM1(clr_eol), 1, outch);
-          }
-
+          (void)tputs(TPARM1(cursor_up), 1, outch);
           (void)tputs(TPARM1(clr_bol), 1, outch);
           (void)tputs(TPARM1(clr_eol), 1, outch);
-
-          /* Display the words window and its title for the first time. */
-          /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-          disp_message(message_lines_list, message_max_width, message_max_len,
-                       &term, &win, &langinfo);
         }
-        /* The timeout has expired. */
-        /* """""""""""""""""""""""" */
-        if (timeout.remain == 0)
-          timeout.reached = 1;
+
+        (void)tputs(TPARM1(clr_bol), 1, outch);
+        (void)tputs(TPARM1(clr_eol), 1, outch);
+
+        /* Display the words window and its title for the first time. */
+        /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+        disp_message(message_lines_list, message_max_width, message_max_len,
+                     &term, &win, &langinfo);
       }
+      /* The timeout has expired. */
+      /* """""""""""""""""""""""" */
+      if (timeout.remain == 0)
+        timeout.reached = 1;
     }
 
     if (timeout.reached)
@@ -9927,12 +9927,11 @@ main(int argc, char * argv[])
         setitimer(ITIMER_REAL, &periodic_itv, NULL);
       }
 
-      if (search_mode == NONE)
-        if (help_mode && buffer[0] != '?')
-        {
-          got_help_alrm = 1;
-          continue;
-        }
+      if (search_mode == NONE && help_mode && buffer[0] != '?')
+      {
+        got_help_alrm = 1;
+        continue;
+      }
 
       switch (buffer[0])
       {
@@ -9978,9 +9977,9 @@ main(int argc, char * argv[])
               /* In column mode we need to take care of the */
               /* horizontal scrolling.                      */
               /* """""""""""""""""""""""""""""""""""""""""" */
-              if (win.col_mode || win.line_mode)
-                if (word_a[current].end < win.first_column)
-                  win.first_column = word_a[current].start;
+              if ((win.col_mode || win.line_mode)
+                  && word_a[current].end < win.first_column)
+                win.first_column = word_a[current].start;
             }
 
             nl = disp_lines(&win, &toggles, current, count, search_mode,
@@ -10958,20 +10957,17 @@ main(int argc, char * argv[])
           /* The INS key has been pressed to tag a word if */
           /* tagging is enabled.                           */
           /* """"""""""""""""""""""""""""""""""""""""""""" */
-          if (toggles.taggable)
+          if (toggles.taggable && word_a[current].is_tagged == 0)
           {
-            if (word_a[current].is_tagged == 0)
-            {
-              tagged_words++;
-              word_a[current].is_tagged = 1;
+            tagged_words++;
+            word_a[current].is_tagged = 1;
 
-              if (toggles.pinable)
-                word_a[current].tag_order = next_tag_nb++;
+            if (toggles.pinable)
+              word_a[current].tag_order = next_tag_nb++;
 
-              nl = disp_lines(&win, &toggles, current, count, search_mode,
-                              &search_data, &term, last_line, tmp_word,
-                              &langinfo);
-            }
+            nl = disp_lines(&win, &toggles, current, count, search_mode,
+                            &search_data, &term, last_line, tmp_word,
+                            &langinfo);
           }
           break;
 
@@ -10979,17 +10975,19 @@ main(int argc, char * argv[])
           /* The DEL key has been pressed to untag a word if */
           /* tagging is enabled.                             */
           /* """"""""""""""""""""""""""""""""""""""""""""""" */
-          if (toggles.taggable)
+          if (toggles.taggable && word_a[current].is_tagged == 1)
           {
-            if (word_a[current].is_tagged == 1)
-            {
-              word_a[current].is_tagged = 0;
-              tagged_words--;
+            word_a[current].is_tagged = 0;
+            tagged_words--;
 
-              nl = disp_lines(&win, &toggles, current, count, search_mode,
-                              &search_data, &term, last_line, tmp_word,
-                              &langinfo);
-            }
+            /* We do not try to change next_tag_nb here to guaranty that */
+            /* next_tag_nb will be greater than all those already stored */
+            /* in all word_a[*].tag_order.                               */
+            /* ''''''''''''''''''''''''''''''''''''''''''''''''''''''''' */
+
+            nl = disp_lines(&win, &toggles, current, count, search_mode,
+                            &search_data, &term, last_line, tmp_word,
+                            &langinfo);
           }
           break;
 
