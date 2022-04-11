@@ -8678,91 +8678,88 @@ main(int argc, char * argv[])
           {
             if (daccess.mode & DA_TYPE_POS)
             {
-              if (!word->is_numbered)
+              if (!word->is_numbered && daccess.size > 0
+                  && (daccess.offset + daccess.size + daccess.ignore)
+                       <= utf8_strlen(word->str))
               {
-                if (daccess.size > 0
-                    && daccess.offset + daccess.size + daccess.ignore
-                         <= utf8_strlen(word->str))
-                {
-                  unsigned selector_value;  /* numerical value of the         *
+                unsigned selector_value;  /* numerical value of the         *
                                              | extracted selector.            */
-                  long     selector_offset; /* offset in byte to the selector *
+                long     selector_offset; /* offset in byte to the selector *
                                              | to extract.                    */
-                  char *   ptr;             /* points just after the selector *
+                char *   ptr;             /* points just after the selector *
                                              | to extract.                    */
-                  long     plus_offset;     /* points to the first occurrence *
+                long     plus_offset;     /* points to the first occurrence *
                                              | of a number in word->str after *
                                              | the offset given.              */
 
-                  selector_offset = utf8_offset(word->str, daccess.offset);
+                selector_offset = utf8_offset(word->str, daccess.offset);
 
-                  if (daccess.plus)
-                  {
-                    plus_offset = strcspn(word->str + selector_offset,
-                                          "0123456789");
+                if (daccess.plus)
+                {
+                  plus_offset = strcspn(word->str + selector_offset,
+                                        "0123456789");
 
-                    if (plus_offset + daccess.size + daccess.ignore
-                        <= strlen(word->str))
-                      selector_offset += plus_offset;
-                  }
-
-                  ptr      = word->str + selector_offset;
-                  selector = xstrndup(ptr, daccess.size);
-
-                  /* read the embedded number and, if correct, format */
-                  /* it according to daccess.alignment.               */
-                  /* """""""""""""""""""""""""""""""""""""""""""""""" */
-                  if (sscanf(selector, "%u", &selector_value) == 1)
-                  {
-                    sprintf(selector, "%u", selector_value);
-
-                    sprintf(tmp + 1, "%*u",
-                            daccess.alignment == 'l' ? -daccess.length
-                                                     : daccess.length,
-                            selector_value);
-
-                    /* Overwrite the end of the word to erase */
-                    /* the selector.                          */
-                    /* """""""""""""""""""""""""""""""""""""" */
-                    my_strcpy(ptr, ptr + daccess.size
-                                     + utf8_offset(ptr + daccess.size,
-                                                   daccess.ignore));
-
-                    /* Modify the word according to the 'h' directive */
-                    /* of -D.                                         */
-                    /* """""""""""""""""""""""""""""""""""""""""""""" */
-                    if (daccess.head == 'c')
-                      /* h:c is present cut the leading characters */
-                      /* before the selector.                      */
-                      /* ''''''''''''''''''''''''''''''''''''''''' */
-                      memmove(word->str, ptr, strlen(ptr) + 1);
-                    else if (daccess.head == 't')
-                    {
-                      /* h:t is present trim the leading characters   */
-                      /* before the selector if they are ' ' or '\t'. */
-                      /* '''''''''''''''''''''''''''''''''''''''''''' */
-                      char * p = word->str;
-
-                      while (p != ptr && (*p == ' ' || *p == '\t'))
-                        p++;
-
-                      if (p == ptr)
-                        memmove(word->str, ptr, strlen(ptr) + 1);
-                    }
-
-                    ltrim(selector, " ");
-                    rtrim(selector, " ", 0);
-
-                    tst_daccess = tst_insert(tst_daccess,
-                                             utf8_strtowcs(selector), word_pos);
-
-                    if (daccess.follow == 'y')
-                      daccess_index = selector_value + 1;
-
-                    word->is_numbered = 1;
-                  }
-                  free(selector);
+                  if (plus_offset + daccess.size + daccess.ignore
+                      <= strlen(word->str))
+                    selector_offset += plus_offset;
                 }
+
+                ptr      = word->str + selector_offset;
+                selector = xstrndup(ptr, daccess.size);
+
+                /* read the embedded number and, if correct, format */
+                /* it according to daccess.alignment.               */
+                /* """""""""""""""""""""""""""""""""""""""""""""""" */
+                if (sscanf(selector, "%u", &selector_value) == 1)
+                {
+                  sprintf(selector, "%u", selector_value);
+
+                  sprintf(tmp + 1, "%*u",
+                          daccess.alignment == 'l' ? -daccess.length
+                                                   : daccess.length,
+                          selector_value);
+
+                  /* Overwrite the end of the word to erase */
+                  /* the selector.                          */
+                  /* """""""""""""""""""""""""""""""""""""" */
+                  my_strcpy(ptr, ptr + daccess.size
+                                   + utf8_offset(ptr + daccess.size,
+                                                 daccess.ignore));
+
+                  /* Modify the word according to the 'h' directive */
+                  /* of -D.                                         */
+                  /* """""""""""""""""""""""""""""""""""""""""""""" */
+                  if (daccess.head == 'c')
+                    /* h:c is present cut the leading characters */
+                    /* before the selector.                      */
+                    /* ''''''''''''''''''''''''''''''''''''''''' */
+                    memmove(word->str, ptr, strlen(ptr) + 1);
+                  else if (daccess.head == 't')
+                  {
+                    /* h:t is present trim the leading characters   */
+                    /* before the selector if they are ' ' or '\t'. */
+                    /* '''''''''''''''''''''''''''''''''''''''''''' */
+                    char * p = word->str;
+
+                    while (p != ptr && (*p == ' ' || *p == '\t'))
+                      p++;
+
+                    if (p == ptr)
+                      memmove(word->str, ptr, strlen(ptr) + 1);
+                  }
+
+                  ltrim(selector, " ");
+                  rtrim(selector, " ", 0);
+
+                  tst_daccess = tst_insert(tst_daccess, utf8_strtowcs(selector),
+                                           word_pos);
+
+                  if (daccess.follow == 'y')
+                    daccess_index = selector_value + 1;
+
+                  word->is_numbered = 1;
+                }
+                free(selector);
               }
             }
 
@@ -9425,9 +9422,9 @@ main(int argc, char * argv[])
       /* """"""""""""""""""""" */
       for (new_current = first_selectable; new_current < count; new_current++)
       {
-        if (strprefix(word_a[new_current].str, ptr))
-          if (word_a[new_current].is_selectable)
-            break;
+        if (strprefix(word_a[new_current].str, ptr)
+            && word_a[new_current].is_selectable)
+          break;
       }
 
       if (new_current == count)
