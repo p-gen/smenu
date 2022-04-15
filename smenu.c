@@ -2729,16 +2729,13 @@ get_word(FILE * input, ll_t * word_delims_list, ll_t * line_delims_list,
         && ll_find(word_delims_list, utf8_buffer, buffer_cmp) != NULL)
       break;
 
-    if (!misc->ignore_quotes)
+    /* We no dot count the significant quotes. */
+    /* """"""""""""""""""""""""""""""""""""""" */
+    if (!misc->ignore_quotes && !is_special
+        && ((byte == '"' && !is_squote) || (byte == '\'' && !is_dquote)))
     {
-      /* We no dot count the significant quotes. */
-      /* """"""""""""""""""""""""""""""""""""""" */
-      if (!is_special
-          && ((byte == '"' && !is_squote) || (byte == '\'' && !is_dquote)))
-      {
-        is_special = 0;
-        goto next;
-      }
+      is_special = 0;
+      goto next;
     }
 
     /* Feed temp with the content of utf8_buffer. */
@@ -4258,27 +4255,25 @@ move_left(win_t * win, term_t * term, toggle_t * toggles,
       /* Sets the new win->start and win->end if the cursor */
       /* is at the beginning of the windows.                */
       /* """""""""""""""""""""""""""""""""""""""""""""""""" */
-      if (current == win->start)
-        if (win->start > 0)
+      if (current == win->start && win->start > 0)
+      {
+        for (wi = win->start - 1; wi >= 0 && word_a[wi].start != 0; wi--)
         {
-          for (wi = win->start - 1; wi >= 0 && word_a[wi].start != 0; wi--)
-          {
-          }
+        }
+        win->start = wi;
+
+        if (word_a[wi].str != NULL)
           win->start = wi;
 
-          if (word_a[wi].str != NULL)
-            win->start = wi;
-
-          if (win->end < count - 1)
+        if (win->end < count - 1)
+        {
+          for (wi = win->end + 2; wi < count - 1 && word_a[wi].start != 0; wi++)
           {
-            for (wi = win->end + 2; wi < count - 1 && word_a[wi].start != 0;
-                 wi++)
-            {
-            }
-            if (word_a[wi].str != NULL)
-              win->end = wi;
           }
+          if (word_a[wi].str != NULL)
+            win->end = wi;
         }
+      }
 
       /* In column mode we need to take care of the */
       /* horizontal scrolling.                      */
@@ -4346,27 +4341,25 @@ move_right(win_t * win, term_t * term, toggle_t * toggles,
       /* Sets the new win->start and win->end if the cursor */
       /* is at the end of the windows.                      */
       /* """""""""""""""""""""""""""""""""""""""""""""""""" */
-      if (current == win->end)
-        if (win->start < count - 1 && win->end != count - 1)
+      if (current == win->end && win->start < count - 1
+          && win->end != count - 1)
+      {
+        for (wi = win->start + 1; wi < count - 1 && word_a[wi].start != 0; wi++)
         {
-          for (wi = win->start + 1; wi < count - 1 && word_a[wi].start != 0;
-               wi++)
-          {
-          }
-
-          if (word_a[wi].str != NULL)
-            win->start = wi;
-
-          if (win->end < count - 1)
-          {
-            for (wi = win->end + 2; wi < count - 1 && word_a[wi].start != 0;
-                 wi++)
-            {
-            }
-            if (word_a[wi].str != NULL)
-              win->end = wi;
-          }
         }
+
+        if (word_a[wi].str != NULL)
+          win->start = wi;
+
+        if (win->end < count - 1)
+        {
+          for (wi = win->end + 2; wi < count - 1 && word_a[wi].start != 0; wi++)
+          {
+          }
+          if (word_a[wi].str != NULL)
+            win->end = wi;
+        }
+      }
 
       /* In column mode we need to take care of the */
       /* horizontal scrolling.                      */
@@ -8204,22 +8197,20 @@ main(int argc, char * argv[])
       /* The included line intervals are only checked if the word didn't  */
       /* belong to an excluded line interval before.                      */
       /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-      if (exc_interval)
-      {
-        if (line_count >= exc_interval->low && line_count <= exc_interval->high)
-          selectable = EXCLUDE_MARK;
-      }
-      if (selectable != EXCLUDE_MARK && inc_interval)
-      {
-        if (line_count >= inc_interval->low && line_count <= inc_interval->high)
-        {
-          selectable = INCLUDE_MARK;
+      if (exc_interval && line_count >= exc_interval->low
+          && line_count <= exc_interval->high)
+        selectable = EXCLUDE_MARK;
 
-          /* As the raw has been explicitly selected, record that so than */
-          /* we can distinguish that from the implicit selection.         */
-          /* '''''''''''''''''''''''''''''''''''''''''''''''''''''''''''' */
-          row_inc_matched = 1;
-        }
+      if (selectable != EXCLUDE_MARK && inc_interval
+          && line_count >= inc_interval->low
+          && line_count <= inc_interval->high)
+      {
+        selectable = INCLUDE_MARK;
+
+        /* As the raw has been explicitly selected, record that so than */
+        /* we can distinguish that from the implicit selection.         */
+        /* '''''''''''''''''''''''''''''''''''''''''''''''''''''''''''' */
+        row_inc_matched = 1;
       }
     }
 
@@ -8332,11 +8323,8 @@ main(int argc, char * argv[])
         /* Check if the word will be excluded in the list of selectable */
         /* words or not.                                                */
         /* '''''''''''''''''''''''''''''''''''''''''''''''''''''''''''' */
-        if (exclude_pattern)
-        {
-          if (regexec(&exclude_re, word, (int)0, NULL, 0) == 0)
-            selectable = EXCLUDE_MARK;
-        }
+        if (exclude_pattern && regexec(&exclude_re, word, (int)0, NULL, 0) == 0)
+          selectable = EXCLUDE_MARK;
 
         if (selectable != 0 && !line_selected_by_regex)
         {
@@ -8606,12 +8594,9 @@ main(int argc, char * argv[])
     /* """"""""""""""""""""""""""""""""""""""""""""" */
     if (daccess.mode != DA_TYPE_NONE)
     {
-      if (daccess.mode & DA_TYPE_POS)
-      {
-        if (daccess.size > 0)
-          if (daccess.size > daccess.length)
-            daccess.length = daccess.size;
-      }
+      if ((daccess.mode & DA_TYPE_POS) && daccess.size > 0
+          && daccess.size > daccess.length)
+        daccess.length = daccess.size;
 
       /* Auto determination of the length of the selector */
       /* with DA_TYPE_AUTO.                               */
@@ -8676,91 +8661,89 @@ main(int argc, char * argv[])
           /* """""""" */
           if (may_number)
           {
-            if (daccess.mode & DA_TYPE_POS)
+            if ((daccess.mode & DA_TYPE_POS) && !word->is_numbered
+                && daccess.size > 0
+                && (daccess.offset + daccess.size + daccess.ignore)
+                     <= utf8_strlen(word->str))
             {
-              if (!word->is_numbered && daccess.size > 0
-                  && (daccess.offset + daccess.size + daccess.ignore)
-                       <= utf8_strlen(word->str))
-              {
-                unsigned selector_value;  /* numerical value of the         *
+              unsigned selector_value;  /* numerical value of the         *
                                              | extracted selector.            */
-                long     selector_offset; /* offset in byte to the selector *
+              long     selector_offset; /* offset in byte to the selector *
                                              | to extract.                    */
-                char *   ptr;             /* points just after the selector *
+              char *   ptr;             /* points just after the selector *
                                              | to extract.                    */
-                long     plus_offset;     /* points to the first occurrence *
+              long     plus_offset;     /* points to the first occurrence *
                                              | of a number in word->str after *
                                              | the offset given.              */
 
-                selector_offset = utf8_offset(word->str, daccess.offset);
+              selector_offset = utf8_offset(word->str, daccess.offset);
 
-                if (daccess.plus)
-                {
-                  plus_offset = strcspn(word->str + selector_offset,
-                                        "0123456789");
+              if (daccess.plus)
+              {
+                plus_offset = strcspn(word->str + selector_offset,
+                                      "0123456789");
 
-                  if (plus_offset + daccess.size + daccess.ignore
-                      <= strlen(word->str))
-                    selector_offset += plus_offset;
-                }
-
-                ptr      = word->str + selector_offset;
-                selector = xstrndup(ptr, daccess.size);
-
-                /* read the embedded number and, if correct, format */
-                /* it according to daccess.alignment.               */
-                /* """""""""""""""""""""""""""""""""""""""""""""""" */
-                if (sscanf(selector, "%u", &selector_value) == 1)
-                {
-                  sprintf(selector, "%u", selector_value);
-
-                  sprintf(tmp + 1, "%*u",
-                          daccess.alignment == 'l' ? -daccess.length
-                                                   : daccess.length,
-                          selector_value);
-
-                  /* Overwrite the end of the word to erase */
-                  /* the selector.                          */
-                  /* """""""""""""""""""""""""""""""""""""" */
-                  my_strcpy(ptr, ptr + daccess.size
-                                   + utf8_offset(ptr + daccess.size,
-                                                 daccess.ignore));
-
-                  /* Modify the word according to the 'h' directive */
-                  /* of -D.                                         */
-                  /* """""""""""""""""""""""""""""""""""""""""""""" */
-                  if (daccess.head == 'c')
-                    /* h:c is present cut the leading characters */
-                    /* before the selector.                      */
-                    /* ''''''''''''''''''''''''''''''''''''''''' */
-                    memmove(word->str, ptr, strlen(ptr) + 1);
-                  else if (daccess.head == 't')
-                  {
-                    /* h:t is present trim the leading characters   */
-                    /* before the selector if they are ' ' or '\t'. */
-                    /* '''''''''''''''''''''''''''''''''''''''''''' */
-                    char * p = word->str;
-
-                    while (p != ptr && (*p == ' ' || *p == '\t'))
-                      p++;
-
-                    if (p == ptr)
-                      memmove(word->str, ptr, strlen(ptr) + 1);
-                  }
-
-                  ltrim(selector, " ");
-                  rtrim(selector, " ", 0);
-
-                  tst_daccess = tst_insert(tst_daccess, utf8_strtowcs(selector),
-                                           word_pos);
-
-                  if (daccess.follow == 'y')
-                    daccess_index = selector_value + 1;
-
-                  word->is_numbered = 1;
-                }
-                free(selector);
+                if (plus_offset + daccess.size + daccess.ignore
+                    <= strlen(word->str))
+                  selector_offset += plus_offset;
               }
+
+              ptr      = word->str + selector_offset;
+              selector = xstrndup(ptr, daccess.size);
+
+              /* read the embedded number and, if correct, format */
+              /* it according to daccess.alignment.               */
+              /* """""""""""""""""""""""""""""""""""""""""""""""" */
+              if (sscanf(selector, "%u", &selector_value) == 1)
+              {
+                sprintf(selector, "%u", selector_value);
+
+                sprintf(tmp + 1, "%*u",
+                        daccess.alignment == 'l' ? -daccess.length
+                                                 : daccess.length,
+                        selector_value);
+
+                /* Overwrite the end of the word to erase */
+                /* the selector.                          */
+                /* """""""""""""""""""""""""""""""""""""" */
+                my_strcpy(ptr,
+                          ptr + daccess.size
+                            + utf8_offset(ptr + daccess.size, daccess.ignore));
+
+                /* Modify the word according to the 'h' directive */
+                /* of -D.                                         */
+                /* """""""""""""""""""""""""""""""""""""""""""""" */
+                if (daccess.head == 'c')
+                  /* h:c is present cut the leading characters */
+                  /* before the selector.                      */
+                  /* ''''''''''''''''''''''''''''''''''''''''' */
+                  memmove(word->str, ptr, strlen(ptr) + 1);
+                else if (daccess.head == 't')
+                {
+                  /* h:t is present trim the leading characters   */
+                  /* before the selector if they are ' ' or '\t'. */
+                  /* '''''''''''''''''''''''''''''''''''''''''''' */
+                  char * p = word->str;
+
+                  while (p != ptr && (*p == ' ' || *p == '\t'))
+                    p++;
+
+                  if (p == ptr)
+                    memmove(word->str, ptr, strlen(ptr) + 1);
+                }
+
+                ltrim(selector, " ");
+                rtrim(selector, " ", 0);
+
+                tst_daccess = tst_insert(tst_daccess, utf8_strtowcs(selector),
+                                         word_pos);
+
+                if (daccess.follow == 'y')
+                  daccess_index = selector_value + 1;
+
+                word->is_numbered = 1;
+              }
+              free(selector);
             }
 
             /* Try to number this word if it is still non numbered and */
