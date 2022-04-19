@@ -70,7 +70,7 @@ cptoutf8(char * utf8_str, uint32_t c)
 /* Returns 0 if the conversion has failed else 1.                          */
 /* ======================================================================= */
 int
-utf8_interpret(char * s, langinfo_t * langinfo, char substitute)
+utf8_interpret(char * s, char substitute)
 {
   char * utf8_str;          /* \uxx...                                     */
   size_t utf8_to_eos_len;   /* bytes in s starting from the first          *

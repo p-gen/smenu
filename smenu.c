@@ -1673,7 +1673,7 @@ parse_selectors(char * str, filters_t * filter, char * unparsed,
   /* Replace the UTF-8 ascii representation in the selector by */
   /* their binary values.                                      */
   /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-  utf8_interpret(str, langinfo, misc->invalid_char_substitute);
+  utf8_interpret(str, misc->invalid_char_substitute);
 
   /* Get the first character to see if this is */
   /* an additive or restrictive operation.     */
@@ -2763,7 +2763,7 @@ get_word(FILE * input, ll_t * word_delims_list, ll_t * line_delims_list,
   /* Replace the UTF-8 ASCII representations in the word just */
   /* read by their binary values.                             */
   /* """""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-  utf8_interpret(temp, langinfo, misc->invalid_char_substitute);
+  utf8_interpret(temp, misc->invalid_char_substitute);
 
   /* Skip all field delimiters before a record delimiter. */
   /* """""""""""""""""""""""""""""""""""""""""""""""""""" */
@@ -5134,7 +5134,7 @@ set_pattern_action(char * ctx_name, char * opt_name, char * param,
   misc_t *     misc     = opt_data[2];
 
   *pattern = xstrdup(values[0]);
-  utf8_interpret(*pattern, langinfo, misc->invalid_char_substitute);
+  utf8_interpret(*pattern, misc->invalid_char_substitute);
 }
 
 void
@@ -5152,7 +5152,7 @@ int_action(char * ctx_name, char * opt_name, char * param, int nb_values,
     *string = xstrdup(values[0]);
     if (!langinfo->utf8)
       utf8_sanitize(*string, misc->invalid_char_substitute);
-    utf8_interpret(*string, langinfo, misc->invalid_char_substitute);
+    utf8_interpret(*string, misc->invalid_char_substitute);
   }
 
   *shell_like = 0;
@@ -5170,7 +5170,7 @@ set_string_action(char * ctx_name, char * opt_name, char * param, int nb_values,
   *string = xstrdup(values[0]);
   if (!langinfo->utf8)
     utf8_sanitize(*string, misc->invalid_char_substitute);
-  utf8_interpret(*string, langinfo, misc->invalid_char_substitute);
+  utf8_interpret(*string, misc->invalid_char_substitute);
 }
 
 void
@@ -5304,7 +5304,7 @@ gutter_action(char * ctx_name, char * opt_name, char * param, int nb_values,
 
     gutter = xstrdup(values[0]);
 
-    utf8_interpret(gutter, langinfo,
+    utf8_interpret(gutter,
                    misc->invalid_char_substitute); /* Guarantees a well    *
                                                     | formed UTF-8 string/ */
 
@@ -5384,7 +5384,7 @@ include_re_action(char * ctx_name, char * opt_name, char * param, int nb_values,
   /* Replace the UTF-8 ASCII representations by their binary values in */
   /* inclusion patterns.                                               */
   /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-  utf8_interpret(*include_pattern, langinfo, misc->invalid_char_substitute);
+  utf8_interpret(*include_pattern, misc->invalid_char_substitute);
 }
 
 void
@@ -5411,7 +5411,7 @@ exclude_re_action(char * ctx_name, char * opt_name, char * param, int nb_values,
   /* Replace the UTF-8 ASCII representations by their binary values in */
   /* exclusion patterns.                                               */
   /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-  utf8_interpret(*exclude_pattern, langinfo, misc->invalid_char_substitute);
+  utf8_interpret(*exclude_pattern, misc->invalid_char_substitute);
 }
 
 void
@@ -5433,7 +5433,7 @@ post_subst_action(char * ctx_name, char * opt_name, char * param, int nb_values,
   {
     sed_node          = xmalloc(sizeof(sed_t));
     sed_node->pattern = xstrdup(values[i]);
-    utf8_interpret(sed_node->pattern, langinfo, misc->invalid_char_substitute);
+    utf8_interpret(sed_node->pattern, misc->invalid_char_substitute);
     sed_node->stop = 0;
     ll_append(*list, sed_node);
   }
@@ -5456,8 +5456,7 @@ special_level_action(char * ctx_name, char * opt_name, char * param,
   int      i;
 
   special_pattern[opt - '1'] = xstrdup(values[0]);
-  utf8_interpret(special_pattern[opt - '1'], langinfo,
-                 misc->invalid_char_substitute);
+  utf8_interpret(special_pattern[opt - '1'], misc->invalid_char_substitute);
 
   /* Parse optional additional arguments. */
   /* """""""""""""""""""""""""""""""""""" */
@@ -5726,7 +5725,7 @@ timeout_action(char * ctx_name, char * opt_name, char * param, int nb_values,
     {
       timeout.mode = WORD;
       timeout_word = xstrdup(values[1]);
-      utf8_interpret(timeout_word, langinfo, misc->invalid_char_substitute);
+      utf8_interpret(timeout_word, misc->invalid_char_substitute);
     }
     else
     {
@@ -5762,7 +5761,7 @@ tag_mode_action(char * ctx_name, char * opt_name, char * param, int nb_values,
   if (nb_values == 1)
   {
     win->sel_sep = xstrdup(values[0]);
-    utf8_interpret(win->sel_sep, langinfo, misc->invalid_char_substitute);
+    utf8_interpret(win->sel_sep, misc->invalid_char_substitute);
   }
 }
 
@@ -5782,7 +5781,7 @@ pin_mode_action(char * ctx_name, char * opt_name, char * param, int nb_values,
   if (nb_values == 1)
   {
     win->sel_sep = xstrdup(values[0]);
-    utf8_interpret(win->sel_sep, langinfo, misc->invalid_char_substitute);
+    utf8_interpret(win->sel_sep, misc->invalid_char_substitute);
   }
 }
 
@@ -5892,7 +5891,7 @@ da_options_action(char * ctx_name, char * opt_name, char * param, int nb_values,
         free(daccess.left);
 
         daccess.left = xstrdup(value + 2);
-        utf8_interpret(daccess.left, langinfo, misc->invalid_char_substitute);
+        utf8_interpret(daccess.left, misc->invalid_char_substitute);
 
         if (utf8_strlen(daccess.left) != 1)
         {
@@ -5917,7 +5916,7 @@ da_options_action(char * ctx_name, char * opt_name, char * param, int nb_values,
         free(daccess.right);
 
         daccess.right = xstrdup(value + 2);
-        utf8_interpret(daccess.right, langinfo, misc->invalid_char_substitute);
+        utf8_interpret(daccess.right, misc->invalid_char_substitute);
 
         if (utf8_strlen(daccess.right) != 1)
         {
@@ -6070,8 +6069,7 @@ da_options_action(char * ctx_name, char * opt_name, char * param, int nb_values,
         free(daccess.num_sep);
 
         daccess.num_sep = xstrdup(value + 2);
-        utf8_interpret(daccess.num_sep, langinfo,
-                       misc->invalid_char_substitute);
+        utf8_interpret(daccess.num_sep, misc->invalid_char_substitute);
 
         if (utf8_strlen(daccess.num_sep) != 1)
         {

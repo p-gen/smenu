@@ -40,7 +40,7 @@ int
 cptoutf8(char * utf8_str, uint32_t c);
 
 int
-utf8_interpret(char * s, langinfo_t * langinfo, char sc);
+utf8_interpret(char * s, char sc);
 
 char *
 utf8_validate(char * str);
