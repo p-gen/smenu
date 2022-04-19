@@ -763,6 +763,7 @@ ini_load(const char * filename, win_t * win, term_t * term, limit_t * limits,
       /* Do nothing. */
       /* """"""""""" */
     }
+
     if ((cnt = fscanf(f, " %63[^=;\n] = %255[^;\n]", name, value)))
     {
       if (cnt == 1)
@@ -781,6 +782,7 @@ ini_load(const char * filename, win_t * win, term_t * term, limit_t * limits,
       if (error)
         goto out;
     }
+
     if (fscanf(f, " ;%*[^\n]"))
     {
       /* To silence the compiler about unused results. */
@@ -4429,8 +4431,8 @@ get_line_last_word(long line, long last_line)
 {
   if (line == last_line)
     return count - 1;
-  else
-    return first_word_in_line_a[line + 1] - 1;
+
+  return first_word_in_line_a[line + 1] - 1;
 }
 
 /* ==================================================================== */
@@ -9268,10 +9270,9 @@ main(int argc, char * argv[])
 
   /* Find the first selectable word (if any) in the input stream. */
   /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-  for (first_selectable = 0;
-       first_selectable < count && !word_a[first_selectable].is_selectable;
-       first_selectable++)
-    ;
+  first_selectable = 0;
+  while (first_selectable < count && !word_a[first_selectable].is_selectable)
+    first_selectable++;
 
   /* If not found, abort. */
   /* """""""""""""""""""" */
