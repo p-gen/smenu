@@ -477,16 +477,16 @@ ini_cb(win_t * win, term_t * term, limit_t * limits, ticker_t * timers,
   if (strcmp(section, "colors") == 0)
   {
     attrib_t v = { UNSET,
-                   -1,
-                   -1,
-                   (signed char)-1,
-                   (signed char)-1,
-                   (signed char)-1,
-                   (signed char)-1,
-                   (signed char)-1,
-                   (signed char)-1,
-                   (signed char)-1,
-                   (signed char)-1 };
+                   /* fg        */ -1,
+                   /* bg        */ -1,
+                   /* bold      */ (signed char)-1,
+                   /* dim       */ (signed char)-1,
+                   /* reverse   */ (signed char)-1,
+                   /* standout  */ (signed char)-1,
+                   /* underline */ (signed char)-1,
+                   /* italic    */ (signed char)-1,
+                   /* invis     */ (signed char)-1,
+                   /* blink     */ (signed char)-1 };
 
 #define CHECK_ATTR(x)                             \
   else if (strcmp(name, #x) == 0)                 \
