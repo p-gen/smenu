@@ -33,7 +33,7 @@ int
 interval_comp(void * a, void * b);
 
 void
-interval_swap(void * a, void * b);
+interval_swap(void ** a, void ** b);
 
 void
 merge_intervals(ll_t * list);

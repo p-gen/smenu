@@ -24,11 +24,11 @@
 
 static ll_node_t *
 ll_partition(ll_node_t * l, ll_node_t * h, int (*comp)(void *, void *),
-             void (*swap)(void *, void *));
+             void (*swap)(void **, void **));
 
 static void
 ll_quicksort(ll_node_t * l, ll_node_t * h, int (*comp)(void *, void *),
-             void (*swap)(void *, void *));
+             void (*swap)(void **, void **));
 
 /* ========================== */
 /* Creates a new linked list. */
@@ -185,7 +185,7 @@ ll_insert_after(ll_t * const list, ll_node_t * node, void * const data)
 /* ====================================================== */
 static ll_node_t *
 ll_partition(ll_node_t * l, ll_node_t * h, int (*comp)(void *, void *),
-             void (*swap)(void *, void *))
+             void (*swap)(void **, void **))
 {
   /* Considers last element as pivot, places the pivot element at its       */
   /* correct position in sorted array, and places all smaller (smaller than */
@@ -222,7 +222,7 @@ ll_partition(ll_node_t * l, ll_node_t * h, int (*comp)(void *, void *),
 /* ======================================================== */
 static void
 ll_quicksort(ll_node_t * l, ll_node_t * h, int (*comp)(void *, void *),
-             void (*swap)(void *, void *))
+             void (*swap)(void **, void **))
 {
   if (h != NULL && l != h && l != h->next)
   {
@@ -236,7 +236,8 @@ ll_quicksort(ll_node_t * l, ll_node_t * h, int (*comp)(void *, void *),
 /* A linked list sort function. */
 /* ============================ */
 void
-ll_sort(ll_t * list, int (*comp)(void *, void *), void (*swap)(void *, void *))
+ll_sort(ll_t * list, int (*comp)(void *, void *),
+        void (*swap)(void **, void **))
 {
   /* Call the recursive ll_quicksort function. */
   /* """"""""""""""""""""""""""""""""""""""""" */

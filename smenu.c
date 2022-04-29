@@ -875,12 +875,13 @@ tag_comp(void * a, void * b)
 /* Swap the values of two selected words in the output list. */
 /* ========================================================= */
 void
-tag_swap(void * a, void * b)
+tag_swap(void ** a, void ** b)
 {
-  output_t * oa = *(output_t **)a;
-  output_t * ob = *(output_t **)b;
-  char *     tmp_str;
-  long       tmp_order;
+  output_t * oa = (output_t *)*a;
+  output_t * ob = (output_t *)*b;
+
+  char * tmp_str;
+  long   tmp_order;
 
   tmp_str        = oa->output_str;
   oa->output_str = ob->output_str;

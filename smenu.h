@@ -430,7 +430,7 @@ int
 tag_comp(void * a, void * b);
 
 void
-tag_swap(void * a, void * b);
+tag_swap(void * *a, void ** b);
 
 int
 isempty(const char * s);

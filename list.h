@@ -51,7 +51,7 @@ ll_insert_after(ll_t * const list, ll_node_t * node, void * const data);
 
 void
 ll_sort(ll_t * list, int (*comp)(void *, void *),
-        void (*swap)(void * a, void *));
+        void (*swap)(void **, void **));
 
 int
 ll_delete(ll_t * const list, ll_node_t * node);
