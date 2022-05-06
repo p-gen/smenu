@@ -1242,10 +1242,10 @@ update_bitmaps(search_mode_t mode, search_data_t * data,
   }
 }
 
-/* ====================================================== */
-/* Find the next word index in the list of matching words */
-/* returns -1 if not found.                               */
-/* ====================================================== */
+/* ========================================================= */
+/* Find the next word index in the list of matching words    */
+/* set the value of index to -1 and returns -1 if not found. */
+/* ========================================================= */
 long
 find_next_matching_word(long * array, long nb, long value, long * index)
 {
@@ -1269,35 +1269,30 @@ find_next_matching_word(long * array, long nb, long value, long * index)
       else
         left = middle + 1;
     }
+
     if (left < nb - 1)
     {
       *index = left;
       return array[*index];
     }
-    else
+
+    if (value > array[nb - 1])
     {
-      if (value > array[nb - 1])
-      {
-        *index = -1;
-        return *index;
-      }
-      else
-      {
-        *index = nb - 1;
-        return array[*index];
-      }
+      *index = -1;
+      return -1;
     }
+
+    *index = nb - 1;
+    return array[*index];
   }
-  else
-  {
-    *index = -1;
-    return *index;
-  }
+
+  *index = -1;
+  return -1;
 }
 
 /* ========================================================== */
 /* Find the previous word index in the list of matching words */
-/* returns -1 if not found.                                   */
+/* set the value of index to -1 and returns -1 if not found.  */
 /* ========================================================== */
 long
 find_prev_matching_word(long * array, long nb, long value, long * index)
@@ -1324,11 +1319,9 @@ find_prev_matching_word(long * array, long nb, long value, long * index)
           *index = middle - 1;
           return array[*index];
         }
-        else
-        {
-          *index = -1;
-          return *index;
-        }
+
+        *index = -1;
+        return -1;
       }
 
       if (value < array[middle])
@@ -1336,22 +1329,19 @@ find_prev_matching_word(long * array, long nb, long value, long * index)
       else
         left = middle + 1;
     }
+
     if (left > 0)
     {
       *index = left - 1;
       return array[*index];
     }
-    else
-    {
-      *index = -1;
-      return *index;
-    }
-  }
-  else
-  {
+
     *index = -1;
-    return *index;
+    return -1;
   }
+
+  *index = -1;
+  return -1;
 }
 
 /* ============================================================= */
@@ -6478,7 +6468,7 @@ main(int argc, char * argv[])
   regex_t last_word_re;  /* to hold the compiled last words RE.              */
 
   char *  special_pattern[9] = { NULL, NULL, NULL, NULL, NULL,
-                                NULL, NULL, NULL, NULL }; /* -1 .. -9 */
+                                 NULL, NULL, NULL, NULL }; /* -1 .. -9 */
   regex_t special_re[9]; /* array to hold the compiled special patterns RE.  */
 
   int include_visual_only = 0; /* If set to 1, the original word which is    *
