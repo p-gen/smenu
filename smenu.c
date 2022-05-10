@@ -472,7 +472,7 @@ ini_cb(win_t * win, term_t * term, limit_t * limits, ticker_t * timers,
        misc_t * misc, const char * section, const char * name, char * value)
 {
   int error      = 0;
-  int has_colors = (term->colors > 7);
+  int has_colors = term->colors > 7;
 
   if (strcmp(section, "colors") == 0)
   {
@@ -1654,7 +1654,7 @@ void
 parse_selectors(char * str, filters_t * filter, char * unparsed,
                 ll_t ** inc_interval_list, ll_t ** inc_regex_list,
                 ll_t ** exc_interval_list, ll_t ** exc_regex_list,
-                langinfo_t * langinfo, misc_t * misc)
+                misc_t * misc)
 {
   char         mark; /* Value to set */
   char         c;
@@ -5122,9 +5122,8 @@ set_pattern_action(char * ctx_name, char * opt_name, char * param,
                    int nb_values, char ** values, int nb_opt_data,
                    void ** opt_data, int nb_ctx_data, void ** ctx_data)
 {
-  char **      pattern  = opt_data[0];
-  langinfo_t * langinfo = opt_data[1];
-  misc_t *     misc     = opt_data[2];
+  char **  pattern = opt_data[0];
+  misc_t * misc    = opt_data[1];
 
   *pattern = xstrdup(values[0]);
   utf8_interpret(*pattern, misc->invalid_char_substitute);
@@ -5358,10 +5357,9 @@ include_re_action(char * ctx_name, char * opt_name, char * param, int nb_values,
                   char ** values, int nb_opt_data, void ** opt_data,
                   int nb_ctx_data, void ** ctx_data)
 {
-  int *        pattern_def_include = opt_data[0];
-  char **      include_pattern     = opt_data[1];
-  langinfo_t * langinfo            = opt_data[2];
-  misc_t *     misc                = opt_data[3];
+  int *    pattern_def_include = opt_data[0];
+  char **  include_pattern     = opt_data[1];
+  misc_t * misc                = opt_data[2];
 
   /* Set the default behaviour if not already set. */
   /* """"""""""""""""""""""""""""""""""""""""""""" */
@@ -5412,9 +5410,8 @@ post_subst_action(char * ctx_name, char * opt_name, char * param, int nb_values,
                   char ** values, int nb_opt_data, void ** opt_data,
                   int nb_ctx_data, void ** ctx_data)
 {
-  ll_t **      list     = opt_data[0];
-  langinfo_t * langinfo = opt_data[1];
-  misc_t *     misc     = opt_data[2];
+  ll_t **  list = opt_data[0];
+  misc_t * misc = opt_data[1];
 
   sed_t * sed_node;
   int     i;
@@ -5437,12 +5434,11 @@ special_level_action(char * ctx_name, char * opt_name, char * param,
                      int nb_values, char ** values, int nb_opt_data,
                      void ** opt_data, int nb_ctx_data, void ** ctx_data)
 {
-  char **      special_pattern = opt_data[0];
-  win_t *      win             = opt_data[1];
-  term_t *     term            = opt_data[2];
-  langinfo_t * langinfo        = opt_data[3];
-  attrib_t *   init_attr       = opt_data[4];
-  misc_t *     misc            = opt_data[5];
+  char **    special_pattern = opt_data[0];
+  win_t *    win             = opt_data[1];
+  term_t *   term            = opt_data[2];
+  attrib_t * init_attr       = opt_data[3];
+  misc_t *   misc            = opt_data[4];
 
   attrib_t attr = *init_attr;
   char     opt  = param[strlen(param) - 1]; /* last character of param. */
@@ -5702,8 +5698,7 @@ timeout_action(char * ctx_name, char * opt_name, char * param, int nb_values,
                char ** values, int nb_opt_data, void ** opt_data,
                int nb_ctx_data, void ** ctx_data)
 {
-  langinfo_t * langinfo = opt_data[0];
-  misc_t *     misc     = opt_data[1];
+  misc_t * misc = opt_data[0];
 
   if (strcmp(opt_name, "hidden_timeout") == 0)
     quiet_timeout = 1;
@@ -5744,10 +5739,9 @@ tag_mode_action(char * ctx_name, char * opt_name, char * param, int nb_values,
                 char ** values, int nb_opt_data, void ** opt_data,
                 int nb_ctx_data, void ** ctx_data)
 {
-  toggle_t *   toggles  = opt_data[0];
-  win_t *      win      = opt_data[1];
-  langinfo_t * langinfo = opt_data[2];
-  misc_t *     misc     = opt_data[3];
+  toggle_t * toggles = opt_data[0];
+  win_t *    win     = opt_data[1];
+  misc_t *   misc    = opt_data[2];
 
   toggles->taggable = 1;
 
@@ -5763,10 +5757,9 @@ pin_mode_action(char * ctx_name, char * opt_name, char * param, int nb_values,
                 char ** values, int nb_opt_data, void ** opt_data,
                 int nb_ctx_data, void ** ctx_data)
 {
-  toggle_t *   toggles  = opt_data[0];
-  win_t *      win      = opt_data[1];
-  langinfo_t * langinfo = opt_data[2];
-  misc_t *     misc     = opt_data[3];
+  toggle_t * toggles = opt_data[0];
+  win_t *    win     = opt_data[1];
+  misc_t *   misc    = opt_data[2];
 
   toggles->taggable = 1;
   toggles->pinable  = 1;
@@ -5861,9 +5854,8 @@ da_options_action(char * ctx_name, char * opt_name, char * param, int nb_values,
                   char ** values, int nb_opt_data, void ** opt_data,
                   int nb_ctx_data, void ** ctx_data)
 {
-  langinfo_t * langinfo      = opt_data[0];
-  long *       daccess_index = opt_data[1];
-  misc_t *     misc          = opt_data[2];
+  long *   daccess_index = opt_data[0];
+  misc_t * misc          = opt_data[1];
 
   int       pos;
   wchar_t * w;
@@ -7007,8 +6999,8 @@ main(int argc, char * argv[])
   ctxopt_add_opt_settings(actions, "rows_select", rows_select_action,
                           &rows_selector_list, &win, (char *)0);
   ctxopt_add_opt_settings(actions, "include_re", include_re_action,
-                          &pattern_def_include, &include_pattern, &langinfo,
-                          &misc, (char *)0);
+                          &pattern_def_include, &include_pattern, &misc,
+                          (char *)0);
   ctxopt_add_opt_settings(actions, "exclude_re", exclude_re_action,
                           &pattern_def_include, &exclude_pattern, &langinfo,
                           &misc, (char *)0);
@@ -7023,7 +7015,7 @@ main(int argc, char * argv[])
   ctxopt_add_opt_settings(actions, "no_scroll_bar", toggle_action, &toggles,
                           (char *)0);
   ctxopt_add_opt_settings(actions, "start_pattern", set_pattern_action,
-                          &pre_selection_index, &langinfo, &misc, (char *)0);
+                          &pre_selection_index, &misc, (char *)0);
   ctxopt_add_opt_settings(actions, "title", set_string_action, &message,
                           &langinfo, &misc, (char *)0);
   ctxopt_add_opt_settings(actions, "int", int_action, &int_string,
@@ -7038,60 +7030,59 @@ main(int argc, char * argv[])
   ctxopt_add_opt_settings(actions, "wide_mode", wide_mode_action, &win,
                           (char *)0);
   ctxopt_add_opt_settings(actions, "early_subst_all", post_subst_action,
-                          &early_sed_list, &langinfo, &misc, (char *)0);
+                          &early_sed_list, &misc, (char *)0);
   ctxopt_add_opt_settings(actions, "post_subst_all", post_subst_action,
-                          &sed_list, &langinfo, &misc, (char *)0);
+                          &sed_list, &misc, (char *)0);
   ctxopt_add_opt_settings(actions, "post_subst_included", post_subst_action,
-                          &include_sed_list, &langinfo, &misc, (char *)0);
+                          &include_sed_list, &misc, (char *)0);
   ctxopt_add_opt_settings(actions, "post_subst_excluded", post_subst_action,
-                          &exclude_sed_list, &langinfo, &misc, (char *)0);
+                          &exclude_sed_list, &misc, (char *)0);
   ctxopt_add_opt_settings(actions, "special_level_1", special_level_action,
-                          special_pattern, &win, &term, &langinfo, &init_attr,
-                          &misc, (char *)0);
+                          special_pattern, &win, &term, &init_attr, &misc,
+                          (char *)0);
   ctxopt_add_opt_settings(actions, "special_level_2", special_level_action,
-                          special_pattern, &win, &term, &langinfo, &init_attr,
-                          &misc, (char *)0);
+                          special_pattern, &win, &term, &init_attr, &misc,
+                          (char *)0);
   ctxopt_add_opt_settings(actions, "special_level_3", special_level_action,
-                          special_pattern, &win, &term, &langinfo, &init_attr,
-                          &misc, (char *)0);
+                          special_pattern, &win, &term, &init_attr, &misc,
+                          (char *)0);
   ctxopt_add_opt_settings(actions, "special_level_4", special_level_action,
-                          special_pattern, &win, &term, &langinfo, &init_attr,
-                          &misc, (char *)0);
+                          special_pattern, &win, &term, &init_attr, &misc,
+                          (char *)0);
   ctxopt_add_opt_settings(actions, "special_level_5", special_level_action,
-                          special_pattern, &win, &term, &langinfo, &init_attr,
-                          &misc, (char *)0);
+                          special_pattern, &win, &term, &init_attr, &misc,
+                          (char *)0);
   ctxopt_add_opt_settings(actions, "special_level_6", special_level_action,
-                          special_pattern, &win, &term, &langinfo, &init_attr,
-                          &misc, (char *)0);
+                          special_pattern, &win, &term, &init_attr, &misc,
+                          (char *)0);
   ctxopt_add_opt_settings(actions, "special_level_7", special_level_action,
-                          special_pattern, &win, &term, &langinfo, &init_attr,
-                          &misc, (char *)0);
+                          special_pattern, &win, &term, &init_attr, &misc,
+                          (char *)0);
   ctxopt_add_opt_settings(actions, "special_level_8", special_level_action,
-                          special_pattern, &win, &term, &langinfo, &init_attr,
-                          &misc, (char *)0);
+                          special_pattern, &win, &term, &init_attr, &misc,
+                          (char *)0);
   ctxopt_add_opt_settings(actions, "special_level_9", special_level_action,
-                          special_pattern, &win, &term, &langinfo, &init_attr,
-                          &misc, (char *)0);
+                          special_pattern, &win, &term, &init_attr, &misc,
+                          (char *)0);
   ctxopt_add_opt_settings(actions, "attributes", attributes_action, &win, &term,
                           &init_attr, (char *)0);
-  ctxopt_add_opt_settings(actions, "timeout", timeout_action, &langinfo, &misc,
-                          (char *)0);
-  ctxopt_add_opt_settings(actions, "hidden_timeout", timeout_action, &langinfo,
+  ctxopt_add_opt_settings(actions, "timeout", timeout_action, &misc, (char *)0);
+  ctxopt_add_opt_settings(actions, "hidden_timeout", timeout_action, &misc,
                           (char *)0);
   ctxopt_add_opt_settings(actions, "force_first_column", set_pattern_action,
-                          &first_word_pattern, &langinfo, &misc, (char *)0);
+                          &first_word_pattern, &misc, (char *)0);
   ctxopt_add_opt_settings(actions, "force_last_column", set_pattern_action,
-                          &last_word_pattern, &langinfo, &misc, (char *)0);
+                          &last_word_pattern, &misc, (char *)0);
   ctxopt_add_opt_settings(actions, "word_separators", set_pattern_action, &iws,
-                          &langinfo, &misc, (char *)0);
+                          &misc, (char *)0);
   ctxopt_add_opt_settings(actions, "line_separators", set_pattern_action, &ils,
-                          &langinfo, &misc, (char *)0);
+                          &misc, (char *)0);
   ctxopt_add_opt_settings(actions, "zapped_glyphs", set_pattern_action, &zg,
-                          &langinfo, &misc, (char *)0);
+                          &misc, (char *)0);
   ctxopt_add_opt_settings(actions, "tag_mode", tag_mode_action, &toggles, &win,
-                          &langinfo, &misc, (char *)0);
+                          &misc, (char *)0);
   ctxopt_add_opt_settings(actions, "pin_mode", pin_mode_action, &toggles, &win,
-                          &langinfo, &misc, (char *)0);
+                          &misc, (char *)0);
   ctxopt_add_opt_settings(actions, "search_method", search_method_action, &misc,
                           (char *)0);
   ctxopt_add_opt_settings(actions, "auto_da_number", auto_da_action,
@@ -7100,7 +7091,7 @@ main(int argc, char * argv[])
                           &daccess_up, (char *)0);
   ctxopt_add_opt_settings(actions, "field_da_number", field_da_number_action,
                           (char *)0);
-  ctxopt_add_opt_settings(actions, "da_options", da_options_action, &langinfo,
+  ctxopt_add_opt_settings(actions, "da_options", da_options_action,
                           &daccess_index, &misc, (char *)0);
   ctxopt_add_opt_settings(actions, "ignore_quotes", ignore_quotes_action, &misc,
                           (char *)0);
@@ -7916,8 +7907,7 @@ main(int argc, char * argv[])
 
       parse_selectors(rows_selector, &filter_type, unparsed,
                       &inc_row_interval_list, &inc_row_regex_list,
-                      &exc_row_interval_list, &exc_row_regex_list, &langinfo,
-                      &misc);
+                      &exc_row_interval_list, &exc_row_regex_list, &misc);
 
       if (*unparsed != '\0')
       {
@@ -7956,8 +7946,7 @@ main(int argc, char * argv[])
 
       parse_selectors(cols_selector, &filter_type, unparsed,
                       &inc_col_interval_list, &inc_col_regex_list,
-                      &exc_col_interval_list, &exc_col_regex_list, &langinfo,
-                      &misc);
+                      &exc_col_interval_list, &exc_col_regex_list, &misc);
 
       if (*unparsed != '\0')
       {

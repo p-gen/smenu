@@ -573,7 +573,7 @@ void
 parse_selectors(char * str, filters_t * filter, char * unparsed,
                 ll_t ** inc_interval_list, ll_t ** inc_regex_list,
                 ll_t ** exc_interval_list, ll_t ** exc_regex_list,
-                langinfo_t * langinfo, misc_t * misc);
+                misc_t * misc);
 
 int
 replace(char * orig, sed_t * sed);
