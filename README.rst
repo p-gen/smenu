@@ -127,7 +127,7 @@ On mine (``LANG`` and ``LC_ALL`` set to ``POSIX``) it displays:
   named   44 44  /bin/false     |
   ntp     74 108 /bin/false     v
 
-Note the presence of a scrollbar.
+Note the presence of a scroll bar.
 
 Bash example (CRTL-R replacement)
 ---------------------------------
@@ -174,7 +174,7 @@ notably occur when some specific regular expressions or uncommon ``UTF-8``
 byte sequences are used.
 
 If a test fails for an unknown reason, please send me the name of its
-directory nd the corresponding ``.bad`` file.
+directory and the corresponding ``.bad`` file.
 
 If you are hit by a bug that no test covers, then you can create a new
 test in the ``tests`` directory in an existing or new directory: read the
