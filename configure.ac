@@ -3,8 +3,8 @@
 
 m4_define(my_version, [m4_esyscmd([tr -d '\n' < version])])
 
-AC_PREREQ([2.69])
-AC_INIT([smenu], [my_version], [p.gen.progs@gmail.com])
+AC_PREREQ([2.71])
+AC_INIT([smenu],[my_version],[p.gen.progs@gmail.com])
 AC_CONFIG_SRCDIR([smenu.c])
 AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_AUX_DIR([build-aux])
@@ -14,7 +14,7 @@ AM_SILENT_RULES([yes])
 # Checks for programs.
 AC_USE_SYSTEM_EXTENSIONS
 AC_PROG_AWK
-AC_PROG_CC_STDC
+AC_PROG_CC
 AC_PROG_INSTALL
 AC_PROG_LN_S
 AC_PROG_MAKE_SET
@@ -24,7 +24,9 @@ AC_SEARCH_LIBS([tgetent], [tinfo curses ncursesw ncurses], [HAVE_CURSES=True])
 # Checks for libraries.
 
 # Checks for header files.
-AC_HEADER_STDC
+AC_CHECK_INCLUDES_DEFAULT
+AC_PROG_EGREP
+
 AC_CHECK_HEADERS([fcntl.h limits.h langinfo.h locale.h stdint.h stdlib.h \
                   string.h sys/ioctl.h sys/time.h termios.h unistd.h wchar.h])
 
