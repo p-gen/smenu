@@ -5383,10 +5383,9 @@ exclude_re_action(char * ctx_name, char * opt_name, char * param, int nb_values,
                   char ** values, int nb_opt_data, void ** opt_data,
                   int nb_ctx_data, void ** ctx_data)
 {
-  int *        pattern_def_include = opt_data[0];
-  char **      exclude_pattern     = opt_data[1];
-  langinfo_t * langinfo            = opt_data[2];
-  misc_t *     misc                = opt_data[3];
+  int *    pattern_def_include = opt_data[0];
+  char **  exclude_pattern     = opt_data[1];
+  misc_t * misc                = opt_data[2];
 
   /* Set the default behaviour if not already set. */
   /* """"""""""""""""""""""""""""""""""""""""""""" */
@@ -7002,8 +7001,8 @@ main(int argc, char * argv[])
                           &pattern_def_include, &include_pattern, &misc,
                           (char *)0);
   ctxopt_add_opt_settings(actions, "exclude_re", exclude_re_action,
-                          &pattern_def_include, &exclude_pattern, &langinfo,
-                          &misc, (char *)0);
+                          &pattern_def_include, &exclude_pattern, &misc,
+                          (char *)0);
   ctxopt_add_opt_settings(actions, "gutter", gutter_action, &win, &langinfo,
                           &misc, (char *)0);
   ctxopt_add_opt_settings(actions, "help", help_action, (char *)0);
