@@ -1,4 +1,0 @@
-# B: Bugs to fix, I: possible Improvements
-# ========================================.
-I: Improve configure.ac
-I: Improve the checking of system/library calls returns
