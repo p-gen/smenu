@@ -252,7 +252,7 @@ see the difference between the actions of the \fBs\fP/\fBS\fP and
 
 This method also tolerates intermediate symbols not appearing in the
 words which will be ignored.
-If this is the case, the attributes of the approximatively matching
+If this is the case, the attributes of the approximately matching
 words are changed into an error versions of them to warn the user to
 this situation.
 
@@ -318,7 +318,7 @@ is refreshed.
 For those who consider \fBHOME\fP and \fBEND\fP as non-intuitive,
 the \fBCTRL\ A\fP and \fBCTRL\ Z\fP keys are also available in search mode
 as an alternative.
-This behaviour is persistent until the user hit the \fBESC\fP or
+This behavior is persistent until the user hit the \fBESC\fP or
 \fBENTER\fP key.
 
 For example, if the search pattern in substring mode is \f(CBsh\fP and
@@ -391,7 +391,7 @@ Pressing \fBq\fP gives the possibility to exit without selecting anything.
 immediately with a return code equal to 128+SINGINT (by default)
 without selecting anything.
 See the \fB-!\fP|\fB-int\fP|\fB-int_string\fP option for more information
-about the customization of the \fBCTRL\ C\fP behaviour.
+about the customization of the \fBCTRL\ C\fP behavior.
 .PP
 By default, \fBENTER\fP writes the selected word to stdout when not in
 search mode otherwise it exits from this mode and does nothing more.
@@ -467,7 +467,7 @@ words.
 .SS "Terminal resizing (also see BUGS/LIMITATIONS)"
 The windows is redrawn if the terminal is resized.
 The redrawing is actually done only 1s after the end of the resizing to
-avoid artefacts on screen.
+avoid artifacts on screen.
 The cursor will remain on the current selected word but may be displayed
 at another place in the window.
 .SS Unicode support
@@ -484,7 +484,7 @@ ICU project (https://icu.unicode.org) to do this work before using smenu.
 
 For example: uconv can be used as a filter as in:
 
-\f(CBcat ... | uconv -x any-nfc | smenu\fP
+\f(CBcat ... | uconv -x any-nfc | smenu\fP
 .SS Configuration
 If a file with adequate permissions and the same name as the executable
 but prefixed with a dot is present in the current directory
@@ -789,7 +789,7 @@ If \fIstring\fP is missing then nothing will be selected.
 In all cases, when \fB-!\fP|\fB-int\fP|\fB-int_string\fP is present in
 the command line, the return code of the program will be \fB0\fP.
 
-This gives the user the choice to make the behaviour of \fBCTRL\ C\fP
+This gives the user the choice to make the behavior of \fBCTRL\ C\fP
 similar to that of \fBq\fP and \fBQ\fP or to that of the Unix shell
 leaving the shell with a return code greater than 128.
 .IP "\fB-a\fP|\fB-attr\fP|\fB-attributes\fP \fIprefix:attr\fP..."
@@ -1031,7 +1031,7 @@ this program.
 (Allowed in the Following contexts: "Main", "Columns", "Lines" and
 "Tabulations".)
 
-This option allows one to change the default behaviour of
+This option allows one to change the default behavior of
 the \fB-N\fP|\fB-number\fP, \fB-U\fP|\fB-unnumber\fP and
 \fB-F\fP|\fB-en\fP|\fB-embedded_number\fP options.
 
