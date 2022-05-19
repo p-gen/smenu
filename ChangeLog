@@ -2,25 +2,23 @@
 * Fixes:
   * Fix configure.ac for autoconf >= 2.70.
   * Fixed a bug in the bash example in the README.
-  * Improve the manual.
   * Synchronization with the commit 9ddac73 of ctxopt on github.
   * Use the right format to print size_t values (C99).
   * Add a missing break.
-  * Removal of unnecessary code.
-  * Fix a potential segfault when allocating ini paths.
-  * Added a note on UTF-8 canonical forms in the manual.
+  * Fix a potential segfault when allocating .ini paths.
   * Fixed color and attribute parsing.
-  * Remove some bad code and fix a related test.
+  * Fix some tests.
 * Improvements:
   * Update to autoconf 2.71.
   * Added "invisible" style attribute (n).
   * Prevent smenu from running in the background.
   * Catch and handle SIGPIPE signal.
+  * Improve the manual.
 * Miscellaneous:
-  * Code simplifications.
+  * Various code simplifications.
   * Removal of some unnecessary parameter.
-  * Simplification of some if-then-else statements.
-  * Fixed typos in the README.
+  * Removal of unnecessary code.
+  * Fixed typos in the README file.
 - Version 0.9.19
 * Fixes:
   * Prevent an attempt to free memory that has already been freed.
