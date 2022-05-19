@@ -357,15 +357,15 @@ parse_attr(char * str, attrib_t * attr, short max_color)
   int    n;
   char * pos;
   char   s1[12] = { (char)0 };
-  char   s2[7]  = { (char)0 };
+  char   s2[9]  = { (char)0 };
   short  d1 = -1, d2 = -1;
   int    rc = 1;
-  char   c;
+  char   c  = '\0';
 
   /* 11: 4 type+colon,2x3 for colors, 1 for slash.     */
-  /* 6 : max size for the concatenation of attributes. */
+  /* 8 : max size for the concatenation of attributes. */
   /* """"""""""""""""""""""""""""""""""""""""""""""""" */
-  n = sscanf(str, "%11[^,],%6s%c", s1, s2, &c);
+  n = sscanf(str, "%11[^,],%8s%c", s1, s2, &c);
 
   if (n == 0 || c != '\0')
     return 0;
