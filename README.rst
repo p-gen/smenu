@@ -191,4 +191,4 @@ Special thanks.
 ---------------
 I want to thank those who took the time to package **smenu** for their
 preferred operating system or distribution.
-You will find their names here: https://repology.org/project/smenu/packages
+You will find their names here: https://repology.org/project/smenu/information
