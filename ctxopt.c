@@ -1,4 +1,6 @@
 /* ################################################################### */
+/* Copyright 2015, Pierre Gentile (p.gen.progs@gmail.com)              */
+/*                                                                     */
 /* This Source Code Form is subject to the terms of the Mozilla Public */
 /* License, v. 2.0. If a copy of the MPL was not distributed with this */
 /* file, You can obtain one at https://mozilla.org/MPL/2.0/.           */
@@ -1387,6 +1389,7 @@ struct opt_s
                  void ** ctx_data     /* current context data pointers.    */
   );
 
+  int visible_in_help; /* visibility in help.                                */
   int nb_data;  /* number of the data pointers passed as argument to action. */
   void ** data; /* array of data pointers passed as argument to action.      */
 
@@ -1833,6 +1836,14 @@ print_options(ll_t * list, int * has_optional, int * has_ellipsis,
   {
     option = xstrdup("");
     opt    = node->data;
+
+    /* Skip option set as not visible in help. */
+    /* """"""""""""""""""""""""""""""""""""""" */
+    if (!opt->visible_in_help)
+    {
+      node = node->next;
+      continue;
+    }
 
     if (opt->optional)
     {
@@ -2729,6 +2740,7 @@ success:
   (*opt)->action                = NULL;
   (*opt)->params                = NULL;
   (*opt)->data                  = NULL;
+  (*opt)->visible_in_help       = 1;
 
   return s - s_orig;
 }
@@ -4456,6 +4468,10 @@ ctxopt_add_global_settings(settings s, ...)
 /*   o a string containing an option name.                          */
 /*   o a pointer to a function to check if an argument is valid.    */
 /*   o a strings containing the arguments to this function.         */
+/* - visible_in_help:                                               */
+/*   o a string containing an option name.                          */
+/*   o the string "yes" or "no" (case insensitive) which will       */
+/*     determine if the option must be seen in help/usage.          */
 /* ================================================================ */
 void
 ctxopt_add_opt_settings(settings s, ...)
@@ -4707,6 +4723,43 @@ ctxopt_add_opt_settings(settings s, ...)
       }
       else
         fatal_internal("Unknown option %s.", ptr);
+
+      break;
+    }
+
+    case visible_in_help:
+    {
+      char * opt_name;
+      char * toggle;
+
+      /* The second argument must be a string containing */
+      /* The name of an existing option.                 */
+      /* """"""""""""""""""""""""""""""""""""""""""""""" */
+      ptr      = va_arg(args, char *);
+      opt_name = ptr;
+
+      if (opt_name != NULL)
+      {
+        if ((opt = locate_opt(opt_name)) != NULL)
+        {
+          ptr    = va_arg(args, char *);
+          toggle = ptr;
+
+          if (stricmp(toggle, "yes") == 0)
+            opt->visible_in_help = 1;
+          else if (stricmp(toggle, "no") == 0)
+            opt->visible_in_help = 0;
+          else
+            fatal_internal("The value for the visible_in_help setting must be "
+                           "\"yes\" or \"no\" (case insensitive).",
+                           toggle);
+        }
+        else
+          fatal_internal("Unknown option %s.", opt_name);
+      }
+      else
+        fatal_internal(
+          "ctxopt_opt_add_settings: visible_in_help: not enough arguments.");
 
       break;
     }

@@ -1,5 +1,13 @@
 #!/usr/bin/env bash
 
+# ###################################################################
+# Copyright 2015, Pierre Gentile (p.gen.progs@gmail.com)
+#
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at https://mozilla.org/MPL/2.0/.
+# ###################################################################
+
 # ===========================================================================
 # Usage: ./tests.sh [test_directory]
 #
@@ -65,7 +73,7 @@ RESULTS_UNC=$(grep UNCHECKED ${TESTDIR:=*}.log)
 
 if [ -z "$RESULTS_BAD" ]; then
   tput smso
-  echo "All validated tests passed successfully !" 
+  echo "All validated tests passed successfully !"
   tput rmso
 else
   tput smso

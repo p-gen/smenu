@@ -1,4 +1,6 @@
 /* ################################################################### */
+/* Copyright 2020, Pierre Gentile (p.gen.progs@gmail.com)              */
+/*                                                                     */
 /* This Source Code Form is subject to the terms of the Mozilla Public */
 /* License, v. 2.0. If a copy of the MPL was not distributed with this */
 /* file, You can obtain one at https://mozilla.org/MPL/2.0/.           */
@@ -17,6 +19,7 @@ typedef enum
   error_functions,
   before,
   after,
+  visible_in_help,
 } settings;
 
 typedef enum
@@ -58,7 +61,7 @@ typedef struct state_s
   char * opt_name;           /* current option name.                  */
   int    opts_count;         /* limit of the number of occurrences of *
                              |  the current option.                   */
-  int opt_args_count;        /* limit of the number of parameters of  *
+  int    opt_args_count;     /* limit of the number of parameters of  *
                              |  the current option.                   */
   char * pre_opt_par_name;   /* parameter before the current one.     */
   char * cur_opt_par_name;   /* current parameter.                    */

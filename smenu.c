@@ -1,17 +1,9 @@
 /* ################################################################### */
-/* Copyright 2015-present, Pierre Gentile (p.gen.progs@gmail.com)      */
+/* Copyright 2015, Pierre Gentile (p.gen.progs@gmail.com)              */
 /*                                                                     */
-/* This Software is licensed under the GPL licensed Version 2,         */
-/* please read http://www.gnu.org/copyleft/gpl.html                    */
-/*                                                                     */
-/* you can redistribute it and/or modify it under the terms of the GNU */
-/* General Public License as published by the Free Software            */
-/* Foundation; either version 2 of the License.                        */
-/*                                                                     */
-/* This software is distributed in the hope that it will be useful,    */
-/* but WITHOUT ANY WARRANTY; without even the implied warranty of      */
-/* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU   */
-/* General Public License for more details.                            */
+/* This Source Code Form is subject to the terms of the Mozilla Public */
+/* License, v. 2.0. If a copy of the MPL was not distributed with this */
+/* file, You can obtain one at https://mozilla.org/MPL/2.0/.           */
 /* ################################################################### */
 
 #include "config.h"
@@ -5684,6 +5676,17 @@ limits_action(char * ctx_name, char * opt_name, char * param, int nb_values,
 }
 
 void
+copyright_action(char * ctx_name, char * opt_name, char * param, int nb_values,
+                 char ** values, int nb_opt_data, void ** opt_data,
+                 int nb_ctx_data, void ** ctx_data)
+{
+  fputs_safe("Copyright 2015 - Pierre Gentile <p.gen.progs@gmail.com> - "
+             "MPL-2.0\n",
+             stdout);
+  exit(EXIT_SUCCESS);
+}
+
+void
 version_action(char * ctx_name, char * opt_name, char * param, int nb_values,
                char ** values, int nb_opt_data, void ** opt_data,
                int nb_ctx_data, void ** ctx_data)
@@ -6791,7 +6794,8 @@ main(int argc, char * argv[])
     "[limits #limit:value...] "
     "[forgotten_timeout #timeout] "; /* don't remove this space! */
 
-  main_spec_options = "[*version] "
+  main_spec_options = "[*copyright] "
+                      "[*version] "
                       "[*long_help] "
                       "[da_options #prefix:attr...] "
                       "[auto_da_number... [#regex...]] "
@@ -6870,6 +6874,7 @@ main(int argc, char * argv[])
   ctxopt_add_opt_settings(parameters, "help", "-h -help");
   ctxopt_add_opt_settings(parameters, "long_help", "-H -long-help");
   ctxopt_add_opt_settings(parameters, "usage", "-? -u -usage");
+  ctxopt_add_opt_settings(parameters, "copyright", "-copyright");
   ctxopt_add_opt_settings(parameters, "version", "-V -version");
   ctxopt_add_opt_settings(parameters, "include_re",
                           "-i -in -inc -incl -include");
@@ -7021,6 +7026,7 @@ main(int argc, char * argv[])
                           &int_as_in_shell, &langinfo, &misc, (char *)0);
   ctxopt_add_opt_settings(actions, "validate_in_search_mode", toggle_action,
                           &toggles, (char *)0);
+  ctxopt_add_opt_settings(actions, "copyright", copyright_action, (char *)0);
   ctxopt_add_opt_settings(actions, "version", version_action, (char *)0);
   ctxopt_add_opt_settings(actions, "visual_bell", toggle_action, &toggles,
                           (char *)0);
@@ -7120,6 +7126,11 @@ main(int argc, char * argv[])
 
   ctxopt_add_opt_settings(after, "da_options",
                           "field_da_number auto_da_number auto_da_unnumber");
+
+  /* In help settings. */
+  /* """"""""""""""""" */
+
+  ctxopt_add_opt_settings(visible_in_help, "copyright", "no");
 
   /* Command line options analysis. */
   /* """""""""""""""""""""""""""""" */

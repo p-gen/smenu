@@ -2,6 +2,7 @@
 /* Memory management functions. */
 /* **************************** */
 
+/* ***************************************************************** */
 /* Created by Kevin Locke (from numerous canonical examples).        */
 /*                                                                   */
 /* Adapted for use by smenu.                                         */
@@ -9,7 +10,7 @@
 /* I hereby place this file in the public domain.  It may be freely  */
 /* reproduced, distributed, used, modified, built upon, or otherwise */
 /* employed by anyone for any purpose without restriction.           */
-/* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+/* ***************************************************************** */
 
 #include <stdio.h>
 #include <stdlib.h>

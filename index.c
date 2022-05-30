@@ -1,8 +1,12 @@
-/* ########################################################### */
-/* This Software is licensed under the GPL licensed Version 2, */
-/* please read http://www.gnu.org/copyleft/gpl.html.           */
-/* ########################################################### */
+/* ################################################################### */
+/* Copyright 2015, Pierre Gentile (p.gen.progs@gmail.com)              */
+/*                                                                     */
+/* This Source Code Form is subject to the terms of the Mozilla Public */
+/* License, v. 2.0. If a copy of the MPL was not distributed with this */
+/* file, You can obtain one at https://mozilla.org/MPL/2.0/.           */
+/* ################################################################### */
 
+/* ************************************************************************ */
 /* Ternary Search Tree and sorted array creation functions.                 */
 /* Inspired by a code described in "Ternary Search Trees" by Jon            */
 /* Bentley and Robert Sedgewick in the April, 1998, Dr. Dobb's Journal.     */
