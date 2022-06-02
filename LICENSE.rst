@@ -383,13 +383,6 @@ modified version of this License if you rename the license and remove
 any references to the name of the license steward (except to note that
 such modified license differs from this License).
 
-10.4. Distributing Source Code Form that is Incompatible With Secondary Licenses
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-If You choose to distribute Source Code Form that is Incompatible With
-Secondary Licenses under the terms of this version of the License, the
-notice described in Exhibit B of this License must be attached.
-
 Exhibit A - Source Code Form License Notice
 -------------------------------------------
 
@@ -403,9 +396,3 @@ file in a relevant directory) where a recipient would be likely to look
 for such a notice.
 
 You may add additional accurate notices of copyright ownership.
-
-Exhibit B - "Incompatible With Secondary Licenses" Notice
----------------------------------------------------------
-
-This Source Code Form is "Incompatible With Secondary Licenses", as
-defined by the Mozilla Public License, v. 2.0.
