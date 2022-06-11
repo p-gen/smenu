@@ -38,9 +38,10 @@ animations that detail some concepts and features of **smenu**.
 
 How to build it?
 ================
-**smenu** can be built on any system on which a working ``terminfo``
-development platform is available. This includes every Unix and
-Unix-like system I am aware of.
+Some Linux distributions already provide **smenu** as a package,
+if not, **smenu** can be built on any system on which a functional
+``terminfo`` development platform is available.
+This includes all Unix and Unix-like systems that I know of.
 
 Please use the provided ``build.sh`` script to build the executable.
 This script uses and accepts the same arguments as the GNU ``configure``
@@ -48,7 +49,7 @@ script, type ``build.sh --help`` to see them.
 
 How to install it?
 ==================
-Once the build process has finished, a simple ``make install`` with the
+Once the build process is complete, a simple ``make install`` with the
 appropriate privileges will do it.
 
 Issue vs Discussion.
