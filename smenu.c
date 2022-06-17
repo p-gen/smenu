@@ -163,25 +163,25 @@ help(win_t * win, term_t * term, long last_line)
 
   struct entry_s
   {
-    char   attr; /* r=reverse, n=normal, b=bold.                           */
     char * str;  /* string to be displayed for an object in the help line. */
     int    len;  /* length of one of these objects.                        */
+    char   attr; /* r=reverse, n=normal, b=bold.                           */
   };
 
   char * arrows = concat(left_arrow, up_arrow, right_arrow, down_arrow,
                          (char *)0);
 
   struct entry_s entries[] = {
-    { 'r', "Move:", 5 },   { 'b', "hjkl", 4 }, { 'n', ",", 1 },
-    { 'b', arrows, 4 },    { 'n', ",", 1 },    { 'b', "PgUp", 4 },
-    { 'n', "/", 1 },       { 'b', "Dn", 2 },   { 'n', "... ", 4 },
-    { 'r', "Abort:", 6 },  { 'b', "q", 1 },    { 'n', ",", 1 },
-    { 'b', "^C", 2 },      { 'n', " ", 1 },    { 'r', "Find:", 5 },
-    { 'b', "/", 1 },       { 'b', "\"\'", 2 }, { 'b', "~*", 2 },
-    { 'b', "=^", 2 },      { 'n', ",", 1 },    { 'b', "SP", 2 },
-    { 'n', ",", 1 },       { 'b', "nN", 2 },   { 'n', " ", 1 },
-    { 'r', "Select:", 7 }, { 'b', "CR", 2 },   { 'n', " ", 1 },
-    { 'r', "Cancel:", 7 }, { 'b', "ESC", 3 },
+    { "Move:", 5, 'r' },   { "hjkl", 4, 'b' }, { ",", 1, 'n' },
+    { arrows, 4, 'b' },    { ",", 1, 'n' },    { "PgUp", 4, 'b' },
+    { "/", 1, 'n' },       { "Dn", 2, 'b' },   { "... ", 4, 'n' },
+    { "Abort:", 6, 'r' },  { "q", 1, 'b' },    { ",", 1, 'n' },
+    { "^C", 2, 'b' },      { " ", 1, 'n' },    { "Find:", 5, 'r' },
+    { "/", 1, 'b' },       { "\"\'", 2, 'b' }, { "~*", 2, 'b' },
+    { "=^", 2, 'b' },      { ",", 1, 'n' },    { "SP", 2, 'b' },
+    { ",", 1, 'n' },       { "nN", 2, 'b' },   { " ", 1, 'n' },
+    { "Select:", 7, 'r' }, { "CR", 2, 'b' },   { " ", 1, 'n' },
+    { "Cancel:", 7, 'r' }, { "ESC", 3, 'b' },
   };
 
   entries_nb = sizeof(entries) / sizeof(struct entry_s);
@@ -9224,11 +9224,11 @@ main(int argc, char * argv[])
   /* """"""""""""""""""""""""""""""""""""""""""" */
   word_a[count].str = NULL;
 
-  /* We can now allocate the space for our tmp_word work variable. */
-  /* augmented by the number of tabulation columns. This is not    */
-  /* optimal but the loss is tiny and we have the guarantee that   */
-  /* enough place will be allocated.                               */
-  /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+  /* We can now allocate the space for our tmp_word work variable */
+  /* augmented by the number of tabulation columns. This is not   */
+  /* optimal but the loss is tiny and we have the guarantee that  */
+  /* enough place will be allocated.                              */
+  /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
   tmp_word = xcalloc(word_real_max_size + tab_max_size + 1, 1);
 
   search_data.utf8_off_a = xmalloc(word_real_max_size * sizeof(long));
