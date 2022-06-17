@@ -621,15 +621,18 @@ ll_new(void)
 static void
 ll_free(ll_t * const list, void (*clean)(void *))
 {
+  void * data;
+
   if (list)
-    while (list->head)
+    while (list->len > 0)
     {
+      data = list->head->data;
+      ll_delete(list, list->head);
+
       /* Apply a custom cleaner if not NULL. */
       /* """"""""""""""""""""""""""""""""""" */
       if (clean)
-        clean(list->head->data);
-
-      ll_delete(list, list->head);
+        clean(data);
     }
 }
 
@@ -4147,7 +4150,7 @@ ctxopt_new_ctx(char * name, char * opts_specs)
   /* ALPHA+(ALPHANUM|_)*         */
   /* """"""""""""""""""""""""""" */
   p = name;
-  if (!isalpha(*p))
+  if (*p == '\0' || !isalpha(*p))
     fatal_internal("A context name must start with a letter: %s.", name);
 
   p++;
