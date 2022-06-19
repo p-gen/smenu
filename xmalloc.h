@@ -11,7 +11,7 @@ void *
 xmalloc(size_t size);
 
 void *
-xcalloc(size_t num, size_t size);
+xcalloc(size_t n, size_t size);
 
 void *
 xrealloc(void * ptr, size_t size);

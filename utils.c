@@ -39,7 +39,7 @@ interval_new(void)
 /* same return values as for strcmp.       */
 /* ======================================= */
 int
-interval_comp(void * a, void * b)
+interval_comp(void const * a, void const * b)
 {
   interval_t * ia = (interval_t *)a;
   interval_t * ib = (interval_t *)b;

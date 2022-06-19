@@ -26,11 +26,13 @@
 #include "list.h"
 
 static ll_node_t *
-ll_partition(ll_node_t * l, ll_node_t * h, int (*comp)(void *, void *),
+ll_partition(ll_node_t * l, ll_node_t * h,
+             int (*comp)(void const *, void const *),
              void (*swap)(void **, void **));
 
 static void
-ll_quicksort(ll_node_t * l, ll_node_t * h, int (*comp)(void *, void *),
+ll_quicksort(ll_node_t * l, ll_node_t * h,
+             int (*comp)(void const *, void const *),
              void (*swap)(void **, void **));
 
 /* ========================== */
@@ -82,8 +84,8 @@ ll_append(ll_t * const list, void * const data)
 
   node->data = data;
   node->next = NULL;
-
   node->prev = list->tail;
+
   if (list->tail)
     list->tail->next = node;
   else
@@ -91,7 +93,7 @@ ll_append(ll_t * const list, void * const data)
 
   list->tail = node;
 
-  ++list->len;
+  ++list->len; /* One more node in the list. */
 }
 
 #if 0
@@ -112,8 +114,8 @@ ll_prepend(ll_t * const list, void * const data)
 
   node->data = data;
   node->prev = NULL;
-
   node->next = list->head;
+
   if (list->head)
     list->head->prev = node;
   else
@@ -121,7 +123,7 @@ ll_prepend(ll_t * const list, void * const data)
 
   list->head = node;
 
-  ++list->len;
+  ++list->len; /* One more node in the list. */
 }
 #endif
 
@@ -148,7 +150,7 @@ ll_insert_before(ll_t * const list, ll_node_t * node, void * const data)
     node->prev->next = new_node;
     node->prev       = new_node;
 
-    ++list->len;
+    ++list->len; /* One more node in the list. */
   }
 }
 #endif
@@ -176,7 +178,7 @@ ll_insert_after(ll_t * const list, ll_node_t * node, void * const data)
     node->next->prev = new_node;
     node->next       = new_node;
 
-    ++list->len;
+    ++list->len; /* One more node in the list. */
   }
 }
 #endif
@@ -187,7 +189,8 @@ ll_insert_after(ll_t * const list, ll_node_t * node, void * const data)
 /* http://www.geeksforgeeks.org/quicksort-for-linked-list */
 /* ====================================================== */
 static ll_node_t *
-ll_partition(ll_node_t * l, ll_node_t * h, int (*comp)(void *, void *),
+ll_partition(ll_node_t * l, ll_node_t * h,
+             int (*comp)(void const *, void const *),
              void (*swap)(void **, void **))
 {
   /* Considers last element as pivot, places the pivot element at its       */
@@ -224,7 +227,8 @@ ll_partition(ll_node_t * l, ll_node_t * h, int (*comp)(void *, void *),
 /* http://www.geeksforgeeks.org/quicksort-for-linked-list   */
 /* ======================================================== */
 static void
-ll_quicksort(ll_node_t * l, ll_node_t * h, int (*comp)(void *, void *),
+ll_quicksort(ll_node_t * l, ll_node_t * h,
+             int (*comp)(void const *, void const *),
              void (*swap)(void **, void **))
 {
   if (h != NULL && l != h && l != h->next)
@@ -239,7 +243,7 @@ ll_quicksort(ll_node_t * l, ll_node_t * h, int (*comp)(void *, void *),
 /* A linked list sort function. */
 /* ============================ */
 void
-ll_sort(ll_t * list, int (*comp)(void *, void *),
+ll_sort(ll_t * list, int (*comp)(void const *, void const *),
         void (*swap)(void **, void **))
 {
   /* Call the recursive ll_quicksort function. */
@@ -255,6 +259,8 @@ ll_delete(ll_t * const list, ll_node_t * node)
 {
   if (list->head == list->tail)
   {
+    /* We delete the last remaining element from the list. */
+    /* """"""""""""""""""""""""""""""""""""""""""""""""""" */
     if (list->head == NULL)
       return 0;
 
@@ -262,23 +268,29 @@ ll_delete(ll_t * const list, ll_node_t * node)
   }
   else if (node->prev == NULL)
   {
+    /* We delete the first element from the list. */
+    /* """""""""""""""""""""""""""""""""""""""""" */
     list->head       = node->next;
     list->head->prev = NULL;
   }
   else if (node->next == NULL)
   {
+    /* We delete the last element from the list. */
+    /* """"""""""""""""""""""""""""""""""""""""" */
     list->tail       = node->prev;
     list->tail->next = NULL;
   }
   else
   {
+    /* We delete an element from the list. */
+    /* """"""""""""""""""""""""""""""""""" */
     node->next->prev = node->prev;
     node->prev->next = node->next;
   }
 
   free(node);
 
-  --list->len;
+  --list->len; /* One less node in the list. */
 
   return 1;
 }

@@ -53,14 +53,14 @@ ll_insert_after(ll_t * const list, ll_node_t * node, void * const data);
 #endif
 
 void
-ll_sort(ll_t * list, int (*comp)(void *, void *),
+ll_sort(ll_t * list, int (*comp)(void const *, void const *),
         void (*swap)(void **, void **));
 
 int
 ll_delete(ll_t * const list, ll_node_t * node);
 
 ll_node_t *
-ll_find(ll_t * const, void * const, int (*)(const void *, const void *));
+ll_find(ll_t * const, void * const, int (*)(void const *, void const *));
 
 void
 ll_init(ll_t * list);

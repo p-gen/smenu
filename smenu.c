@@ -852,7 +852,7 @@ make_ini_path(char * name, char * base)
 /* Compare the pin order of two pinned word in the output list. */
 /* ============================================================ */
 int
-tag_comp(void * a, void * b)
+tag_comp(void const * a, void const * b)
 {
   output_t * oa = (output_t *)a;
   output_t * ob = (output_t *)b;

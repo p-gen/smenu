@@ -33,7 +33,7 @@ interval_t *
 interval_new(void);
 
 int
-interval_comp(void * a, void * b);
+interval_comp(void const * a, void const * b);
 
 void
 interval_swap(void ** a, void ** b);

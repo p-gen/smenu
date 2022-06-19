@@ -430,7 +430,7 @@ void
 help(win_t * win, term_t * term, long last_line);
 
 int
-tag_comp(void * a, void * b);
+tag_comp(void const * a, void const * b);
 
 void
 tag_swap(void ** a, void ** b);
