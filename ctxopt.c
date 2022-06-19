@@ -126,11 +126,6 @@ ll_insert_before(ll_t * const list, ll_node_t * node, void * const data);
 static int
 ll_delete(ll_t * const list, ll_node_t * node);
 
-#if 0 /* Unused yet. */
-static ll_node_t *
-ll_find(ll_t * const, void * const, int (*)(const void *, const void *));
-#endif
-
 static void
 ll_init(ll_t * list);
 
@@ -621,19 +616,24 @@ ll_new(void)
 static void
 ll_free(ll_t * const list, void (*clean)(void *))
 {
-  void * data;
+  ll_node_t * node;
 
   if (list)
-    while (list->len > 0)
-    {
-      data = list->head->data;
-      ll_delete(list, list->head);
+  {
+    node = list->head;
 
+    while (node)
+    {
       /* Apply a custom cleaner if not NULL. */
       /* """"""""""""""""""""""""""""""""""" */
       if (clean)
-        clean(data);
+        clean(node->data);
+
+      ll_delete(list, node);
+
+      node = list->head;
     }
+  }
 }
 
 /* ==================================== */
@@ -685,9 +685,9 @@ ll_append(ll_t * const list, void * const data)
                          | is an allocation error.                     */
 
   node->data = data;
-  node->next = NULL;
+  node->next = NULL;       /* This node will be the last. */
+  node->prev = list->tail; /* NULL if it is a new list.   */
 
-  node->prev = list->tail;
   if (list->tail)
     list->tail->next = node;
   else
@@ -695,7 +695,7 @@ ll_append(ll_t * const list, void * const data)
 
   list->tail = node;
 
-  ++list->len;
+  ++list->len; /* One more node in the list. */
 }
 
 /* ================================================================== */
@@ -713,9 +713,9 @@ ll_prepend(ll_t * const list, void * const data)
                          | is an allocation error.                     */
 
   node->data = data;
-  node->prev = NULL;
+  node->prev = NULL;       /* This node will be the first. */
+  node->next = list->head; /* NULL if it is a new list.    */
 
-  node->next = list->head;
   if (list->head)
     list->head->prev = node;
   else
@@ -723,7 +723,7 @@ ll_prepend(ll_t * const list, void * const data)
 
   list->head = node;
 
-  ++list->len;
+  ++list->len; /* One more node in the list. */
 }
 
 /* ======================================================== */
@@ -742,13 +742,14 @@ ll_insert_before(ll_t * const list, ll_node_t * node, void * const data)
                                | uses xmalloc which does not return if there *
                                | is an allocation error.                     */
 
-    new_node->data   = data;
-    new_node->next   = node;
-    new_node->prev   = node->prev;
+    new_node->data = data;
+    new_node->next = node;
+    new_node->prev = node->prev;
+
     node->prev->next = new_node;
     node->prev       = new_node;
 
-    ++list->len;
+    ++list->len; /* One more node in the list. */
   }
 }
 
@@ -768,13 +769,14 @@ ll_insert_after(ll_t * const list, ll_node_t * node, void * const data)
                                | uses xmalloc which does not return if there *
                                | is an allocation error.                     */
 
-    new_node->data   = data;
-    new_node->prev   = node;
-    new_node->next   = node->next;
+    new_node->data = data;
+    new_node->prev = node;
+    new_node->next = node->next;
+
     node->next->prev = new_node;
     node->next       = new_node;
 
-    ++list->len;
+    ++list->len; /* One more node in the list. */
   }
 }
 
@@ -787,58 +789,41 @@ ll_delete(ll_t * const list, ll_node_t * node)
 {
   if (list->head == list->tail)
   {
-    if (list->head != NULL)
-      list->head = list->tail = NULL;
-    else
+    /* We delete the last remaining element from the list. */
+    /* """"""""""""""""""""""""""""""""""""""""""""""""""" */
+    if (list->head == NULL)
       return 0;
+
+    list->head = list->tail = NULL;
   }
   else if (node->prev == NULL)
   {
+    /* We delete the first element from the list. */
+    /* """""""""""""""""""""""""""""""""""""""""" */
     list->head       = node->next;
     list->head->prev = NULL;
   }
   else if (node->next == NULL)
   {
+    /* We delete the last element from the list. */
+    /* """"""""""""""""""""""""""""""""""""""""" */
     list->tail       = node->prev;
     list->tail->next = NULL;
   }
   else
   {
+    /* We delete an element from the list. */
+    /* """"""""""""""""""""""""""""""""""" */
     node->next->prev = node->prev;
     node->prev->next = node->next;
   }
 
-  --list->len;
-
   free(node);
+
+  --list->len; /* One less node in the list. */
 
   return 1;
 }
-
-#if 0 /* Unused yet */
-/* ======================================================================== */
-/* Find a node in the list containing data. Return the node pointer or NULL */
-/* if not found.                                                            */
-/* A comparison function must be provided to compare a and b (strcmp like). */
-/* ======================================================================== */
-static ll_node_t *
-ll_find(ll_t * const list, void * const data,
-        int (*cmpfunc)(const void * a, const void * b))
-{
-  ll_node_t * node;
-
-  if (NULL == (node = list->head))
-    return NULL;
-
-  do
-  {
-    if (0 == cmpfunc(node->data, data))
-      return node;
-  } while (NULL != (node = node->next));
-
-  return NULL;
-}
-#endif
 
 /* ==================================================================== */
 /* Allocate and fill an array of strings from a list.                   */
@@ -1173,7 +1158,8 @@ strappend(char * str, ...)
 
   va_end(args);
 
-  str = xrealloc(str, l);
+  if (l > 0)
+    str = xrealloc(str, l);
 
   va_start(args, str);
   s = va_arg(args, char *);
