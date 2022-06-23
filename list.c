@@ -83,8 +83,8 @@ ll_append(ll_t * const list, void * const data)
                          * is an allocation error.                     */
 
   node->data = data;
-  node->next = NULL;
-  node->prev = list->tail;
+  node->next = NULL;       /* This node will be the last. */
+  node->prev = list->tail; /* NULL if it is a new list.   */
 
   if (list->tail)
     list->tail->next = node;
@@ -96,92 +96,49 @@ ll_append(ll_t * const list, void * const data)
   ++list->len; /* One more node in the list. */
 }
 
-#if 0
-/* ==================================================================== */
-/* Puts a new node filled with its data at the beginning of the linked  */
-/* list. The user is responsible for the memory management of the data. */
-/*                                                                      */
-/* Note: list is assumed to be initialized by ll_new().                 */
-/* ==================================================================== */
-void
-ll_prepend(ll_t * const list, void * const data)
+/* ================================== */
+/* Removes a node from a linked list. */
+/* ================================== */
+int
+ll_delete(ll_t * const list, ll_node_t * node)
 {
-  ll_node_t * node;
+  if (list->head == list->tail)
+  {
+    /* We delete the last remaining element from the list. */
+    /* """"""""""""""""""""""""""""""""""""""""""""""""""" */
+    if (list->head == NULL)
+      return 0;
 
-  node = ll_new_node(); /* ll_new_node cannot return NULL because it   *
-                         * uses xmalloc which does not return if there *
-                         * is an allocation error.                     */
-
-  node->data = data;
-  node->prev = NULL;
-  node->next = list->head;
-
-  if (list->head)
-    list->head->prev = node;
-  else
-    list->tail = node;
-
-  list->head = node;
-
-  ++list->len; /* One more node in the list. */
-}
-#endif
-
-#if 0
-/* ========================================================= */
-/* Inserts a new node before the specified node in the list. */
-/* ========================================================= */
-void
-ll_insert_before(ll_t * const list, ll_node_t * node, void * const data)
-{
-  ll_node_t * new_node;
-
-  if (node->prev == NULL)
-    ll_prepend(list, data);
+    list->head = list->tail = NULL;
+  }
+  else if (node->prev == NULL)
+  {
+    /* We delete the first element from the list. */
+    /* """""""""""""""""""""""""""""""""""""""""" */
+    list->head       = node->next;
+    list->head->prev = NULL;
+  }
+  else if (node->next == NULL)
+  {
+    /* We delete the last element from the list. */
+    /* """"""""""""""""""""""""""""""""""""""""" */
+    list->tail       = node->prev;
+    list->tail->next = NULL;
+  }
   else
   {
-    new_node = ll_new_node(); /* ll_new_node cannot return NULL because it   *
-                               * uses xmalloc which does not return if there *
-                               * is an allocation error.                     */
-
-    new_node->data   = data;
-    new_node->next   = node;
-    new_node->prev   = node->prev;
-    node->prev->next = new_node;
-    node->prev       = new_node;
-
-    ++list->len; /* One more node in the list. */
+    /* We delete an element from the list. */
+    /* """"""""""""""""""""""""""""""""""" */
+    node->next->prev = node->prev;
+    node->prev->next = node->next;
   }
+
+  free(node);
+
+  --list->len; /* One less node in the list. */
+
+  return 1;
 }
-#endif
-
-#if 0
-/* ======================================================== */
-/* Inserts a new node after the specified node in the list. */
-/* ======================================================== */
-void
-ll_insert_after(ll_t * const list, ll_node_t * node, void * const data)
-{
-  ll_node_t * new_node;
-
-  if (node->next == NULL)
-    ll_append(list, data);
-  else
-  {
-    new_node = ll_new_node(); /* ll_new_node cannot return NULL because it   *
-                               * uses xmalloc which does not return if there *
-                               * is an allocation error.                     */
-
-    new_node->data   = data;
-    new_node->prev   = node;
-    new_node->next   = node->next;
-    node->next->prev = new_node;
-    node->next       = new_node;
-
-    ++list->len; /* One more node in the list. */
-  }
-}
-#endif
 
 /* ====================================================== */
 /* Partition code for the quicksort function.             */
@@ -251,50 +208,6 @@ ll_sort(ll_t * list, int (*comp)(void const *, void const *),
   ll_quicksort(list->head, list->tail, comp, swap);
 }
 
-/* ================================== */
-/* Removes a node from a linked list. */
-/* ================================== */
-int
-ll_delete(ll_t * const list, ll_node_t * node)
-{
-  if (list->head == list->tail)
-  {
-    /* We delete the last remaining element from the list. */
-    /* """"""""""""""""""""""""""""""""""""""""""""""""""" */
-    if (list->head == NULL)
-      return 0;
-
-    list->head = list->tail = NULL;
-  }
-  else if (node->prev == NULL)
-  {
-    /* We delete the first element from the list. */
-    /* """""""""""""""""""""""""""""""""""""""""" */
-    list->head       = node->next;
-    list->head->prev = NULL;
-  }
-  else if (node->next == NULL)
-  {
-    /* We delete the last element from the list. */
-    /* """"""""""""""""""""""""""""""""""""""""" */
-    list->tail       = node->prev;
-    list->tail->next = NULL;
-  }
-  else
-  {
-    /* We delete an element from the list. */
-    /* """"""""""""""""""""""""""""""""""" */
-    node->next->prev = node->prev;
-    node->prev->next = node->next;
-  }
-
-  free(node);
-
-  --list->len; /* One less node in the list. */
-
-  return 1;
-}
-
 /* ==========================================================================*/
 /* Finds a node in the list containing data. Return the node pointer or NULL */
 /* if not found.                                                             */
@@ -316,4 +229,43 @@ ll_find(ll_t * const list, void * const data,
   } while (NULL != (node = node->next));
 
   return NULL;
+}
+
+/* =============================================== */
+/* Free all the elements of a list (make it empty) */
+/* NULL or a custom function may be used to free   */
+/* the sub components of the elements.             */
+/* =============================================== */
+void
+ll_free(ll_t * const list, void (*clean)(void *))
+{
+  if (list)
+  {
+    ll_node_t * node = list->head;
+
+    while (node)
+    {
+      /* Apply a custom cleaner if not NULL. */
+      /* """"""""""""""""""""""""""""""""""" */
+      if (clean)
+        clean(node->data);
+
+      ll_delete(list, node);
+
+      node = list->head;
+    }
+  }
+}
+
+/* ==================================== */
+/* Destroy a list and all its elements. */
+/* ==================================== */
+void
+ll_destroy(ll_t * list, void (*clean)(void *))
+{
+  if (list)
+  {
+    ll_free(list, clean);
+    free(list);
+  }
 }

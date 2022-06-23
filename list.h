@@ -34,23 +34,17 @@ struct ll_s
   long        len;
 };
 
+ll_t *
+ll_new(void);
+
+void
+ll_init(ll_t * list);
+
+ll_node_t *
+ll_new_node(void);
+
 void
 ll_append(ll_t * const list, void * const data);
-
-#if 0
-void
-ll_prepend(ll_t * const list, void * const data);
-#endif
-
-#if 0
-void
-ll_insert_before(ll_t * const list, ll_node_t * node, void * const data);
-#endif
-
-#if 0
-void
-ll_insert_after(ll_t * const list, ll_node_t * node, void * const data);
-#endif
 
 void
 ll_sort(ll_t * list, int (*comp)(void const *, void const *),
@@ -63,12 +57,9 @@ ll_node_t *
 ll_find(ll_t * const, void * const, int (*)(void const *, void const *));
 
 void
-ll_init(ll_t * list);
+ll_free(ll_t * const list, void (*clean)(void *));
 
-ll_node_t *
-ll_new_node(void);
-
-ll_t *
-ll_new(void);
+void
+ll_destroy(ll_t * list, void (*clean)(void *));
 
 #endif
