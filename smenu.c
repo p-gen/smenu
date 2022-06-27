@@ -811,7 +811,6 @@ make_ini_path(char * name, char * base)
   char * home;
   long   path_max;
   long   len;
-  char * conf;
 
   /* Set the prefix of the path from the environment */
   /* base can be "HOME" or "PWD".                    */
@@ -829,8 +828,11 @@ make_ini_path(char * name, char * base)
 
   if (len <= path_max)
   {
+    char * conf;
+
     path = xmalloc(len);
     conf = strrchr(name, '/');
+
     if (conf != NULL)
       conf++;
     else
@@ -911,12 +913,13 @@ void
 my_beep(toggle_t * toggles)
 {
   struct timespec ts, rem;
-  int             rc;
 
   if (!toggles->visual_bell)
     fputc_safe('\a', stdout);
   else
   {
+    int rc;
+
     (void)tputs(TPARM1(cursor_visible), 1, outch);
 
     ts.tv_sec  = 0;
@@ -967,12 +970,6 @@ update_bitmaps(search_mode_t mode, search_data_t * data,
 {
   long i, j, n; /* work variables.                                        */
 
-  long lmg; /* position of the last matching glyph of the search buffer   *
-             | in a word.                                                 */
-
-  long sg; /* index going from lmg backward to 0 of the tested glyphs     *
-            | of the search buffer (searched glyph).                      */
-
   long bm_len; /* number of chars taken by the bitmask.                   */
 
   char * start; /* pointer on the position of the matching position       *
@@ -983,10 +980,7 @@ update_bitmaps(search_mode_t mode, search_data_t * data,
   char * str;      /* copy of the current word put in lower case.         */
   char * str_orig; /* original version of the word.                       */
 
-  char * first_glyph;
-
   char * sb_orig = data->buf; /* sb: search buffer.                       */
-  char * sb;                  /* a pointer to sb_orig.                    */
 
   long * o    = data->utf8_off_a;   /* array of the offsets of the search *
                                      | buffer glyphs.                     */
@@ -995,17 +989,20 @@ update_bitmaps(search_mode_t mode, search_data_t * data,
   long   last = data->utf8_len - 1; /* offset of the last glyph in the    *
                                      | search buffer.                     */
 
-  long badness = 0; /* number of 0s between two 1s.                       */
+  long badness = 0; /* number of 0s between two 1s. */
 
   best_matches_count = 0;
 
   if (mode == FUZZY || mode == SUBSTRING)
   {
+    char * sb;
+    char * first_glyph;
+
     first_glyph = xmalloc(5);
 
     if (mode == FUZZY)
     {
-      sb = xstrdup(sb_orig);
+      sb = xstrdup(sb_orig); /* sb initially points to sb_orig. */
       utf8_strtolower(sb, sb_orig);
     }
     else
@@ -1013,6 +1010,9 @@ update_bitmaps(search_mode_t mode, search_data_t * data,
 
     for (i = 0; i < matches_count; i++)
     {
+      long lmg; /* position of the last matching glyph of the search buffer *
+                 | in a word.                                               */
+
       n = matching_words_a[i];
 
       str_orig = xstrdup(word_a[n].str + daccess.flength);
@@ -1056,6 +1056,9 @@ update_bitmaps(search_mode_t mode, search_data_t * data,
         {
           char * p; /* Pointer to the beginning of an UTF-8 glyph in *
                      | the potential lowercase version of the word.  */
+
+          long sg; /* index going from lmg backward to 0 of the tested *
+                    | glyphs of the search buffer (searched glyph).    */
 
           if (last == 0)
           {
@@ -1121,7 +1124,6 @@ update_bitmaps(search_mode_t mode, search_data_t * data,
         /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
         if (affinity == START_AFFINITY)
         {
-          char * ptr1, *ptr2;
           size_t i;
           long   utf8_len;
 
@@ -1136,6 +1138,8 @@ update_bitmaps(search_mode_t mode, search_data_t * data,
 
           if (!BIT_ISSET(word_a[n].bitmap, i))
           {
+            char *ptr1, *ptr2;
+
             BIT_ON(word_a[n].bitmap, i);
 
             ptr1 = word_a[n].str + i;
@@ -1213,6 +1217,7 @@ update_bitmaps(search_mode_t mode, search_data_t * data,
         }
       }
     }
+
     if (mode == FUZZY)
       free(sb);
 
@@ -1241,8 +1246,6 @@ update_bitmaps(search_mode_t mode, search_data_t * data,
 long
 find_next_matching_word(long * array, long nb, long value, long * index)
 {
-  long left = 0, right = nb, middle;
-
   /* Use the cached value when possible. */
   /* """"""""""""""""""""""""""""""""""" */
   if (*index >= 0 && *index < nb - 1 && array[*index] == value)
@@ -1250,6 +1253,8 @@ find_next_matching_word(long * array, long nb, long value, long * index)
 
   if (nb > 0)
   {
+    long left = 0, right = nb, middle;
+
     /* Bisection search. */
     /* ''''''''''''''''' */
     while (left < right)
@@ -1342,16 +1347,18 @@ find_prev_matching_word(long * array, long nb, long value, long * index)
 void
 clean_matches(search_data_t * search_data, long size)
 {
-  sub_tst_t * sub_tst_data;
-  ll_node_t * fuzzy_node;
-  long        i;
+  long i;
 
   /* Clean the list of lists data-structure containing the search levels */
   /* Note that the first element of the list is never deleted.           */
   /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
   if (tst_search_list)
   {
+    ll_node_t * fuzzy_node;
+    sub_tst_t * sub_tst_data;
+
     fuzzy_node = tst_search_list->tail;
+
     while (tst_search_list->len > 1)
     {
       sub_tst_data = (sub_tst_t *)(fuzzy_node->data);
@@ -1714,7 +1721,6 @@ parse_selectors(char * str, filters_t * filter, char * unparsed,
   /* """""""""""""""""""""""""""""""" */
   while (*ptr)
   {
-    size_t swap;
     int    is_range = 0;
     char   delim1, delim2 = '\0';
     char * oldptr;
@@ -1816,6 +1822,8 @@ parse_selectors(char * str, filters_t * filter, char * unparsed,
 
       if (first > second)
       {
+        size_t swap;
+
         swap   = first;
         first  = second;
         second = swap;
@@ -1977,8 +1985,8 @@ char *
 build_repl_string(char * orig, char * repl, long match_start, long match_end,
                   range_t * subs_a, long subs_nb, long match)
 {
-  size_t rsize     = 0;
   size_t allocated = 16;
+  size_t rsize     = 0;
   char * str       = xmalloc(allocated);
   int    special   = 0;
   long   offset    = match * subs_nb; /* offset of the 1st sub       *
@@ -5283,7 +5291,6 @@ gutter_action(char * ctx_name, char * opt_name, char * param, int nb_values,
     long      n;
     wchar_t * w;
     long      i, offset;
-    int       mblen;
     char *    gutter;
 
     gutter = xstrdup(values[0]);
@@ -5299,9 +5306,11 @@ gutter_action(char * ctx_name, char * opt_name, char * param, int nb_values,
 
     for (i = 0; i < win->gutter_nb; i++)
     {
-      mblen            = utf8_get_length(*(gutter + offset));
-      win->gutter_a[i] = xcalloc(1, mblen + 1);
-      memcpy(win->gutter_a[i], gutter + offset, mblen);
+      int mblength;
+
+      mblength         = utf8_get_length(*(gutter + offset));
+      win->gutter_a[i] = xcalloc(1, mblength + 1);
+      memcpy(win->gutter_a[i], gutter + offset, mblength);
 
       n = wcswidth((w = utf8_strtowcs(win->gutter_a[i])), 1);
       free(w);
@@ -5311,7 +5320,7 @@ gutter_action(char * ctx_name, char * opt_name, char * param, int nb_values,
         fprintf(stderr, "%s: A multi columns gutter is not allowed.\n", param);
         ctxopt_ctx_disp_usage(ctx_name, exit_after);
       }
-      offset += mblen;
+      offset += mblength;
     }
     free(gutter);
   }
@@ -5404,14 +5413,15 @@ post_subst_action(char * ctx_name, char * opt_name, char * param, int nb_values,
   ll_t **  list = opt_data[0];
   misc_t * misc = opt_data[1];
 
-  sed_t * sed_node;
-  int     i;
+  int i;
 
   if (*list == NULL)
     *list = ll_new();
 
   for (i = 0; i < nb_values; i++)
   {
+    sed_t * sed_node;
+
     sed_node          = xmalloc(sizeof(sed_t));
     sed_node->pattern = xstrdup(values[i]);
     utf8_interpret(sed_node->pattern, misc->invalid_char_substitute);
@@ -5799,7 +5809,6 @@ auto_da_action(char * ctx_name, char * opt_name, char * param, int nb_values,
                int nb_ctx_data, void ** ctx_data)
 {
   char ** daccess_pattern = opt_data[0];
-  char *  value;
   int     i;
 
   if (nb_values == 0)
@@ -5818,6 +5827,8 @@ auto_da_action(char * ctx_name, char * opt_name, char * param, int nb_values,
   else
     for (i = 0; i < nb_values; i++)
     {
+      char * value;
+
       if (*values[i] == '\0'
           && (daccess.missing == 'y' || ((daccess.mode & DA_TYPE_POS) == 0)))
         value = ".";
@@ -6500,9 +6511,10 @@ main(int argc, char * argv[])
   FILE * old_stdin;
   FILE * old_stdout; /* The selected word will go there.                     */
 
-  long nl;     /* Number of lines displayed in the window.                   */
-  long offset; /* Used to correctly put the cursor at the start of the       *
-                | selection window, even after a terminal vertical scroll.   */
+  long nl; /* Number of lines displayed in the window.                       */
+  long line_offset; /* Used to correctly put the cursor at the start of the  *
+                     | selection window, even after a terminal vertical      *
+                     | scroll.                                               */
 
   long first_selectable; /* Index of the first selectable word in the input  *
                           | stream.                                          */
@@ -9291,7 +9303,6 @@ main(int argc, char * argv[])
     /* A regular expression is expected. */
     /* """"""""""""""""""""""""""""""""" */
     regex_t re;
-    long    index;
 
     if (regcomp(&re, pre_selection_index + 1, REG_EXTENDED | REG_NOSUB) != 0)
     {
@@ -9513,16 +9524,16 @@ main(int argc, char * argv[])
   /* display needed a terminal scrolling.                              */
   /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
   if (nl + term.curs_line - 1 > term.nlines)
-    offset = term.curs_line + nl - term.nlines;
+    line_offset = term.curs_line + nl - term.nlines;
   else
-    offset = 0;
+    line_offset = 0;
 
   /* Set the cursor to the first line of the window. */
   /* """"""""""""""""""""""""""""""""""""""""""""""" */
   {
     long i; /* generic index in this block. */
 
-    for (i = 1; i < offset; i++)
+    for (i = 1; i < line_offset; i++)
       (void)tputs(TPARM1(cursor_up), 1, outch);
   }
 
@@ -9777,13 +9788,13 @@ main(int argc, char * argv[])
       /* display needed a terminal scrolling.                               */
       /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
       if (nl + win.message_lines + term.curs_line > term.nlines)
-        offset = term.curs_line + nl + win.message_lines - term.nlines;
+        line_offset = term.curs_line + nl + win.message_lines - term.nlines;
       else
-        offset = 0;
+        line_offset = 0;
 
       /* Set the cursor to the first line of the window. */
       /* """"""""""""""""""""""""""""""""""""""""""""""" */
-      for (i = 1; i < offset; i++)
+      for (i = 1; i < line_offset; i++)
         (void)tputs(TPARM1(cursor_up), 1, outch);
 
       /* Get new cursor position. */
@@ -11233,10 +11244,9 @@ main(int argc, char * argv[])
         special_cmds_when_searching:
         default:
         {
-          int                c; /* byte index in the scancode string .*/
-          sub_tst_t *        sub_tst_data;
-          unsigned long long index;
-          long               i;
+          int         c; /* byte index in the scancode string .*/
+          sub_tst_t * sub_tst_data;
+          long        i;
 
           if (search_mode != NONE)
           {
