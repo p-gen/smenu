@@ -2173,9 +2173,13 @@ replace(char * orig, sed_t * sed)
       else
       {
         my_strcpy(word_buffer, orig);
+        free(matches_a);
+        free(subs_a);
         return 0;
       }
 
+      free(matches_a);
+      free(subs_a);
       return nomatch;
     }
 
@@ -2214,6 +2218,8 @@ replace(char * orig, sed_t * sed)
   }
 
 fail:
+  free(matches_a);
+  free(subs_a);
   return 0;
 }
 
