@@ -1,3 +1,11 @@
+- Version 1.0.0.RC2
+  * Improve memory management.
+  * Reduce the scope of some variables.
+  * Rework parts of the list code.
+  * Sync with github's ctxopt commit b943e6b.
+  * Switch to Mozilla Public License 2.0.
+  * Modify the URL to find the package maintainers.
+  * Fix a potential memory corruption.
 - Version 1.0.0.RC1
 * Fixes:
   * Fix configure.ac for autoconf >= 2.70.
