@@ -4,7 +4,7 @@ smenu_SOURCES = smenu.c smenu.h list.c list.h xmalloc.c xmalloc.h \
 		utils.c utils.h usage.c usage.h ctxopt.h ctxopt.c \
 		safe.h safe.c
 dist_man_MANS = smenu.1
-EXTRA_DIST =	ChangeLog build.sh version COPYRIGHT LICENSE.rst README.rst \
+EXTRA_DIST =	ChangeLog build.sh version COPYRIGHT LICENSE README.rst \
 		examples build-aux tests FAQ
 
 dist-hook:
