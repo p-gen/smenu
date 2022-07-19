@@ -6809,7 +6809,7 @@ main(int argc, char * argv[])
     "[visual_bell] "
     "[ignore_quotes] "
     "[incremental_search] "
-    "[limits #limit:value...] "
+    "[limits... #limit:value...] "
     "[forgotten_timeout #timeout] "; /* don't remove this space! */
 
   main_spec_options = "[*copyright] "
@@ -8505,7 +8505,7 @@ main(int argc, char * argv[])
 
     /* One more word... */
     /* """""""""""""""" */
-    if (count == limits.words)
+    if (count + 1 >= limits.words)
     {
       fprintf(stderr,
               "The number of read words has reached the limit of %ld.\n",
