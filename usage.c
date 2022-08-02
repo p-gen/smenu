@@ -36,18 +36,20 @@ common_help(void)
   printf("  sets the regex input filter to match the non-selectable "
          "words.\n");
   printf("-m|-msg|-message|-title\n");
-  printf("  displays a one-line message above the window.\n");
+  printf("  displays a one-line message/title above the window.\n");
   printf("-!|-int|-int_string\n");
   printf("  outputs an optional string when ^C is typed.\n");
   printf("-a|-attr|-attributes\n");
   printf("  sets the attributes for the various displayed elements.\n");
   printf("-1|-l1|-level1,-2|-l2|-level2,...,-9|-l9|-level9\n");
-  printf("  gives specific colors to up to 5 classes of "
+  printf("  gives specific colors to up to 9 classes of "
          "selectable words.\n");
   printf("-z|-zap|-zap_glyphs bytes\n");
-  printf("  defines a set of glyphs to ignore as input.\n");
+  printf("  defines a set of glyphs that should be ignored in the input "
+         "stream.\n");
   printf("-n|-lines|-height\n");
-  printf("  sets the number of lines in the selection window.\n");
+  printf("  sets the maximum number of lines in the selection window.\n");
+  printf("  This number is autodetected when no number is given.\n");
   printf("-b|-blank\n");
   printf("  displays non printable characters as space.\n");
   printf("-.|-dot|-invalid\n");
@@ -60,44 +62,41 @@ common_help(void)
   printf("-k|-ks|-keep_spaces\n");
   printf("  does not trim spaces surrounding the output string if any.\n");
   printf("-W|-ws|-wd|-word_delimiters|-word_separators\n");
-  printf("  sets the input words separators.\n");
+  printf("  defines word separators in the input stream.\n");
   printf("-L|-ls|-ld|-line-delimiters|-line_separators\n");
-  printf("  sets the input lines separators.\n");
+  printf("  defines line separators in the input stream.\n");
   printf("-q|-no_bar|-no-scroll_bar\n");
-  printf("  prevents the display of the scroll bar.\n");
+  printf("  prevents the scroll bar from being displayed.\n");
   printf("-S|-subst\n");
-  printf("  sets the post substitution treatment action to be applied to all "
-         "words.\n");
+  printf("  defines the post-substitution action to apply to all words.\n");
   printf("-I|-si|-subst_included\n");
-  printf("  sets the post substitution treatment action to be applied to "
-         "selectable\n");
-  printf("  words only.\n");
+  printf("  defines the post-substitution action to apply to selectable "
+         "words only.\n");
   printf("-E|-se|-subst_excluded\n");
-  printf("  sets the post substitution treatment action to be applied to "
-         "non-selectable\n");
+  printf("  defines the post-substitution action to apply to non-selectable "
+         "words only.\n");
   printf("-ES|-early_subst\n");
-  printf("  sets the early substitution treatment action to be applied to "
-         "all words.\n");
-  printf("  words only.\n");
+  printf("  defines the early substitution action to apply to all words.\n");
   printf("-/|-search_method\n");
-  printf("  changes the affectation of the / key (default fuzzy search).\n");
+  printf("  changes the affectation of the / key (default: fuzzy search).\n");
   printf("-s|-sp|-start|-start_pattern\n");
-  printf("  sets the initial cursor position (read the manual for "
+  printf("  sets the initial cursor position (refer to the manual for "
          "more details).\n");
   printf("-x|-tmout|-timeout/-X|-htmout|-hidden_timeout\n");
-  printf("  sets a timeout and specifies what to do when it expires.\n");
+  printf("  defines a timeout and specifies what to do when it expires.\n");
   printf("-r|-auto_validate\n");
   printf("  enables ENTER to validate the selection even in search mode.\n");
   printf("-is|-incremental_search\n");
-  printf("  the search buffer is not reset when starting a new search "
-         "session.\n");
+  printf("  prevents the search buffer from being reset when starting a new "
+         "search\n");
+  printf("  session.\n");
   printf("-v|-vb|-visual_bell\n");
   printf("  makes the bell visual (fuzzy search with error).\n");
   printf("-Q|-ignore_quotes\n");
   printf("  treats single and double quotes as normal characters.\n");
   printf("-lim|-limits\n");
   printf("  overload the words number/max. word length/max columns limits.\n");
-  printf("f|-forgotten_timeout|-global_timeout");
+  printf("-f|-forgotten_timeout|-global_timeout\n");
   printf("  defines a global inactivity timeout, defaults to 15 min.\n");
 }
 
@@ -126,24 +125,24 @@ main_help(void)
   printf("  displays a full help and the options available in all "
          "contexts.\n");
   printf("-N|-number/-U|-unnumber\n");
-  printf("  numbers/un-numbers and provides a direct access to words "
-         "matching\n");
-  printf("  (or not) a specific regex.\n");
+  printf("  creates or deletes direct access entries for words matching "
+         "(or not) a\n");
+  printf("  specific regex.\n");
   printf("-F|-en|-embedded_number\n");
-  printf("  numbers and provides a direct access to words by extracting the "
-         "number\n");
+  printf("  creates direct access entries by extracting the numbers from the "
+         "input words.\n");
   printf("-c|-col|-col_mode|-column\n");
-  printf("  is like|-t without argument but respects end of lines.\n");
+  printf("  is like -tab without argument but respects end of lines.\n");
   printf("-l|-line|-line_mode\n");
-  printf("  is like|-c without column alignments.\n");
+  printf("  is like -col without column alignments.\n");
   printf("-t|-tab|-tab_mode|-tabulate_mode\n");
   printf("  tabulates the items. The number of columns can be limited "
          "with\n");
   printf("  an optional number.\n");
   printf("-T|-tm|-tag|-tag_mode/-P|-pm|-pin|-pin_mode\n");
-  printf("  enables the tagging (multi-selections) mode. ");
+  printf("  enables the tagging mode (multi-selections). ");
   printf("An optional parameter\n");
-  printf("  sets the separator string between the selected words ");
+  printf("  defines the separator string between the selected words ");
   printf("on the output.\n");
   printf("  A single space is the default separator.\n");
 
