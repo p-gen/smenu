@@ -9875,7 +9875,7 @@ main(int argc, char * argv[])
     {
       /* Rearm the timer named "forgotten". */
       /* """""""""""""""""""""""""""""""""" */
-      forgotten_timer = timers.forgotten; /* default 900 s (15 min). */
+      forgotten_timer = timers.forgotten;
 
       if (timeout.initial_value && buffer[0] != 0x0d && buffer[0] != 'q'
           && buffer[0] != 'Q' && buffer[0] != 3)

@@ -1,3 +1,6 @@
+- Version 1.0.0
+  * Fix and improve the content of the integrated help system.
+  * Allow multiple instances of the "-limits" option.
 - Version 1.0.0.RC2
   * Improve memory management.
   * Reduce the scope of some variables.

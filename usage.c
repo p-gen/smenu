@@ -167,11 +167,11 @@ main_help(void)
          "/ or CTRL-F\n\n");
   printf("The search key activates a timed search mode in which\n");
   printf("you can enter the first letters of the searched word.\n");
-  printf("When entering this mode you have 7s to start typing\n");
-  printf("and each entered letter gives you 5 more seconds before\n");
-  printf("the timeout. After that the search mode is ended.\n\n");
+  printf("When entering this mode you have 10s to start typing\n");
+  printf("and each entered letter restarts this timer.\n");
+  printf("After this time, the normal navigation mode is restored.\n\n");
   printf("Notes:\n");
-  printf("- the timer can be cancelled by pressing ESC.\n");
+  printf("- the search timer can be cancelled by pressing ESC.\n");
   printf("- a bad search letter can be removed with ");
   printf("CTRL-H or Backspace.\n\n");
   printf("(C) Pierre Gentile.\n\n");
