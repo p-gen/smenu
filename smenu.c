@@ -9495,7 +9495,7 @@ main(int argc, char * argv[])
   disp_message(message_lines_list, message_max_width, message_max_len, &term,
                &win, &langinfo);
 
-  /* Before displaying the word windows for the first time when ins   */
+  /* Before displaying the word windows for the first time when in    */
   /* column or line mode, we need to ensure that the word under the   */
   /* cursor will be visible by setting the number of the first column */
   /* to be displayed.                                                 */
