@@ -10032,34 +10032,7 @@ main(int argc, char * argv[])
               /* horizontal scrolling.                      */
               /* """""""""""""""""""""""""""""""""""""""""" */
               if (win.col_mode || win.line_mode)
-              {
-                long pos;
-                long len;
-
-                len = term.ncolumns - 3;
-
-                if (word_a[current].end >= len + win.first_column)
-                {
-                  /* Find the first word to be displayed in this line. */
-                  /* """"""""""""""""""""""""""""""""""""""""""""""""" */
-                  pos = first_word_in_line_a[line_nb_of_word_a[current]];
-
-                  while (word_a[pos].start <= win.first_column)
-                    pos++;
-
-                  /* If the new current word cannot be displayed, search */
-                  /* the first word in the line that can be displayed by */
-                  /* iterating on pos.                                   */
-                  /* """"""""""""""""""""""""""""""""""""""""""""""""""" */
-                  pos--;
-
-                  while (word_a[current].end - word_a[pos].start >= len)
-                    pos++;
-
-                  if (word_a[pos].start > 0)
-                    win.first_column = word_a[pos].start;
-                }
-              }
+                set_new_first_column(&win, &term);
             }
 
             nl = disp_lines(&win, &toggles, current, count, search_mode,
