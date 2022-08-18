@@ -64,6 +64,12 @@ long * line_nb_of_word_a;    /* array containing the line number (from 0)   *
 long * first_word_in_line_a; /* array containing the index of the first     *
                               | word of each lines.                         */
 
+int forgotten_timer = -1;
+int help_timer      = -1;
+int winch_timer     = -1;
+int daccess_timer   = -1;
+int search_timer    = -1;
+
 search_mode_t search_mode     = NONE;
 search_mode_t old_search_mode = NONE;
 
@@ -1423,23 +1429,24 @@ outch(int c)
 /* wait for at least one byte, no timeout.         */
 /* =============================================== */
 void
-setup_term(int const fd)
+setup_term(int const fd, struct termios * old_in_attrs,
+           struct termios * new_in_attrs)
 {
   int error;
 
   /* Save the terminal parameters and configure it in row mode. */
   /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-  tcgetattr(fd, &old_in_attrs);
+  tcgetattr(fd, old_in_attrs);
 
-  new_in_attrs.c_iflag = 0;
-  new_in_attrs.c_oflag = old_in_attrs.c_oflag;
-  new_in_attrs.c_cflag = old_in_attrs.c_cflag;
-  new_in_attrs.c_lflag = old_in_attrs.c_lflag & ~(ICANON | ECHO | ISIG);
+  new_in_attrs->c_iflag = 0;
+  new_in_attrs->c_oflag = old_in_attrs->c_oflag;
+  new_in_attrs->c_cflag = old_in_attrs->c_cflag;
+  new_in_attrs->c_lflag = old_in_attrs->c_lflag & ~(ICANON | ECHO | ISIG);
 
-  new_in_attrs.c_cc[VMIN]  = 1; /* wait for at least 1 byte. */
-  new_in_attrs.c_cc[VTIME] = 0; /* no timeout.               */
+  new_in_attrs->c_cc[VMIN]  = 1; /* wait for at least 1 byte. */
+  new_in_attrs->c_cc[VTIME] = 0; /* no timeout.               */
 
-  error = tcsetattr_safe(fd, TCSANOW, &new_in_attrs);
+  error = tcsetattr_safe(fd, TCSANOW, new_in_attrs);
 
   if (error == -1)
   {
@@ -1452,11 +1459,11 @@ setup_term(int const fd)
 /* Set the terminal in its previous mode. */
 /* ====================================== */
 void
-restore_term(int const fd)
+restore_term(int const fd, struct termios * old_in_attrs)
 {
   int error;
 
-  error = tcsetattr_safe(fd, TCSANOW, &old_in_attrs);
+  error = tcsetattr_safe(fd, TCSANOW, old_in_attrs);
 
   if (error == -1)
   {
@@ -6413,6 +6420,15 @@ main(int argc, char * argv[])
     { NULL, 0 }
   };
 
+  /* Terminal setting variables. */
+  /* """"""""""""""""""""""""""" */
+  struct termios new_in_attrs;
+  struct termios old_in_attrs;
+
+  /* Interval timers used. */
+  /* """"""""""""""""""""" */
+  struct itimerval periodic_itv; /* refresh rate for the timeout counter. */
+
   int     nb_rem_args = 0; /* Remaining non analyzed command line arguments. */
   char ** rem_args    = NULL; /* Remaining non analyzed command line         *
                                | arguments array.                            */
@@ -9464,13 +9480,13 @@ main(int argc, char * argv[])
 
   /* Set the characteristics of the terminal. */
   /* """""""""""""""""""""""""""""""""""""""" */
-  setup_term(fileno(stdin));
+  setup_term(fileno(stdin), &old_in_attrs, &new_in_attrs);
 
   if (!get_cursor_position(&row, &col))
   {
     fprintf(stderr, "The terminal does not have the capability to report "
                     "the cursor position.\n");
-    restore_term(fileno(stdin));
+    restore_term(fileno(stdin), &old_in_attrs);
 
     exit(EXIT_FAILURE);
   }
@@ -9583,7 +9599,7 @@ main(int argc, char * argv[])
     {
       (void)tputs(TPARM1(carriage_return), 1, outch);
       (void)tputs(TPARM1(cursor_normal), 1, outch);
-      restore_term(fileno(stdin));
+      restore_term(fileno(stdin), &old_in_attrs);
 
       exit(128 + SIGPIPE);
     }
@@ -9596,7 +9612,7 @@ main(int argc, char * argv[])
       fputs_safe("SIGSEGV received!\n", stderr);
       (void)tputs(TPARM1(carriage_return), 1, outch);
       (void)tputs(TPARM1(cursor_normal), 1, outch);
-      restore_term(fileno(stdin));
+      restore_term(fileno(stdin), &old_in_attrs);
 
       exit(128 + SIGSEGV);
     }
@@ -9609,7 +9625,7 @@ main(int argc, char * argv[])
       fputs_safe("Interrupted!\n", stderr);
       (void)tputs(TPARM1(carriage_return), 1, outch);
       (void)tputs(TPARM1(cursor_normal), 1, outch);
-      restore_term(fileno(stdin));
+      restore_term(fileno(stdin), &old_in_attrs);
 
       if (got_sigterm)
         exit(128 + SIGTERM);
@@ -9623,7 +9639,7 @@ main(int argc, char * argv[])
     {
       (void)tputs(TPARM1(carriage_return), 1, outch);
       (void)tputs(TPARM1(cursor_normal), 1, outch);
-      restore_term(fileno(stdin));
+      restore_term(fileno(stdin), &old_in_attrs);
 
       exit(EXIT_SUCCESS);
     }
@@ -10182,13 +10198,13 @@ main(int argc, char * argv[])
             /* original terminal state before exiting.                */
             /* """""""""""""""""""""""""""""""""""""""""""""""""""""" */
             (void)tputs(TPARM1(carriage_return), 1, outch);
-            restore_term(fileno(stdin));
+            restore_term(fileno(stdin), &old_in_attrs);
 
             if (int_as_in_shell)
               exit(128 + SIGINT);
           }
           else
-            restore_term(fileno(stdin));
+            restore_term(fileno(stdin), &old_in_attrs);
 
           exit(EXIT_SUCCESS);
 
@@ -10592,7 +10608,7 @@ main(int argc, char * argv[])
           /* original terminal state before exiting.                */
           /* """""""""""""""""""""""""""""""""""""""""""""""""""""" */
           (void)tputs(TPARM1(carriage_return), 1, outch);
-          restore_term(fileno(stdin));
+          restore_term(fileno(stdin), &old_in_attrs);
 
           exit(EXIT_SUCCESS);
         }

@@ -199,21 +199,6 @@ struct misc_s
   int           ignore_quotes;
 };
 
-/* Terminal setting variables. */
-/* """"""""""""""""""""""""""" */
-struct termios new_in_attrs;
-struct termios old_in_attrs;
-
-/* Interval timers used. */
-/* """"""""""""""""""""" */
-struct itimerval periodic_itv; /* refresh rate for the timeout counter. */
-
-int forgotten_timer = -1;
-int help_timer      = -1;
-int winch_timer     = -1;
-int daccess_timer   = -1;
-int search_timer    = -1;
-
 /* Structure containing the attributes components. */
 /* """"""""""""""""""""""""""""""""""""""""""""""" */
 struct attrib_s
@@ -455,10 +440,10 @@ outch(int c);
 #endif
 
 void
-restore_term(int const fd);
+restore_term(int const fd, struct termios * old);
 
 void
-setup_term(int const fd);
+setup_term(int const fd, struct termios * old, struct termios * new);
 
 void
 strip_ansi_color(char * s, toggle_t * toggles, misc_t * misc);
