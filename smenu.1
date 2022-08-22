@@ -1430,6 +1430,19 @@ Post-processes the words by applying a regular expression based
 substitution.
 The argument must be formatted as in the \fBsed\fP editor.
 
+As in \fBsed\fP, matching groups and references to these groups
+(from \f(CB\\0\fP to \f(CB\\9\fP in \fIrepl\fP) are supported.
+These groups must be surrounded by \f(CB(\fP and \f(CB)\fP in \fIregex\fP.
+\f(CB\\0\fP and \f(CB&\fP are equivalent in \fIrepl\fP as in the GNU
+version of \fBsed\fP.
+
+Back reference example:
+
+.nf
+\f(CBR=$(echo "[A] [B] [C]" | ./smenu -S '/([^][]+)/:\\1:/')\fP
+will display \f(CR"[:A:] [:B:] [:C:]"\fP
+.fi
+
 This option can be used more than once.
 Each substitution will be applied in sequence on each word.
 This sequence can be stopped if a \fBstop\fP flag is encountered.
@@ -1451,14 +1464,20 @@ more substitution will be allowed on this word even if another
 The optional trailing \fBi\fP (for \fIi\fPgnore case) means that the
 string search operation should ignore the case for this pattern.
 
-Small example:
+Small examples to explain the meaning of \fIv\fP:
+
+.nf
 \f(CBR=$(echo a b c | smenu -S /b/B/)\fP
-will display \f(CR"a B c"\fP and \f(CBR\fP will contain \fIB\fP if \fI
-B\fP is
-selected meanwhile
+.fi
+will display \f(CR"a B c"\fP and \f(CBR\fP will contain \fIB\fP
+when \fIB\fP is selected meanwhile
+
+.nf
 \f(CBR=$(echo a b c | smenu -S /b/B/\fBv\fP)\fR
+.fi
 will display the same as above but \f(CBR\fP will contain the original
-word \fIb\fP if \fIB\fP is selected.
+word \fIb\fP when \fIB\fP is selected.
+
 In both cases, only the word \fIB\fP will be searchable and not \fIb\fP.
 .RE
 .IP "\fB-I\fP|\fB-si\fP|\fB-subst_included\fP... \

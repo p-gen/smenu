@@ -1983,6 +1983,8 @@ err:
 /* match_start/end: offset in orig for the current matched string        */
 /* subs_nb:         number of elements containing significant values in  */
 /*                  the array described above.                           */
+/* error:           set to 0 if no error in replacement string and to 1  */
+/*                  otherwise.                                           */
 /* match:           current match number in the original string.         */
 /*                                                                       */
 /* OUT:                                                                  */
@@ -1990,7 +1992,7 @@ err:
 /* ===================================================================== */
 char *
 build_repl_string(char * orig, char * repl, long match_start, long match_end,
-                  range_t * subs_a, long subs_nb, long match)
+                  range_t * subs_a, long subs_nb, long match, int * error)
 {
   size_t allocated = 16;
   size_t rsize     = 0;
@@ -1999,10 +2001,12 @@ build_repl_string(char * orig, char * repl, long match_start, long match_end,
   long   offset    = match * subs_nb; /* offset of the 1st sub       *
                                        | corresponding to the match. */
 
+  *error = 0;
+
   if (*repl == '\0')
     str = xstrdup("");
   else
-    while (*repl)
+    while (!*error && *repl)
     {
       switch (*repl)
       {
@@ -2044,6 +2048,35 @@ build_repl_string(char * orig, char * repl, long match_start, long match_end,
               rsize += delta;
               str[rsize] = '\0';
             }
+            else
+            {
+              *error = 1;
+              break;
+            }
+            special = 0;
+          }
+          else
+          {
+            if (allocated == rsize)
+              str = xrealloc(str, allocated += 16);
+            str[rsize] = *repl;
+            rsize++;
+            str[rsize] = '\0';
+          }
+          break;
+
+        case '0':
+          if (special)
+          {
+            long delta = match_end - match_start;
+
+            if (allocated <= rsize + delta)
+              str = xrealloc(str, allocated += (delta + 16));
+
+            memcpy(str + rsize, orig + match_start, delta);
+
+            rsize += delta;
+            str[rsize] = '\0';
 
             special = 0;
           }
@@ -2054,6 +2087,7 @@ build_repl_string(char * orig, char * repl, long match_start, long match_end,
             str[rsize] = *repl;
             rsize++;
             str[rsize] = '\0';
+            special    = 0;
           }
           break;
 
@@ -2069,24 +2103,29 @@ build_repl_string(char * orig, char * repl, long match_start, long match_end,
 
             rsize += delta;
             str[rsize] = '\0';
-
             break;
           }
+          else
+            special = 0;
 
           /* No break here, '&' must be treated as a normal */
           /* character when protected.                      */
           /* '''''''''''''''''''''''''''''''''''''''''''''' */
 
         default:
-          special = 0;
           if (allocated == rsize)
             str = xrealloc(str, allocated += 16);
           str[rsize] = *repl;
           rsize++;
           str[rsize] = '\0';
+          special    = 0;
       }
       repl++;
     }
+
+  if (special > 0)
+    *error = 1;
+
   return str;
 }
 
@@ -2149,11 +2188,21 @@ replace(char * orig, sed_t * sed)
         {
           size_t len;
           size_t end;
+          int    error;
 
           exp_repl = build_repl_string(orig, sed->substitution,
                                        matches_a[match].start,
                                        matches_a[match].end, subs_a, subs_max,
-                                       match);
+                                       match, &error);
+
+          if (error)
+          {
+            fprintf(stderr,
+                    "Invalid matching group reference "
+                    "in the replacement string \"%s\".\n",
+                    sed->substitution);
+            exit(EXIT_FAILURE);
+          }
 
           len = strlen(exp_repl);
 
