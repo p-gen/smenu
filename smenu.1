@@ -75,6 +75,11 @@ and outputs the selection to stdout.
   [\fB-Q\fP|\fB-ignore_quotes\fP]
   [\fB-lim\fP|\fB-limits\fP \fIlimit:value\fP...]
   [\fB-f\fP|\fB-forgotten_timeout\fP|\fB-global_timeout\fP \fItimeout\fP]
+  [\fB-nm\fP|\fB-no_mouse\fP]
+  [\fB-br\fP|\fB-buttons\fP|\fB-button_remapping\fP \fInew_button_1\fP \
+\fInew_button_3\fP]
+  [\fB-dc\fP|\fB-dcd\fP|\fB-double_click\fP|\fB-double_click_delay\fp \
+\fIdelay_in_ms\fP]
 
 
   selectors ::= \fIcol1\fP[-\fIcol2\fP],...|\fIrow1\fP[-\fIrow2\fP],...|\
@@ -178,7 +183,9 @@ A typical example is DOS or Windows files with lines ending with
 In such a case one might decide to ignore all \fICR\fP characters from
 the input.
 .PP
-.SS "Moving among words"
+.SS "Moving among words using the keyboard and maybe the mouse"
+\fBkeyboard\fP:
+.RS 2
 The cursor can be moved in any direction using the arrow keys of the
 keyboard: \fB\(<-\fP, \fB\(da\fP, \fB\(ua\fP, \fB\(->\fP
 or the \fIvi\fP direction keys: \fBh\fP, \fBj\fP, \fBk\fP and \fBl\fP.
@@ -195,6 +202,8 @@ l l.
 \fBPgUp\fP, \fBK\fP@Previous page
 \fBHOME\fP@First word of the window
 \fBCTRL\ HOME\fP, \fBSHIFT\ HOME\fP, \fBCTRL\ K\fP@First word
+\fB<\fP@The window's content is shifted to the
+@left while keeping the cursor visible
 
 \fB\(->\fP, \fBl\fP@Next word
 \fBCTRL\ \(->\fP, \fBL\fP@End of line
@@ -202,12 +211,111 @@ l l.
 \fBPgDn\fP, \fBJ\fP@Next page
 \fBEND\fP@Last word of the window
 \fBCTRL\ END\fP, \fBSHIFT\ END\fP, \fBCTRL\ J\fP@Last word
+\fB>\fP@The window's content is shifted to the
+@right while keeping the cursor visible
 .TE
 
 \fBCTRL\ \(<-\fP/\fBH\fP (resp. \fBCTRL\ \(->\fP/\fBL\fP) places the cursor
 so that a maximum number of words (selectable or not) are visible to
 the left (reps. right) side of the window.
 
+When the content of the window is shifted to the left or right using
+\fB<\fP or \fB>\fP or the mouse, the cursor always highlights the same
+word and remains visible.
+This can block sole shifting operations.
+.RE
+.PP
+\fBMouse:\fP
+.RS 2
+With many terminal emulators, it is possible to use the mouse to interact
+with the screen content.
+When the mouse is supported, the cursor can turn into an arrow (but
+not always) and the mouse can then be used as a point and click device
+as follows:
+
+\fB* First mouse button (note that buttons can be remapped)\fP:
+.IP \(bu 2
+A click on a word selects it if it is selectable.
+.IP \(bu 2
+A click at the ends of the scroll bar is equivalent
+to pressing the up and down arrow on the keyboard.
+.IP \(bu 2
+A double-click on a word selects it if it is selectable and acts as if
+the Enter key had been pressed,
+the double-click delay is configurable.
+.IP \(bu 2
+A click on the left or right horizontal arrow (when visible) shifts
+the content of the window to the left or right, one word at a time.
+.br
+Nothing is done if the cursor is at risk to leave the window.
+
+Note that clicking on a left-facing arrow in an empty line means that
+not all the words in that line could be displayed because of previous
+shifts or moves.
+In this case, smenu will try to display the last word of this line but
+it is not always possible as the cursor must remain visible.
+.br
+The keyboard commands \fB<\fP and \fB>\fP can be used in such a case
+because the cursor is already on the current line.
+.P
+\fB* Third mouse button or first button with CTRL pressed\fP:
+.IP \(bu 2
+When tagging or pinning is enabled, a click on a word tags it if it is
+selectable and not already tagged.
+.IP \(bu 2
+When tagging or pinning is enabled, a click on a word untags it if it
+is selectable and already tagged.
+.P
+\fB* Mouse wheel\fP:
+.IP \(bu 2
+The rotation of the wheel allows you to scroll the content of the window
+up or down one line.
+.IP \(bu 2
+The rotation of the  wheel with the CTRL key held down allows you to
+scroll the content of the window up or down one page.
+.br
+This feature may not work depending of the terminal and the operating
+system.
+
+Be sure to use the wheel when the mouse pointer is over the smenu
+window, as some terminal emulators may otherwise zoom the screen in
+and out instead.
+
+Some terminals may not report clicks after the 223rd line or column due
+to a limitation of the old X11 mouse tracking protocol, one example of
+such a terminal emulator is screen < 4.7.0.
+tmux as well as screen >= 4.7.0 are fine.
+.PP
+Remember that mouse support does not disable the keyboard, so use the
+keys instead if the mouse is not working properly.
+
+Keyboard and mouse can be used at the same time.
+.TP 2
+\fBImportant note for BSD systems:\fP
+In order for the mouse to work properly under (virtualised?) FreeBSD
+and perhaps other BSD variants, it may be necessary add the following
+two lines to the file \fB~/.Xmodmap\fP:
+
+.nf
+\f(CR! Disable button 8 and 9.
+pointer = 1 2 3 4 5 6 7 0 0 10 11 12\fP
+.fi
+
+And run the command: \f(CRxmodmap ~/.Xmodmap\fP
+(ignore any warnings issued by this command).
+
+This can also be done non-permanently by running the command:
+.nf
+\f(CRxmodmap -e "pointer = 1 2 3 4 5 6 7 0 0 10 11 12"\fP
+.fi
+
+If this is not enough, try to disable buttons 8 to 12.
+
+.¨
+.RE
+.P
+\fBDirect acess:\fP
+.RS 2
 If \fB-N\fP|\fB-number\fP, \fB-U\fP|\fB-unnumber\fP or
 \fB-F\fP|\fB-en\fP|\fB-embedded_number\fP are used, then it becomes
 possible to directly access a word by entering its number.
@@ -223,6 +331,7 @@ removing it (substituted by nothing) afterward using
 
 \fB-E\fP|\fB-se\fP|\fB-subst_excluded\fP gives another way to do that,
 see below or more.
+.RE
 .SS "Changing input words"
 smenu offers the possibility to modify the input words in a sed-like way.
 Words can be modified at two points: just after they have been read
@@ -496,7 +605,7 @@ For example: uconv can be used as a filter as in:
 If a file with adequate permissions and the same name as the executable
 but prefixed with a dot is present in the current directory
 or in the user's home directory, then it will be parsed as a
-\fIini\fP file.
+\fI.ini\fP file.
 The values read from the file in the home directory will be overridden by
 the ones read from the local directory (if it is present).
 
@@ -567,6 +676,9 @@ allowed:
 
 [misc]
   default_search_method = substring
+
+[mouse]
+  double_click_delay= 200 ; delay in milliseconds
 --8<------------------------------------------------------------------
 \fP
 .fi
@@ -1688,6 +1800,38 @@ See the example in the configuration sub-section.
 
 A value of 0 as an argument disables this timer and replaces the default
 value.
+.IP "[\fB-nm\fP|\fB-no_mouse\fP]"
+(Allowed in all contexts.)
+
+Normally, mouse tracking support is auto-detected using the presence
+and content of the terminal's 'kmous' capability.
+This option allows you to disable the mouse even if smenu can use it.
+.IP "[\fB-br\fP|\fB-buttons\fP|\fB-button_remapping\fP \fInew_button_1\fP \
+\fInew_button_3\fP]"
+(Allowed in all contexts.)
+
+This option allows to remap the mouse buttons.  The buttons are numbered
+from 1 to 3 but as smenu only uses buttons 1 and 3, only two arguments
+are required.
+
+By example, the syntax \f(CR-br 3 1\fP will reverse the first (left)
+and third (right?) buttons.
+
+The default mapping is \f(CR1 3\fP.
+.IP "[\fB-dc\fP|\fB-dcd\fP|\fB-double_click\fP|\fB-double_click_delay\fp \
+\fIdelay_in_ms\fP]"
+(Allowed in all contexts.)
+
+This option allows  to set the double-click delay in the range of 100 ms
+(1/10 second) to 500 ms (1/2 second).
+The default delay of 150 ms (1/6.66 second) will be used if the given
+value is out of range or invalid.
+
+The double-click capability can also be disabled by setting
+\fIdelay_in_ms\fP to \fB0\fP.
+
+This setting is also configurable in a configuration file, see the
+[mouse] section in the example in the configuration sub-section.
 .SH NOTES
 If tabulators (\fI\\t\fP) are embedded in the input, there is no way
 to replace them with the original number of spaces.

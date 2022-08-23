@@ -63,6 +63,7 @@ long * line_nb_of_word_a;    /* array containing the line number (from 0)   *
                               | of each word read.                          */
 long * first_word_in_line_a; /* array containing the index of the first     *
                               | word of each lines.                         */
+long * shift_right_sym_pos_a;
 
 int forgotten_timer = -1;
 int help_timer      = -1;
@@ -97,6 +98,11 @@ char * sbar_arr_up     = "\xe2\x96\xb2"; /* ▲ black_up_pointing_triangle.    *
 char * sbar_arr_down   = "\xe2\x96\xbc"; /* ▼ black_down_pointing_triangle.  */
 char * msg_arr_down    = "\xe2\x96\xbc"; /* ▼ black_down_pointing_triangle.  */
 /* clang-format on */
+
+/* Mouse tracking. */
+/* """"""""""""""" */
+char * mouse_trk_on;
+char * mouse_trk_off;
 
 /* Variables used to manage the direct access entries. */
 /* """"""""""""""""""""""""""""""""""""""""""""""""""" */
@@ -467,7 +473,8 @@ apply_attr(term_t * term, attrib_t attr)
 /* ===================================================== */
 int
 ini_cb(win_t * win, term_t * term, limit_t * limits, ticker_t * timers,
-       misc_t * misc, const char * section, const char * name, char * value)
+       misc_t * misc, mouse_t * mouse, const char * section, const char * name,
+       char * value)
 {
   int error      = 0;
   int has_colors = term->colors > 7;
@@ -685,6 +692,20 @@ ini_cb(win_t * win, term_t * term, limit_t * limits, ticker_t * timers,
         timers->search = v;
     }
   }
+  else if (strcmp(section, "mouse") == 0)
+  {
+    int v;
+
+    /* [mouse] section. */
+    /* """"""""""""""" */
+    if (strcmp(name, "double_click_delay") == 0)
+    {
+      if ((error = !(sscanf(value, "%d", &v) == 1 && v > 0)))
+        goto out;
+      else
+        mouse->double_click_delay = v;
+    }
+  }
   else if (strcmp(section, "misc") == 0)
   {
     /* [misc] section. */
@@ -720,10 +741,10 @@ out:
 /* ======================================================================== */
 int
 ini_load(const char * filename, win_t * win, term_t * term, limit_t * limits,
-         ticker_t * timers, misc_t * misc,
+         ticker_t * timers, misc_t * misc, mouse_t * mouse,
          int (*report)(win_t * win, term_t * term, limit_t * limits,
-                       ticker_t * timers, misc_t * misc, const char * section,
-                       const char * name, char * value))
+                       ticker_t * timers, misc_t * misc, mouse_t * mouse,
+                       const char * section, const char * name, char * value))
 {
   char   name[64]     = "";
   char   value[256]   = "";
@@ -775,7 +796,8 @@ ini_load(const char * filename, win_t * win, term_t * term, limit_t * limits,
 
       /* Callback function calling. */
       /* """""""""""""""""""""""""" */
-      error = report(win, term, limits, timers, misc, section, name, value);
+      error = report(win, term, limits, timers, misc, mouse, section, name,
+                     value);
 
       if (error)
         goto out;
@@ -2396,6 +2418,10 @@ get_scancode(unsigned char * s, size_t max)
   size_t         i = 1;
   struct termios original_ts, nowait_ts;
 
+  /* Flush non-transmitted, non-read input data. */
+  /* """"""""""""""""""""""""""""""""""""""""""" */
+  tcflush(0, TCIFLUSH);
+
   if ((c = my_fgetc(stdin)) == EOF)
     return 0;
 
@@ -3726,6 +3752,7 @@ disp_lines(win_t * win, toggle_t * toggles, long current, long count,
   char scroll_symbol[5];
   long len;
   long display_bar;
+  long first_start;
 
   sigset_t mask;
 
@@ -3740,7 +3767,18 @@ disp_lines(win_t * win, toggle_t * toggles, long current, long count,
   scroll_symbol[0] = ' ';
   scroll_symbol[1] = '\0';
 
-  lines_disp = 1;
+  lines_disp  = 1;
+  first_start = -1;
+
+  /* Initialize the truncates lines flag. */
+  /* """""""""""""""""""""""""""""""""""" */
+  win->has_truncated_lines = 0;
+
+  /* Initialize the selectable column guard to its maximum position. */
+  /* for the first window line.                                      */
+  /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+  shift_right_sym_pos_a[line_nb_of_word_a[win->start] + lines_disp - 1] =
+    term->ncolumns;
 
   (void)tputs(TPARM1(save_cursor), 1, outch);
 
@@ -3777,6 +3815,9 @@ disp_lines(win_t * win, toggle_t * toggles, long current, long count,
         strcpy(scroll_symbol, shift_left_sym);
       else
         strcpy(scroll_symbol, "<");
+
+      if (!win->has_truncated_lines)
+        win->has_truncated_lines = 1;
     }
   }
   else
@@ -3799,6 +3840,9 @@ disp_lines(win_t * win, toggle_t * toggles, long current, long count,
     if (word_a[i].start >= win->first_column
         && word_a[i].end < len + win->first_column)
     {
+      if (first_start < 0)
+        first_start = word_a[i].start;
+
       disp_word(i, search_mode, search_data, term, win, tmp_word);
 
       /* If there are more element to be displayed after the right margin. */
@@ -3806,6 +3850,9 @@ disp_lines(win_t * win, toggle_t * toggles, long current, long count,
       if ((win->col_mode || win->line_mode) && i < count - 1
           && word_a[i + 1].end >= len + win->first_column)
       {
+        if (!win->has_truncated_lines)
+          win->has_truncated_lines = 1;
+
         apply_attr(term, win->shift_attr);
 
         if (langinfo->utf8)
@@ -3814,6 +3861,12 @@ disp_lines(win_t * win, toggle_t * toggles, long current, long count,
           fputc_safe('>', stdout);
 
         (void)tputs(TPARM1(exit_attribute_mode), 1, outch);
+
+        /* Adjust the selectable column guard to the column just after */
+        /* the last displayed word.                                    */
+        /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+        shift_right_sym_pos_a[line_nb_of_word_a[i]] = word_a[i].end + 1
+                                                      - first_start + 2;
       }
 
       /* If we want to display the gutter. */
@@ -3856,6 +3909,10 @@ disp_lines(win_t * win, toggle_t * toggles, long current, long count,
         if (display_bar && !toggles->no_scrollbar
             && (lines_disp > 1 || i < count - 1))
         {
+          /* Store the scroll bar column position. */
+          /* """"""""""""""""""""""""""""""""""""" */
+          win->sb_column = win->offset + win->max_width + 1;
+
           /* Display the next element of the scrollbar. */
           /* """""""""""""""""""""""""""""""""""""""""" */
           if (line_nb_of_word_a[i] == 0)
@@ -3912,7 +3969,16 @@ disp_lines(win_t * win, toggle_t * toggles, long current, long count,
         /* a premature end of input.                          */
         /* """""""""""""""""""""""""""""""""""""""""""""""""" */
         if (i < count - 1)
+        {
           lines_disp++;
+          first_start = -1;
+
+          /* Initialize the selectable column guard to its maximum position. */
+          /* for the next window line.                                       */
+          /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+          shift_right_sym_pos_a[line_nb_of_word_a[win->start] + lines_disp
+                                - 1] = term->ncolumns;
+        }
 
         if (win->max_lines == 1)
           break;
@@ -4376,6 +4442,52 @@ move_left(win_t * win, term_t * term, toggle_t * toggles,
                      term, last_line, tmp_word, langinfo);
 }
 
+/* ============================= */
+/* Shift the window to the left. */
+/* ============================= */
+void
+shift_left(win_t * win, term_t * term, toggle_t * toggles,
+           search_data_t * search_data, langinfo_t * langinfo, long * nl,
+           long last_line, char * tmp_word, long line)
+{
+  long pos;
+  long len;
+  long start;
+
+  /* No lines to shift if not in lire or column mode. */
+  /* """""""""""""""""""""""""""""""""""""""""""""""" */
+  if (!win->col_mode && !win->line_mode)
+    return;
+
+  /* Do  nothing if we already are on the left side of if the line */
+  /* is already fully displayed.                                   */
+  /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+  if (win->first_column == 0)
+    return;
+
+  /* Find the first word to be displayed in this line. */
+  /* """"""""""""""""""""""""""""""""""""""""""""""""" */
+  pos = first_word_in_line_a[line];
+
+  while (pos < count - 1 && word_a[pos].start < win->first_column
+         && word_a[pos + 1].start > 0)
+    pos++;
+
+  if (word_a[pos].start >= win->first_column)
+    pos--;
+
+  /* Make sure the word under the cursor remains visible. */
+  /* """""""""""""""""""""""""""""""""""""""""""""""""""" */
+  len = term->ncolumns - 3;
+  if (word_a[current].end > len + word_a[pos].start)
+    return;
+
+  win->first_column = word_a[pos].start;
+
+  *nl = disp_lines(win, toggles, current, count, search_mode, search_data, term,
+                   last_line, tmp_word, langinfo);
+}
+
 /* ======================= */
 /* Moves the cursor right. */
 /* ======================= */
@@ -4473,6 +4585,68 @@ move_right(win_t * win, term_t * term, toggle_t * toggles,
   if (current != old_current)
     *nl = disp_lines(win, toggles, current, count, search_mode, search_data,
                      term, last_line, tmp_word, langinfo);
+}
+
+/* ============================== */
+/* Shift the window to the right. */
+/* ============================== */
+void
+shift_right(win_t * win, term_t * term, toggle_t * toggles,
+            search_data_t * search_data, langinfo_t * langinfo, long * nl,
+            long last_line, char * tmp_word, long line)
+{
+  long pos;
+  long len;
+
+  /* No lines to shift if not in lire or column mode. */
+  /* """""""""""""""""""""""""""""""""""""""""""""""" */
+  if (!win->col_mode && !win->line_mode)
+    return;
+
+  /* Do nothing if we already are on the right side and all or lines */
+  /* are already fully displayed.                                    */
+  /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+  if (shift_right_sym_pos_a[line] == term->ncolumns)
+  {
+    int found = 0;
+
+    /* Search for at least one line not fully displayed. */
+    /* ''''''''''''''''''''''''''''''''''''''''''''''''' */
+    for (long l = line_nb_of_word_a[win->start];
+         l < line_nb_of_word_a[win->start] + win->max_lines; l++)
+    {
+      if (shift_right_sym_pos_a[l] == term->ncolumns) /* fully displayed. */
+        continue;
+
+      found = 1; /* Use this line instead of line to calculate the shifting. */
+
+      break;
+    }
+
+    /* Do nothing if all lines are fully displayed. */
+    /* '''''''''''''''''''''''''''''''''''''''''''' */
+    if (!found)
+      return;
+  }
+
+  /* Find the first word to be displayed in this line. */
+  /* """"""""""""""""""""""""""""""""""""""""""""""""" */
+  pos = first_word_in_line_a[line];
+
+  while (pos < count - 1 && word_a[pos].start < win->first_column
+         && word_a[pos + 1].start > 0)
+    pos++;
+
+  if (pos < count - 1 && word_a[pos + 1].start > 0)
+    pos++;
+
+  if (word_a[pos].start <= word_a[current].start)
+    win->first_column = word_a[pos].start;
+  else
+    return;
+
+  *nl = disp_lines(win, toggles, current, count, search_mode, search_data, term,
+                   last_line, tmp_word, langinfo);
 }
 
 /* ================================================================== */
@@ -4977,7 +5151,7 @@ move_down(win_t * win, term_t * term, toggle_t * toggles,
 void
 init_main_ds(attrib_t * init_attr, win_t * win, limit_t * limits,
              ticker_t * timers, toggle_t * toggles, misc_t * misc,
-             timeout_t * timeout, daccess_t * daccess)
+             mouse_t * mouse, timeout_t * timeout, daccess_t * daccess)
 {
   int i;
 
@@ -5009,6 +5183,7 @@ init_main_ds(attrib_t * init_attr, win_t * win, limit_t * limits,
   win->line_mode       = 0;
   win->first_column    = 0;
   win->real_max_width  = 0;
+  win->sb_column       = -1;
 
   win->cursor_attr           = *init_attr;
   win->cursor_on_tag_attr    = *init_attr;
@@ -5060,11 +5235,20 @@ init_main_ds(attrib_t * init_attr, win_t * win, limit_t * limits,
   toggles->pinable             = 0;
   toggles->visual_bell         = 0;
   toggles->incremental_search  = 0;
+  toggles->no_mouse            = 0;
 
   /* Misc default values. */
   /* """""""""""""""""""" */
   misc->default_search_method = NONE;
   misc->ignore_quotes         = 0;
+
+  /* Mouse values. */
+  /* """"""""""""" */
+  mouse->button[0] = 1;
+  mouse->button[1] = 0;
+  mouse->button[2] = 3;
+
+  mouse->double_click_delay = 150;
 
   /* Set the default timeout to 0 (no expiration). */
   /* """"""""""""""""""""""""""""""""""""""""""""" */
@@ -5305,6 +5489,8 @@ toggle_action(char * ctx_name, char * opt_name, char * param, int nb_values,
     toggles->noautotag = 1;
   else if (strcmp(opt_name, "incremental_search") == 0)
     toggles->incremental_search = 1;
+  else if (strcmp(opt_name, "no_mouse") == 0)
+    toggles->no_mouse = 1;
 }
 
 void
@@ -6238,6 +6424,67 @@ forgotten_action(char * ctx_name, char * opt_name, char * param, int nb_values,
   free(p);
 }
 
+void
+button_action(char * ctx_name, char * opt_name, char * param, int nb_values,
+              char ** values, int nb_opt_data, void ** opt_data,
+              int nb_ctx_data, void ** ctx_data)
+{
+  mouse_t * mouse = opt_data[0];
+
+  char * endptr;
+  char * p;
+  long   val;
+
+  if (nb_values != 2)
+  {
+    fprintf(stderr, "Remapping of buttons 1 and 3 expected.\n");
+    ctxopt_ctx_disp_usage(ctx_name, exit_after);
+  }
+
+  int index[2] = { 0, 2 };
+  int ind;
+
+  mouse->button[0] = 0;
+  mouse->button[1] = 0;
+  mouse->button[2] = 0;
+
+  for (int i = 0; i < nb_values; i++)
+  {
+    ind   = index[i];
+    errno = 0;
+    p     = values[i];
+    val   = strtol(p, &endptr, 0);
+    if (errno == ERANGE || endptr == p || *endptr != '\0' || val < 1 || val > 3)
+    {
+      fprintf(stderr, "%s: Invalid button number.\n", values[0]);
+      ctxopt_ctx_disp_usage(ctx_name, exit_after);
+    }
+    mouse->button[(int)val - 1] = ind + 1;
+  }
+}
+
+void
+double_click_action(char * ctx_name, char * opt_name, char * param,
+                    int nb_values, char ** values, int nb_opt_data,
+                    void ** opt_data, int nb_ctx_data, void ** ctx_data)
+{
+  mouse_t * mouse = opt_data[0];
+  int *     ddc   = opt_data[1];
+
+  char * endptr;
+  char * p = values[0];
+  long   val;
+
+  errno = 0;
+  val   = strtol(p, &endptr, 0);
+  if (errno == ERANGE || endptr == p || *endptr != '\0')
+    return; /* default value (150 ~ 1/6.66th second) is set in main(). */
+  else if (mouse->double_click_delay == 0)
+    *ddc = 1; /* disable double_click; */
+  else if (mouse->double_click_delay >= 100 || mouse->double_click_delay <= 500)
+    mouse->double_click_delay = val;
+}
+
 /* =================================================================== */
 /* Cancels a search. Called when ESC is hit or a new search session is */
 /* initiated and the incremental_search option is not used.            */
@@ -6301,6 +6548,150 @@ is_in_foreground_process_group(void)
   close(fd);
 
   return fg;
+}
+
+/* ===================================================================== */
+/* Get the new index of a word based on the mouse click position.        */
+/* Returns a new index if a word could be selected or the original index */
+/* The error flag is set if the word was not selectable or if the user   */
+/* did not click on a word.                                              */
+/* ===================================================================== */
+long
+get_clicked_index(win_t * win, term_t * term, int line_click, int column_click,
+                  int * error)
+{
+  long new_current;  /* Future new current word on success.              */
+  long clicked_line; /* Number of the clicked line in smenu internal     *
+                      | representation on the screen.                    */
+  int  delta;        /* Compensation due to the alignment of the first   *
+                      | visible word of the selected line in the window. */
+
+  /* Make sure the error indicator is initialized. */
+  /* """"""""""""""""""""""""""""""""""""""""""""" */
+  *error = 0;
+
+  /* Get the internal line number of the click. */
+  /* """""""""""""""""""""""""""""""""""""""""" */
+  clicked_line = line_nb_of_word_a[win->start] + line_click - term->curs_line;
+
+  /* Ignore clicks after the last word on a line. */
+  /* """""""""""""""""""""""""""""""""""""""""""" */
+  if (column_click >= shift_right_sym_pos_a[clicked_line])
+    return current;
+
+  new_current = first_word_in_line_a[clicked_line];
+
+  if (new_current == count - 1)
+    return new_current; /* The users clicked on the last word; */
+  else
+  {
+    int offset; /* in column or line mode lines can be larger than the *
+                 | terminal size, in this case a space is added at the *
+                 | start of the lines to possibly put the  shift arrow *
+                 | indicator, this space must be taken into account.   */
+    int found;  /* Flag to indicate if a word could have been clicked. */
+
+    /* Take into account the presence of shift arrows if any. */
+    /* """""""""""""""""""""""""""""""""""""""""""""""""""""" */
+    if (win->has_truncated_lines)
+      offset = 1;
+    else
+      offset = 0;
+
+    /* Compensates for the offset of the window in the case of a centred */
+    /* window and the the additional space indtuduced by the display of  */
+    /* trucated lines.                                                   */
+    /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+    column_click -= win->offset;
+
+    /* Forbid click on column 1 if the windows has truncated lines. */
+    /* '''''''''''''''''''''''''''''''''''''''''''''''''''''''''''' */
+    if (column_click == 1 && offset == 1)
+      return current;
+
+    /* Normalize column_click. */
+    /* """"""""""""""""""""""" */
+    column_click -= offset;
+
+    /* Determine the offset of the first character of the */
+    /* first visible word in the clicked line.            */
+    /* """""""""""""""""""""""""""""""""""""""""""""""""" */
+    while (word_a[new_current].start < win->first_column)
+    {
+      new_current++;
+
+      if (new_current == count || word_a[new_current].start == 0)
+        return current;
+    }
+
+    delta = word_a[new_current].start - win->first_column;
+
+    /* Find the right clicked word if any. */
+    /* """"""""""""""""""""""""""""""""""" */
+    found = 0;
+
+    while (1)
+    {
+      if ((column_click - 1
+           >= word_a[new_current].start - win->first_column - delta)
+          && (column_click - 1
+              <= word_a[new_current].end - win->first_column - delta))
+      {
+        found = 1;
+        break;
+      }
+
+      new_current++;
+
+      if (new_current == count || word_a[new_current].start == 0)
+        break;
+    }
+
+    if (!found)
+    {
+      *error      = 1;
+      new_current = current;
+    }
+  }
+
+  if (!word_a[new_current].is_selectable)
+  {
+    *error = 1;
+    return current;
+  }
+
+  return new_current;
+}
+
+/* ==================================================================== */
+/* Get the number of the clicked shift arrow if any.                    */
+/* arrow will contain 0 if the left arrow as clicked and 1 if the right */
+/* arrow was clicked.                                                   */
+/* Returns 0 is no arrow wa clicked else 1.                             */
+/* ==================================================================== */
+int
+shift_arrow_clicked(win_t * win, term_t * term, int line_click,
+                    int column_click, long * clicked_line, int * arrow)
+{
+  /* Get the internal line number of the click. */
+  /* """""""""""""""""""""""""""""""""""""""""" */
+  *clicked_line = line_nb_of_word_a[win->start] + line_click - term->curs_line;
+
+  if (column_click > shift_right_sym_pos_a[*clicked_line])
+    return 0;
+
+  /* Compensates for the offset of the window */
+  /* in the case of a centred window.         */
+  /* """""""""""""""""""""""""""""""""""""""" */
+  if (column_click == 1)
+    *arrow = 0; /* Left arrow. */
+  else if (shift_right_sym_pos_a[*clicked_line] < term->ncolumns
+           && column_click == shift_right_sym_pos_a[*clicked_line])
+    *arrow = 1; /* Right arrow. */
+  else
+    return 0;
+
+  return 1;
 }
 
 /* ================= */
@@ -6575,6 +6966,7 @@ main(int argc, char * argv[])
   limit_t  limits;  /* set of various limitations.                           */
   ticker_t timers;  /* timers contents.                                      */
   misc_t   misc;    /* misc contents.                                        */
+  mouse_t  mouse;   /* mouse default values.                                 */
   toggle_t toggles; /* set of binary indicators.                             */
 
   int    old_fd0; /* backups of the old stdin file descriptor.               */
@@ -6615,7 +7007,7 @@ main(int argc, char * argv[])
 
   char * pre_selection_index = NULL; /* pattern used to set the initial      *
                                       | cursor position.                     */
-  unsigned char buffer[16];          /* Input buffer.                        */
+  unsigned char buffer[32];          /* Input buffer.                        */
 
   search_data_t search_data;
   search_data.buf = NULL;    /* Search buffer                                */
@@ -6678,10 +7070,12 @@ main(int argc, char * argv[])
   int row; /* absolute line position in terminal (1...)   */
   int col; /* absolute column position in terminal (1...) */
 
+  int mouse_proto = -1;
+
   /* Initialize some internal data structures. */
   /* """"""""""""""""""""""""""""""""""""""""" */
-  init_main_ds(&init_attr, &win, &limits, &timers, &toggles, &misc, &timeout,
-               &daccess);
+  init_main_ds(&init_attr, &win, &limits, &timers, &toggles, &misc, &mouse,
+               &timeout, &daccess);
 
   /* direct access variable initialization. */
   /* """""""""""""""""""""""""""""""""""""" */
@@ -6713,6 +7107,12 @@ main(int argc, char * argv[])
   /* Initialize the count of tagged words. */
   /* """"""""""""""""""""""""""""""""""""" */
   long tagged_words = 0;
+
+  /* Double-click related variables. */
+  /* """"""""""""""""""""""""""""""" */
+  int             disable_double_click = 0;
+  int             click_nr             = 0;
+  struct timespec last_click_ts;
 
   /* Get the current locale. */
   /* """"""""""""""""""""""" */
@@ -6821,10 +7221,12 @@ main(int argc, char * argv[])
 
   /* Set the attributes from the configuration file if possible. */
   /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-  if (ini_load(home_ini_file, &win, &term, &limits, &timers, &misc, ini_cb))
+  if (ini_load(home_ini_file, &win, &term, &limits, &timers, &misc, &mouse,
+               ini_cb))
     exit(EXIT_FAILURE);
 
-  if (ini_load(local_ini_file, &win, &term, &limits, &timers, &misc, ini_cb))
+  if (ini_load(local_ini_file, &win, &term, &limits, &timers, &misc, &mouse,
+               ini_cb))
     exit(EXIT_FAILURE);
 
   free(home_ini_file);
@@ -6836,46 +7238,48 @@ main(int argc, char * argv[])
                        "allow_abbreviations=No "
                        "display_usage_on_error=Yes ");
 
-  common_options =
-    "[*help] "
-    "[*usage] "
-    "[include_re... #regex] "
-    "[exclude_re... #regex] "
-    "[title #message] "
-    "[int [#string]] "
-    "[attributes #prefix:attr...] "
-    "[special_level_1 #...<3] "
-    "[special_level_2 #...<3] "
-    "[special_level_3 #...<3] "
-    "[special_level_4 #...<3] "
-    "[special_level_5 #...<3] "
-    "[special_level_6 #...<3] "
-    "[special_level_7 #...<3] "
-    "[special_level_8 #...<3] "
-    "[special_level_9 #...<3] "
-    "[zapped_glyphs #bytes] "
-    "[lines [#height]] "
-    "[blank_nonprintable] "
-    "[*invalid_character #invalid_char_subst] "
-    "[center_mode] "
-    "[clean] "
-    "[keep_spaces] "
-    "[word_separators #bytes] "
-    "[no_scroll_bar] "
-    "[early_subst_all... #/regex/repl/opts] "
-    "[post_subst_all... #/regex/repl/opts] "
-    "[post_subst_included... #/regex/repl/opts] "
-    "[post_subst_excluded... #/regex/repl/opts] "
-    "[search_method #prefix|substring|fuzzy] "
-    "[start_pattern #pattern] "
-    "[timeout #...] "
-    "[hidden_timeout #...] "
-    "[validate_in_search_mode] "
-    "[visual_bell] "
-    "[ignore_quotes] "
-    "[incremental_search] "
-    "[limits... #limit:value...] "
-    "[forgotten_timeout #timeout] "; /* don't remove this space! */
+  common_options = "[*help] "
+                   "[*usage] "
+                   "[include_re... #regex] "
+                   "[exclude_re... #regex] "
+                   "[title #message] "
+                   "[int [#string]] "
+                   "[attributes #prefix:attr...] "
+                   "[special_level_1 #...<3] "
+                   "[special_level_2 #...<3] "
+                   "[special_level_3 #...<3] "
+                   "[special_level_4 #...<3] "
+                   "[special_level_5 #...<3] "
+                   "[special_level_6 #...<3] "
+                   "[special_level_7 #...<3] "
+                   "[special_level_8 #...<3] "
+                   "[special_level_9 #...<3] "
+                   "[zapped_glyphs #bytes] "
+                   "[lines [#height]] "
+                   "[blank_nonprintable] "
+                   "[*invalid_character #invalid_char_subst] "
+                   "[center_mode] "
+                   "[clean] "
+                   "[keep_spaces] "
+                   "[word_separators #bytes] "
+                   "[no_scroll_bar] "
+                   "[early_subst_all... #/regex/repl/opts] "
+                   "[post_subst_all... #/regex/repl/opts] "
+                   "[post_subst_included... #/regex/repl/opts] "
+                   "[post_subst_excluded... #/regex/repl/opts] "
+                   "[search_method #prefix|substring|fuzzy] "
+                   "[start_pattern #pattern] "
+                   "[timeout #...] "
+                   "[hidden_timeout #...] "
+                   "[validate_in_search_mode] "
+                   "[visual_bell] "
+                   "[ignore_quotes] "
+                   "[incremental_search] "
+                   "[limits... #limit:value...] "
+                   "[forgotten_timeout #timeout] "
+                   "[double_click_delay #delay] "
+                   "[button_remapping #mapping...] "
+                   "[no_mouse] "; /* don't remove this space! */
 
   main_spec_options = "[*copyright] "
                       "[*version] "
@@ -7035,6 +7439,11 @@ main(int argc, char * argv[])
   ctxopt_add_opt_settings(parameters, "limits", "-lim -limits");
   ctxopt_add_opt_settings(parameters, "forgotten_timeout",
                           "-f -forgotten_timeout -global_timeout");
+  ctxopt_add_opt_settings(parameters, "no_mouse", "-nm -no_mouse");
+  ctxopt_add_opt_settings(parameters, "button_remapping",
+                          "-br -buttons -button_remapping");
+  ctxopt_add_opt_settings(parameters, "double_click_delay",
+                          "-dc -dcd -double_click -double_click_delay");
 
   /* ctxopt options incompatibilities. */
   /* """"""""""""""""""""""""""""""""" */
@@ -7044,6 +7453,10 @@ main(int argc, char * argv[])
   ctxopt_add_ctx_settings(incompatibilities, "Main", "tag_mode pin_mode");
   ctxopt_add_ctx_settings(incompatibilities, "Main", "help usage");
   ctxopt_add_ctx_settings(incompatibilities, "Main", "timeout hidden_timeout");
+  ctxopt_add_ctx_settings(incompatibilities, "Main",
+                          "no_mouse button_remapping");
+  ctxopt_add_ctx_settings(incompatibilities, "Main",
+                          "no_mouse double_click_delay");
 
   /* ctxopt options requirements. */
   /* """""""""""""""""""""""""""" */
@@ -7186,6 +7599,12 @@ main(int argc, char * argv[])
   ctxopt_add_opt_settings(actions, "limits", limits_action, &limits, (char *)0);
   ctxopt_add_opt_settings(actions, "forgotten_timeout", forgotten_action,
                           &timers, (char *)0);
+  ctxopt_add_opt_settings(actions, "button_remapping", button_action, &mouse,
+                          (char *)0);
+  ctxopt_add_opt_settings(actions, "double_click_delay", double_click_action,
+                          &mouse, &disable_double_click, (char *)0);
+  ctxopt_add_opt_settings(actions, "no_mouse", toggle_action, &toggles,
+                          (char *)0);
 
   /* ctxopt constraints. */
   /* """"""""""""""""""" */
@@ -7311,6 +7730,8 @@ main(int argc, char * argv[])
     term.has_invis             = (str == (char *)-1 || str == NULL) ? 0 : 1;
     str                        = tigetstr("blink");
     term.has_blink             = (str == (char *)-1 || str == NULL) ? 0 : 1;
+    str                        = tigetstr("kmous");
+    term.has_kmous             = (str == (char *)-1 || str == NULL) ? 0 : 1;
   }
 
   if (!term.has_cursor_up || !term.has_cursor_down || !term.has_cursor_left
@@ -8866,7 +9287,7 @@ main(int argc, char * argv[])
         }
         else if (daccess.length > 0)
         {
-          /* make sure that the prefix of empty word is blank */
+          /* Make sure that the prefix of empty word is blank */
           /* as they may be display in column mode.           */
           /* """""""""""""""""""""""""""""""""""""""""""""""" */
           for (i = 0; i < daccess.flength; i++)
@@ -9169,8 +9590,9 @@ main(int argc, char * argv[])
 
   /* Allocate the space for the satellites arrays. */
   /* """"""""""""""""""""""""""""""""""""""""""""" */
-  line_nb_of_word_a    = xmalloc(count * sizeof(long));
-  first_word_in_line_a = xmalloc(count * sizeof(long));
+  line_nb_of_word_a     = xmalloc(count * sizeof(long));
+  first_word_in_line_a  = xmalloc(count * sizeof(long));
+  shift_right_sym_pos_a = xmalloc(count * sizeof(long));
 
   /* Fourth pass:                                                         */
   /* When in column or tabulating mode, we need to adjust the length of   */
@@ -9323,6 +9745,12 @@ main(int argc, char * argv[])
   /* We can now build the first metadata. */
   /* """""""""""""""""""""""""""""""""""" */
   last_line = build_metadata(&term, count, &win);
+
+  /* Adjust the max number of lines in the windows */
+  /* if it has not be explicitly set.              */
+  /* """"""""""""""""""""""""""""""""""""""""""""" */
+  if (line_nb_of_word_a[count - 1] < win.max_lines)
+    win.max_lines = win.asked_max_lines = line_nb_of_word_a[count - 1] + 1;
 
   /* Index of the selected element in the array words                */
   /* The string can be:                                              */
@@ -9606,6 +10034,20 @@ main(int argc, char * argv[])
 
     for (i = 1; i < line_offset; i++)
       (void)tputs(TPARM1(cursor_up), 1, outch);
+  }
+
+  /* Enable the reporting of the mouse events. */
+  /* """"""""""""""""""""""""""""""""""""""""" */
+  if (!toggles.no_mouse)
+  {
+    if (term.has_kmous && (strncmp(tigetstr("kmous"), "\E[<", 4) == 0))
+      mouse_trk_on = "\e[?1000;1006h";
+    else
+      mouse_trk_on = "\e[?1000;1006;1015h";
+
+    mouse_trk_off = "\e[?1000;1006;1015l";
+
+    printf("%s", mouse_trk_on);
   }
 
   /* Save again the cursor current line and column positions so that we */
@@ -9933,7 +10375,7 @@ main(int argc, char * argv[])
     page = 1; /* Default number of lines to do down/up *
                | with PgDn/PgUp.                       */
 
-    sc = get_scancode(buffer, 15);
+    sc = get_scancode(buffer, 31);
 
     if (sc && winch_timer < 0) /* Do not allow input when a window *
                                 | refresh is scheduled.            */
@@ -10156,6 +10598,46 @@ main(int argc, char * argv[])
             /* """"""""""""""""""""""""""""" */
             goto ksol;
 
+          if (!toggles.no_mouse)
+          {
+            double          res = 5000; /* 5 s, arbitrary value. */
+            struct timespec res_ts;
+
+            /* The minimal resolution for double-click must be 1/10 s. */
+            /* """"""""""""""""""""""""""""""""""""""""""""""""""""""" */
+            if (clock_getres(CLOCK_MONOTONIC, &res_ts) == -1)
+              disable_double_click = 1;
+            else
+              res = 1000.0 * res_ts.tv_sec + 1e-6 * res_ts.tv_nsec;
+
+            if (res > 100)
+              disable_double_click = 1;
+
+            /* Detect the mouse protocol. */
+            /* """""""""""""""""""""""""" */
+            if (memcmp("\x1b[<", buffer, 3) == 0)
+            {
+              mouse_proto = MOUSE1006;
+              goto kmouse;
+            }
+
+            if (memcmp("\x1b[M", buffer, 3) == 0)
+            {
+              mouse_proto = MOUSE1000;
+              goto kmouse;
+            }
+
+            if (memcmp("\x1b[32;", buffer, 5) == 0
+                || memcmp("\x1b[33;", buffer, 5) == 0
+                || memcmp("\x1b[34;", buffer, 5) == 0
+                || memcmp("\x1b[96;", buffer, 5) == 0
+                || memcmp("\x1b[97;", buffer, 5) == 0)
+            {
+              mouse_proto = MOUSE1015;
+              goto kmouse;
+            }
+          }
+
           if (buffer[0] == 0x1b && buffer[1] == '\0')
           {
             /* ESC key has been pressed. */
@@ -10174,8 +10656,9 @@ main(int argc, char * argv[])
         case 'q':
         case 'Q':
         case 3: /* ^C */
-          /* q or Q of ^C has been pressed. */
-          /* """""""""""""""""""""""""""""" */
+                /* q or Q of ^C has been pressed. */
+                /* """""""""""""""""""""""""""""" */
+
           if (search_mode != NONE && buffer[0] != 3)
             goto special_cmds_when_searching;
 
@@ -10207,11 +10690,16 @@ main(int argc, char * argv[])
             }
           }
 
+          /* Disable the reporting of the mouse events. */
+          /* """""""""""""""""""""""""""""""""""""""""" */
+          if (!toggles.no_mouse)
+            printf("%s", mouse_trk_off);
+
           /* Restore the visibility of the cursor. */
           /* """"""""""""""""""""""""""""""""""""" */
           (void)tputs(TPARM1(cursor_normal), 1, outch);
 
-          if (buffer[0] == 3)
+          if (buffer[0] == 3) /* ^C */
           {
             if (int_string != NULL)
               fprintf(old_stdout, "%s", int_string);
@@ -10622,6 +11110,11 @@ main(int argc, char * argv[])
 
         exit:
 
+          /* Disable mouse reporting. */
+          /* '''''''''''''''''''''''' */
+          if (!toggles.no_mouse)
+            printf("%s", mouse_trk_off);
+
           /* Restore the visibility of the cursor. */
           /* """"""""""""""""""""""""""""""""""""" */
           (void)tputs(TPARM1(cursor_normal), 1, outch);
@@ -10680,6 +11173,17 @@ main(int argc, char * argv[])
 
           break;
 
+        /* shift the window to the left if possible. */
+        /* """"""""""""""""""""""""""""""""""""""""" */
+        case '<':
+          if (search_mode == NONE)
+            shift_left(&win, &term, &toggles, &search_data, &langinfo, &nl,
+                       last_line, tmp_word, line_nb_of_word_a[current]);
+          else
+            goto special_cmds_when_searching;
+
+          break;
+
         keol:
           /* Go to the end of the line. */
           /* """""""""""""""""""""""""" */
@@ -10722,6 +11226,17 @@ main(int argc, char * argv[])
           if (search_mode == NONE)
             move_right(&win, &term, &toggles, &search_data, &langinfo, &nl,
                        last_line, tmp_word);
+          else
+            goto special_cmds_when_searching;
+
+          break;
+
+        /* shift the window to the left if possible. */
+        /* """"""""""""""""""""""""""""""""""""""""" */
+        case '>':
+          if (search_mode == NONE)
+            shift_right(&win, &term, &toggles, &search_data, &langinfo, &nl,
+                        last_line, tmp_word, line_nb_of_word_a[current]);
           else
             goto special_cmds_when_searching;
 
@@ -11284,6 +11799,241 @@ main(int argc, char * argv[])
           else
             goto special_cmds_when_searching;
           break;
+
+        kmouse:
+        {
+          long          new_current;
+          unsigned int  iCb, iCx, iCy;
+          unsigned char cCb, cCx, cCy;
+          char          action;
+
+          int state;
+          int button, old_button;
+          int line_click;
+          int column_click;
+          int error;
+
+          long old_current = current;
+
+          struct timespec actual_click_ts;
+
+          switch (mouse_proto)
+          {
+            case MOUSE1006:
+              if (sscanf((char *)buffer + 3, "%u;%u;%u%c", &iCb, &iCx, &iCy,
+                         &action)
+                  != 4)
+                goto ignore_mouse_event;
+
+              state        = iCb & ~3;
+              button       = iCb & 3;
+              line_click   = iCy;
+              column_click = iCx;
+
+              /* Only consider button click (not release) events. */
+              /* """""""""""""""""""""""""""""""""""""""""""""""" */
+              if (action == 'm') /* released. */
+                goto ignore_mouse_event;
+
+              break;
+
+            case MOUSE1015:
+              if (sscanf((char *)buffer + 2, "%u;%u;%u%c", &iCb, &iCx, &iCy,
+                         &action)
+                  != 4)
+                goto ignore_mouse_event;
+
+              state        = (iCb - 32) & ~3;
+              button       = (iCb - 32) & 3;
+              line_click   = iCy;
+              column_click = iCx;
+
+              /* Only consider button click (not release) events. */
+              /* """""""""""""""""""""""""""""""""""""""""""""""" */
+              if (state == 0 && button == 3) /* released. */
+                goto ignore_mouse_event;
+
+              break;
+
+            case MOUSE1000:
+              if (sscanf((char *)buffer + 3, "%c%c%c", &cCb, &cCx, &cCy) != 3)
+                goto ignore_mouse_event;
+
+              state        = (cCb - 32) & ~3;
+              button       = (cCb - 32) & 3;
+              line_click   = cCy - 32;
+              column_click = cCx - 32;
+
+              /* Only consider button click (not release) events. */
+              /* """""""""""""""""""""""""""""""""""""""""""""""" */
+              if (button == 3) /* released. */
+                goto ignore_mouse_event;
+
+              break;
+
+            default:
+              goto ignore_mouse_event;
+          }
+
+          /* Mouse Button remapping. */
+          /* """"""""""""""""""""""" */
+          old_button = button;
+          button     = mouse.button[button] - 1;
+          long clicked_line;
+          int  clicked_arrow;
+
+          /* Only buttons 0 and 2 are considered for clicks. */
+          /* """"""""""""""""""""""""""""""""""""""""""""""" */
+          if (state != 64 && state != 80 && button != 0 && button != 2)
+            goto ignore_mouse_event;
+
+          /* Do not do anything if the user has above or below the window. */
+          /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+          if (line_click < term.curs_line
+              || line_click >= term.curs_line + win.max_lines)
+            break;
+
+          /* Mouse wheel scroll down. */
+          /* """""""""""""""""""""""" */
+          if (state == 64 && old_button == 1)
+            goto kd; /* down arrow. */
+
+          /* Mouse wheel scroll down + CTRL. */
+          /* """"""""""""""""""""""""""""""" */
+          if (state == 80 && old_button == 1)
+            goto knp; /* PgDn. */
+
+          /* Mouse wheel scroll up. */
+          /* """""""""""""""""""""" */
+          if (state == 64 && old_button == 0)
+            goto ku; /* up arrow. */
+
+          /* Mouse wheel scroll up + CTRL. */
+          /* """"""""""""""""""""""""""""" */
+          if (state == 80 && old_button == 0)
+            goto kpp; /* PgUp. */
+
+          /* Manage the clicks at the ends of the scroll bar. */
+          /* """""""""""""""""""""""""""""""""""""""""""""""" */
+          if (button == 0 && column_click == win.sb_column + 1)
+          {
+            if (line_click == term.curs_line + win.max_lines - 1)
+            {
+              if (state == 16)
+                goto knp; /* PgDn. */
+              if (state == 0)
+                goto kd; /* down arrow. */
+            }
+            else if (line_click == term.curs_line)
+            {
+              if (state == 16)
+                goto kpp; /* PgUp. */
+              if (state == 0)
+                goto ku; /* up arrow. */
+            }
+          }
+
+          /* manage clicks on the horizontal arrows if any. */
+          /* """""""""""""""""""""""""""""""""""""""""""""" */
+          if (win.has_truncated_lines
+              && shift_arrow_clicked(&win, &term, line_click, column_click,
+                                     &clicked_line, &clicked_arrow))
+          {
+            if (button == 0)
+              switch (clicked_arrow)
+              {
+                case 0: /* left */
+                  shift_left(&win, &term, &toggles, &search_data, &langinfo,
+                             &nl, last_line, tmp_word, clicked_line);
+                  break;
+
+                case 1: /* right */
+                  shift_right(&win, &term, &toggles, &search_data, &langinfo,
+                              &nl, last_line, tmp_word, clicked_line);
+                  break;
+              }
+            nl = disp_lines(&win, &toggles, current, count, search_mode,
+                            &search_data, &term, last_line, tmp_word,
+                            &langinfo);
+          }
+          else
+          {
+            /* Get the new current word on click. */
+            /* """""""""""""""""""""""""""""""""" */
+            error       = 0;
+            new_current = get_clicked_index(&win, &term, line_click,
+                                            column_click, &error);
+
+            /* Update the selection index and refresh if needed. */
+            /* """"""""""""""""""""""""""""""""""""""""""""""""" */
+            if ((toggles.taggable || toggles.pinable || new_current != current)
+                && error == 0)
+            {
+              current = new_current;
+
+              /* Manage the tag indicator:                   */
+              /* (button 0 + CTRL or button 1 or 2 pressed). */
+              /* """"""""""""""""""""""""""""""""""""""""""" */
+              if (((button == 0 && state == 16)
+                   || ((button == 1 || button == 2) && state == 0))
+                  && (toggles.taggable || toggles.pinable))
+              {
+                if (word_a[current].is_tagged)
+                  goto kdel;
+                else
+                  goto kins;
+              }
+
+              /* Redisplay the new window if the first button was pressed   */
+              /* otherwise reset the cursor position to its previous value. */
+              /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+              if (button == 0)
+                nl = disp_lines(&win, &toggles, current, count, search_mode,
+                                &search_data, &term, last_line, tmp_word,
+                                &langinfo);
+              else
+                current = old_current;
+            }
+
+            /* Manage double clicks if the clicked word is selectable. */
+            /* """"""""""""""""""""""""""""""""""""""""""""""""""""""" */
+            if (!disable_double_click && button == 0)
+            {
+              /* More than one clicks on the same word? */
+              /* """""""""""""""""""""""""""""""""""""" */
+              if (click_nr > 0 && old_current == current)
+              {
+                double delay;
+
+                /* Get the delay between the actual click and */
+                /* the previous one.                          */
+                /* """""""""""""""""""""""""""""""""""""""""" */
+                clock_gettime(CLOCK_MONOTONIC, &actual_click_ts);
+                delay = (1000.0 * actual_click_ts.tv_sec
+                         + 1e-6 * actual_click_ts.tv_nsec)
+                        - (1000.0 * last_click_ts.tv_sec
+                           + 1e-6 * last_click_ts.tv_nsec);
+
+                if (!error && delay > 0 && delay <= mouse.double_click_delay)
+                  goto enter; /* Press Enter. */
+                else
+                  clock_gettime(CLOCK_MONOTONIC, &last_click_ts);
+              }
+              else
+              {
+                /* The first click on a selectable was not make yet. */
+                /* """"""""""""""""""""""""""""""""""""""""""""""""" */
+                clock_gettime(CLOCK_MONOTONIC, &last_click_ts);
+
+                if (!error)
+                  click_nr = 1;
+              }
+            }
+          }
+
+        ignore_mouse_event:
+          break;
+        }
 
         special_cmds_when_searching:
         default:

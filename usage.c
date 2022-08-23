@@ -98,6 +98,12 @@ common_help(void)
   printf("  overload the words number/max. word length/max columns limits.\n");
   printf("-f|-forgotten_timeout|-global_timeout\n");
   printf("  defines a global inactivity timeout, defaults to 15 min.\n");
+  printf("-nm|-no_mouse\n");
+  printf("  disable a possibly auto-detected mouse tracking support.\n");
+  printf("-br|-buttons|-button_remapping\n");
+  printf("  Remaps the left and right mouse buttons, default is 1 and 3.\n");
+  printf("-dc|-dcd|-double_click|-double_click_delay\n");
+  printf("  Change the mouse double-click delay which is 150 ms by default.\n");
 }
 
 void

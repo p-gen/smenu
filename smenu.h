@@ -48,6 +48,7 @@ typedef struct attrib_s      attrib_t;
 typedef struct limit_s       limit_t;
 typedef struct ticker_s      ticker_t;
 typedef struct misc_s        misc_t;
+typedef struct mouse_s       mouse_t;
 typedef struct sed_s         sed_t;
 typedef struct timeout_s     timeout_t;
 typedef struct output_s      output_t;
@@ -135,6 +136,15 @@ enum
                           | but can be excluded later.                   */
 };
 
+/* Mouse protocols. */
+/* """""""""""""""" */
+enum
+{
+  MOUSE1000, /* VT200          */
+  MOUSE1006, /* SGR_EXT_MODE   */
+  MOUSE1015  /* URXVT_EXT_MODE */
+};
+
 /* ******* */
 /* Structs */
 /* ******* */
@@ -168,6 +178,8 @@ struct toggle_s
   int visual_bell;         /* 1 to flash the window, 0 to make a sound.   */
   int incremental_search;  /* 1 makes the searching process incremental.  *
                             | 0 keeps it forgetful.                       */
+  int no_mouse;            /* 1 to disable the possibly auto-detected     *
+                            | mouse, 0 to let smenu auto-detect it.       */
 };
 
 /* Structure to store the default or imposed smenu limits. */
@@ -197,6 +209,14 @@ struct misc_s
   search_mode_t default_search_method;
   char          invalid_char_substitute;
   int           ignore_quotes;
+};
+
+/* Structure to store mouse informations. */
+/* """""""""""""""""""""""""""""""""""""" */
+struct mouse_s
+{
+  int double_click_delay;
+  int button[3];
 };
 
 /* Structure containing the attributes components. */
@@ -248,6 +268,7 @@ struct term_s
   char has_italic;            /* has italic mode.                        */
   char has_invis;             /* has invis mode.                         */
   char has_blink;             /* has blink mode.                         */
+  char has_kmous;             /* has mouse reporting                     */
 };
 
 /* Structure describing a word. */
@@ -296,6 +317,7 @@ struct win_s
   char *  sel_sep;         /* output separator when tags are enabled.  */
   char ** gutter_a;        /* array of UTF-8 gutter glyphs.            */
   long    gutter_nb;       /* number of UTF-8 gutter glyphs.           */
+  long    sb_column;       /* scroll bar column (-1) if no scroll bar. */
 
   unsigned char tab_mode;  /* -t */
   unsigned char col_mode;  /* -c */
@@ -303,6 +325,8 @@ struct win_s
   unsigned char col_sep;   /* -g */
   unsigned char wide;      /* -w */
   unsigned char center;    /* -M */
+
+  unsigned char has_truncated_lines; /* 1 if win has tr. lines else 0. */
 
   attrib_t cursor_attr;           /* current cursor attributes.          */
   attrib_t cursor_on_tag_attr;    /* current cursor on tag attributes.   */
@@ -456,14 +480,15 @@ tst_cb_cli(void * elem);
 
 int
 ini_load(const char * filename, win_t * win, term_t * term, limit_t * limits,
-         ticker_t * timers, misc_t * misc,
+         ticker_t * timers, misc_t * misc, mouse_t * mouse,
          int (*report)(win_t * win, term_t * term, limit_t * limits,
-                       ticker_t * timers, misc_t * misc, const char * section,
-                       const char * name, char * value));
+                       ticker_t * timers, misc_t * misc, mouse_t * mouse,
+                       const char * section, const char * name, char * value));
 
 int
 ini_cb(win_t * win, term_t * term, limit_t * limits, ticker_t * timers,
-       misc_t * misc, const char * section, const char * name, char * value);
+       misc_t * misc, mouse_t * mouse, const char * section, const char * name,
+       char * value);
 
 char *
 make_ini_path(char * name, char * base);
@@ -607,7 +632,7 @@ move_down(win_t * win, term_t * term, toggle_t * toggles,
 void
 init_main_ds(attrib_t * init_attr, win_t * win, limit_t * limits,
              ticker_t * timers, toggle_t * toggles, misc_t * misc,
-             timeout_t * timeout, daccess_t * daccess);
+             mouse_t * mouse, timeout_t * timeout, daccess_t * daccess);
 
 void
 reset_search_buffer(win_t * win, search_data_t * search_data, ticker_t * timers,
@@ -617,3 +642,7 @@ reset_search_buffer(win_t * win, search_data_t * search_data, ticker_t * timers,
 int
 is_in_foreground_process_group(void);
 #endif
+
+long
+get_clicked_index(win_t * win, term_t * term, int line_click, int column_click,
+                  int * error);
