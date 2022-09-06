@@ -19,8 +19,8 @@ What is it?
 
 This tool takes words from standard input or from a file and presents
 them on the screen in different layouts in a scrolling window.
-A cursor that you can easily move with the keyboard or the mouse lets
-you select one or more of them.
+A cursor that you can easily move with the **keyboard** and/or the
+**mouse** lets you select one or more of them.
 
 Note that the screen is not cleared at the beginning and end of the
 **smenu** execution. The selection window is displayed at the cursor
