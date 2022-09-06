@@ -4451,9 +4451,10 @@ move_left(win_t * win, term_t * term, toggle_t * toggles,
                      term, last_line, tmp_word, langinfo);
 }
 
-/* ============================= */
-/* Shift the window to the left. */
-/* ============================= */
+/* ============================================ */
+/* Shift the content of the window to the left. */
+/* Stop if the cursor will stop to be visible.  */
+/* ============================================ */
 void
 shift_left(win_t * win, term_t * term, toggle_t * toggles,
            search_data_t * search_data, langinfo_t * langinfo, long * nl,
@@ -4596,9 +4597,10 @@ move_right(win_t * win, term_t * term, toggle_t * toggles,
                      term, last_line, tmp_word, langinfo);
 }
 
-/* ============================== */
-/* Shift the window to the right. */
-/* ============================== */
+/* ============================================= */
+/* Shift content of the the window to the right. */
+/* Stop if the cursor will stop to be visible.   */
+/* ============================================= */
 void
 shift_right(win_t * win, term_t * term, toggle_t * toggles,
             search_data_t * search_data, langinfo_t * langinfo, long * nl,
@@ -4649,6 +4651,8 @@ shift_right(win_t * win, term_t * term, toggle_t * toggles,
   if (pos < count - 1 && word_a[pos + 1].start > 0)
     pos++;
 
+  /* Make sure the word under the cursor remains visible. */
+  /* """""""""""""""""""""""""""""""""""""""""""""""""""" */
   if (word_a[pos].start <= word_a[current].start)
     win->first_column = word_a[pos].start;
   else
