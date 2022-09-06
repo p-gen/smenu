@@ -165,13 +165,12 @@ int       quiet_timeout = 0; /* 1 when we want no message to be displayed.  */
 void
 help(win_t * win, term_t * term, long last_line)
 {
-  int index;      /* used to identify the objects long the help line. */
-  int line   = 0; /* number of windows lines used by the help line.   */
-  int len    = 0; /* length of the help line.                         */
-  int offset = 0; /* offset from the first column of the terminal to  *
-                   | the start of the help line.                      */
-  int entries_nb; /* number of help entries to display.               */
-  int help_len;   /* total length of the help line.                   */
+  int  index;      /* used to identify the objects long the help line. */
+  int  line = 0;   /* number of windows lines used by the help line.   */
+  int  len  = 0;   /* length of the help line.                         */
+  int  max_col;    /* when to split the help line.                     */
+  int  entries_nb; /* number of help entries to display.             */
+  long i;
 
   struct entry_s
   {
@@ -184,42 +183,36 @@ help(win_t * win, term_t * term, long last_line)
                          (char *)0);
 
   struct entry_s entries[] = {
-    { "Move:", 5, 'r' },   { "hjkl", 4, 'b' }, { ",", 1, 'n' },
-    { arrows, 4, 'b' },    { ",", 1, 'n' },    { "PgUp", 4, 'b' },
-    { "/", 1, 'n' },       { "Dn", 2, 'b' },   { "... ", 4, 'n' },
-    { "Abort:", 6, 'r' },  { "q", 1, 'b' },    { ",", 1, 'n' },
-    { "^C", 2, 'b' },      { " ", 1, 'n' },    { "Find:", 5, 'r' },
-    { "/", 1, 'b' },       { "\"\'", 2, 'b' }, { "~*", 2, 'b' },
-    { "=^", 2, 'b' },      { ",", 1, 'n' },    { "SP", 2, 'b' },
-    { ",", 1, 'n' },       { "nN", 2, 'b' },   { " ", 1, 'n' },
-    { "Select:", 7, 'r' }, { "CR", 2, 'b' },   { " ", 1, 'n' },
-    { "Cancel:", 7, 'r' }, { "ESC", 3, 'b' },
+    { "Move:", 5, 'r' }, { "Mouse:", 6, 'u' },  { "B1", 2, 'b' },
+    { ",", 1, 'n' },     { "B3", 2, 'b' },      { ",", 1, 'n' },
+    { "Wh", 2, 'b' },    { " ", 1, 'n' },       { "Keyb:", 5, 'u' },
+    { "hjkl", 4, 'b' },  { ",", 1, 'n' },       { arrows, 4, 'b' },
+    { ",", 1, 'n' },     { "PgUp", 4, 'b' },    { "/", 1, 'n' },
+    { "Dn", 2, 'b' },    { "... ", 4, 'n' },    { "Abort:", 6, 'r' },
+    { "q", 1, 'b' },     { ",", 1, 'n' },       { "^C", 2, 'b' },
+    { " ", 1, 'n' },     { "Find:", 5, 'r' },   { "/", 1, 'b' },
+    { "\"\'", 2, 'b' },  { "~*", 2, 'b' },      { "=^", 2, 'b' },
+    { ",", 1, 'n' },     { "SP", 2, 'b' },      { ",", 1, 'n' },
+    { "nN", 2, 'b' },    { " ", 1, 'n' },       { "Select:", 7, 'r' },
+    { "CR", 2, 'b' },    { ",", 1, 'n' },       { "D-click", 7, 'b' },
+    { " ", 1, 'n' },     { "Cancel:", 7, 'r' }, { "ESC", 3, 'b' },
   };
 
   entries_nb = sizeof(entries) / sizeof(struct entry_s);
-
-  /* Get the total length of the help line. */
-  /* """""""""""""""""""""""""""""""""""""" */
-  help_len = 0;
-  for (index = 0; index < entries_nb; index++)
-    help_len += entries[index].len;
 
   /* Save the position of the terminal cursor so that it can be */
   /* put back there after printing of the help line.            */
   /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
   (void)tputs(TPARM1(save_cursor), 1, outch);
 
-  /* Center the help line if the -M (Middle) option is set. */
-  /* May update the variable offset as a side  effect.      */
-  /* """""""""""""""""""""""""""""""""""""""""""""""""""""" */
-  if (win->offset > 0
-      && ((offset = win->offset + win->max_width / 2 - help_len / 2) > 0))
-  {
-    int i;
+  /* Determine when to split the help line if necessary. */
+  /* """"""""""""""""""""""""""""""""""""""""""""""""""" */
+  if (win->sb_column > 0)
+    max_col = term->ncolumns > win->sb_column ? win->sb_column - 1
+                                              : term->ncolumns - 1;
 
-    for (i = 0; i < offset; i++)
-      fputc_safe(' ', stdout);
-  }
+  else
+    max_col = term->ncolumns - 1;
 
   /* Print the different objects forming the help line.                  */
   /* A new line is added each time the next entry does not fit in the    */
@@ -228,26 +221,40 @@ help(win_t * win, term_t * term, long last_line)
   /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
   for (index = 0; index < entries_nb; index++)
   {
-    if ((len += entries[index].len) >= term->ncolumns - 1)
+    if (entries[index].len >= max_col)
+      continue;
+
+    len += entries[index].len;
+    if (len >= max_col)
     {
       line++;
 
       if (line > last_line || line == win->max_lines)
         break;
 
+      len -= entries[index].len;
+
+      /* Fill the rest on the line with space, preserving the scroll bar. */
+      /* '''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''' */
+      for (i = len; i < max_col; i++)
+        fputc_safe(' ', stdout);
+
       len = entries[index].len;
       fputc_safe('\n', stdout);
     }
 
+    (void)tputs(TPARM1(exit_attribute_mode), 1, outch);
     switch (entries[index].attr)
     {
       case 'b': /* bold. */
-        (void)tputs(TPARM1(exit_attribute_mode), 1, outch);
         if (term->has_bold)
           (void)tputs(TPARM1(enter_bold_mode), 1, outch);
         break;
+      case 'u': /* underline. */
+        if (term->has_underline)
+          (void)tputs(TPARM1(enter_underline_mode), 1, outch);
+        break;
       case 'r': /* reverse. */
-        (void)tputs(TPARM1(exit_attribute_mode), 1, outch);
         if (term->has_reverse)
           (void)tputs(TPARM1(enter_reverse_mode), 1, outch);
         else if (term->has_standout)
@@ -258,10 +265,12 @@ help(win_t * win, term_t * term, long last_line)
         break;
     }
     fputs_safe(entries[index].str, stdout);
+    (void)tputs(TPARM1(exit_attribute_mode), 1, outch);
   }
 
   (void)tputs(TPARM1(exit_attribute_mode), 1, outch);
-  (void)tputs(TPARM1(clr_eol), 1, outch);
+  for (i = len; i < max_col; i++)
+    fputc_safe(' ', stdout);
 
   /* Put back the cursor to its saved position. */
   /* """""""""""""""""""""""""""""""""""""""""" */
