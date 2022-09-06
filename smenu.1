@@ -623,8 +623,8 @@ allowed:
 .nf
 \f(CR--8<------------------------------------------------------------------
 [colors]
-  ; The terminal must have at least 8 colors and/or have attributes like bold
-  ; and reverse for this to be useful
+  ; The terminal must have at least 8 colors and/or have attributes
+  : like bold and reverse for this to be useful
   ; if not the following settings will be ignored.
 
   method=ansi             ; classic | ansi (default)
@@ -1803,8 +1803,6 @@ value.
 .IP "[\fB-nm\fP|\fB-no_mouse\fP]"
 (Allowed in all contexts.)
 
-Normally, mouse tracking support is auto-detected using the presence
-and content of the terminal's 'kmous' capability.
 This option allows you to disable the mouse even if smenu can use it.
 .IP "[\fB-br\fP|\fB-buttons\fP|\fB-button_remapping\fP \fInew_button_1\fP \
 \fInew_button_3\fP]"
