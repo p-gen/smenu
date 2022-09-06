@@ -4462,7 +4462,6 @@ shift_left(win_t * win, term_t * term, toggle_t * toggles,
 {
   long pos;
   long len;
-  long start;
 
   /* No lines to shift if not in lire or column mode. */
   /* """""""""""""""""""""""""""""""""""""""""""""""" */
