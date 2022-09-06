@@ -4488,7 +4488,7 @@ shift_left(win_t * win, term_t * term, toggle_t * toggles,
   /* Make sure the word under the cursor remains visible. */
   /* """""""""""""""""""""""""""""""""""""""""""""""""""" */
   len = term->ncolumns - 3;
-  if (word_a[current].end > len + word_a[pos].start)
+  if (word_a[current].end >= len + word_a[pos].start)
     return;
 
   win->first_column = word_a[pos].start;
