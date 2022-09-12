@@ -10052,12 +10052,12 @@ main(int argc, char * argv[])
   /* """"""""""""""""""""""""""""""""""""""""" */
   if (!toggles.no_mouse)
   {
-    if (term.has_kmous && (strncmp(tigetstr("kmous"), "\E[<", 4) == 0))
-      mouse_trk_on = "\e[?1000;1006h";
+    if (term.has_kmous && strncmp(tigetstr("kmous"), "\x1b[<", 3) == 0)
+      mouse_trk_on = "\x1b[?1000;1006h";
     else
-      mouse_trk_on = "\e[?1000;1006;1015h";
+      mouse_trk_on = "\x1b[?1000;1006;1015h";
 
-    mouse_trk_off = "\e[?1000;1006;1015l";
+    mouse_trk_off = "\x1b[?1000;1006;1015l";
 
     printf("%s", mouse_trk_on);
   }
