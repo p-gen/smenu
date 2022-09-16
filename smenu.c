@@ -88,15 +88,15 @@ char * up_arrow        = "\xe2\x86\x91"; /* ↑ upwards arrow.                 *
 char * right_arrow     = "\xe2\x86\x92"; /* → rightwards arrow.              */
 char * down_arrow      = "\xe2\x86\x93"; /* ↓ downwards arrow.               */
 char * vertical_bar    = "\xe2\x94\x82"; /* │ box drawings light vertical.   */
-char * shift_left_sym  = "\xe2\x97\x80"; /* ◀ leftwards_arrow.               */
-char * shift_right_sym = "\xe2\x96\xb6"; /* ▶ rightwards_arrow.              */
-char * sbar_line       = "\xe2\x94\x82"; /* │ box_drawings_light_vertical.   */
-char * sbar_top        = "\xe2\x94\x90"; /* ┐ box_drawings_light_down_and_l. */
-char * sbar_down       = "\xe2\x94\x98"; /* ┘ box_drawings_light_up_and_l.   */
-char * sbar_curs       = "\xe2\x95\x91"; /* ║ box_drawings_double_vertical.  */
-char * sbar_arr_up     = "\xe2\x96\xb2"; /* ▲ black_up_pointing_triangle.    */
-char * sbar_arr_down   = "\xe2\x96\xbc"; /* ▼ black_down_pointing_triangle.  */
-char * msg_arr_down    = "\xe2\x96\xbc"; /* ▼ black_down_pointing_triangle.  */
+char * shift_left_sym  = "\xe2\x97\x80"; /* ◀ black left-pointing triangle.  */
+char * shift_right_sym = "\xe2\x96\xb6"; /* ▶ black right-pointing triangle. */
+char * sbar_line       = "\xe2\x94\x82"; /* │ box drawings light vertical.   */
+char * sbar_top        = "\xe2\x94\x90"; /* ┐ box drawings light down and l. */
+char * sbar_down       = "\xe2\x94\x98"; /* ┘ box drawings light up and l.   */
+char * sbar_curs       = "\xe2\x96\x88"; /* █ full Block.                    */
+char * sbar_arr_up     = "\xe2\x96\xb2"; /* ▲ black up pointing triangle.    */
+char * sbar_arr_down   = "\xe2\x96\xbc"; /* ▼ black down pointing triangle.  */
+char * msg_arr_down    = "\xe2\x96\xbc"; /* ▼ black down pointing triangle.  */
 /* clang-format on */
 
 /* Mouse tracking. */
