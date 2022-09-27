@@ -11943,6 +11943,48 @@ main(int argc, char * argv[])
               if (state == 0)
                 goto ku; /* up arrow. */
             }
+            else if (line_click > term.curs_line
+                     && line_click < term.curs_line + win.max_lines - 1)
+            {
+              float ratio; /* cursor ratio in the beween the extremities *
+                            | of the scroll bar.                         */
+              float corr;  /* scaling correction.                        */
+              long  line;  /* new selected line.                         */
+
+              if (win.max_lines > 3)
+              {
+                corr  = (float)(win.max_lines - 2) / (win.max_lines - 3);
+                ratio = (float)(line_click - term.curs_line - 1)
+                        / (win.max_lines - 2);
+
+                /* Find the location of the new current word based on  */
+                /* the position of the cursor in the scroll bar.       */
+                /* """"""""""""""""""""""""""""""""""""""""""""""""""" */
+                line    = ratio * corr * line_nb_of_word_a[count - 1];
+                current = first_word_in_line_a[line];
+
+                /* Make sure the new current word is selectable. */
+                /* """"""""""""""""""""""""""""""""""""""""""""" */
+                if (current < first_selectable)
+                  current = first_selectable;
+
+                if (current > last_selectable)
+                  current = last_selectable;
+
+                while (!word_a[current].is_selectable)
+                  current++;
+
+                /* Display the window. */
+                /* """"""""""""""""""" */
+                last_line = build_metadata(&term, count, &win);
+
+                set_new_first_column(&win, &term);
+
+                nl = disp_lines(&win, &toggles, current, count, search_mode,
+                                &search_data, &term, last_line, tmp_word,
+                                &langinfo);
+              }
+            }
           }
 
           /* manage clicks on the horizontal arrows if any. */
