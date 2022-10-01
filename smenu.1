@@ -78,7 +78,7 @@ and outputs the selection to stdout.
   [\fB-nm\fP|\fB-no_mouse\fP]
   [\fB-br\fP|\fB-buttons\fP|\fB-button_remapping\fP \fInew_button_1\fP \
 \fInew_button_3\fP]
-  [\fB-dc\fP|\fB-dcd\fP|\fB-double_click\fP|\fB-double_click_delay\fp \
+  [\fB-dc\fP|\fB-dcd\fP|\fB-double_click\fP|\fB-double_click_delay\fP \
 \fIdelay_in_ms\fP]
 
 
@@ -233,12 +233,18 @@ When the mouse is supported, the cursor can turn into an arrow (but
 not always) and the mouse can then be used as a point and click device
 as follows:
 
-\fB* First mouse button (note that buttons can be remapped)\fP:
+\fBFirst (usually left) mouse button (note that buttons can be remapped)\fP:
+.RS 2
 .IP \(bu 2
 A click on a word selects it if it is selectable.
 .IP \(bu 2
 A click at the ends of the scroll bar is equivalent
 to pressing the up and down arrow on the keyboard.
+
+A click on another location of the scroll bar moves the cursor to another
+word depending on the location clicked.
+The new current word will be positioned at the beginning of a line
+if possible.
 .IP \(bu 2
 A double-click on a word selects it if it is selectable and acts as if
 the Enter key had been pressed,
@@ -257,16 +263,20 @@ it is not always possible as the cursor must remain visible.
 .br
 The keyboard commands \fB<\fP and \fB>\fP can be used in such a case
 because the cursor is already on the current line.
+.RE
 .P
-\fB* Third mouse button or first button with CTRL pressed\fP:
+\fBThird (usually right) mouse button or first button with CTRL pressed\fP:
+.RS 2
 .IP \(bu 2
 When tagging or pinning is enabled, a click on a word tags it if it is
 selectable and not already tagged.
 .IP \(bu 2
 When tagging or pinning is enabled, a click on a word untags it if it
 is selectable and already tagged.
+.RE
 .P
-\fB* Mouse wheel\fP:
+\fBMouse wheel\fP:
+.RS 2
 .IP \(bu 2
 Rotating the mouse wheel scrolls the contents of the window one line up
 or down.
@@ -275,18 +285,19 @@ Rotating the mouse wheel while holding down the \fBCTRL\fP key scrolls
 the contents of the window one page up or down.
 .br
 This feature may not work depending on the terminal and operating system.
-
+.PP
 Be sure to use the wheel when the mouse pointer is over the smenu
 window, as some terminal emulators may otherwise zoom the screen in
 and out instead.
-
+.RE
+.PP
+Remember that mouse support does not disable the keyboard, so use the
+keys instead if the mouse is not working properly.
+.PP
 Some terminals may not report clicks after the 223rd line or column due
 to a limitation of the old X11 mouse tracking protocol, one example of
 such a terminal emulator is screen < 4.7.0.
 tmux as well as screen >= 4.7.0 are fine.
-.PP
-Remember that mouse support does not disable the keyboard, so use the
-keys instead if the mouse is not working properly.
 
 Keyboard and mouse can be used at the same time.
 .TP 2
@@ -1814,7 +1825,7 @@ By example, the syntax \f(CR-br 3 1\fP will reverse the first (left)
 and third (right?) buttons.
 
 The default mapping is \f(CR1 3\fP.
-.IP "[\fB-dc\fP|\fB-dcd\fP|\fB-double_click\fP|\fB-double_click_delay\fp \
+.IP "[\fB-dc\fP|\fB-dcd\fP|\fB-double_click\fP|\fB-double_click_delay\fP \
 \fIdelay_in_ms\fP]"
 (Allowed in all contexts.)
 
