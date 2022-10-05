@@ -1,3 +1,15 @@
+- Version 1.1.0
+* Fixes:
+  * Fix and improve the instant help (?) display.
+  * Fix and improve the substitution code.
+  * Fix and simplify the "End" key management code.
+* Improvements:
+  * Add mouse support.
+  * Allows to shift the window's content horizontally without moving the cursor.
+  * Small adjustments in UTF-8 symbols and comments.
+  * Improve the documentation.
+* Miscellaneous:
+  * Various code simplifications.
 - Version 1.0.0
   * Fix and improve the content of the integrated help system.
   * Allow multiple instances of the "-limits" option.
