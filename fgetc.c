@@ -28,7 +28,23 @@ static long next_buffer_pos = 0; /* Next free position in the getc buffer. */
 int
 my_fgetc(FILE * input)
 {
-  return (next_buffer_pos > 0) ? getc_buffer[--next_buffer_pos] : fgetc(input);
+  int c;
+
+  if (next_buffer_pos > 0)
+    return getc_buffer[--next_buffer_pos];
+  else
+  {
+    errno = 0;
+    c     = fgetc(input);
+
+    while (c == EOF && errno == EAGAIN)
+    {
+      errno = 0;
+      c     = fgetc(input);
+    }
+
+    return c;
+  }
 }
 
 /* =============================== */
