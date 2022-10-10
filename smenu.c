@@ -2427,9 +2427,9 @@ get_scancode(unsigned char * s, size_t max)
   size_t         i = 1;
   struct termios original_ts, nowait_ts;
 
-  /* Flush non-transmitted, non-read input data. */
-  /* """"""""""""""""""""""""""""""""""""""""""" */
-  tcflush(0, TCIFLUSH);
+  /* Wait until all data has been transmitted to stdin. */
+  /* """""""""""""""""""""""""""""""""""""""""""""""""" */
+  tcdrain(0);
 
   if ((c = my_fgetc(stdin)) == EOF)
     return 0;
