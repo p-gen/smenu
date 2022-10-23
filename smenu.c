@@ -11575,6 +11575,29 @@ main(int argc, char * argv[])
             goto special_cmds_when_searching;
           break;
 
+        case 'u':
+          /* u has been pressed to untag a word if */
+          /* tagging is enabled.                   */
+          /* """"""""""""""""""""""""""""""""""""" */
+          if (search_mode == NONE)
+          {
+            if (toggles.taggable)
+            {
+              if (word_a[current].is_tagged)
+              {
+                word_a[current].is_tagged = 0;
+                tagged_words--;
+
+                nl = disp_lines(&win, &toggles, current, count, search_mode,
+                                &search_data, &term, last_line, tmp_word,
+                                &langinfo);
+              }
+            }
+          }
+          else
+            goto special_cmds_when_searching;
+          break;
+
         case 'T':
           /* T has been pressed to tag all matching words resulting */
           /* from a previous search if tagging is enabled.          */

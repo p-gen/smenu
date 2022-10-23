@@ -526,13 +526,16 @@ use the \fB-r\fP|\fB-auto_validate\fP option to change this behavior.
 When the tagging is activated by using the command line
 \fB-T\fP|\fB-tm\fP|\fB-tag\fP|\fB-tag_mode\fP
 or \fB-P\fP|\fB-pm\fP|\fB-pin\fP|\fB-pin_mode\fP option, then the
-keys \fBt\fP, \fBT\fP, \fBINS\fP and \fBDEL\fP can be used to tag/untag
-some words.
-These tagged words will then be output on the standard output when
+keys \fBt\fP, \fBu\fP, \fBT\fP, \fBU\fP, \fBINS\fP and \fBDEL\fP can be
+used to tag/untag some words.
+These tagged words will then be sent to the standard output when
 \fBENTER\fP is pressed.
 .TP
 \fBt\fP
 Tag/untag or Pin/unpin the word under the cursor (toggle).
+.TP
+\fBu\fP
+Untag or unpin the word under the cursor.
 .TP
 \fBT\fP
 Tag or pin the matching words if any.
