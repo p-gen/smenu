@@ -10053,11 +10053,11 @@ main(int argc, char * argv[])
   if (!toggles.no_mouse)
   {
     if (term.has_kmous && strncmp(tigetstr("kmous"), "\x1b[<", 3) == 0)
-      mouse_trk_on = "\x1b[?1000;1006h";
+      mouse_trk_on = "\x1b[?1000;1006h\x1b[?2004h";
     else
-      mouse_trk_on = "\x1b[?1000;1006;1015h";
+      mouse_trk_on = "\x1b[?1000;1006;1015h\x1b[?2004h";
 
-    mouse_trk_off = "\x1b[?1000;1006;1015l";
+    mouse_trk_off = "\x1b[?1000;1006;1015l\x1b[?2004l";
 
     printf("%s", mouse_trk_on);
   }
@@ -10456,6 +10456,27 @@ main(int argc, char * argv[])
           break;
 
         case 0x1b: /* ESC */
+
+          /* Ignore mouse pastes when bracketed pastes is enabled. */
+          /* """"""""""""""""""""""""""""""""""""""""""""""""""""" */
+          if (memcmp("\x1b[200~", buffer, 6) == 0)
+          {
+            int c, eb[6];
+
+            /* Consume stdin until a closing bracket is found. */
+            /* ''''''''''''''''''''''''''''''''''''''''''''''' */
+            while (1)
+            {
+              while ((c = my_fgetc(stdin)) != EOF && c != 0x1b)
+                ; /* Null action. */
+
+              if (c == EOF || scanf("[201~", eb))
+                break;
+            }
+
+            continue;
+          }
+
           /* An escape sequence or a UTF-8 sequence has been pressed. */
           /* """""""""""""""""""""""""""""""""""""""""""""""""""""""" */
           if (memcmp("\x1bOH", buffer, 3) == 0
