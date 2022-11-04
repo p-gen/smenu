@@ -2804,12 +2804,12 @@ get_word(FILE * input, ll_t * word_delims_list, ll_t * line_delims_list,
         /* Manage double quotes. */
         /* """"""""""""""""""""" */
         if (byte == '"' && !is_squote)
-          is_dquote = !is_dquote;
+          is_dquote ^= 1;
 
         /* Manage single quotes. */
         /* """"""""""""""""""""" */
         if (byte == '\'' && !is_dquote)
-          is_squote = !is_squote;
+          is_squote ^= 1;
       }
     }
 
