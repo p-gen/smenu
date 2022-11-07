@@ -229,6 +229,7 @@ This can block sole shifting operations.
 .RS 2
 With many terminal emulators, it is possible to use the mouse to interact
 with the screen content.
+
 When the mouse is supported, the cursor can turn into an arrow (but
 not always) and the mouse can then be used as a point and click device
 as follows:
@@ -237,6 +238,9 @@ as follows:
 .RS 2
 .IP \(bu 2
 A click on a word selects it if it is selectable.
+.IP \(bu 2
+A click on a word while holding the CTRL key pressed marks/unmarks it
+if it is selectable.
 .IP \(bu 2
 A click at the ends of the scroll bar is equivalent
 to pressing the up and down arrow on the keyboard.
@@ -265,14 +269,40 @@ The keyboard commands \fB<\fP and \fB>\fP can be used in such a case
 because the cursor is already on the current line.
 .RE
 .P
-\fBThird (usually right) mouse button or first button with CTRL pressed\fP:
+\fBPaste (second and usually middle) mouse button\fP:
 .RS 2
 .IP \(bu 2
-When tagging or pinning is enabled, a click on a word tags it if it is
-selectable and not already tagged.
+When tagging or pinning is enabled, a click undoes the latest taggging
+operation.
+.RE
+.P
+\fBThird (usually right) mouse button\fP:
+.RS 2
 .IP \(bu 2
-When tagging or pinning is enabled, a click on a word untags it if it
-is selectable and already tagged.
+When tagging or pinning is enabled, a click on a word tags/untags it if
+it is selectable.
+.IP \(bu 2
+When tagging or pinning is enabled, a click on a word while holding the
+CTRL key pressed has the following actions:
+.RS 2
+.IP - 2
+If the word clicked is selectable and no word is already marked then mark it.
+.IP - 2
+If a word is marked and the clicked word is selectable and is not the
+marked word, then:
+.RS 2
+.IP + 2
+In column mode, if the marked word in in the same column as the clicked
+word, tag all the words between the two in this column.
+.IP + 2
+In line or column mode, if the marked word in in the same line as the
+clicked word, tag all the words between the two in this line.
+.IP + 2
+Otherwise, tag all the words between the marked word and the clicked one.
+.IP + 2
+In all cases, the mark is removed.
+.RE
+.RE
 .RE
 .P
 \fBMouse wheel\fP:
@@ -300,6 +330,25 @@ such a terminal emulator is screen < 4.7.0.
 tmux as well as screen >= 4.7.0 are fine.
 
 Keyboard and mouse can be used at the same time.
+
+\fBRemark 1\fP, some X-Window terminal emulators may not support the
+enable/disable bracketed pastes escape sequence, in such a case if
+may be necessary to explicitly clear the content of the paste buffer
+before running smenu so that the mouse buttons (especially for pasting)
+do their job correctly.
+.br
+This action can easily be performed using the command \f(CRxsel -c\fP
+for example.
+
+\fBRemark 2\fP, some X-Windows terminal emulators intercept mouse input
+when some modifiers are used, a typical example is xterm which displays
+popup menus in these cases.
+.br
+For xterm a working workaround is to use the X resource
+\f(CRXTerm*omitTranslation:popup-menu\fP either by adding it in
+your \f(CR.Xresources\fP file and register it with \f(CRxrdb\fP or by
+launching xterm using the \f(CR-xrm 'XTerm*omitTranslation:popup-menu'\fP
+command line option.
 .TP 2
 \fBImportant note for BSD systems:\fP
 In order for the mouse to work properly under (virtualised?) FreeBSD
@@ -532,25 +581,68 @@ These tagged words will then be sent to the standard output when
 \fBENTER\fP is pressed.
 .TP
 \fBt\fP
-Tag/untag or Pin/unpin the word under the cursor (toggle).
+Tags/untags or Pin/unpin the word under the cursor (toggle).
 .TP
 \fBu\fP
-Untag or unpin the word under the cursor.
-.TP
-\fBT\fP
-Tag or pin the matching words if any.
-.TP
-\fBU\fP
-Untag or unpin the matching words if any.
+Untags or unpins the word under the cursor.
 .TP
 \fBINS\fP
-Tag or pin the word under the cursor.
+Tags or pins the word under the cursor.
 .TP
 \fBDEL\fP
-Untag or unpin the word under the cursor.
+Untags or unpins the word under the cursor.
+.TP
+\fBc\fP
+Tags or pins all the selectable words in the current \fBcolumn\fP.
+.TP
+\fBr\fP
+Tags or pins all the selectable words in the current \fBrow/line\fP.
+.TP
+\fBm\fP
+Marks the current word, the cursor aspect will change until the word
+is unmarked.
+.TP
+\fBM\fP
+Unmarks the current word, other actions will automatically unmark the
+word, see below.
+.TP
+\fBT\fP
+If no word are marked then tags the current one, else tags all word
+between the marked one and the current one.
+.br
+If the marked word and the current word are on the same line/column
+then only the words in this line/column will be tagged/pinned.
+.br
+The marked word will no longer be marked once tagging is complete.
+.TP
+\fBC\fP
+As for \fBT\fP, \fBC\fP marks the current word if no word are currently
+marked.
+.br
+If a word is already marked, \fBC\fP tags/pins the words between the
+current and the marked words if they are the \fBsame column\fP.
+.br
+The marked word will no longer be marked once tagging is complete.
+.TP
+\fBR\fP
+As for \fBT\fP, \fBR\fP marks the current word if no word are currently
+marked.
+.br
+If a word is already marked, \fBR\fP tags/pins the words between the
+current and the marked words if they are the \fBsame row/line\fP.
+.br
+The marked word will no longer be marked once tagging is complete.
+.TP
+\fBU\fP
+Untags or unpins the last tagging action.
+.TP
+\fBCTRL T\fP
+Untags all the previously tagged/pinned words.
+.br
+The marked word, if any, will no longer be marked after this action.
 .SS Help
-A small help message can be displayed when hitting \fB?\fP.
-This display will last for 10s or until a valid key or \fBESC\fP is
+A small help message can be displayed when hitting the \fB?\fP key.
+This message will last for 10s or until another key or \fBESC\fP is
 pressed.
 .SS Scroll bar
 A scroll bar is displayed at the right of the scrolling window.
