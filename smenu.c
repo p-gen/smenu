@@ -3880,10 +3880,10 @@ disp_lines(win_t * win, toggle_t * toggles, long current, long count,
         strcpy(scroll_symbol, shift_left_sym);
       else
         strcpy(scroll_symbol, "<");
-
-      if (!win->has_truncated_lines)
-        win->has_truncated_lines = 1;
     }
+
+    if (!win->has_truncated_lines)
+      win->has_truncated_lines = 1;
   }
   else
     scroll_symbol[0] = '\0';
