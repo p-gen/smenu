@@ -5309,7 +5309,6 @@ init_main_ds(attrib_t * init_attr, win_t * win, limit_t * limits,
   toggles->visual_bell         = 0;
   toggles->incremental_search  = 0;
   toggles->no_mouse            = 0;
-  toggles->tagged_to_mark      = 0;
 
   /* Misc default values. */
   /* """""""""""""""""""" */

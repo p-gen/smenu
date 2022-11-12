@@ -180,8 +180,6 @@ struct toggle_s
                             | 0 keeps it forgetful.                       */
   int no_mouse;            /* 1 to disable the possibly auto-detected     *
                             | mouse, 0 to let smenu auto-detect it.       */
-  int tagged_to_mark;      /* 1 of tag_to_mark has tagged untagged words  *
-                            | else 0.                                     */
 };
 
 /* Structure to store the default or imposed smenu limits. */
