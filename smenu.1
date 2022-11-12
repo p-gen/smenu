@@ -269,13 +269,6 @@ The keyboard commands \fB<\fP and \fB>\fP can be used in such a case
 because the cursor is already on the current line.
 .RE
 .P
-\fBPaste (second and usually middle) mouse button\fP:
-.RS 2
-.IP \(bu 2
-When tagging or pinning is enabled, a click undoes the latest taggging
-operation.
-.RE
-.P
 \fBThird (usually right) mouse button\fP:
 .RS 2
 .IP \(bu 2
@@ -330,8 +323,9 @@ such a terminal emulator is screen < 4.7.0.
 tmux as well as screen >= 4.7.0 are fine.
 
 Keyboard and mouse can be used at the same time.
-
-\fBRemark 1\fP, some X-Window terminal emulators may not support the
+.TP 2
+\fBRemark 1.\fP
+Some X-Window terminal emulators may not support the
 enable/disable bracketed pastes escape sequence, in such a case if
 may be necessary to explicitly clear the content of the paste buffer
 before running smenu so that the mouse buttons (especially for pasting)
@@ -339,18 +333,19 @@ do their job correctly.
 .br
 This action can easily be performed using the command \f(CRxsel -c\fP
 for example.
-
-\fBRemark 2\fP, some X-Windows terminal emulators intercept mouse input
+.TP 2
+\fBRemark 2.\fP
+Some X-Windows terminal emulators intercept mouse input
 when some modifiers are used, a typical example is xterm which displays
 popup menus in these cases.
 .br
-For xterm a working workaround is to use the X resource
-\f(CRXTerm*omitTranslation:popup-menu\fP either by adding it in
-your \f(CR.Xresources\fP file and register it with \f(CRxrdb\fP or by
-launching xterm using the \f(CR-xrm 'XTerm*omitTranslation:popup-menu'\fP
-command line option.
+For xterm (Patch #361 - 2020/10/14 or later) a working workaround
+is to use the X resource \f(CRXTerm*omitTranslation:popup-menu\fP
+either by adding it in your \f(CR.Xresources\fP file and register
+it with \f(CRxrdb\fP or by launching xterm using the
+\f(CR-xrm 'XTerm*omitTranslation:popup-menu'\fP command line option.
 .TP 2
-\fBImportant note for BSD systems:\fP
+\fBRemark 3 for BSD systems.\fP
 In order for the mouse to work properly under (virtualised?) FreeBSD
 and perhaps other BSD variants, it may be necessary add the following
 two lines to the file \fB~/.Xmodmap\fP:
@@ -602,13 +597,17 @@ Tags or pins all the selectable words in the current \fBrow/line\fP.
 Marks the current word, the cursor aspect will change until the word
 is unmarked.
 .TP
-\fBM\fP
-Unmarks the current word, other actions will automatically unmark the
-word, see below.
+\fBM\fP or \fBESC\fP
+Unmarks the current word, other actions will also automatically unmark
+the word, see below.
 .TP
 \fBT\fP
-If no word are marked then tags the current one, else tags all word
-between the marked one and the current one.
+If no word are marked and the result of a search is still displayed then
+tags all words found in this search.
+
+If no word has been searched and no word is marked, then the current
+word is marked, otherwise all words between the marked word and the
+current word are tagged.
 .br
 If the marked word and the current word are on the same line/column
 then only the words in this line/column will be tagged/pinned.

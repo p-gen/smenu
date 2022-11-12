@@ -180,6 +180,8 @@ struct toggle_s
                             | 0 keeps it forgetful.                       */
   int no_mouse;            /* 1 to disable the possibly auto-detected     *
                             | mouse, 0 to let smenu auto-detect it.       */
+  int tagged_to_mark;      /* 1 of tag_to_mark has tagged untagged words  *
+                            | else 0.                                     */
 };
 
 /* Structure to store the default or imposed smenu limits. */
@@ -275,25 +277,25 @@ struct term_s
 /* """""""""""""""""""""""""""" */
 struct word_s
 {
-  long          start, end;    /* start/end absolute horiz. word positions *
-                                | on the screen.                           */
-  size_t        mb;            /* number of UTF-8 glyphs to display.       */
-  long          tag_order;     /* each time a word is tagged, this value.  *
-                                | is increased.                            */
-  size_t        special_level; /* can vary from 0 to 9; 0 meaning normal.  */
-  char *        str;           /* display string associated with this word */
-  size_t        len;           /* number of bytes of str (for trimming).   */
-  char *        orig;          /* NULL or original string if is had been.  *
-                                | shortened for being displayed or altered *
-                                | by is expansion.                         */
-  char *        bitmap;        /* used to store the position of the.       *
-                                | currently searched chars in a word. The  *
-                                | objective is to speed their display.     */
-  unsigned char is_matching;   /* word is matching a search ERE.           */
-  unsigned char is_tagged;     /* 1 if the word is tagged, 0 if not.       */
-  unsigned char is_last;       /* 1 if the word is the last of a line.     */
-  unsigned char is_selectable; /* word is selectable.                      */
-  unsigned char is_numbered;   /* word has a direct access index.          */
+  long           start, end;    /* start/end absolute horiz. word positions *
+                                | on the screen.                            */
+  size_t         mb;            /* number of UTF-8 glyphs to display.       */
+  long           tag_order;     /* each time a word is tagged, this value.  *
+                                | is increased.                             */
+  unsigned short tag_id;        /* tag id. 0 means no tag.                  */
+  size_t         special_level; /* can vary from 0 to 9; 0 meaning normal.  */
+  char *         str;           /* display string associated with this word */
+  size_t         len;           /* number of bytes of str (for trimming).   */
+  char *         orig;          /* NULL or original string if is had been.  *
+                                | shortened for being displayed or altered  *
+                                | by is expansion.                          */
+  char *         bitmap;        /* used to store the position of the.       *
+                                | currently searched chars in a word. The   *
+                                | objective is to speed their display.      */
+  unsigned char  is_matching;   /* word is matching a search ERE.           */
+  unsigned char  is_last;       /* 1 if the word is the last of a line.     */
+  unsigned char  is_selectable; /* word is selectable.                      */
+  unsigned char  is_numbered;   /* word has a direct access index.          */
 };
 
 /* Structure describing the window in which the user  */
@@ -301,23 +303,25 @@ struct word_s
 /* """""""""""""""""""""""""""""""""""""""""""""""""" */
 struct win_s
 {
-  long    start, end;      /* index of the first and last word.        */
-  long    first_column;    /* number of the first character displayed. */
-  long    cur_line;        /* relative number of the cursor line (1+). */
-  long    asked_max_lines; /* requested number of lines in the window. */
-  long    max_lines;       /* effective number of lines in the window. */
-  long    max_cols;        /* max number of words in a single line.    */
-  long    real_max_width;  /* max line length. In column, tab or line  *
+  long     start, end;      /* index of the first and last word.        */
+  long     first_column;    /* number of the first character displayed. */
+  long     cur_line;        /* relative number of the cursor line (1+). */
+  long     asked_max_lines; /* requested number of lines in the window. */
+  long     max_lines;       /* effective number of lines in the window. */
+  long     max_cols;        /* max number of words in a single line.    */
+  long     real_max_width;  /* max line length. In column, tab or line  *
                             | mode it can be greater than the          *
                             | terminal width.                          */
-  long    message_lines;   /* number of lines taken by the messages    *
+  long     message_lines;   /* number of lines taken by the messages    *
                             | (updated by disp_message.                */
-  long    max_width;       /* max usable line width or the terminal.   */
-  long    offset;          /* Left margin, used in centered mode.      */
-  char *  sel_sep;         /* output separator when tags are enabled.  */
-  char ** gutter_a;        /* array of UTF-8 gutter glyphs.            */
-  long    gutter_nb;       /* number of UTF-8 gutter glyphs.           */
-  long    sb_column;       /* scroll bar column (-1) if no scroll bar. */
+  long     max_width;       /* max usable line width or the terminal.   */
+  long     offset;          /* Left margin, used in centered mode.      */
+  char *   sel_sep;         /* output separator when tags are enabled.  */
+  char **  gutter_a;        /* array of UTF-8 gutter glyphs.            */
+  long     gutter_nb;       /* number of UTF-8 gutter glyphs.           */
+  long     sb_column;       /* scroll bar column (-1) if no scroll bar. */
+  unsigned next_tag_id;     /* Next tag ID, increased on each tagging   *
+                            | operation.                               */
 
   unsigned char tab_mode;  /* -t */
   unsigned char col_mode;  /* -c */
@@ -328,24 +332,30 @@ struct win_s
 
   unsigned char has_truncated_lines; /* 1 if win has tr. lines else 0. */
 
-  attrib_t cursor_attr;           /* current cursor attributes.          */
-  attrib_t cursor_on_tag_attr;    /* current cursor on tag attributes.   */
-  attrib_t bar_attr;              /* scrollbar attributes.               */
-  attrib_t shift_attr;            /* shift indicator attributes.         */
-  attrib_t message_attr;          /* message (title) attributes.         */
-  attrib_t search_field_attr;     /* search mode field attributes.       */
-  attrib_t search_text_attr;      /* search mode text attributes.        */
-  attrib_t search_err_field_attr; /* bad search mode field attributes.   */
-  attrib_t search_err_text_attr;  /* bad search mode text attributes.    */
-  attrib_t match_field_attr;      /* matching word field attributes.     */
-  attrib_t match_text_attr;       /* matching word text attributes.      */
-  attrib_t match_err_field_attr;  /* bad matching word field attributes. */
-  attrib_t match_err_text_attr;   /* bad matching word text attributes.  */
-  attrib_t include_attr;          /* selectable words attributes.        */
-  attrib_t exclude_attr;          /* non-selectable words attributes.    */
-  attrib_t tag_attr;              /* non-selectable words attributes.    */
-  attrib_t daccess_attr;          /* direct access tag attributes.       */
-  attrib_t special_attr[9];       /* special (-1,...) words attributes.  */
+  attrib_t cursor_attr;               /* current cursor attributes.          */
+  attrib_t cursor_marked_attr;        /* current cursor when a mark is set.  */
+  attrib_t cursor_on_marked_attr;     /* current cursor on marked word       *
+                                       | attributes.                         */
+  attrib_t cursor_on_tag_attr;        /* current cursor on tag attributes.   */
+  attrib_t cursor_on_tag_marked_attr; /* current cursor on tag attributes    *
+                                       | if current word is marked.          */
+  attrib_t marked_attr;               /* marked word.                        */
+  attrib_t bar_attr;                  /* scrollbar attributes.               */
+  attrib_t shift_attr;                /* shift indicator attributes.         */
+  attrib_t message_attr;              /* message (title) attributes.         */
+  attrib_t search_field_attr;         /* search mode field attributes.       */
+  attrib_t search_text_attr;          /* search mode text attributes.        */
+  attrib_t search_err_field_attr;     /* bad search mode field attributes.   */
+  attrib_t search_err_text_attr;      /* bad search mode text attributes.    */
+  attrib_t match_field_attr;          /* matching word field attributes.     */
+  attrib_t match_text_attr;           /* matching word text attributes.      */
+  attrib_t match_err_field_attr;      /* bad matching word field attributes. */
+  attrib_t match_err_text_attr;       /* bad matching word text attributes.  */
+  attrib_t include_attr;              /* selectable words attributes.        */
+  attrib_t exclude_attr;              /* non-selectable words attributes.    */
+  attrib_t tag_attr;                  /* non-selectable words attributes.    */
+  attrib_t daccess_attr;              /* direct access tag attributes.       */
+  attrib_t special_attr[9];           /* special (-1,...) words attributes.  */
 };
 
 /* Sed like node structure. */
@@ -547,7 +557,7 @@ disp_matching_word(long pos, win_t * win, term_t * term, int is_cursor,
 
 void
 disp_word(long pos, search_mode_t search_mode, search_data_t * search_data,
-          term_t * term, win_t * win, char * tmp_word);
+          term_t * term, win_t * win, toggle_t * toggles, char * tmp_word);
 
 size_t
 expand(char * src, char * dest, langinfo_t * langinfo, toggle_t * toggles,

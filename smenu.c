@@ -10574,20 +10574,32 @@ main(int argc, char * argv[])
           /* """"""""""""""""""""""""""""""""""""""""""""""""""""" */
           if (memcmp("\x1b[200~", buffer, 6) == 0)
           {
-            int c, eb[6];
+            int  c;
+            char eb[6] = { 0 };
 
             /* Consume stdin until a closing bracket is found. */
             /* ''''''''''''''''''''''''''''''''''''''''''''''' */
             while (1)
             {
+              /* Fast reading until an ESC or the end of input is found. */
+              /* """"""""""""""""""""""""""""""""""""""""""""""""""""""" */
               while ((c = my_fgetc(stdin)) != EOF && c != 0x1b)
                 ; /* Null action. */
 
-              if (c == EOF || scanf("[201~", eb))
+              /* Exits the loop early if the first ESC character starting */
+              /* the ending bracket has already be consumed while reading */
+              /* the content of buffer.                                   */
+              /* """""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+              if (c == EOF)
+                break;
+
+              /* Read the 5 next characters to look for the */
+              /* ending bracket "[201~".                    */
+              /* """""""""""""""""""""""""""""""""""""""""" */
+              scanf("%5c", eb);
+              if (memcmp("[201~", eb, 5) == 0)
                 break;
             }
-
-            goto untag_last_tagged;
           }
 
           /* An escape sequence or a UTF-8 sequence has been pressed. */
@@ -10791,6 +10803,12 @@ main(int argc, char * argv[])
             reset_search_buffer(&win, &search_data, &timers, &toggles, &term,
                                 &daccess, &langinfo, last_line, tmp_word,
                                 word_real_max_size);
+
+            /* Unmark the marked word. */
+            /* """"""""""""""""""""""" */
+            if (toggles.taggable && marked >= 0)
+              goto unmark_word;
+
             break;
           }
 
@@ -11768,86 +11786,89 @@ main(int argc, char * argv[])
           /* """""""""""""""""""""""""""""""""""""""""""""" */
           if (search_mode == NONE)
           {
-            long col, cur_col, marked_col;
-            long first, last;
-            int  tagged;
-
-            if (!win.col_mode)
-              break;
-
-            /* Get the current column number. */
-            /* """""""""""""""""""""""""""""" */
-            cur_col = current - first_word_in_line_a[line_nb_of_word_a[current]]
-                      + 1;
-
-            /* Determine the loop values according to the existence of */
-            /* a marked word and is value.                             */
-            /* """"""""""""""""""""""""""""""""""""""""""""""""""""""" */
-            if (marked == -1)
+            if (toggles.taggable || toggles.pinable)
             {
-              first = 0;
-              last  = count - 1;
-            }
-            else
-            {
-              marked_col = marked
-                           - first_word_in_line_a[line_nb_of_word_a[marked]]
-                           + 1;
+              long col, cur_col, marked_col;
+              long first, last;
+              int  tagged;
 
-              /* Ignore the marked word is its is not on the same column */
-              /* as the current word.                                    */
+              if (!win.col_mode)
+                break;
+
+              /* Get the current column number. */
+              /* """""""""""""""""""""""""""""" */
+              cur_col = current
+                        - first_word_in_line_a[line_nb_of_word_a[current]] + 1;
+
+              /* Determine the loop values according to the existence of */
+              /* a marked word and is value.                             */
               /* """"""""""""""""""""""""""""""""""""""""""""""""""""""" */
-              if (cur_col == marked_col)
+              if (marked == -1)
               {
-                if (marked <= current)
-                {
-                  first = first_word_in_line_a[line_nb_of_word_a[marked]];
-                  last  = current;
-                }
-                else
-                {
-                  first = first_word_in_line_a[line_nb_of_word_a[current]];
-                  last  = marked;
-                }
+                first = 0;
+                last  = count - 1;
               }
               else
-                break;
-            }
-
-            /* Tag from first to last. */
-            /* """"""""""""""""""""""" */
-            col    = 0;
-            tagged = 0;
-
-            for (wi = first; wi <= last; wi++)
-            {
-              col++;
-              if (col == cur_col && word_a[wi].is_selectable
-                  && word_a[wi].tag_id == 0)
               {
-                word_a[wi].tag_id = win.next_tag_id;
-                tagged_words++;
+                marked_col = marked
+                             - first_word_in_line_a[line_nb_of_word_a[marked]]
+                             + 1;
 
-                if (toggles.pinable)
-                  word_a[wi].tag_order = tag_nb++;
-
-                tagged = 1;
+                /* Ignore the marked word is its is not on the same column */
+                /* as the current word.                                    */
+                /* """"""""""""""""""""""""""""""""""""""""""""""""""""""" */
+                if (cur_col == marked_col)
+                {
+                  if (marked <= current)
+                  {
+                    first = first_word_in_line_a[line_nb_of_word_a[marked]];
+                    last  = current;
+                  }
+                  else
+                  {
+                    first = first_word_in_line_a[line_nb_of_word_a[current]];
+                    last  = marked;
+                  }
+                }
+                else
+                  break;
               }
 
-              /* Time to go back to column 1? */
-              /* """""""""""""""""""""""""""" */
-              if (word_a[wi].is_last)
-                col = 0;
+              /* Tag from first to last. */
+              /* """"""""""""""""""""""" */
+              col    = 0;
+              tagged = 0;
+
+              for (wi = first; wi <= last; wi++)
+              {
+                col++;
+                if (col == cur_col && word_a[wi].is_selectable
+                    && word_a[wi].tag_id == 0)
+                {
+                  word_a[wi].tag_id = win.next_tag_id;
+                  tagged_words++;
+
+                  if (toggles.pinable)
+                    word_a[wi].tag_order = tag_nb++;
+
+                  tagged = 1;
+                }
+
+                /* Time to go back to column 1? */
+                /* """""""""""""""""""""""""""" */
+                if (word_a[wi].is_last)
+                  col = 0;
+              }
+
+              if (tagged)
+                win.next_tag_id++;
+
+              marked = -1;
+
+              nl = disp_lines(&win, &toggles, current, count, search_mode,
+                              &search_data, &term, last_line, tmp_word,
+                              &langinfo);
             }
-
-            if (tagged)
-              win.next_tag_id++;
-
-            marked = -1;
-
-            nl = disp_lines(&win, &toggles, current, count, search_mode,
-                            &search_data, &term, last_line, tmp_word,
-                            &langinfo);
           }
           else
             goto special_cmds_when_searching;
@@ -11862,6 +11883,9 @@ main(int argc, char * argv[])
             /* Mark the first word is not already marked. */
             /* """""""""""""""""""""""""""""""""""""""""" */
             if (!win.col_mode)
+              break;
+
+            if (!toggles.taggable && !toggles.pinable)
               break;
 
             if (marked == -1)
@@ -11879,72 +11903,76 @@ main(int argc, char * argv[])
           /* """""""""""""""""""""""""""""""""""""""""""" */
           if (search_mode == NONE)
           {
-            long first, last;
-            long marked_line;
-            int  tagged;
-
-            if (!win.col_mode && !win.line_mode)
-              break;
-
-            if (marked >= 0)
+            if (toggles.taggable || toggles.pinable)
             {
-              marked_line = line_nb_of_word_a[marked];
-              if (marked_line == line_nb_of_word_a[current])
+              long first, last;
+              long marked_line;
+              int  tagged;
+
+              if (!win.col_mode && !win.line_mode)
+                break;
+
+              if (marked >= 0)
               {
-                if (marked <= current)
+                marked_line = line_nb_of_word_a[marked];
+                if (marked_line == line_nb_of_word_a[current])
                 {
-                  first = marked;
-                  last  = current;
+                  if (marked <= current)
+                  {
+                    first = marked;
+                    last  = current;
+                  }
+                  else
+                  {
+                    first = current;
+                    last  = marked;
+                  }
                 }
                 else
-                {
-                  first = current;
-                  last  = marked;
-                }
+                  break;
               }
               else
-                break;
-            }
-            else
-            {
-              first = first_word_in_line_a[line_nb_of_word_a[current]];
-              if (line_nb_of_word_a[current] == line_nb_of_word_a[count - 1])
-                last = count - 1;
-              else
-                last = first_word_in_line_a[line_nb_of_word_a[current] + 1] - 1;
-            }
-
-            /* Tag from first to last. */
-            /* """"""""""""""""""""""" */
-            wi     = first;
-            tagged = 0;
-
-            do
-            {
-              if (word_a[wi].is_selectable)
               {
-                if (word_a[wi].tag_id == 0)
-                {
-                  word_a[wi].tag_id = win.next_tag_id;
-                  tagged_words++;
-
-                  if (toggles.pinable)
-                    word_a[wi].tag_order = tag_nb++;
-
-                  tagged = 1;
-                }
+                first = first_word_in_line_a[line_nb_of_word_a[current]];
+                if (line_nb_of_word_a[current] == line_nb_of_word_a[count - 1])
+                  last = count - 1;
+                else
+                  last = first_word_in_line_a[line_nb_of_word_a[current] + 1]
+                         - 1;
               }
-              wi++;
-            } while (wi <= last);
 
-            if (tagged)
-              win.next_tag_id++;
+              /* Tag from first to last. */
+              /* """"""""""""""""""""""" */
+              wi     = first;
+              tagged = 0;
 
-            marked = -1;
+              do
+              {
+                if (word_a[wi].is_selectable)
+                {
+                  if (word_a[wi].tag_id == 0)
+                  {
+                    word_a[wi].tag_id = win.next_tag_id;
+                    tagged_words++;
 
-            nl = disp_lines(&win, &toggles, current, count, search_mode,
-                            &search_data, &term, last_line, tmp_word,
-                            &langinfo);
+                    if (toggles.pinable)
+                      word_a[wi].tag_order = tag_nb++;
+
+                    tagged = 1;
+                  }
+                }
+                wi++;
+              } while (wi <= last);
+
+              if (tagged)
+                win.next_tag_id++;
+
+              marked = -1;
+
+              nl = disp_lines(&win, &toggles, current, count, search_mode,
+                              &search_data, &term, last_line, tmp_word,
+                              &langinfo);
+            }
           }
           else
             goto special_cmds_when_searching;
@@ -11957,6 +11985,9 @@ main(int argc, char * argv[])
           if (search_mode == NONE)
           {
             if (!win.col_mode && !win.line_mode)
+              break;
+
+            if (!toggles.taggable && !toggles.pinable)
               break;
 
             if (marked == -1)
@@ -12019,7 +12050,7 @@ main(int argc, char * argv[])
 
               /* Is words have been matched by a recent search, tag them. */
               /* """""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-              if (matches_count > 0)
+              if (matches_count > 0 && marked == -1)
               {
                 int tagged = 0;
 
@@ -12547,7 +12578,8 @@ main(int argc, char * argv[])
                   goto kins;
               }
 
-              if (button == 2 && state == 16)
+              if ((button == 2 && state == 16)
+                  && (toggles.taggable || toggles.pinable))
               {
                 if (marked == -1)
                   marked = current;
