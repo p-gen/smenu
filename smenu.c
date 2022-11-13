@@ -6554,7 +6554,7 @@ double_click_action(char * ctx_name, char * opt_name, char * param,
     return; /* default value (150 ~ 1/6.66th second) is set in main(). */
   else if (mouse->double_click_delay == 0)
     *ddc = 1; /* disable double_click; */
-  else if (mouse->double_click_delay >= 100 || mouse->double_click_delay <= 500)
+  else if (mouse->double_click_delay >= 100 && mouse->double_click_delay <= 500)
     mouse->double_click_delay = val;
 }
 
