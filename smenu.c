@@ -6552,9 +6552,9 @@ double_click_action(char * ctx_name, char * opt_name, char * param,
   val   = strtol(p, &endptr, 0);
   if (errno == ERANGE || endptr == p || *endptr != '\0')
     return; /* default value (150 ~ 1/6.66th second) is set in main(). */
-  else if (mouse->double_click_delay == 0)
+  if (val == 0)
     *ddc = 1; /* disable double_click; */
-  else if (mouse->double_click_delay >= 100 && mouse->double_click_delay <= 500)
+  else if (val >= 100 && val <= 500)
     mouse->double_click_delay = val;
 }
 
@@ -7692,6 +7692,8 @@ main(int argc, char * argv[])
                           "");
   ctxopt_add_opt_settings(constraints, "tab_mode", ctxopt_range_constraint,
                           "1 .");
+  ctxopt_add_opt_settings(constraints, "double_click_delay",
+                          check_integer_constraint, "");
 
   /* Evaluation order. */
   /* """"""""""""""""" */
