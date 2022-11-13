@@ -2140,8 +2140,6 @@ build_repl_string(char * orig, char * repl, long match_start, long match_end,
             str[rsize] = '\0';
             break;
           }
-          else
-            special = 0;
 
           /* No break here, '&' must be treated as a normal */
           /* character when protected.                      */
