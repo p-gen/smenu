@@ -1030,14 +1030,13 @@ update_bitmaps(search_mode_t mode, search_data_t * data,
   long   last = data->utf8_len - 1; /* offset of the last glyph in the    *
                                      | search buffer.                     */
 
-  long badness = 0; /* number of 0s between two 1s. */
-
   best_matches_count = 0;
 
   if (mode == FUZZY || mode == SUBSTRING)
   {
     char * sb;
     char * first_glyph;
+    long   badness = 0; /* number of 0s between two 1s. */
 
     first_glyph = xmalloc(5);
 
@@ -1294,13 +1293,13 @@ find_next_matching_word(long * array, long nb, long value, long * index)
 
   if (nb > 0)
   {
-    long left = 0, right = nb, middle;
+    long left = 0, right = nb;
 
     /* Bisection search. */
     /* ''''''''''''''''' */
     while (left < right)
     {
-      middle = (left + right) / 2;
+      long middle = (left + right) / 2;
 
       if (value < array[middle])
         right = middle;
@@ -1335,8 +1334,6 @@ find_next_matching_word(long * array, long nb, long value, long * index)
 long
 find_prev_matching_word(long * array, long nb, long value, long * index)
 {
-  long left = 0, right = nb, middle;
-
   /* Use the cached value when possible. */
   /* """"""""""""""""""""""""""""""""""" */
   if (*index > 0 && array[*index] == value)
@@ -1346,9 +1343,12 @@ find_prev_matching_word(long * array, long nb, long value, long * index)
   {
     /* Bisection search. */
     /* ''''''''''''''''' */
+
+    long left = 0, right = nb;
+
     while (left < right)
     {
-      middle = (left + right) / 2;
+      long middle = (left + right) / 2;
 
       if (array[middle] == value)
       {
@@ -2715,7 +2715,8 @@ get_word(FILE * input, ll_t * word_delims_list, ll_t * line_delims_list,
 
   /* Allocate initial word storage space. */
   /* """""""""""""""""""""""""""""""""""" */
-  temp = xmalloc(wordsize = CHARSCHUNK);
+  wordsize = CHARSCHUNK;
+  temp     = xmalloc(wordsize);
 
   /* Start stashing bytes. Stop when we meet a non delimiter or EOF. */
   /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
@@ -4048,7 +4049,7 @@ disp_lines(win_t * win, toggle_t * toggles, long current, long count,
         if (win->max_lines == 1)
           break;
       }
-      else if (i <= count - 1 && lines_disp == win->max_lines)
+      else if (lines_disp == win->max_lines)
       {
         /* The last line of the window has been displayed. */
         /* """"""""""""""""""""""""""""""""""""""""""""""" */
@@ -4662,7 +4663,6 @@ shift_right(win_t * win, term_t * term, toggle_t * toggles,
             long last_line, char * tmp_word, long line)
 {
   long pos;
-  long len;
 
   /* No lines to shift if not in lire or column mode. */
   /* """""""""""""""""""""""""""""""""""""""""""""""" */
@@ -10511,8 +10511,6 @@ main(int argc, char * argv[])
       if (timeout.initial_value && buffer[0] != 0x0d && buffer[0] != 'q'
           && buffer[0] != 'Q' && buffer[0] != 3)
       {
-        long i;
-
         char * timeout_string;
 
         /* Reset the timeout to its initial value. */
@@ -10528,7 +10526,7 @@ main(int argc, char * argv[])
 
           /* Clear the message. */
           /* """""""""""""""""" */
-          for (i = 0; i < win.message_lines; i++)
+          for (long i = 0; i < win.message_lines; i++)
           {
             (void)tputs(TPARM1(cursor_up), 1, outch);
             (void)tputs(TPARM1(clr_bol), 1, outch);
@@ -12135,8 +12133,6 @@ main(int argc, char * argv[])
           {
             if (toggles.taggable)
             {
-              long i;
-
               for (wi = 0; wi < count; wi++)
               {
                 if (!word_a[wi].is_selectable)
@@ -12476,11 +12472,12 @@ main(int argc, char * argv[])
             {
               float ratio; /* cursor ratio in the beween the extremities *
                             | of the scroll bar.                         */
-              float corr;  /* scaling correction.                        */
-              long  line;  /* new selected line.                         */
 
               if (win.max_lines > 3)
               {
+                float corr; /* scaling correction. */
+                long  line; /* new selected line.  */
+
                 corr  = (float)(win.max_lines - 2) / (win.max_lines - 3);
                 ratio = (float)(line_click - term.curs_line - 1)
                         / (win.max_lines - 2);
