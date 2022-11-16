@@ -5316,7 +5316,7 @@ init_main_ds(attrib_t * init_attr, win_t * win, limit_t * limits,
   /* Mouse values. */
   /* """"""""""""" */
   mouse->button[0] = 1;
-  mouse->button[1] = 0;
+  mouse->button[1] = 2;
   mouse->button[2] = 3;
 
   mouse->double_click_delay = 150;
