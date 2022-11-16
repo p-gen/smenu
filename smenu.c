@@ -10167,11 +10167,11 @@ main(int argc, char * argv[])
   if (!toggles.no_mouse)
   {
     if (term.has_kmous && strncmp(tigetstr("kmous"), "\x1b[<", 3) == 0)
-      mouse_trk_on = "\x1b[?1000;1006h\x1b[?2004h";
+      mouse_trk_on = "\x1b[?1005l\x1b[?1000;1006h\x1b[?2004h";
     else
-      mouse_trk_on = "\x1b[?1000;1006;1015h\x1b[?2004h";
+      mouse_trk_on = "\x1b[?1005l\x1b[?1000;1015;1006h\x1b[?2004h";
 
-    mouse_trk_off = "\x1b[?1000;1006;1015l\x1b[?2004l";
+    mouse_trk_off = "\x1b[?1000;1015;1006l\x1b[?2004l";
 
     printf("%s", mouse_trk_on);
   }
