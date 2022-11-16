@@ -7845,6 +7845,8 @@ main(int argc, char * argv[])
     {
       if (term.has_dim)
         win.cursor_marked_attr.dim = 1;
+      else if (term.has_bold)
+        win.cursor_marked_attr.bold = 1;
 
       if (term.has_reverse)
         win.cursor_marked_attr.reverse = 1;
