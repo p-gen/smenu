@@ -11097,7 +11097,7 @@ main(int argc, char * argv[])
               /* When using -P, updates the tagging order of this word to */
               /* make sure that the output will be correctly sorted.      */
               /* """""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-              if (!word_a[current].tag_id > 0 && toggles.pinable)
+              if (word_a[current].tag_id == 0 && toggles.pinable)
                 word_a[current].tag_order = tag_nb++;
 
               for (wi = 0; wi < count; wi++)
