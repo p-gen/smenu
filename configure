@@ -5706,6 +5706,70 @@ then :
 fi
 
 
+# clock_gettime is in librt on *-*-osf5.1 and on glibc < 2.17, so add -lrt
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for library containing clock_gettime" >&5
+printf %s "checking for library containing clock_gettime... " >&6; }
+if test ${ac_cv_search_clock_gettime+y}
+then :
+  printf %s "(cached) " >&6
+else $as_nop
+  ac_func_search_save_LIBS=$LIBS
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+char clock_gettime ();
+int
+main (void)
+{
+return clock_gettime ();
+  ;
+  return 0;
+}
+_ACEOF
+for ac_lib in '' rt
+do
+  if test -z "$ac_lib"; then
+    ac_res="none required"
+  else
+    ac_res=-l$ac_lib
+    LIBS="-l$ac_lib  $ac_func_search_save_LIBS"
+  fi
+  if ac_fn_c_try_link "$LINENO"
+then :
+  ac_cv_search_clock_gettime=$ac_res
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext
+  if test ${ac_cv_search_clock_gettime+y}
+then :
+  break
+fi
+done
+if test ${ac_cv_search_clock_gettime+y}
+then :
+
+else $as_nop
+  ac_cv_search_clock_gettime=no
+fi
+rm conftest.$ac_ext
+LIBS=$ac_func_search_save_LIBS
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_search_clock_gettime" >&5
+printf "%s\n" "$ac_cv_search_clock_gettime" >&6; }
+ac_res=$ac_cv_search_clock_gettime
+if test "$ac_res" != no
+then :
+  test "$ac_res" = "none required" || LIBS="$ac_res $LIBS"
+
+
+printf "%s\n" "#define HAVE_CLOCK_GETTIME 1" >>confdefs.h
+
+fi
+
+
 # Checks for libraries.
 
 # Checks for header files.

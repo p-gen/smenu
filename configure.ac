@@ -21,6 +21,11 @@ AC_PROG_MAKE_SET
 
 AC_SEARCH_LIBS([tgetent], [tinfo curses ncursesw ncurses], [HAVE_CURSES=True])
 
+# clock_gettime is in librt on *-*-osf5.1 and on glibc < 2.17, so add -lrt
+AC_SEARCH_LIBS([clock_gettime], [rt], [
+  AC_DEFINE([HAVE_CLOCK_GETTIME],1,
+  [Define to 1 if you have the `clock_gettime' function])])
+
 # Checks for libraries.
 
 # Checks for header files.
