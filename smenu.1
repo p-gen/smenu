@@ -501,57 +501,6 @@ show one of the multiple matching possibilities.
 When not in a search session \fBESC\fP can be also used to clear the
 list of matching words and to reset the search buffer.
 .PP
-In summary, here is the meaning of the special keys in search mode:
-.TS
-tab(@);
-lb s s
-l l c
-^ ^ l
-l lw(6c) c .
-Keys which clear the list of matching words.
-Key@Meaning@Closes
-@@the
-@@search
-@@session
-_
-Esc@Cancel search@Yes
-_
-
-.T&
-lb s s
-l l l
-^ ^ l
-l lw(6c) c .
-Keys which keep or update the list of matching words.
-Key@Meaning@Closes
-@@the
-@@search
-@@session
-_
-\fB\(<-\fP@Previous word@Yes
-\fB\(ua\fP@Previous line@Yes
-\fBCTRL\ \(<-\fP@Start of line@Yes
-\fBPgUp\fP@Previous page@Yes
-\fBCTRL\ HOME\fP, \fBSHIFT\ HOME\fP, \fBCTRL\ K\fP@First word@Yes
-
-\fB\(->\fP@Next word@Yes
-\fB\(da\fP@Next line@Yes
-\fBCTRL\ \(->\fP@END of line@Yes
-\fBPgDn\fP@Next pages@Yes
-\fBCTRL\ END\fP, \fBSHIFT\ END\fP, \fBCTRL\ J\fP@Last word@Yes
-
-\fBHOME\fP, \fBCTRL\ A\fP@T{
-Only keep the words starting with the search pattern
-T}@No
-\fBEND\fP, \fBCTRL\ Z\fP@T{
-Only keep the words ending with the search pattern
-T}@No
-
-\fBINS\fP@Tag word@No
-\fBDEL\fP@Untag word@No
-_
-.TE
-.PP
 Note that the search buffer is persistent as long as the same search
 algorithm is used and \fBESC\fP has not been pressed.
 .SS "Selection and Exit"
@@ -562,7 +511,8 @@ code equal to 128+SINGINT (by default) without selecting anything.
 See the \fB-!\fP|\fB-int\fP|\fB-int_string\fP option for more information
 about the customization of the \fBCTRL\ C\fP behavior.
 .PP
-By default, \fBENTER\fP writes the selected word to stdout when not in
+By default, \fBENTER\fP or a double click with the first mouse button if
+applicable writes the selected word to stdout when not in
 search mode otherwise it exits from this mode and does nothing more.
 If you want to be able to select a word \fIeven\fP when in search mode,
 use the \fB-r\fP|\fB-auto_validate\fP option to change this behavior.
