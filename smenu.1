@@ -519,10 +519,13 @@ use the \fB-r\fP|\fB-auto_validate\fP option to change this behavior.
 When the tagging is activated by using the command line
 \fB-T\fP|\fB-tm\fP|\fB-tag\fP|\fB-tag_mode\fP
 or \fB-P\fP|\fB-pm\fP|\fB-pin\fP|\fB-pin_mode\fP option, then the
-keys \fBt\fP, \fBu\fP, \fBT\fP, \fBU\fP, \fBINS\fP and \fBDEL\fP can be
+keys \fBt\fP, \fBu\fP, \fBINS\fP, \fBDEL\fP \fBc\fP, \fBr\fP,
+\fBm\fP, \fBM\fP, \fBT\fP, \fBC\fP, \fBR\fP and \fBU\fP, can be
 used to tag/untag some words.
 These tagged words will then be sent to the standard output when
 \fBENTER\fP is pressed.
+
+Their meanings is as follows:
 .TP
 \fBt\fP
 Tags/untags or Pin/unpin the word under the cursor (toggle).
@@ -555,31 +558,32 @@ If no word are marked and the result of a search is still displayed then
 tags all words found in this search.
 
 If no word has been searched and no word is marked, then the current
-word is marked, otherwise all words between the marked word and the
+word is marked, just as if \fBm\fP has been used instead.
+Otherwise all words between the marked word and the
 current word are tagged.
 .br
 If the marked word and the current word are on the same line/column
 then only the words in this line/column will be tagged/pinned.
 .br
-The marked word will no longer be marked once tagging is complete.
+The marked word will no longer be marked after tagging is complete.
 .TP
 \fBC\fP
-As for \fBT\fP, \fBC\fP marks the current word if no word are currently
-marked.
+As for \fBT\fP, \fBC\fP marks the current word if no word is currently
+marked, just as if \fBm\fP had been used instead.
 .br
 If a word is already marked, \fBC\fP tags/pins the words between the
 current and the marked words if they are the \fBsame column\fP.
 .br
-The marked word will no longer be marked once tagging is complete.
+The marked word will no longer be marked after tagging is complete.
 .TP
 \fBR\fP
-As for \fBT\fP, \fBR\fP marks the current word if no word are currently
-marked.
+As for \fBT\fP, \fBR\fP marks the current word if no word is currently
+marked, just as if \fBm\fP has been used instead.
 .br
 If a word is already marked, \fBR\fP tags/pins the words between the
 current and the marked words if they are the \fBsame row/line\fP.
 .br
-The marked word will no longer be marked once tagging is complete.
+The marked word will no longer be marked after tagging is complete.
 .TP
 \fBU\fP
 Untags or unpins the last tagging action.
