@@ -540,10 +540,12 @@ Tags or pins the word under the cursor.
 Untags or unpins the word under the cursor.
 .TP
 \fBc\fP
-Tags or pins all the selectable words in the current \fBcolumn\fP.
+Tags or pins all the selectable words in the current \fBcolumn\fP when
+no word is marked, otherwise acts like \fBC\fP.
 .TP
 \fBr\fP
-Tags or pins all the selectable words in the current \fBrow/line\fP.
+Tags or pins all the selectable words in the current \fBrow/line\fP
+when no word is marked, otherwise acts like \fBR\fP.
 .TP
 \fBm\fP
 Marks the current word, the cursor aspect will change until the word
@@ -581,6 +583,10 @@ If a word is already marked, \fBR\fP tags/pins the words between the
 current and the marked words if they are the \fBsame row/line\fP.
 .br
 The marked word will no longer be marked after tagging is complete.
+.PP
+Note when you use \fBT\fP, \fBc\fP/\fBC\fP or \fPr\fP/\fBR\fP with
+pinning enabled, the order of word selection depends on whether the
+marked word is before or after the current word.
 .TP
 \fBU\fP
 Untags or unpins the last tagging action.

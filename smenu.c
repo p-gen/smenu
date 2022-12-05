@@ -11798,7 +11798,8 @@ main(int argc, char * argv[])
             {
               long col, cur_col, marked_col;
               long first, last;
-              int  tagged;
+
+              int tagged;
 
               if (!win.col_mode)
                 break;
@@ -11836,6 +11837,12 @@ main(int argc, char * argv[])
                   {
                     first = first_word_in_line_a[line_nb_of_word_a[current]];
                     last  = marked;
+
+                    /* Pre-increment tag_nb with is maximum mulue as     */
+                    /* it will be decremented in the following loop when */
+                    /* marked > current                                  */
+                    /* ''''''''''''''''''''''''''''''''''''''''''''''''' */
+                    tag_nb += marked - current + 1;
                   }
                 }
                 else
@@ -11857,7 +11864,12 @@ main(int argc, char * argv[])
                   tagged_words++;
 
                   if (toggles.pinable)
-                    word_a[wi].tag_order = tag_nb++;
+                  {
+                    if (marked <= current)
+                      word_a[wi].tag_order = tag_nb++;
+                    else
+                      word_a[wi].tag_order = tag_nb--;
+                  }
 
                   tagged = 1;
                 }
@@ -11870,6 +11882,9 @@ main(int argc, char * argv[])
 
               if (tagged)
                 win.next_tag_id++;
+
+              if (marked > current)
+                tag_nb += marked - current + 1;
 
               marked = -1;
 
@@ -11934,6 +11949,12 @@ main(int argc, char * argv[])
                   {
                     first = current;
                     last  = marked;
+
+                    /* Pre-increment tag_nb with is maximum mulue as     */
+                    /* it will be decremented in the following loop when */
+                    /* marked > current                                  */
+                    /* ''''''''''''''''''''''''''''''''''''''''''''''''' */
+                    tag_nb += marked - current + 1;
                   }
                 }
                 else
@@ -11964,7 +11985,12 @@ main(int argc, char * argv[])
                     tagged_words++;
 
                     if (toggles.pinable)
-                      word_a[wi].tag_order = tag_nb++;
+                    {
+                      if (marked <= current)
+                        word_a[wi].tag_order = tag_nb++;
+                      else
+                        word_a[wi].tag_order = tag_nb--;
+                    }
 
                     tagged = 1;
                   }
@@ -11974,6 +12000,9 @@ main(int argc, char * argv[])
 
               if (tagged)
                 win.next_tag_id++;
+
+              if (marked > current)
+                tag_nb += marked - current + 1;
 
               marked = -1;
 
@@ -12098,6 +12127,12 @@ main(int argc, char * argv[])
                   {
                     first = current;
                     last  = marked;
+
+                    /* Pre-increment tag_nb with is maximum mulue as     */
+                    /* it will be decremented in the following loop when */
+                    /* marked > current                                  */
+                    /* ''''''''''''''''''''''''''''''''''''''''''''''''' */
+                    tag_nb += marked - current + 1;
                   }
 
                   tagged = 0;
@@ -12113,7 +12148,12 @@ main(int argc, char * argv[])
                       tagged_words++;
 
                       if (toggles.pinable)
-                        word_a[wi].tag_order = tag_nb++;
+                      {
+                        if (marked <= current)
+                          word_a[wi].tag_order = tag_nb++;
+                        else
+                          word_a[wi].tag_order = tag_nb--;
+                      }
 
                       tagged = 1;
                     }
@@ -12121,6 +12161,9 @@ main(int argc, char * argv[])
 
                   if (tagged)
                     win.next_tag_id++;
+
+                  if (marked > current)
+                    tag_nb += marked - current + 1;
 
                   marked = -1;
                 }
