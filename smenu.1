@@ -584,9 +584,15 @@ current and the marked words if they are the \fBsame row/line\fP.
 .br
 The marked word will no longer be marked after tagging is complete.
 .PP
-Note when you use \fBT\fP, \fBc\fP/\fBC\fP or \fPr\fP/\fBR\fP with
-pinning enabled, the order of word selection depends on whether the
-marked word is before or after the current word.
+Note that when you use \fBT\fP, \fBC\fP or \fBR\fP with pinning enabled,
+the order of word selection depends on whether the marked word is before
+or after the current word.
+.br
+When a word is marked, the pinning order using \fBc\fP and \fBr\fP
+increases from the marked word to the current word.
+.br
+When no words are marked, the pinning order when using \fBc\fP and \fBr\fP
+always increases from top to bottom and from left to right respectively.
 .TP
 \fBU\fP
 Untags or unpins the last tagging action.
