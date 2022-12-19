@@ -187,28 +187,30 @@ help(win_t * win, term_t * term, long last_line)
                          (char *)0);
 
   struct entry_s entries[] = {
-    { "Move:", 5, 'r' }, { "Mouse:", 6, 'u' },  { "B1", 2, 'b' },
-    { ",", 1, 'n' },     { "B3", 2, 'b' },      { ",", 1, 'n' },
-    { "Wheel", 5, 'b' }, { " ", 1, 'n' },       { "Keyb:", 5, 'u' },
-    { "hjkl", 4, 'b' },  { ",", 1, 'n' },       { arrows, 4, 'b' },
-    { ",", 1, 'n' },     { "PgUp", 4, 'b' },    { "/", 1, 'n' },
-    { "Dn", 2, 'b' },    { "... ", 4, 'n' },    { "Abort:", 6, 'r' },
-    { "q", 1, 'b' },     { ",", 1, 'n' },       { "^C", 2, 'b' },
-    { " ", 1, 'n' },     { "Find:", 5, 'r' },   { "/", 1, 'b' },
-    { "\"\'", 2, 'b' },  { "~*", 2, 'b' },      { "=^", 2, 'b' },
-    { ",", 1, 'n' },     { "SP", 2, 'b' },      { ",", 1, 'n' },
-    { "nN", 2, 'b' },    { " ", 1, 'n' },       { "Select:", 7, 'r' },
-    { "CR", 2, 'b' },    { ",", 1, 'n' },       { "D-click", 7, 'b' },
-    { " ", 1, 'n' },     { " ", 1, 'n' },       { "Mark:", 5, 'r' },
-    { "mM", 2, 'b' },    { " ", 1, 'n' },       { "Tag:", 4, 'r' },
-    { "t", 1, 'b' },     { ",", 1, 'n' },       { "r", 1, 'b' },
-    { ",", 1, 'n' },     { "c", 1, 'b' },       { " ", 1, 'n' },
-    { "T", 1, 'b' },     { "...", 3, 'n' },     { "T", 1, 'b' },
-    { ",", 1, 'n' },     { "R", 1, 'b' },       { "...", 3, 'n' },
-    { "R", 1, 'b' },     { ",", 1, 'n' },       { "C", 1, 'b' },
-    { "...", 3, 'n' },   { "C", 1, 'b' },       { " ", 1, 'n' },
-    { "U", 1, 'b' },     { ",", 1, 'n' },       { "^T", 2, 'b' },
-    { " ", 1, 'n' },     { "Cancel:", 7, 'r' }, { "ESC", 3, 'b' },
+    { "Move:", 5, 'r' }, { "Mouse:", 6, 'u' }, { "B1", 2, 'b' },
+    { ",", 1, 'n' },     { "B3", 2, 'b' },     { ",", 1, 'n' },
+    { "Wheel", 5, 'b' }, { " ", 1, 'n' },      { "Keyb:", 5, 'u' },
+    { "hjkl", 4, 'b' },  { ",", 1, 'n' },      { arrows, 4, 'b' },
+    { ",", 1, 'n' },     { "PgUp", 4, 'b' },   { "/", 1, 'n' },
+    { "Dn", 2, 'b' },    { "... ", 4, 'n' },   { "Abort:", 6, 'r' },
+    { "q", 1, 'b' },     { ",", 1, 'n' },      { "^C", 2, 'b' },
+    { " ", 1, 'n' },     { "Find:", 5, 'r' },  { "/", 1, 'b' },
+    { "\"\'", 2, 'b' },  { "~*", 2, 'b' },     { "=^", 2, 'b' },
+    { ",", 1, 'n' },     { "SP", 2, 'b' },     { ",", 1, 'n' },
+    { "nN", 2, 'b' },    { " ", 1, 'n' },      { "Select:", 7, 'r' },
+    { "CR", 2, 'b' },    { ",", 1, 'n' },      { "D-click", 7, 'b' },
+    { " ", 1, 'n' },     { " ", 1, 'n' },      { "Mark:", 5, 'r' },
+    { "mM", 2, 'b' },    { " ", 1, 'n' },      { "Tag:", 4, 'r' },
+    { "t", 1, 'b' },     { ",", 1, 'n' },      { "r", 1, 'b' },
+    { ",", 1, 'n' },     { "c", 1, 'b' },      { " ", 1, 'n' },
+    { "T", 1, 'b' },     { "...", 3, 'n' },    { "T", 1, 'b' },
+    { ",", 1, 'n' },     { "Z", 1, 'b' },      { "...", 3, 'n' },
+    { "Z", 1, 'b' },     { ",", 1, 'n' },      { "R", 1, 'b' },
+    { "...", 3, 'n' },   { "R", 1, 'b' },      { ",", 1, 'n' },
+    { "C", 1, 'b' },     { "...", 3, 'n' },    { "C", 1, 'b' },
+    { " ", 1, 'n' },     { "U", 1, 'b' },      { ",", 1, 'n' },
+    { "^T", 2, 'b' },    { " ", 1, 'n' },      { "Cancel:", 7, 'r' },
+    { "ESC", 3, 'b' },
   };
 
   entries_nb = sizeof(entries) / sizeof(struct entry_s);
@@ -12178,10 +12180,53 @@ main(int argc, char * argv[])
             goto special_cmds_when_searching;
           break;
 
+        adaptative_tag_to_mark:
+        case 'Z':
+          /* Z has been pressed to tag consecutive word in a given zone . */
+          /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+          if (search_mode == NONE)
+          {
+            if (toggles.taggable)
+            {
+              if (marked == -1)
+                marked = current;
+              else if (marked == current)
+                marked = -1;
+              else if (marked >= 0 && win.col_mode)
+              {
+                long cur_col =
+                  current - first_word_in_line_a[line_nb_of_word_a[current]]
+                  + 1;
+                long mark_col =
+                  marked - first_word_in_line_a[line_nb_of_word_a[marked]] + 1;
+                if (cur_col == mark_col)
+                  goto tag_column;
+                else if (line_nb_of_word_a[current]
+                         == line_nb_of_word_a[marked])
+                  goto tag_line;
+                else
+                  goto tag_to_mark;
+              }
+              else if (marked >= 0)
+              {
+                if (win.line_mode
+                    && line_nb_of_word_a[current] == line_nb_of_word_a[marked])
+                  goto tag_line;
+                else
+                  goto tag_to_mark;
+              }
+            }
+            nl = disp_lines(&win, &toggles, current, count, search_mode,
+                            &search_data, &term, last_line, tmp_word,
+                            &langinfo);
+          }
+          else
+            goto special_cmds_when_searching;
+          break;
+
         untag_last_tagged:
         case 'U':
-          /* U has been pressed to untag all matching words resulting */
-          /* from a previous search if tagging is enabled.            */
+          /* U has been pressed to undo the last tagging ioperation. */
           /* """""""""""""""""""""""""""""""""""""""""""""""""""""""" */
           if (search_mode == NONE)
           {
@@ -12630,37 +12675,7 @@ main(int argc, char * argv[])
 
               if ((button == 2 && state == 16)
                   && (toggles.taggable || toggles.pinable))
-              {
-                if (marked == -1)
-                  marked = current;
-                else if (marked == current)
-                  marked = -1;
-                else if (marked >= 0 && win.col_mode)
-                {
-                  long cur_col =
-                    current - first_word_in_line_a[line_nb_of_word_a[current]]
-                    + 1;
-                  long mark_col =
-                    marked - first_word_in_line_a[line_nb_of_word_a[marked]]
-                    + 1;
-                  if (cur_col == mark_col)
-                    goto tag_column;
-                  else if (line_nb_of_word_a[current]
-                           == line_nb_of_word_a[marked])
-                    goto tag_line;
-                  else
-                    goto tag_to_mark;
-                }
-                else if (marked >= 0)
-                {
-                  if (win.line_mode
-                      && line_nb_of_word_a[current]
-                           == line_nb_of_word_a[marked])
-                    goto tag_line;
-                  else
-                    goto tag_to_mark;
-                }
-              }
+                goto adaptative_tag_to_mark; /* Like 'Z' keyboard command. */
 
               /* Redisplay the new window if the first button was pressed   */
               /* otherwise reset the cursor position to its previous value. */
