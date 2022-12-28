@@ -279,20 +279,22 @@ When tagging or pinning is enabled, a click on a word while holding the
 CTRL key pressed has the following actions:
 .RS 2
 .IP - 2
-If the word clicked is selectable and no word is already marked then mark it.
+If the word clicked is selectable and no word is already marked then
+marks it.
 .IP - 2
 If a word is marked and the clicked word is selectable and is not the
 marked word, then:
 .RS 2
 .IP + 2
-In column mode, if the marked word in in the same column/row as the
-clicked word, tag all the words between the two in this column/row just
-like the keyboard \fBZ\fP command.
+In column mode, if the marked word is in the same column/line as the
+clicked word, tags all words bounded by those words in that column/line
+as if \fBZ\fP the keyboard command were used.
 .IP + 2
-In line or column mode, if the marked word in in the same line as the
-clicked word, tag all the words between the two in this line.
+In line or column mode, if the marked word is in the same line as the
+clicked word, tags all words bounded by those words in that line.
 .IP + 2
-Otherwise, tag all the words between the marked word and the clicked one.
+Otherwise, tags all words bounded by the marked word and the
+clicked one.
 .IP + 2
 In all cases, the mark is removed.
 .RE
@@ -569,11 +571,11 @@ The marked word will no longer be marked after tagging is complete.
 .TP
 \fBZ\fP
 Like \fBT\fP when not in search mode and when the marked words is not
-on the same column or row as the cursor in column mode.
+on the same column or line as the cursor in column mode.
 .br
-When in column mode and if the marked word is on the same column or row
-as the cursor, marks only the words of the same column (respectively. row)
-between the markerd word and the cursor.
+When in column mode and if the marked word is in the same column or line
+as the cursor, tags only the words in the same column (respectively line)
+bounded by the marked word and the cursor.
 .TP
 \fBC\fP
 As for \fBT\fP, \fBC\fP marks the current word if no word is currently
