@@ -1,3 +1,16 @@
+- Version 1.2.0
+* Fixes:
+  * Correction of word selections with the mouse in long lines.
+  * Fixed support for the double-click mouse delay setting.
+  * Prevention of spurious commands being sent by the mouse paste function.
+  * Allowed compilation with old glibc versions.
+* Improvements:
+  * Redesign of the multiple selection mechanism with the possibility to undo.
+  * Improved initialization of mouse tracking modes.
+* Miscellaneous:
+  * Corrections and improvements to the manual.
+  * Removal of dead code.
+
 - Version 1.1.0
 * Fixes:
   * Fix and improve the instant help (?) display.
