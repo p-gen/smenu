@@ -2361,10 +2361,12 @@ strip_ansi_color(char * s, toggle_t * toggles, misc_t * misc)
   *p = '\0';
 }
 
-/* ================================================================= */
-/* Callback function to insert the index of a matching word index in */
-/* the sorted list of the already matched words.                     */
-/* ================================================================= */
+/* ================================================================== */
+/* Callback function used by tst_traverse to insert the index         */
+/* of a matching word index in the sorted list of the already matched */
+/* words.                                                             */
+/* Always succeeds and returns 1.                                     */
+/* ================================================================== */
 int
 set_matching_flag(void * elem)
 {
@@ -2397,6 +2399,7 @@ set_matching_flag(void * elem)
 /* Each position in this list is used to:                                  */
 /* - mark the word at that position as matching,                           */
 /* - add this position in the sorted array matching_words_a.               */
+/* Always succeeds and returns 1.                                          */
 /* ======================================================================= */
 int
 tst_cb(void * elem)
@@ -2428,11 +2431,13 @@ tst_cb(void * elem)
 /* Input functions. */
 /* **************** */
 
-/* =============================================== */
-/* Non delay reading of a scancode.                */
-/* Update a scancodes buffer and return its length */
-/* in bytes.                                       */
-/* =============================================== */
+/* ===================================================================== */
+/* Non delay reading of a scancode.                                      */
+/* Update a scancodes buffer and return its length  in bytes.            */
+/* The length of the scancode cannot reach max which must be lower of    */
+/* equal than 63 which is the size minus one of the buffer array defined */
+/* in main.                                                              */
+/* ===================================================================== */
 int
 get_scancode(unsigned char * s, size_t max)
 {
@@ -7089,7 +7094,8 @@ main(int argc, char * argv[])
 
   char * pre_selection_index = NULL; /* pattern used to set the initial      *
                                       | cursor position.                     */
-  unsigned char buffer[32];          /* Input buffer.                        */
+
+  unsigned char buffer[64]; /* Input buffer which will contain the scancode. */
 
   search_data_t search_data;
   search_data.buf = NULL;    /* Search buffer                                */
@@ -10512,7 +10518,7 @@ main(int argc, char * argv[])
     page = 1; /* Default number of lines to do down/up *
                | with PgDn/PgUp.                       */
 
-    sc = get_scancode(buffer, 31);
+    sc = get_scancode(buffer, 63);
 
     if (sc && winch_timer < 0) /* Do not allow input when a window *
                                 | refresh is scheduled.            */
