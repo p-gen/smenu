@@ -32,6 +32,39 @@ A: smenu uses a new system of options based on the notion of contexts. The
    The string '[-c|-col|-col_mode|-column>Columns]' that is printed
    in the error message indicates that to switch to "Columns" mode
    must use the -c parameter or its alternatives.
-   
+
    In this case the correct command line should contain something like:
    smenu -c -C...
+--------
+Q: How to preserve the original alignment of the columns?
+
+A: smenu merges multiple occurrences of word delimiters (' ' in the
+   example below) and so the original alignment of columns is lost.
+   One way to limit this loss is to replace the delimiter with a character
+   that does not appear in the input and is not a delimiter, we will use
+   '!' in the example, and tell smenu to replace it with a space with the
+   -S option.
+
+   Example of a session using the free command:
+
+   $ free
+                  total        used        free      shared  buff/cache   available
+   Mem:            23Gi       4,3Gi       1,6Gi       118Mi        18Gi        19Gi
+   Swap:          2,0Gi       0,0Ki       2,0Gi
+
+   $ free -h | smenu -c
+   total used  free  shared buff/cache available
+   Mem:  23Gi  4,3Gi 1,6Gi  118Mi      18Gi      19Gi
+   Swap: 2,0Gi 0,0Ki 2,0Gi
+
+   $ free -h | sed -e 's/ /!/g' -e 's/!\([^!]\)/ \1/g'
+   !!!!!!!!!!!!!! total!!!!!!! used!!!!!!! free!!!!! shared! buff/cache!! available
+   Mem:!!!!!!!!!!! 23Gi!!!!!! 4,3Gi!!!!!! 1,6Gi!!!!!! 120Mi!!!!!!! 18Gi!!!!!!! 19Gi
+   Swap:!!!!!!!!! 2,0Gi!!!!!! 0,0Ki!!!!!! 2,0Gi
+
+   $ free -h | sed -e 's/ /!/g' -e 's/!\([^!]\)/ \1/g' | smenu -c -S'/!/ /g'
+   ############### total        used        free        shared       buff/cache   available
+   Mem:            23Gi         4,3Gi       1,6Gi       118Mi        18Gi         19Gi
+   Swap:           2,0Gi        0,0Ki       2,0Gi
+
+   Where ############### is the smenu cursor.
