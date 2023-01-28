@@ -616,7 +616,7 @@ The marked word, if any, will no longer be marked after this action.
 A small help message can be displayed when hitting the \fB?\fP key.
 This message will last for 10s or until another key or \fBESC\fP is
 pressed.
-.SS Scroll bar
+.SS "Scroll bar"
 A scroll bar is displayed at the right of the scrolling window.
 Its appearance is meant to be classical but it has some particularities:
 .IP \(bu 2
@@ -662,7 +662,7 @@ The redrawing is actually done only 1s after the end of the resizing to
 avoid artifacts on screen.
 The cursor will remain on the current selected word but may be displayed
 at another place in the window.
-.SS Unicode support
+.SS "Unicode support"
 This utility is Unicode aware and should be able to display correctly
 any Unicode character (even double-width ones) as long as the current
 encoding is \fBUTF-8\fP (\fBUTF-8\fP in the output of the \fIlocale\fP
@@ -677,7 +677,7 @@ ICU project (https://icu.unicode.org) to do this work before using smenu.
 For example: uconv can be used as a filter as in:
 
 \f(CBcat ... | uconv -x any-nfc | smenu\fP
-.SS Configuration
+.SS "Optional configuration file"
 If a file with adequate permissions and the same name as the executable
 but prefixed with a dot is present in the current directory
 or in the user's home directory, then it will be parsed as a
