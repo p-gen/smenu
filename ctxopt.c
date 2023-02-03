@@ -478,7 +478,7 @@ fatal(errors e, char * errmsg)
   if (e == CTXOPTUNKPAR && *errmsg != '\0')
     ctxopt_disp_usage(continue_after);
   else
-    ctxopt_ctx_disp_usage(cur_state->ctx_name, continue_after);
+    ctxopt_ctx_disp_usage(NULL, continue_after);
 
   exit(e); /* Exit with the error id e as return code. */
 }
@@ -4196,7 +4196,13 @@ ctxopt_ctx_disp_usage(char * ctx_name, usage_behaviour action)
   if (!flags.display_usage_on_error)
     return;
 
-  ctx = locate_ctx(ctx_name);
+  ctx = NULL;
+
+  if (ctx_name != NULL)
+    ctx = locate_ctx(ctx_name);
+  else
+    ctx = locate_ctx(cur_state->ctx_name);
+
   if (ctx == NULL)
     fatal_internal("Unknown context %s.", ctx_name);
 

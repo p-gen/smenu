@@ -7741,7 +7741,7 @@ main(int argc, char * argv[])
     {
       fprintf(stderr, "The file \"%s\" does not exist or cannot be read.\n",
               rem_args[0]);
-      ctxopt_disp_usage(exit_after);
+      ctxopt_ctx_disp_usage(NULL, exit_after);
       exit(EXIT_FAILURE); /* Avoid a compiler warning. */
     }
   }
@@ -7756,7 +7756,7 @@ main(int argc, char * argv[])
       fprintf(stderr, ", %s", rem_args[i]);
     fprintf(stderr, ".\n");
 
-    ctxopt_disp_usage(exit_after);
+    ctxopt_ctx_disp_usage(NULL, exit_after);
     exit(EXIT_FAILURE); /* Avoid a compiler warning. */
   }
 
