@@ -902,9 +902,11 @@ make_ini_path(char * name, char * base)
 /* Functions used when sorting tags. */
 /* ********************************* */
 
-/* ============================================================ */
-/* Compare the pin order of two pinned word in the output list. */
-/* ============================================================ */
+/* =================================================================== */
+/* Compare the pin order of two pinned word in the output list.        */
+/* Returns -1 if the pinning value is less than the second, 0 if it is */
+/* equal to the second and 1 if it is greater than the second.         */
+/* =================================================================== */
 int
 tag_comp(void const * a, void const * b)
 {
@@ -945,6 +947,7 @@ tag_swap(void ** a, void ** b)
 /* =================================================================== */
 /* Create a new element to be added to the tst_search_list used by the */
 /* search mechanism.                                                   */
+/* Return the newly created element.                                   */
 /* =================================================================== */
 sub_tst_t *
 sub_tst_new(void)
@@ -990,9 +993,10 @@ my_beep(toggle_t * toggles)
   }
 }
 
-/* =========================================== */
-/* Integer verification constraint for ctxopt. */
-/* =========================================== */
+/* ================================================================== */
+/* Integer verification constraint for ctxopt.                        */
+/* Return 1 if par is the representation of an integer else return 0. */
+/* ================================================================== */
 int
 check_integer_constraint(int nb_args, char ** args, char * value, char * par)
 {
@@ -1292,7 +1296,8 @@ update_bitmaps(search_mode_t mode, search_data_t * data,
 
 /* ========================================================= */
 /* Find the next word index in the list of matching words    */
-/* set the value of index to -1 and returns -1 if not found. */
+/* using the bisection search algorithm.                     */
+/* Set the value of index to -1 and returns -1 if not found. */
 /* ========================================================= */
 long
 find_next_matching_word(long * array, long nb, long value, long * index)
@@ -1340,6 +1345,7 @@ find_next_matching_word(long * array, long nb, long value, long * index)
 
 /* ========================================================== */
 /* Find the previous word index in the list of matching words */
+/* using the bisection search algorithm.                      */
 /* set the value of index to -1 and returns -1 if not found.  */
 /* ========================================================== */
 long
@@ -1932,6 +1938,7 @@ parse_selectors(char * str, filters_t * filter, char * unparsed,
 /* ========================================================= */
 /* Parse the sed like string passed as argument to -S/-I/-E. */
 /* This updates the sed parameter.                           */
+/* Return 1 on success and 0 on error.                       */
 /* ========================================================= */
 int
 parse_sed_like_string(sed_t * sed)
@@ -2033,7 +2040,7 @@ err:
 /*                  otherwise.                                           */
 /* match:           current match number in the original string.         */
 /*                                                                       */
-/* OUT:                                                                  */
+/* Return:                                                               */
 /* The modified string according to the content of repl.                 */
 /* ===================================================================== */
 char *
@@ -2183,7 +2190,6 @@ build_repl_string(char * orig, char * repl, long match_start, long match_end,
 /*           substitution string and various other informations.          */
 /* output:   destination buffer.                                          */
 /*                                                                        */
-/* RC:                                                                    */
 /* return 1 if the replacement has been successful else 0.                */
 /*                                                                        */
 /* NOTE:                                                                  */
