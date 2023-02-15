@@ -179,8 +179,8 @@ help(win_t * win, term_t * term, long last_line)
   struct entry_s
   {
     char * str;  /* string to be displayed for an object in the help line. */
-    int    len;  /* length of one of these objects.                        */
-    char   attr; /* r=reverse, n=normal, b=bold.                           */
+    int    len;  /* screen space taken by of one of these objects.         */
+    char   attr; /* r=reverse, n=normal, b=bold, uu=underlined.            */
   };
 
   char * arrows = concat(left_arrow, up_arrow, right_arrow, down_arrow,
@@ -244,6 +244,8 @@ help(win_t * win, term_t * term, long last_line)
     {
       line++;
 
+      /* Exit early if we do not have enough space. */
+      /* '''''''''''''''''''''''''''''''''''''''''' */
       if (line > last_line || line == win->max_lines)
         break;
 
@@ -283,6 +285,8 @@ help(win_t * win, term_t * term, long last_line)
     (void)tputs(TPARM1(exit_attribute_mode), 1, outch);
   }
 
+  /* Fill the remaining space with spaces. */
+  /* """"""""""""""""""""""""""""""""""""" */
   (void)tputs(TPARM1(exit_attribute_mode), 1, outch);
   for (i = len; i < max_col; i++)
     fputc_safe(' ', stdout);
@@ -380,13 +384,13 @@ decode_attr_toggles(char * s, attrib_t * attr)
 /* attr will be filled by the function.                     */
 /* =========================================================*/
 int
-parse_attr(char * str, attrib_t * attr, short max_color)
+parse_attr(char * str, attrib_t * attr, short colors)
 {
   int    n;
   char * pos;
-  char   s1[12] = { (char)0 };
-  char   s2[9]  = { (char)0 };
-  short  d1 = -1, d2 = -1;
+  char   s1[12] = { (char)0 }; /* For the colors.     */
+  char   s2[9]  = { (char)0 }; /* For the attributes. */
+  short  d1 = -1, d2 = -1;     /* colors. */
   int    rc = 1;
   char   c  = '\0';
 
@@ -432,15 +436,15 @@ parse_attr(char * str, attrib_t * attr, short max_color)
     }
   }
 
-  if (max_color == 0)
+  if (colors == 0) /* Monochrome. */
   {
     attr->fg = -1;
     attr->bg = -1;
   }
   else
   {
-    attr->fg = d1;
-    attr->bg = d2;
+    attr->fg = d1 < colors ? d1 : -1;
+    attr->bg = d2 < colors ? d2 : -1;
   }
 
   if (n == 2)
