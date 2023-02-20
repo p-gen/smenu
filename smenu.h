@@ -622,10 +622,10 @@ move_right(win_t * win, term_t * term, toggle_t * toggles,
            long last_line, char * tmp_word);
 
 int
-find_best_word_upward(long last_word, long s, long e);
+find_best_word_upwards(long last_word, long s, long e);
 
 int
-find_best_word_downward(long last_word, long s, long e);
+find_best_word_downwards(long last_word, long s, long e);
 
 void
 move_up(win_t * win, term_t * term, toggle_t * toggles,

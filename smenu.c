@@ -4446,9 +4446,9 @@ select_starting_matches(win_t * win, term_t * term, search_data_t * search_data,
   }
 }
 
-/* ====================== */
-/* Moves the cursor left. */
-/* ====================== */
+/* ============================= */
+/* Moves the cursor to the left. */
+/* ============================= */
 void
 move_left(win_t * win, term_t * term, toggle_t * toggles,
           search_data_t * search_data, langinfo_t * langinfo, long * nl,
@@ -4578,9 +4578,9 @@ shift_left(win_t * win, term_t * term, toggle_t * toggles,
                    last_line, tmp_word, langinfo);
 }
 
-/* ======================= */
-/* Moves the cursor right. */
-/* ======================= */
+/* ============================== */
+/* Moves the cursor to the right. */
+/* ============================== */
 void
 move_right(win_t * win, term_t * term, toggle_t * toggles,
            search_data_t * search_data, langinfo_t * langinfo, long * nl,
@@ -4677,10 +4677,10 @@ move_right(win_t * win, term_t * term, toggle_t * toggles,
                      term, last_line, tmp_word, langinfo);
 }
 
-/* ============================================= */
-/* Shift content of the the window to the right. */
-/* Stop if the cursor will stop to be visible.   */
-/* ============================================= */
+/* =========================================== */
+/* Shift content of the window to the right.   */
+/* Stop if the cursor will stop to be visible. */
+/* ============================================*/
 void
 shift_right(win_t * win, term_t * term, toggle_t * toggles,
             search_data_t * search_data, langinfo_t * langinfo, long * nl,
@@ -4756,13 +4756,13 @@ get_line_last_word(long line, long last_line)
 
 /* ==================================================================== */
 /* Try to locate the best word in the target line when trying to move   */
-/* the cursor upward.                                                   */
+/* the cursor upwards.                                                  */
 /* returns 1 if a word has been found else 0.                           */
 /* This function has the side effect to potentially change the value of */
 /* the variable 'current' if an adequate word is found.                 */
 /* ==================================================================== */
 int
-find_best_word_upward(long last_word, long s, long e)
+find_best_word_upwards(long last_word, long s, long e)
 {
   int  found = 0;
   long index;
@@ -4831,13 +4831,13 @@ find_best_word_upward(long last_word, long s, long e)
 
 /* ==================================================================== */
 /* Try to locate the best word in the target line when trying to move   */
-/* the cursor downward.                                                 */
+/* the cursor downwards.                                                */
 /* returns 1 if a word has been found else 0.                           */
 /* This function has the side effect to potentially change the value of */
 /* the variable 'current' if an adequate word is found.                 */
 /* ==================================================================== */
 int
-find_best_word_downward(long last_word, long s, long e)
+find_best_word_downwards(long last_word, long s, long e)
 {
   int  found = 0;
   long index;
@@ -4909,9 +4909,9 @@ find_best_word_downward(long last_word, long s, long e)
   return found;
 }
 
-/* ==================== */
-/* Moves the cursor up. */
-/* ==================== */
+/* ========================= */
+/* Moves the cursor upwards. */
+/* ========================= */
 void
 move_up(win_t * win, term_t * term, toggle_t * toggles,
         search_data_t * search_data, langinfo_t * langinfo, long * nl,
@@ -4995,7 +4995,7 @@ move_up(win_t * win, term_t * term, toggle_t * toggles,
       /* """""""""""""""""""""""""""""""""""""""""""""" */
       line      = first_selectable_line;
       last_word = get_line_last_word(line, last_line);
-      find_best_word_upward(last_word, s, e);
+      find_best_word_upwards(last_word, s, e);
     }
     else
     {
@@ -5010,18 +5010,18 @@ move_up(win_t * win, term_t * term, toggle_t * toggles,
       {
         line      = first_selectable_line;
         last_word = get_line_last_word(line, last_line);
-        find_best_word_upward(last_word, s, e);
+        find_best_word_upwards(last_word, s, e);
       }
       else
       {
-        /* If this is not the case, search upward for the line with a */
-        /* selectable word. This line is guaranteed to exist.         */
-        /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+        /* If this is not the case, search upwards for the line with a */
+        /* selectable word. This line is guaranteed to exist.          */
+        /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
         while (line >= first_selectable_line)
         {
           last_word = get_line_last_word(line, last_line);
 
-          if (find_best_word_upward(last_word, s, e))
+          if (find_best_word_upwards(last_word, s, e))
           {
             found = 1;
             break;
@@ -5072,9 +5072,9 @@ move_up(win_t * win, term_t * term, toggle_t * toggles,
                    last_line, tmp_word, langinfo);
 }
 
-/* ====================== */
-/* Moves the cursor down. */
-/* ====================== */
+/* =========================== */
+/* Moves the cursor downwards. */
+/* =========================== */
 void
 move_down(win_t * win, term_t * term, toggle_t * toggles,
           search_data_t * search_data, langinfo_t * langinfo, long * nl,
@@ -5160,7 +5160,7 @@ move_down(win_t * win, term_t * term, toggle_t * toggles,
       /* """"""""""""""""""""""""""""""""""""""""""""" */
       line      = last_selectable_line;
       last_word = get_line_last_word(line, last_line);
-      find_best_word_downward(last_word, s, e);
+      find_best_word_downwards(last_word, s, e);
     }
     else
     {
@@ -5175,18 +5175,18 @@ move_down(win_t * win, term_t * term, toggle_t * toggles,
       {
         line      = last_selectable_line;
         last_word = get_line_last_word(line, last_line);
-        find_best_word_downward(last_word, s, e);
+        find_best_word_downwards(last_word, s, e);
       }
       else
       {
-        /* If this is not the case, search upward for the line with a */
-        /* selectable word. This line is guaranteed to exist.         */
-        /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+        /* If this is not the case, search upwards for the line with a */
+        /* selectable word. This line is guaranteed to exist.          */
+        /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
         while (line <= last_selectable_line)
         {
           last_word = get_line_last_word(line, last_line);
 
-          if (find_best_word_downward(last_word, s, e))
+          if (find_best_word_downwards(last_word, s, e))
           {
             found = 1;
             break;
