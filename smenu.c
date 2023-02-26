@@ -1559,11 +1559,12 @@ get_terminal_size(int * const r, int * const c, term_t * term)
   }
 }
 
-/* ======================================================= */
-/* Get cursor position the terminal.                       */
-/* Assume that the Escape sequence ESC [ 6 n is available. */
-/* Returns 1 on success and 0 on error.                    */
-/* ======================================================= */
+/* =========================================================== */
+/* Gets the cursor position in the terminal.                   */
+/* Assume that the Escape sequence ESC [ 6 n is available.     */
+/* Retries up to 64 times in case of system call interruption. */
+/* Returns 1 on success and 0 on error.                        */
+/* =========================================================== */
 int
 get_cursor_position(int * const r, int * const c)
 {
@@ -1629,6 +1630,7 @@ read:
 
 /* ====================================================== */
 /* Returns 1 if a string is empty or only made of spaces. */
+/* TODO: take all UTF-8 spaces into account.              */
 /* ====================================================== */
 int
 isempty(const char * s)
@@ -1688,7 +1690,7 @@ parse_regex_selector_part(char * str, filters_t filter, ll_t ** inc_regex_list,
 }
 
 /* ===================================================================== */
-/* Parse a description string.                                           */
+/* Parse a column or row selector string whose syntax is defines as:     */
 /* <letter><range1>,<range2>,...                                         */
 /* <range> is n1-n2 | n1 where n1 starts with 1.                         */
 /*                                                                       */
@@ -1725,9 +1727,9 @@ parse_selectors(char * str, filters_t * filter, char * unparsed,
   char *       ptr;           /* pointer to the remaining string to parse.  */
   interval_t * interval;
 
-  /* Replace the UTF-8 ascii representation in the selector by */
-  /* their binary values.                                      */
-  /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+  /* Replace the UTF-8 string representation in the selector by */
+  /* their binary values.                                       */
+  /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
   utf8_interpret(str, misc->invalid_char_substitute);
 
   /* Get the first character to see if this is */
@@ -1819,10 +1821,10 @@ parse_selectors(char * str, filters_t * filter, char * unparsed,
 
     /* If the regex contains at least three characters then delim1 */
     /* and delim2 point to the first and last delimiter of the     */
-    /* regular expression. Ex /abc/                                */
-    /*                        ^   ^                                */
-    /*                        |   |                                */
-    /*                   delim1   delim2                           */
+    /* regular expression. E.g. /abc/                              */
+    /*                          ^   ^                              */
+    /*                          |   |                              */
+    /*                     delim1   delim2                         */
     /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
     delim1 = *(str + start);
     if (*ptr == '\0')
