@@ -1650,15 +1650,10 @@ isempty(const char * s)
 /* like: <delim><regex string><delim> as in /a.*b/ by example.              */
 /*                                                                          */
 /* str            (in)  delimited string to parse                           */
-/* filter         (in)  INCLUDE_FILTER or EXCLUDE_FILTER                    */
-/* inc_regex_list (out) INCLUDE_FILTER or EXCLUDE_FILTER                    */
-/*                      regular expression if the filter is INCLUDE_FILTER  */
-/* exc_regex_list (out) INCLUDE_FILTER or EXCLUDE_FILTER                    */
-/*                      regular expression if the filter is EXCLUDE_FILTER  */
+/* regex_list     (out) regex list to modify.                               */
 /* ======================================================================== */
 void
-parse_regex_selector_part(char * str, filters_t filter, ll_t ** inc_regex_list,
-                          ll_t ** exc_regex_list)
+parse_regex_selector_part(char * str, ll_t ** regex_list)
 {
   regex_t * regex;
 
@@ -1672,20 +1667,10 @@ parse_regex_selector_part(char * str, filters_t filter, ll_t ** inc_regex_list,
   regex = xmalloc(sizeof(regex_t));
   if (regcomp(regex, str + 1, REG_EXTENDED | REG_NOSUB) == 0)
   {
-    if (filter == INCLUDE_FILTER)
-    {
-      if (*inc_regex_list == NULL)
-        *inc_regex_list = ll_new();
+    if (*regex_list == NULL)
+      *regex_list = ll_new();
 
-      ll_append(*inc_regex_list, regex);
-    }
-    else
-    {
-      if (*exc_regex_list == NULL)
-        *exc_regex_list = ll_new();
-
-      ll_append(*exc_regex_list, regex);
-    }
+    ll_append(*regex_list, regex);
   }
 }
 
@@ -1695,10 +1680,11 @@ parse_regex_selector_part(char * str, filters_t filter, ll_t ** inc_regex_list,
 /* <range> is n1-n2 | n1 where n1 starts with 1.                         */
 /*                                                                       */
 /* <letter> is a|A|s|S|r|R|u|U where:                                    */
-/* a|A is for Add.                                                       */
-/* s|S is for Select (same as Add).                                      */
-/* r|R is for Remove.                                                    */
-/* d|D is for Deselect (same as Remove).                                 */
+/* i|I is for 'include'.                                                 */
+/* e|E is for 'exclude'.                                                 */
+/* l|L is for 'left' alignment.                                          */
+/* r|R is for 'right' alignment.                                         */
+/* c|C is for 'center' alignment.                                        */
 /*                                                                       */
 /* str               (in)  string to parse.                              */
 /* filter            (out) is INCLUDE_FILTER or EXCLUDE_FILTER according */
@@ -1711,14 +1697,21 @@ parse_regex_selector_part(char * str, filters_t filter, ll_t ** inc_regex_list,
 /*                         elements to be included.                      */
 /* exc_interval_list (out) is a list of the interval of elements to be   */
 /*                         excluded.                                     */
-/* exc_regex_list    (out) is a list of extended interval of elements to */
+/* exc_regex_list    (out) is a list of regex matching elements to       */
 /*                         be excluded.                                  */
+/* a{lrc}terval_list (out) is a list of the interval of elements to be   */
+/*                         aligned to the left, right or centered.       */
+/* a{lrc}_regex_list (out) is a list of regex matching elements to       */
+/*                         be aligned to the left, right or centered.    */
 /* ===================================================================== */
 void
 parse_selectors(char * str, filters_t * filter, char * unparsed,
                 ll_t ** inc_interval_list, ll_t ** inc_regex_list,
                 ll_t ** exc_interval_list, ll_t ** exc_regex_list,
-                misc_t * misc)
+                ll_t ** al_interval_list, ll_t ** al_regex_list,
+                ll_t ** ar_interval_list, ll_t ** ar_regex_list,
+                ll_t ** ac_interval_list, ll_t ** ac_regex_list,
+                alignment_t * default_alignment, win_t * win, misc_t * misc)
 {
   char         mark; /* Value to set */
   char         c;
@@ -1726,6 +1719,7 @@ parse_selectors(char * str, filters_t * filter, char * unparsed,
   size_t       first, second; /* range starting and ending values.          */
   char *       ptr;           /* pointer to the remaining string to parse.  */
   interval_t * interval;
+  int          type;
 
   /* Replace the UTF-8 string representation in the selector by */
   /* their binary values.                                       */
@@ -1740,14 +1734,46 @@ parse_selectors(char * str, filters_t * filter, char * unparsed,
 
   switch (c)
   {
+    case 'l':
+    case 'L':
+      if (!win->col_mode)
+      {
+        my_strcpy(unparsed, str);
+        return;
+      }
+      type = ALEFT;
+      break;
+
+    case 'r':
+    case 'R':
+      if (!win->col_mode)
+      {
+        my_strcpy(unparsed, str);
+        return;
+      }
+      type = ARIGHT;
+      break;
+
+    case 'c':
+    case 'C':
+      if (!win->col_mode)
+      {
+        my_strcpy(unparsed, str);
+        return;
+      }
+      type = ACENTER;
+      break;
+
     case 'i':
     case 'I':
+      type    = IN;
       *filter = INCLUDE_FILTER;
       mark    = INCLUDE_MARK;
       break;
 
     case 'e':
     case 'E':
+      type    = EX;
       *filter = EXCLUDE_FILTER;
       mark    = EXCLUDE_MARK;
       break;
@@ -1761,6 +1787,7 @@ parse_selectors(char * str, filters_t * filter, char * unparsed,
     case '7':
     case '8':
     case '9':
+      type    = IN;
       *filter = INCLUDE_FILTER;
       mark    = INCLUDE_MARK;
       start   = 0;
@@ -1770,6 +1797,7 @@ parse_selectors(char * str, filters_t * filter, char * unparsed,
       if (!isgraph(c))
         return;
 
+      type    = IN;
       *filter = INCLUDE_FILTER;
       mark    = INCLUDE_MARK;
       start   = 0;
@@ -1780,9 +1808,27 @@ parse_selectors(char * str, filters_t * filter, char * unparsed,
   /* """"""""""""""""""""""""""""""""""""""""""""""""""" */
   ptr = str + start;
 
+  if (*ptr == '\0' && *default_alignment == AL_NONE)
+    switch (type)
+    {
+      case ALEFT:
+        *default_alignment = AL_LEFT;
+        break;
+      case ARIGHT:
+        *default_alignment = AL_RIGHT;
+        break;
+      case ACENTER:
+        *default_alignment = AL_CENTERED;
+        break;
+      default:
+        my_strcpy(unparsed, str);
+        return;
+    }
+
   first = second = -1;
 
   /* Scan the comma separated ranges. */
+  /* '\' can be used to escape a ','. */
   /* """""""""""""""""""""""""""""""" */
   while (*ptr)
   {
@@ -1794,8 +1840,14 @@ parse_selectors(char * str, filters_t * filter, char * unparsed,
     while (*ptr && *ptr != ',')
     {
       if (*ptr == '-')
+      {
         is_range = 1;
-      ptr++;
+        ptr++;
+      }
+      else if (*ptr == '\\' && *(ptr + 1) != '\0' && *(ptr + 1) == ',')
+        ptr += 2;
+      else
+        ptr++;
     }
 
     /* Forbid the trailing comma (ex: xxx,). */
@@ -1839,8 +1891,24 @@ parse_selectors(char * str, filters_t * filter, char * unparsed,
     {
       /* Process the regex. */
       /* """""""""""""""""" */
-      parse_regex_selector_part(str + start, *filter, inc_regex_list,
-                                exc_regex_list);
+      switch (type)
+      {
+        case IN:
+          parse_regex_selector_part(str + start, inc_regex_list);
+          break;
+        case EX:
+          parse_regex_selector_part(str + start, exc_regex_list);
+          break;
+        case ALEFT:
+          parse_regex_selector_part(str + start, al_regex_list);
+          break;
+        case ARIGHT:
+          parse_regex_selector_part(str + start, ar_regex_list);
+          break;
+        case ACENTER:
+          parse_regex_selector_part(str + start, ac_regex_list);
+          break;
+      }
 
       /* Adjust the start of the new interval to read in the */
       /* initial string.                                     */
@@ -1919,19 +1987,218 @@ parse_selectors(char * str, filters_t * filter, char * unparsed,
 
     /* Add the new interval to the correct list. */
     /* """"""""""""""""""""""""""""""""""""""""" */
-    if (mark == EXCLUDE_MARK)
+    switch (type)
     {
-      if (*exc_interval_list == NULL)
-        *exc_interval_list = ll_new();
+      case IN:
+        if (*inc_interval_list == NULL)
+          *inc_interval_list = ll_new();
 
-      ll_append(*exc_interval_list, interval);
+        ll_append(*inc_interval_list, interval);
+        break;
+
+      case EX:
+        if (*exc_interval_list == NULL)
+          *exc_interval_list = ll_new();
+
+        ll_append(*exc_interval_list, interval);
+        break;
+
+      case ALEFT:
+        if (*al_interval_list == NULL)
+          *al_interval_list = ll_new();
+
+        ll_append(*al_interval_list, interval);
+        break;
+
+      case ARIGHT:
+        if (*ar_interval_list == NULL)
+          *ar_interval_list = ll_new();
+
+        ll_append(*ar_interval_list, interval);
+        break;
+
+      case ACENTER:
+        if (*ac_interval_list == NULL)
+          *ac_interval_list = ll_new();
+
+        ll_append(*ac_interval_list, interval);
+        break;
+    }
+  }
+
+  /* If we are here, then all the intervals have be successfully parsed */
+  /* Ensure that the unparsed string is empty.                          */
+  /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+  *unparsed = '\0';
+}
+
+/* ===================================================================== */
+/* Parse a commas separated sequence of regular expression.              */
+/* Uses to align to the left, right or center some words base on reguler */
+/* expressions.                                                          */
+/*                                                                       */
+/* str               (in)  sequence of regular expression.               */
+/* al_regex_list     (out) list of RE for left-aligned words.            */
+/* ar_regex_list     (out) list of RE for left-aligned words.            */
+/* ac_regex_list     (out) list of RE for centered words.                */
+/* default_alignment (out) new default alignment.                        */
+/* misc              (in)  used by utf8_interpret.                       */
+/* ===================================================================== */
+void
+parse_al_selectors(char * str, char * unparsed, ll_t ** al_regex_list,
+                   ll_t ** ar_regex_list, ll_t ** ac_regex_list,
+                   alignment_t * default_alignment, misc_t * misc)
+{
+  char         mark; /* Value to set */
+  char         c;
+  size_t       start = 1;     /* column string offset in the parsed string. */
+  size_t       first, second; /* range starting and ending values.          */
+  char *       ptr;           /* pointer to the remaining string to parse.  */
+  interval_t * interval;
+  int          type;
+
+  /* Replace the UTF-8 string representation in the selector by */
+  /* their binary values.                                       */
+  /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+  utf8_interpret(str, misc->invalid_char_substitute);
+
+  /* Get the first character to see if this is */
+  /* an additive or restrictive operation.     */
+  /* """"""""""""""""""""""""""""""""""""""""" */
+  if (sscanf(str, "%c", &c) == 0)
+    return;
+
+  switch (c)
+  {
+    case 'l':
+    case 'L':
+      type = ALEFT;
+      break;
+
+    case 'r':
+    case 'R':
+      type = ARIGHT;
+      break;
+
+    case 'c':
+    case 'C':
+      type = ACENTER;
+      break;
+
+    default:
+      if (!isgraph(c))
+        return;
+
+      start = 0;
+      break;
+  }
+
+  /* Set ptr to the start of the interval list to parse. */
+  /* """"""""""""""""""""""""""""""""""""""""""""""""""" */
+  ptr = str + start;
+
+  if (*ptr == '\0' && *default_alignment == AL_NONE)
+    switch (type)
+    {
+      case ALEFT:
+        *default_alignment = AL_LEFT;
+        break;
+      case ARIGHT:
+        *default_alignment = AL_RIGHT;
+        break;
+      case ACENTER:
+        *default_alignment = AL_CENTERED;
+        break;
+      default:
+        my_strcpy(unparsed, str);
+        return;
+    }
+
+  first = second = -1;
+
+  /* Scan the comma separated ranges. */
+  /* '\' can be used to escape a ','. */
+  /* """""""""""""""""""""""""""""""" */
+  while (*ptr)
+  {
+    char   delim1, delim2 = '\0';
+    char * oldptr;
+
+    oldptr = ptr;
+    while (*ptr && *ptr != ',')
+    {
+      if (*ptr == '\\' && *(ptr + 1) != '\0' && *(ptr + 1) == ',')
+        ptr += 2;
+      else
+        ptr++;
+    }
+
+    /* Forbid the trailing comma (ex: xxx,). */
+    /* """"""""""""""""""""""""""""""""""""" */
+    if (*ptr == ',' && (*(ptr + 1) == '\0'))
+    {
+      my_strcpy(unparsed, ptr);
+      return;
+    }
+
+    /* Forbid the empty patterns (ex: xxx,,yyy). */
+    /* """"""""""""""""""""""""""""""""""""""""" */
+    if (oldptr == ptr)
+    {
+      my_strcpy(unparsed, ptr);
+      return;
+    }
+
+    /* Mark the end of the interval found. */
+    /* """"""""""""""""""""""""""""""""""" */
+    if (*ptr)
+      *ptr++ = '\0';
+
+    /* If the regex contains at least three characters then delim1 */
+    /* and delim2 point to the first and last delimiter of the     */
+    /* regular expression. E.g. /abc/                              */
+    /*                          ^   ^                              */
+    /*                          |   |                              */
+    /*                     delim1   delim2                         */
+    /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+    delim1 = *(str + start);
+    if (*ptr == '\0')
+      delim2 = *(ptr - 1);
+    else if (ptr > str + start + 2)
+      delim2 = *(ptr - 2);
+
+    /* Forbid the empty patterns (ex: xxx,,yyy) and check is we have */
+    /* found a well described regular expression.                    */
+    /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+    if (ptr > str + start + 2 && delim1 == delim2 && isgraph(delim1)
+        && isgraph(delim2) && !isdigit(delim1) && !isdigit(delim2))
+    {
+      /* Process the regex. */
+      /* """""""""""""""""" */
+      switch (type)
+      {
+        case ALEFT:
+          parse_regex_selector_part(str + start, al_regex_list);
+          break;
+        case ARIGHT:
+          parse_regex_selector_part(str + start, ar_regex_list);
+          break;
+        case ACENTER:
+          parse_regex_selector_part(str + start, ac_regex_list);
+          break;
+      }
+
+      /* Adjust the start of the new interval to read in the */
+      /* initial string.                                     */
+      /* """"""""""""""""""""""""""""""""""""""""""""""""""" */
+      start = ptr - str;
+
+      continue;
     }
     else
     {
-      if (*inc_interval_list == NULL)
-        *inc_interval_list = ll_new();
-
-      ll_append(*inc_interval_list, interval);
+      my_strcpy(unparsed, ptr - 1);
+      return;
     }
   }
 
@@ -5564,6 +5831,22 @@ rows_select_action(char * ctx_name, char * opt_name, char * param,
 }
 
 void
+aligns_select_action(char * ctx_name, char * opt_name, char * param,
+                     int nb_values, char ** values, int nb_opt_data,
+                     void ** opt_data, int nb_ctx_data, void ** ctx_data)
+{
+  int     v;
+  ll_t ** aligns_selector_list = opt_data[0];
+  win_t * win                  = opt_data[1];
+
+  if (*aligns_selector_list == NULL)
+    *aligns_selector_list = ll_new();
+
+  for (v = 0; v < nb_values; v++)
+    ll_append(*aligns_selector_list, xstrdup(values[v]));
+}
+
+void
 toggle_action(char * ctx_name, char * opt_name, char * param, int nb_values,
               char ** values, int nb_opt_data, void ** opt_data,
               int nb_ctx_data, void ** ctx_data)
@@ -6793,6 +7076,85 @@ shift_arrow_clicked(win_t * win, term_t * term, int line_click,
   return 1;
 }
 
+/* ============================================================== */
+/* Takes a string with leading and/or trailing spaces and try to  */
+/* left-align, right-align or center them by re-arranging blanks. */
+/* word      IN/OUT string to work with.                          */
+/* alignment IN     kind of alignments.                           */
+/* ============================================================== */
+void
+align_word(word_t * word, alignment_t alignment, size_t prefix)
+{
+  switch (alignment)
+  {
+    char * str;
+    size_t n;
+    size_t m;
+    size_t wl;
+    size_t l;
+
+    case AL_LEFT:
+      /* Left align the word. */
+      /* """""""""""""""""""" */
+      str = strdup(word->str + prefix);
+      n   = 0;
+
+      while (isspace(str[n]))
+        n++;
+
+      swap_string_parts(&str, n);
+
+      strcpy(word->str + prefix, str);
+      free(str);
+
+      break;
+
+    case AL_RIGHT:
+      /* Right align the word. */
+      /* """"""""""""""""""""" */
+      str = strdup(word->str + prefix);
+      n   = strlen(str) - 1;
+
+      while (n && isspace(str[n]))
+        n--;
+
+      swap_string_parts(&str, n + 1);
+
+      strcpy(word->str + prefix, str);
+      free(str);
+
+      break;
+
+    case AL_CENTERED:
+      /* Center the word. */
+      /* """""""""""""""" */
+      str = strdup(word->str + prefix);
+      n   = 0;
+      l   = strlen(str);
+      m   = l - 1;
+
+      while (isspace(str[n]))
+        n++;
+
+      while (m && isspace(str[m]))
+        m--;
+
+      if (n > m)
+        break;
+
+      wl = m - n + 1;
+      memset(word->str + prefix, ' ', l);
+
+      strncpy(word->str + prefix + (l - wl) / 2, str + n, wl);
+      free(str);
+
+      break;
+
+    default:
+      break;
+  }
+}
+
 /* ================= */
 /* Main entry point. */
 /* ================= */
@@ -7016,15 +7378,35 @@ main(int argc, char * argv[])
   ll_t * include_sed_list = NULL; /* idem for -I.                            */
   ll_t * exclude_sed_list = NULL; /* idem for -E.                            */
 
-  ll_t * inc_col_interval_list = NULL; /* list of included or                */
+  ll_t * inc_col_interval_list = NULL; /* Lists of included or               */
   ll_t * exc_col_interval_list = NULL; /* excluded numerical intervals       */
   ll_t * inc_row_interval_list = NULL; /* for lines and columns.             */
   ll_t * exc_row_interval_list = NULL;
 
-  ll_t * inc_col_regex_list = NULL; /* same for lines and columns specified. */
+  ll_t * inc_col_regex_list = NULL; /* Same for lines and columns specified. */
   ll_t * exc_col_regex_list = NULL; /* by regular expressions.               */
   ll_t * inc_row_regex_list = NULL;
   ll_t * exc_row_regex_list = NULL;
+
+  ll_t * al_col_interval_list = NULL; /* Lists of left aligned rows/columns, */
+  ll_t * ar_col_interval_list = NULL; /* right aligned rows/columns,         */
+  ll_t * ac_col_interval_list = NULL; /* centered rows/columns               */
+  ll_t * al_row_interval_list = NULL;
+  ll_t * ar_row_interval_list = NULL;
+  ll_t * ac_row_interval_list = NULL;
+
+  ll_t * al_col_regex_list = NULL; /* Same for regular expression based      */
+  ll_t * ar_col_regex_list = NULL; /* alignments.                            */
+  ll_t * ac_col_regex_list = NULL;
+  ll_t * al_row_regex_list = NULL;
+  ll_t * ar_row_regex_list = NULL;
+  ll_t * ac_row_regex_list = NULL;
+
+  ll_t * al_word_regex_list = NULL;
+  ll_t * ar_word_regex_list = NULL;
+  ll_t * ac_word_regex_list = NULL;
+
+  alignment_t default_alignment = AL_NONE;
 
   filters_t rows_filter_type = UNKNOWN_FILTER;
 
@@ -7043,10 +7425,15 @@ main(int argc, char * argv[])
                                 | -S/-I/-E.                                  */
 
   ll_t * cols_selector_list = NULL; /* to store ASCII representations of     */
-  char * cols_selector      = NULL; /* RE to select some columns with -C.    */
+  char * cols_selector      = NULL; /* ranges add RE to select some columns  *
+                                     | with -C.                              */
 
   ll_t * rows_selector_list = NULL; /* to store ASCII representations of     */
-  char * rows_selector      = NULL; /* RE to select some rows with -R.       */
+  char * rows_selector      = NULL; /* ranges and RE to select some rows     *
+                                     | with -R.                              */
+
+  ll_t * aligns_selector_list = NULL; /* to store ASCII representations of   */
+  char * aligns_selector      = NULL; /* RE to select some rows with -al.    */
 
   long wi; /* word index.                                                    */
 
@@ -7092,16 +7479,22 @@ main(int argc, char * argv[])
 
   long * col_real_max_size = NULL; /* Array of maximum sizes (bytes) of each */
                                    /* column in column mode.                 */
-  long * col_max_size = NULL;      /* Array of maximum sizes of each column  */
-                                   /* in column mode.                        */
+
+  long * col_max_size = NULL; /* Array of maximum sizes (in display cells)   *
+                               | of each column in column mode.              */
+
+  alignment_t * col_alignments; /* Alignment tag for each column in column   *
+                                 | mode.                                     */
 
   long word_real_max_size = 0; /* size of the longer word after expansion.   */
   long cols_real_max_size = 0; /* Max real width of all columns used when    *
                                 | -w and -c are both set.                    */
-  long cols_max_size      = 0; /* Same as above for the columns widths       */
 
-  long col_index   = 0; /* Index of the current column when reading words,   *
+  long cols_max_size = 0; /* Same as above for the columns widths            */
+
+  long col_index = 0; /* Index of the current column when reading words,     *
                          | used  in column mode.                             */
+
   long cols_number = 0; /* Number of columns in column mode.                 */
 
   char * pre_selection_index = NULL; /* pattern used to set the initial      *
@@ -7397,6 +7790,7 @@ main(int argc, char * argv[])
   col_spec_options = "[wide_mode] "
                      "[columns_select... #selector...] "
                      "[rows_select... #selector...] "
+                     "[aligns_select... #re_selector...] "
                      "[gutter [#string]] "
                      "[line_separators #bytes] "
                      "[da_options #prefix:attr...] "
@@ -7505,6 +7899,7 @@ main(int argc, char * argv[])
                           "-C -cs -cols -cols_select");
   ctxopt_add_opt_settings(parameters, "rows_select",
                           "-R -rs -rows -rows_select");
+  ctxopt_add_opt_settings(parameters, "aligns_select", "-al -align");
   ctxopt_add_opt_settings(parameters, "force_first_column",
                           "-A -fc -first_column");
   ctxopt_add_opt_settings(parameters, "force_last_column",
@@ -7598,6 +7993,8 @@ main(int argc, char * argv[])
                           &cols_selector_list, (char *)0);
   ctxopt_add_opt_settings(actions, "rows_select", rows_select_action,
                           &rows_selector_list, &win, (char *)0);
+  ctxopt_add_opt_settings(actions, "aligns_select", aligns_select_action,
+                          &aligns_selector_list, &win, (char *)0);
   ctxopt_add_opt_settings(actions, "include_re", include_re_action,
                           &pattern_def_include, &include_pattern, &misc,
                           (char *)0);
@@ -8576,11 +8973,18 @@ main(int argc, char * argv[])
 
       parse_selectors(rows_selector, &filter_type, unparsed,
                       &inc_row_interval_list, &inc_row_regex_list,
-                      &exc_row_interval_list, &exc_row_regex_list, &misc);
+                      &exc_row_interval_list, &exc_row_regex_list,
+                      &al_row_interval_list, &al_row_regex_list,
+                      &ar_row_interval_list, &ar_row_regex_list,
+                      &ac_row_interval_list, &ac_row_regex_list,
+                      &default_alignment, &win, &misc);
 
       if (*unparsed != '\0')
       {
-        fprintf(stderr, "%s: Bad -R argument. Unparsed part.\n", unparsed);
+        fprintf(stderr,
+                "Bad not allowed row selection argument. "
+                "Unparsed part: %s\n",
+                unparsed);
 
         exit(EXIT_FAILURE);
       }
@@ -8594,6 +8998,9 @@ main(int argc, char * argv[])
     }
     merge_intervals(inc_row_interval_list);
     merge_intervals(exc_row_interval_list);
+    merge_intervals(al_row_interval_list);
+    merge_intervals(ar_row_interval_list);
+    merge_intervals(ac_row_interval_list);
   }
 
   /* Parse the column selection string if any. */
@@ -8615,19 +9022,24 @@ main(int argc, char * argv[])
 
       parse_selectors(cols_selector, &filter_type, unparsed,
                       &inc_col_interval_list, &inc_col_regex_list,
-                      &exc_col_interval_list, &exc_col_regex_list, &misc);
+                      &exc_col_interval_list, &exc_col_regex_list,
+                      &al_col_interval_list, &al_col_regex_list,
+                      &ar_col_interval_list, &ar_col_regex_list,
+                      &ac_col_interval_list, &ac_col_regex_list,
+                      &default_alignment, &win, &misc);
 
       if (*unparsed != '\0')
       {
-        fprintf(stderr, "%s: Bad -C argument. Unparsed part.\n", unparsed);
+        fprintf(stderr,
+                "Bad not allowed column selection argument. "
+                "Unparsed part: %s\n",
+                unparsed);
 
         exit(EXIT_FAILURE);
       }
 
       merge_intervals(inc_col_interval_list);
       merge_intervals(exc_col_interval_list);
-
-      free(unparsed);
 
       if (cols_filter_type == UNKNOWN_FILTER)
         cols_filter_type = filter_type;
@@ -8673,6 +9085,39 @@ main(int argc, char * argv[])
           memset(cols_filter + data->low, EXCLUDE_MARK,
                  data->high - data->low + 1);
         }
+
+      node_selector = node_selector->next;
+
+      free(unparsed);
+    }
+
+    merge_intervals(al_col_interval_list);
+    merge_intervals(ar_col_interval_list);
+    merge_intervals(ac_col_interval_list);
+  }
+
+  /* parse the alignment selector list if any. */
+  /* """"""""""""""""""""""""""""""""""""""""" */
+  if (aligns_selector_list != NULL)
+  {
+    ll_node_t * node_selector = aligns_selector_list->head;
+
+    while (node_selector != NULL)
+    {
+      aligns_selector = node_selector->data;
+      char * unparsed = xstrdup((char *)aligns_selector);
+
+      parse_al_selectors(aligns_selector, unparsed, &al_word_regex_list,
+                         &ar_word_regex_list, &ac_word_regex_list,
+                         &default_alignment, &misc);
+
+      if (*unparsed != '\0')
+      {
+        fprintf(stderr, "Bad alignment selection argument. Unparsed part: %s\n",
+                unparsed);
+
+        exit(EXIT_FAILURE);
+      }
 
       node_selector = node_selector->next;
     }
@@ -9116,6 +9561,12 @@ main(int argc, char * argv[])
         }
       }
     }
+
+    /* Initialize the alignment information of each column to be 'left'. */
+    /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+    col_alignments = xmalloc(cols_number * sizeof(alignment_t));
+    for (long ci = 0; ci < cols_number; ci++)
+      col_alignments[ci] = AL_NONE;
 
     /* Store some known values in the current word's structure. */
     /* """""""""""""""""""""""""""""""""""""""""""""""""""""""" */
@@ -9783,9 +10234,50 @@ main(int argc, char * argv[])
     col_index = 0;
     for (wi = 0; wi < count; wi++)
     {
-      long      s1, s2;
-      long      word_width;
-      wchar_t * w;
+      long         s1, s2;
+      long         word_width;
+      wchar_t *    w;
+      regex_t      re;
+      ll_node_t *  node;
+      interval_t * interval;
+
+      /* Does this word matched by one of the alignment regex? */
+      /* If yes, then add the current column number to the list of the
+       * corresponding column_alignment list
+      /* """"""""""""""""""""""""""""""""""""""""""""""""""""" */
+      ll_t *  regex_list_a[3]    = { al_col_regex_list, ar_col_regex_list,
+                                     ac_col_regex_list };
+      ll_t ** interval_list_a[3] = { &al_col_interval_list,
+                                     &ar_col_interval_list,
+                                     &ac_col_interval_list };
+
+      for (int i = 0; i < 3; i++) /* For each regex list. */
+      {
+        if (regex_list_a[i] == NULL)
+          continue;
+
+        node = regex_list_a[i]->head;
+        while (node) /* For each RE in the list. */
+        {
+          re = *(regex_t *)(node->data);
+          if (regexec(&re, word_a[wi].str, (int)0, NULL, 0) == 0)
+          {
+            /* We have a match. */
+            /* '''''''''''''''' */
+            interval      = malloc(sizeof(interval_t));
+            interval->low = interval->high = col_index;
+
+            /* Append a new interval containing the current column number */
+            /* in the interval list matching the regex list.              */
+            /* '''''''''''''''''''''''''''''''''''''''''''''''''''''''''' */
+            if (*interval_list_a[i] == NULL)
+              *interval_list_a[i] = ll_new();
+
+            ll_append(*interval_list_a[i], interval);
+          }
+          node = node->next;
+        }
+      }
 
       s1         = (long)strlen(word_a[wi].str);
       word_width = mbstowcs(NULL, word_a[wi].str, 0);
@@ -9803,6 +10295,9 @@ main(int argc, char * argv[])
       else
         col_index++;
     }
+    merge_intervals(al_col_interval_list);
+    merge_intervals(ar_col_interval_list);
+    merge_intervals(ac_col_interval_list);
   }
   else if (win.tab_mode)
   {
@@ -9877,6 +10372,234 @@ main(int argc, char * argv[])
         tst_word = tst_insert(tst_word, w, list);
       }
       free(w);
+    }
+  }
+
+  /* Sixth pass: Apply alignment rules in column modes. */
+  /* """""""""""""""""""""""""""""""""""""""""""""""""" */
+  if (win.col_mode)
+  {
+    long        row_index = 0;
+    interval_t  interval;
+    size_t      n;
+    char *      words;
+    alignment_t row_alignment;
+    alignment_t word_alignment;
+
+    col_index = 0;
+
+    ll_t * word_regex_list_a[3] = { al_word_regex_list, ar_word_regex_list,
+                                    ac_word_regex_list };
+
+    ll_node_t * cur_word_node_a[3];
+
+    ll_t * col_interval_list_a[3] = { al_col_interval_list,
+                                      ar_col_interval_list,
+                                      ac_col_interval_list };
+
+    ll_node_t * cur_col_node_a[3] = {
+      al_col_interval_list != NULL ? al_col_interval_list->head : NULL,
+      ar_col_interval_list != NULL ? ar_col_interval_list->head : NULL,
+      ac_col_interval_list != NULL ? ac_col_interval_list->head : NULL
+    };
+
+    ll_t * row_interval_list_a[3] = { al_row_interval_list,
+                                      ar_row_interval_list,
+                                      ac_row_interval_list };
+
+    ll_node_t * cur_row_interval_node_a[3] = {
+      al_row_interval_list != NULL ? al_row_interval_list->head : NULL,
+      ar_row_interval_list != NULL ? ar_row_interval_list->head : NULL,
+      ac_row_interval_list != NULL ? ac_row_interval_list->head : NULL
+    };
+
+    ll_t * row_regex_list_a[3] = { al_row_regex_list, ar_row_regex_list,
+                                   ac_row_regex_list };
+
+    ll_node_t * cur_row_regex_node_a[3];
+
+    alignment_t alignment_a[3] = { AL_LEFT, AL_RIGHT, AL_CENTERED };
+
+    char * aligned_a; /* Array of indicators used to remember that a word *
+                       | has been aliugnes with -al in a row.             */
+
+    /* Initialize each of its places with No ('N'). */
+    /* """""""""""""""""""""""""""""""""""""""""""" */
+    aligned_a = xmalloc(cols_number);
+
+    for (int i = 0; i < cols_number; i++)
+      aligned_a[i] = 'N';
+
+    row_alignment = AL_NONE;
+
+    for (wi = 0; wi < count; wi++)
+    {
+      word_alignment = AL_NONE;
+
+      /* First heck if the current word is matched by a word specified */
+      /* regular expression set by the * alignment option.             */
+      /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+
+      cur_word_node_a[0] = al_word_regex_list != NULL ? al_word_regex_list->head
+                                                      : NULL;
+
+      cur_word_node_a[1] = ar_word_regex_list != NULL ? ar_word_regex_list->head
+                                                      : NULL;
+
+      cur_word_node_a[2] = ac_word_regex_list != NULL ? ac_word_regex_list->head
+                                                      : NULL;
+
+      cur_row_regex_node_a[0] = al_row_regex_list != NULL
+                                  ? al_row_regex_list->head
+                                  : NULL;
+
+      cur_row_regex_node_a[1] = ar_row_regex_list != NULL
+                                  ? ar_row_regex_list->head
+                                  : NULL;
+
+      cur_row_regex_node_a[2] = ac_row_regex_list != NULL
+                                  ? ac_row_regex_list->head
+                                  : NULL;
+
+      /* Process the word alignment regex lists. */
+      /* """"""""""""""""""""""""""""""""""""""" */
+      for (int i = 0; i < 3; i++)
+      {
+        while (word_alignment == AL_NONE && cur_word_node_a[i] != NULL)
+        {
+          char *    str;
+          regex_t * re;
+
+          str = word_a[wi].str + daccess.flength;
+          re  = (regex_t *)(cur_word_node_a[i]->data);
+
+          if (regexec(re, str, (int)0, NULL, 0) == 0)
+          {
+            word_alignment = alignment_a[i];
+
+            /* Mark this word as aligned in this row. */
+            /* """""""""""""""""""""""""""""""""""""" */
+            if (win.col_mode)
+              aligned_a[col_index] = 'Y';
+
+            break; /* Early exit of the while loop. */
+          }
+
+          cur_word_node_a[i] = cur_word_node_a[i]->next;
+        }
+      }
+
+      /* Process the alignment lists for columns and increment     */
+      /* their current pointers when needed.                       */
+      /* The current interval pointer cur_col_node_a[i] is only    */
+      /* modified to point to the next one of the list is the      */
+      /* current column is greater than the  max column in the     */
+      /* pointed interval.                                         */
+      /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+      for (int i = 0; i < 3; i++)
+      {
+        if (cur_col_node_a[i] != NULL)
+        {
+          interval = *(interval_t *)(cur_col_node_a[i]->data);
+          if (col_index >= interval.low && col_index <= interval.high)
+          {
+            if (col_alignments[col_index] == AL_NONE)
+              col_alignments[col_index] = alignment_a[i];
+          }
+          else if (col_index > interval.high)
+            cur_col_node_a[i] = cur_col_node_a[i]->next;
+        }
+        if (word_a[wi].is_last && col_interval_list_a[i] != NULL)
+          cur_col_node_a[i] = col_interval_list_a[i]->head;
+      }
+
+      /* Process row interval and regex alignment lists. */
+      /* """"""""""""""""""""""""""""""""""""""""""""""" */
+      for (int i = 0; i < 3; i++)
+      {
+        /* Lists of intervals. */
+        /* ''''''''''''''''''' */
+        if (cur_row_interval_node_a[i] != NULL)
+        {
+          interval = *(interval_t *)(cur_row_interval_node_a[i]->data);
+          if (row_index >= interval.low && row_index <= interval.high)
+            row_alignment = alignment_a[i];
+          else if (row_index > interval.high)
+            cur_row_interval_node_a[i] = cur_row_interval_node_a[i]->next;
+        }
+
+        /* Lists of regular expression. */
+        /* '''''''''''''''''''''''''''' */
+        if (cur_row_regex_node_a[i] != NULL)
+        {
+          while (row_alignment == AL_NONE && cur_row_regex_node_a[i] != NULL)
+          {
+            char *    str;
+            regex_t * re;
+
+            str = word_a[wi].str + daccess.flength;
+            re  = (regex_t *)(cur_row_regex_node_a[i]->data);
+
+            if (regexec(re, str, (int)0, NULL, 0) == 0)
+            {
+              row_alignment = alignment_a[i];
+
+              /* Also aligns the previous words in the line to the */
+              /* right, left or centre.                            */
+              /* ''''''''''''''''''''''''''''''''''''''''''''''''' */
+              long j = wi;
+              while (j > 0 && !word_a[j - 1].is_last)
+              {
+                j--;
+                /* Do not realign words already aligned with -al */
+                /* ''''''''''''''''''''''''''''''''''''''''''''' */
+                if (aligned_a[col_index - (wi - j)] == 'N')
+                  align_word(&word_a[j], row_alignment, daccess.flength);
+              }
+
+              break; /* Early exit of the while loop. */
+            }
+
+            cur_row_regex_node_a[i] = cur_row_regex_node_a[i]->next;
+          }
+        }
+      }
+
+      /* Align the words. */
+      /* """""""""""""""" */
+      if (word_alignment != AL_NONE)
+        align_word(&word_a[wi], word_alignment, daccess.flength);
+      else
+        switch (row_alignment)
+        {
+          case AL_NONE:
+            if (col_alignments[col_index] != AL_NONE)
+              align_word(&word_a[wi], col_alignments[col_index],
+                         daccess.flength);
+            else
+              align_word(&word_a[wi], default_alignment, daccess.flength);
+            break;
+
+          default:
+            align_word(&word_a[wi], row_alignment, daccess.flength);
+            break;
+        }
+
+      if (word_a[wi].is_last) /* About to start a new row? */
+      {
+        row_index++;
+        row_alignment = AL_NONE;
+
+        /* Re-initialize the array with No ('N'). */
+        /* as this is a new row.                  */
+        /* """""""""""""""""""""""""""""""""""""" */
+        for (int i = 0; i < cols_number; i++)
+          aligned_a[i] = 'N';
+
+        col_index = 0; /* Restart the columns counter. */
+      }
+      else
+        col_index++;
     }
   }
 

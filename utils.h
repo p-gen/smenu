@@ -71,4 +71,7 @@ my_wcscasecmp(const wchar_t * w1s, const wchar_t * w2s);
 int
 is_integer(const char * const s);
 
+int
+swap_string_parts(char ** s, size_t first);
+
 #endif

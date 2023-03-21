@@ -47,8 +47,11 @@ and outputs the selection to stdout.
   [\fB-l\fP|\fB-line\fP|\fB-line_mode\fP]
   [\fB-t\fP|\fB-tab\fP|\fB-tab_mode\fP|\fB-tabulate_mode\fP [\fIcols\fP]]
   [\fB-w\fP|\fB-wide\fP|\fB-wide_mode\fP]
-  [\fB-C\fP|\fB-cs\fP|\fB-cols\fP|\fB-cols_select\fP... \fIselector\fP...]
-  [\fB-R\fP|\fB-rs\fP|\fB-rows\fP|\fB-rows_select\fP... \fIselector\fP...]
+  [\fB-C\fP|\fB-cs\fP|\fB-cols\fP|\fB-cols_select\fP... \
+[\fIdirective\fP][\fIselector\fP...]]
+  [\fB-R\fP|\fB-rs\fP|\fB-rows\fP|\fB-rows_select\fP... \
+[\fIdirective\fP][\fIselector\fP...]]
+  [\fB-al\fP|\fB-align\fP... [\fIre_selectors\fP...]]
   [\fB-A\fP|\fB-fc\fP|\fB-first_column\fP \fIregex\fP]
   [\fB-Z\fP|\fB-lc\fP|\fB-last_column\fP \fIregex\fP]
   [\fB-g\fP|\fB-gutter\fP [\fIstring\fP]]
@@ -82,13 +85,16 @@ and outputs the selection to stdout.
 \fIdelay_in_ms\fP]
 
 
-  selectors ::= \fIcol1\fP[-\fIcol2\fP],...|\fIrow1\fP[-\fIrow2\fP],...|\
+  selectors    ::= \fIcol1\fP[-\fIcol2\fP],...|\fIrow1\fP[-\fIrow2\fP],...|\
 \fIRE\fP,...
-  parameter ::= [l|r:<char>]|[a:left|right]|[p:included|all|[w:<num>]|
+  re_selectors ::= \fIRE\fP,...
+  directive    ::= \fIi\fP|\fII\fP|\fIe\fP|\fIE\fP|\
+\fIl\fP|\fIL\fP|\fIr\fP|\fIR\fP|\fIc\fP|\fIC\fP
+  parameter    ::= [l|r:<char>]|[a:left|right]|[p:included|all|[w:<num>]|
                 [f:yes|no]|[o:<num>[+]]|[n:<num>]|[i:<num>]|[d:<char>]|
                 [s:<num>]|[h:trim|cut|keep]
-  attr      ::= [fg][/bg][,style]
-  RE        ::= \fB<char>\fIregex\fB<char>\fR
+  attr         ::= [fg][/bg][,style]
+  RE           ::= \fB<char>\fIregex\fB<char>\fR
 
   selectors and RE can be freely mixed.
   style can only contain a maximum of 6 characters.
@@ -1447,17 +1453,21 @@ This choice enables a faster display.
 .RE
 .PP
 .IP "\fB-C\fP|\fB-cs\fP|\fB-cols\fP|\fB-cols_select\fP... \
-[\fIi\fP|\fIe\fP]\fIselectors\fP..."
+[\fIi\fP|\fII\fP|\fIe\fP|\fIE\fP|\
+\fIl\fP|\fIL\fP|\fIr\fP|\fIR\fP|\fIc\fP|\fIC\fP]\
+[\fIselectors\fP]..."
 (Allowed in the "Columns" context.)
-
-\fII\fP and \fIE\fP have the same meaning as \fIi\fP and \fIe\fP.
 
 In column mode, this option is useful to restrict the selections to a
 subset of all columns.
 Either by including (nothing or \fIi\fP) or by excluding (\fIe\fP) them.
 
+The other letters \fIl\fP, \fIL\fP, \fIr\fP, \fIR\fP, \fIc\fP and \fIC\fP
+are useful to respectively align to the left, to the right or center the
+content columns (selected or not).
+
 Columns can be designated by their number (1 based) or by a regular
-expression enclosed in delimiter made from any non-blank ASCII character
+expression enclosed in delimiters made from any non-blank ASCII character
 excluding the comma.
 
 Range of columns (number or RE) can be given by separated then with
@@ -1465,6 +1475,8 @@ a dash.
 
 Multiple selectors can be regrouped in one argument using commas to
 separate them.
+A protected comma ('\\,') is not considered a delimiter.
+
 This option also accepts multiple arguments, each of them being a
 selector.
 
@@ -1474,6 +1486,12 @@ on the letter given after the option or before the selector if there is
 more than one argument.
 
 Regular expressions and column numbers can be freely mixed.
+
+This option also sets the default alignment of column contents when no
+arguments are provided.
+For example: \f(CB-Cr -Cl1\fP sets the default alignment to the right
+and the alignment of the contents of column 1 to the left.
+At the beginning, no default alignment of the column contents is set.
 
 Regular expression in \fB-C\fP|\fB-cs\fP|\fB-cols\fP|\fB-cols_select\fP and
 \fB-R\fP|\fB-rs\fP|\fB-rows\fP|\fB-rows_select\fP can contain \fBUTF-8\fP
@@ -1486,7 +1504,16 @@ If \fIe\fP was used in place of \fIi\fP, all the columns would have been
 selected \fBexcept\fP the columns \fB2\fP,\fB3\fP,\fB5\fP,\fB6\fP,\fB7\fP
 and those matching the extended regular expression '\f(CBX.\fP'.
 
+Example of mixing alignment and inclusion/exclusion directives:
+\f(CB-Ci1-5 -Ce/a+/ -Cr7,/b+/\fP makes columns 1 to 5 selectable, makes
+columns whose content starts with "a" non selectable and aligns the
+content of the column 7 to the left.
+
 Spaces are allowed in the selection string if they are protected.
+
+When an alignment directive is used and without any column selection,
+then the specified alignment becomes the default one, E.g: \f(CB-Cr\fP
+sets alignment the default one to the right.
 
 Other example where multiple selectors are used as multiple arguments:
 \f(CBps | smenu -col -cols e/TTY/ e/CMD/ e3\fP
@@ -1497,6 +1524,9 @@ Other example where multiple selectors are used as multiple arguments:
 Similar to \fB-C\fP|\fB-cs\fP|\fB-cols\fP|\fB-cols_select\fP but for
 the rows.
 
+Warning, the directives \fIl\fP, \fIL\fP, \fIr\fP, \fIR\fP, \fIc\fP
+and \fIC\fP are only allowed in column mode.
+
 \fB-C\fP|\fB-cs\fP|\fB-cols\fP|\fB-cols_select\fP and
 \fB-R\fP|\fB-rs\fP|\fB-rows\fP|\fB-rows_select\fP can be used more than
 once in a cumulative manner:
@@ -1506,6 +1536,29 @@ occurrence of the options, the other occurrences will only update the
 selected or de-selected ranges.
 
 Once a column or a row has been excluded, it cannot be re-included.
+
+Alignments of row contents with this option have priority over alignments
+in columns.
+.IP "\fB-al\fP|\fBalign\fP... \fIregex_selectors\fP..."
+(Allowed in the "Columns" context.)
+
+This option is similar to
+\fB-C\fP|\fB-cs\fP|\fB-cols\fP|\fB-cols_select\fP and
+\fB-R\fP|\fB-rs\fP|\fB-rows\fP|\fB-rows_select\fP but allows to
+align all words matched by on of the regular expression defined in
+\fIregex_selectors\fP
+
+This option only accepts a list of regular expressions.
+
+E.g.: \f(CB-al c/a+/,/b+/\fP
+
+\fB-al\fP|\fBalign\fP,
+\fB-C\fP|\fB-cs\fP|\fB-cols\fP|\fB-cols_select\fP and
+\fB-R\fP|\fB-rs\fP|\fB-rows\fP|\fB-rows_select\fP can be used more than
+once in a cumulative manner.
+
+Word alignments with this option take precedence over row and column
+alignments.
 .IP "\fB-A\fP|\fB-fc\fP|\fB-first_column\fP \fIregex\fP"
 (Allowed in the following contexts: "Columns", "Lines" and "Tabulations".)
 

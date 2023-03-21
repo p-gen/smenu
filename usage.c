@@ -96,6 +96,8 @@ common_help(void)
   printf("  treats single and double quotes as normal characters.\n");
   printf("-lim|-limits\n");
   printf("  overload the words number/max. word length/max columns limits.\n");
+  printf("-al|-align\n");
+  printf("  sets alignments for words selected by regular expressions.\n");
   printf("-f|-forgotten_timeout|-global_timeout\n");
   printf("  defines a global inactivity timeout, defaults to 15 min.\n");
   printf("-nm|-no_mouse\n");
@@ -197,7 +199,7 @@ columns_help(void)
   common_help();
 
   printf("-C|-cs|-cols|-cols_select\n");
-  printf("  sets columns restrictions for selections.\n");
+  printf("  sets alignments and columns restrictions for selections.\n");
   printf("-R|-rs|-rows|-rows_select\n");
   printf("  sets rows restrictions for selections.\n");
   printf("-w|-wide|-wide_mode\n");
@@ -237,7 +239,7 @@ lines_help(void)
   common_help();
 
   printf("-R|-rs|-rows|-row_select\n");
-  printf("  sets rows restrictions for selections.\n");
+  printf("  sets alignments and rows restrictions for selections.\n");
   printf("-N|-number/-U|-unnumber\n");
   printf("  numbers/un-numbers and provides a direct access to words "
          "matching\n");

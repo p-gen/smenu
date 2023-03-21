@@ -333,3 +333,33 @@ is_integer(const char * const s)
 
   return 0;
 }
+
+/* ===================================================== */
+/* Exchanges the start and end part of a string.         */
+/* The first part goes from char 0 to size-1.            */
+/* The second part goes from char size to the end of *s. */
+/* Returns 1 on success.                                 */
+/* ===================================================== */
+int
+swap_string_parts(char ** s, size_t first)
+{
+  char * tmp;
+  size_t size;
+
+  if (*s == NULL || **s == '\0')
+    return 0;
+
+  tmp = xmalloc(strlen(*s)*2+1);
+  size=strlen(*s);
+
+  if (first > size)
+    return 0;
+
+  strcpy(tmp,*s);
+  strcat(tmp,*s);
+  strncpy(*s,tmp+first,size);
+
+  free(tmp);
+  return 1;
+}
+

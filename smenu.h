@@ -68,6 +68,17 @@ typedef enum filter_types
   EXCLUDE_FILTER
 } filters_t;
 
+/* Types of selectors. */
+/* """"""""""""""""""" */
+typedef enum selector_types
+{
+  IN,     /* Inclusion. */
+  EX,     /* Exclusion. */
+  ALEFT,  /* Alignment to the left. */
+  ARIGHT, /* Alignment to the right. */
+  ACENTER /* Alignment to the center. */
+} selector_t;
+
 /* Used by the -N -F and -D options. */
 /* """"""""""""""""""""""""""""""""" */
 typedef enum daccess_modes
@@ -121,6 +132,14 @@ typedef enum bitmap_affinities
   END_AFFINITY,
   START_AFFINITY
 } bitmap_affinity_t;
+
+typedef enum alignment
+{
+  AL_NONE,
+  AL_LEFT,
+  AL_RIGHT,
+  AL_CENTERED
+} alignment_t;
 
 /* Used when managing the -C option. */
 /* """"""""""""""""""""""""""""""""" */
@@ -594,8 +613,15 @@ void
 parse_selectors(char * str, filters_t * filter, char * unparsed,
                 ll_t ** inc_interval_list, ll_t ** inc_regex_list,
                 ll_t ** exc_interval_list, ll_t ** exc_regex_list,
-                misc_t * misc);
+                ll_t ** al_interval_list, ll_t ** al_regex_list,
+                ll_t ** ar_interval_list, ll_t ** ar_regex_list,
+                ll_t ** ac_interval_list, ll_t ** ac_regex_list,
+                alignment_t * al_default, win_t * win, misc_t * misc);
 
+void
+parse_al_selectors(char * str, char * unparsed, ll_t ** al_regex_list,
+                   ll_t ** ar_regex_list, ll_t ** ac_regex_list,
+                   alignment_t * default_alignment, misc_t * misc);
 int
 replace(char * orig, sed_t * sed);
 
@@ -654,3 +680,6 @@ is_in_foreground_process_group(void);
 long
 get_clicked_index(win_t * win, term_t * term, int line_click, int column_click,
                   int * error);
+
+void
+align_word(word_t * word, alignment_t alignment, size_t prerfix);
