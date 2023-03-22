@@ -10260,7 +10260,8 @@ main(int argc, char * argv[])
         while (node) /* For each RE in the list. */
         {
           re = *(regex_t *)(node->data);
-          if (regexec(&re, word_a[wi].str, (int)0, NULL, 0) == 0)
+          if (regexec(&re, word_a[wi].str + daccess.flength, (int)0, NULL, 0)
+              == 0)
           {
             /* We have a match. */
             /* '''''''''''''''' */
