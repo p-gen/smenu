@@ -74,4 +74,7 @@ is_integer(const char * const s);
 int
 swap_string_parts(char ** s, size_t first);
 
+void
+strrep(char * s, const char c1, const char c2);
+
 #endif

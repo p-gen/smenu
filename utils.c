@@ -19,6 +19,7 @@
 #include <wctype.h>
 #include "xmalloc.h"
 #include "list.h"
+#include "utf8.h"
 #include "utils.h"
 
 /* ******************* */
@@ -349,17 +350,33 @@ swap_string_parts(char ** s, size_t first)
   if (*s == NULL || **s == '\0')
     return 0;
 
-  tmp = xmalloc(strlen(*s)*2+1);
-  size=strlen(*s);
+  tmp  = xmalloc(strlen(*s) * 2 + 1);
+  size = strlen(*s);
 
   if (first > size)
     return 0;
 
-  strcpy(tmp,*s);
-  strcat(tmp,*s);
-  strncpy(*s,tmp+first,size);
+  strcpy(tmp, *s);
+  strcat(tmp, *s);
+  strncpy(*s, tmp + first, size);
 
   free(tmp);
   return 1;
 }
 
+/* ================================================================ */
+/* Substitute all the characters c1 by c2 in the string s in place. */
+/* ================================================================ */
+void
+strrep(char * s, const char c1, const char c2)
+{
+  int c;
+
+  if (s)
+    while (*s)
+    {
+      if (*s == c1)
+        *s = c2;
+      s++;
+    }
+}

@@ -682,4 +682,4 @@ get_clicked_index(win_t * win, term_t * term, int line_click, int column_click,
                   int * error);
 
 void
-align_word(word_t * word, alignment_t alignment, size_t prerfix);
+align_word(word_t * word, alignment_t alignment, size_t prerfix, char sp);

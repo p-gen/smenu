@@ -1713,7 +1713,6 @@ parse_selectors(char * str, filters_t * filter, char * unparsed,
                 ll_t ** ac_interval_list, ll_t ** ac_regex_list,
                 alignment_t * default_alignment, win_t * win, misc_t * misc)
 {
-  char         mark; /* Value to set */
   char         c;
   size_t       start = 1;     /* column string offset in the parsed string. */
   size_t       first, second; /* range starting and ending values.          */
@@ -1768,14 +1767,12 @@ parse_selectors(char * str, filters_t * filter, char * unparsed,
     case 'I':
       type    = IN;
       *filter = INCLUDE_FILTER;
-      mark    = INCLUDE_MARK;
       break;
 
     case 'e':
     case 'E':
       type    = EX;
       *filter = EXCLUDE_FILTER;
-      mark    = EXCLUDE_MARK;
       break;
 
     case '1':
@@ -1789,7 +1786,6 @@ parse_selectors(char * str, filters_t * filter, char * unparsed,
     case '9':
       type    = IN;
       *filter = INCLUDE_FILTER;
-      mark    = INCLUDE_MARK;
       start   = 0;
       break;
 
@@ -1799,7 +1795,6 @@ parse_selectors(char * str, filters_t * filter, char * unparsed,
 
       type    = IN;
       *filter = INCLUDE_FILTER;
-      mark    = INCLUDE_MARK;
       start   = 0;
       break;
   }
@@ -2051,9 +2046,8 @@ parse_al_selectors(char * str, char * unparsed, ll_t ** al_regex_list,
 {
   char         mark; /* Value to set */
   char         c;
-  size_t       start = 1;     /* column string offset in the parsed string. */
-  size_t       first, second; /* range starting and ending values.          */
-  char *       ptr;           /* pointer to the remaining string to parse.  */
+  size_t       start = 1; /* column string offset in the parsed string. */
+  char *       ptr;       /* pointer to the remaining string to parse.  */
   interval_t * interval;
   int          type;
 
@@ -2113,8 +2107,6 @@ parse_al_selectors(char * str, char * unparsed, ll_t ** al_regex_list,
         my_strcpy(unparsed, str);
         return;
     }
-
-  first = second = -1;
 
   /* Scan the comma separated ranges. */
   /* '\' can be used to escape a ','. */
@@ -5837,7 +5829,6 @@ aligns_select_action(char * ctx_name, char * opt_name, char * param,
 {
   int     v;
   ll_t ** aligns_selector_list = opt_data[0];
-  win_t * win                  = opt_data[1];
 
   if (*aligns_selector_list == NULL)
     *aligns_selector_list = ll_new();
@@ -7083,7 +7074,7 @@ shift_arrow_clicked(win_t * win, term_t * term, int line_click,
 /* alignment IN     kind of alignments.                           */
 /* ============================================================== */
 void
-align_word(word_t * word, alignment_t alignment, size_t prefix)
+align_word(word_t * word, alignment_t alignment, size_t prefix, char sp)
 {
   switch (alignment)
   {
@@ -7099,7 +7090,7 @@ align_word(word_t * word, alignment_t alignment, size_t prefix)
       str = strdup(word->str + prefix);
       n   = 0;
 
-      while (isspace(str[n]))
+      while (str[n] == sp)
         n++;
 
       swap_string_parts(&str, n);
@@ -7115,7 +7106,7 @@ align_word(word_t * word, alignment_t alignment, size_t prefix)
       str = strdup(word->str + prefix);
       n   = strlen(str) - 1;
 
-      while (n && isspace(str[n]))
+      while (n && str[n] == sp)
         n--;
 
       swap_string_parts(&str, n + 1);
@@ -7133,17 +7124,17 @@ align_word(word_t * word, alignment_t alignment, size_t prefix)
       l   = strlen(str);
       m   = l - 1;
 
-      while (isspace(str[n]))
+      while (str[n] == sp)
         n++;
 
-      while (m && isspace(str[m]))
+      while (m && str[m] == sp)
         m--;
 
       if (n > m)
         break;
 
       wl = m - n + 1;
-      memset(word->str + prefix, ' ', l);
+      memset(word->str + prefix, sp, l);
 
       strncpy(word->str + prefix + (l - wl) / 2, str + n, wl);
       free(str);
@@ -7994,7 +7985,7 @@ main(int argc, char * argv[])
   ctxopt_add_opt_settings(actions, "rows_select", rows_select_action,
                           &rows_selector_list, &win, (char *)0);
   ctxopt_add_opt_settings(actions, "aligns_select", aligns_select_action,
-                          &aligns_selector_list, &win, (char *)0);
+                          &aligns_selector_list, (char *)0);
   ctxopt_add_opt_settings(actions, "include_re", include_re_action,
                           &pattern_def_include, &include_pattern, &misc,
                           (char *)0);
@@ -10284,8 +10275,15 @@ main(int argc, char * argv[])
       word_width = mbstowcs(NULL, word_a[wi].str, 0);
       s2         = wcswidth((w = utf8_strtowcs(word_a[wi].str)), word_width);
       free(w);
+
+      /* Use the 0x05 character as a placeholder to preserve the internal    */
+      /* spaces of the word if there are any. This value has been chosen     */
+      /* because it cannot be part of a UTF-8 sequence and is very unlikely  */
+      /* to be part of a normal word from the input stream.                  */
+      /* This placeholder will be removed during the alignment phase.        */
+      /*"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
       temp = xcalloc(1, col_real_max_size[col_index] + s1 - s2 + 1);
-      memset(temp, ' ', col_max_size[col_index] + s1 - s2);
+      memset(temp, 0x05, col_max_size[col_index] + s1 - s2);
       memcpy(temp, word_a[wi].str, s1);
       temp[col_real_max_size[col_index] + s1 - s2] = '\0';
       free(word_a[wi].str);
@@ -10386,11 +10384,9 @@ main(int argc, char * argv[])
     char *      words;
     alignment_t row_alignment;
     alignment_t word_alignment;
+    char *      str, *tstr;
 
     col_index = 0;
-
-    ll_t * word_regex_list_a[3] = { al_word_regex_list, ar_word_regex_list,
-                                    ac_word_regex_list };
 
     ll_node_t * cur_word_node_a[3];
 
@@ -10404,18 +10400,11 @@ main(int argc, char * argv[])
       ac_col_interval_list != NULL ? ac_col_interval_list->head : NULL
     };
 
-    ll_t * row_interval_list_a[3] = { al_row_interval_list,
-                                      ar_row_interval_list,
-                                      ac_row_interval_list };
-
     ll_node_t * cur_row_interval_node_a[3] = {
       al_row_interval_list != NULL ? al_row_interval_list->head : NULL,
       ar_row_interval_list != NULL ? ar_row_interval_list->head : NULL,
       ac_row_interval_list != NULL ? ac_row_interval_list->head : NULL
     };
-
-    ll_t * row_regex_list_a[3] = { al_row_regex_list, ar_row_regex_list,
-                                   ac_row_regex_list };
 
     ll_node_t * cur_row_regex_node_a[3];
 
@@ -10436,6 +10425,12 @@ main(int argc, char * argv[])
     for (wi = 0; wi < count; wi++)
     {
       word_alignment = AL_NONE;
+
+      str  = strdup(word_a[wi].str + daccess.flength);
+      tstr = strdup(str);
+
+      rtrim(tstr, "\x05", 0);
+      ltrim(tstr, "\x05");
 
       /* First heck if the current word is matched by a word specified */
       /* regular expression set by the * alignment option.             */
@@ -10468,13 +10463,11 @@ main(int argc, char * argv[])
       {
         while (word_alignment == AL_NONE && cur_word_node_a[i] != NULL)
         {
-          char *    str;
           regex_t * re;
 
-          str = word_a[wi].str + daccess.flength;
-          re  = (regex_t *)(cur_word_node_a[i]->data);
+          re = (regex_t *)(cur_word_node_a[i]->data);
 
-          if (regexec(re, str, (int)0, NULL, 0) == 0)
+          if (regexec(re, tstr, (int)0, NULL, 0) == 0)
           {
             word_alignment = alignment_a[i];
 
@@ -10535,13 +10528,11 @@ main(int argc, char * argv[])
         {
           while (row_alignment == AL_NONE && cur_row_regex_node_a[i] != NULL)
           {
-            char *    str;
             regex_t * re;
 
-            str = word_a[wi].str + daccess.flength;
-            re  = (regex_t *)(cur_row_regex_node_a[i]->data);
+            re = (regex_t *)(cur_row_regex_node_a[i]->data);
 
-            if (regexec(re, str, (int)0, NULL, 0) == 0)
+            if (regexec(re, tstr, (int)0, NULL, 0) == 0)
             {
               row_alignment = alignment_a[i];
 
@@ -10555,7 +10546,7 @@ main(int argc, char * argv[])
                 /* Do not realign words already aligned with -al */
                 /* ''''''''''''''''''''''''''''''''''''''''''''' */
                 if (aligned_a[col_index - (wi - j)] == 'N')
-                  align_word(&word_a[j], row_alignment, daccess.flength);
+                  align_word(&word_a[j], row_alignment, daccess.flength, 0x05);
               }
 
               break; /* Early exit of the while loop. */
@@ -10569,20 +10560,20 @@ main(int argc, char * argv[])
       /* Align the words. */
       /* """""""""""""""" */
       if (word_alignment != AL_NONE)
-        align_word(&word_a[wi], word_alignment, daccess.flength);
+        align_word(&word_a[wi], word_alignment, daccess.flength, 0x05);
       else
         switch (row_alignment)
         {
           case AL_NONE:
             if (col_alignments[col_index] != AL_NONE)
               align_word(&word_a[wi], col_alignments[col_index],
-                         daccess.flength);
+                         daccess.flength, 0x05);
             else
-              align_word(&word_a[wi], default_alignment, daccess.flength);
+              align_word(&word_a[wi], default_alignment, daccess.flength, 0x05);
             break;
 
           default:
-            align_word(&word_a[wi], row_alignment, daccess.flength);
+            align_word(&word_a[wi], row_alignment, daccess.flength, 0x05);
             break;
         }
 
@@ -10601,6 +10592,13 @@ main(int argc, char * argv[])
       }
       else
         col_index++;
+
+      free(str);
+      free(tstr);
+
+      /* Restore the spaces which are not part of the word. */
+      /* """""""""""""""""""""""""""""""""""""""""""""""""" */
+      strrep(word_a[wi].str + daccess.flength, 0x05, ' ');
     }
   }
 
