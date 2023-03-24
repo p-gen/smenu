@@ -10265,7 +10265,7 @@ main(int argc, char * argv[])
           {
             /* We have a match. */
             /* '''''''''''''''' */
-            interval      = malloc(sizeof(interval_t));
+            interval      = xmalloc(sizeof(interval_t));
             interval->low = interval->high = col_index;
 
             /* Append a new interval containing the current column number */
