@@ -16,6 +16,9 @@ before going any further.
   The resulting output is the content of the screen after all the
   typescript content and DEC escape sequences have been interpreted.
 
+  With newer Linux kernelsi (>= 6.2), you may need to run (as root)
+  ``sysctl dev.tty.legacy_tiocsti=1`` for this to work.
+
 - For accurate results, please use a terminal using DEC escape sequences
   for attribute settings (colors, bold...). As most tests are using colors
   and UTF-8 the terminal and locale in use must support them. Setting and
