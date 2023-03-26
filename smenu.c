@@ -13309,8 +13309,8 @@ main(int argc, char * argv[])
             else if (line_click > term.curs_line
                      && line_click < term.curs_line + win.max_lines - 1)
             {
-              float ratio; /* cursor ratio in the beween the extremities *
-                            | of the scroll bar.                         */
+              float ratio; /* cursor ratio in the between the extremities *
+                            | of the scroll bar.                          */
 
               if (win.max_lines > 3)
               {
