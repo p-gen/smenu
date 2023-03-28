@@ -199,6 +199,9 @@ struct toggle_s
                             | 0 keeps it forgetful.                       */
   int no_mouse;            /* 1 to disable the possibly auto-detected     *
                             | mouse, 0 to let smenu auto-detect it.       */
+  int show_blank_words;    /* 1 if blank words are allowed then they will *
+                            | be filled by an underscore, 0 to leave them *
+                            | blank.                                      */
 };
 
 /* Structure to store the default or imposed smenu limits. */

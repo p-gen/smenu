@@ -83,6 +83,7 @@ and outputs the selection to stdout.
 \fInew_button_3\fP]
   [\fB-dc\fP|\fB-dcd\fP|\fB-double_click\fP|\fB-double_click_delay\fP \
 \fIdelay_in_ms\fP]
+  [\fB-sb\fP|\fB-sbw\fP|\fB-show_blank_words\fP]
 
 
   selectors    ::= \fIcol1\fP[-\fIcol2\fP],...|\fIrow1\fP[-\fIrow2\fP],...|\
@@ -1959,6 +1960,14 @@ The double-click capability can also be disabled by setting
 
 This setting is also configurable in a configuration file, see the
 [mouse] section in the example in the configuration sub-section.
+.IP "\fB-sb\fP|\fB-sbw\fP|\fB-show_blank_words\fP"
+(Allowed in all contexts.)
+
+Normally, blank words (words containing only space:.!fmt
+s) are only kept in column mode.
+When this option is present, these words are converted into a sequence
+of underscores so that they are visible and not ignored when not in
+column mode.
 .SH NOTES
 If tabulators (\fI\\t\fP) are embedded in the input, there is no way
 to replace them with the original number of spaces.

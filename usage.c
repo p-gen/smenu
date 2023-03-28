@@ -106,6 +106,8 @@ common_help(void)
   printf("  Remaps the left and right mouse buttons, default is 1 and 3.\n");
   printf("-dc|-dcd|-double_click|-double_click_delay\n");
   printf("  Change the mouse double-click delay which is 150 ms by default.\n");
+  printf("-sb|-sbw|-show_blank_words\n");
+  printf("  Make blank words visible and usable even in non column mode.\n");
 }
 
 void

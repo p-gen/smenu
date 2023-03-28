@@ -1791,7 +1791,10 @@ parse_selectors(char * str, filters_t * filter, char * unparsed,
 
     default:
       if (!isgraph(c))
+      {
+        my_strcpy(unparsed, str);
         return;
+      }
 
       type    = IN;
       *filter = INCLUDE_FILTER;
@@ -2938,8 +2941,10 @@ expand(char * src, char * dest, langinfo_t * langinfo, toggle_t * toggles,
         default:
           if (my_isprint(c))
           {
-            *(ptr++)   = c;
-            all_spaces = 0;
+            if (c != ' ')
+              all_spaces = 0;
+
+            *(ptr++) = c;
           }
           else
           {
@@ -2958,8 +2963,8 @@ expand(char * src, char * dest, langinfo_t * langinfo, toggle_t * toggles,
   /* If the word contains only spaces, replace them */
   /* by underscores so that it can be seen.         */
   /* """""""""""""""""""""""""""""""""""""""""""""" */
-  if (all_spaces)
-    memset(dest, ' ', len);
+  if (toggles->show_blank_words && all_spaces)
+    memset(dest, '_', len);
 
   *ptr = '\0'; /* Ensure that dest has a nul terminator. */
 
@@ -5594,6 +5599,7 @@ init_main_ds(attrib_t * init_attr, win_t * win, limit_t * limits,
   toggles->visual_bell         = 0;
   toggles->incremental_search  = 0;
   toggles->no_mouse            = 0;
+  toggles->show_blank_words    = 0;
 
   /* Misc default values. */
   /* """""""""""""""""""" */
@@ -5864,6 +5870,8 @@ toggle_action(char * ctx_name, char * opt_name, char * param, int nb_values,
     toggles->incremental_search = 1;
   else if (strcmp(opt_name, "no_mouse") == 0)
     toggles->no_mouse = 1;
+  else if (strcmp(opt_name, "show_blank_words") == 0)
+    toggles->show_blank_words = 1;
 }
 
 void
@@ -7763,7 +7771,8 @@ main(int argc, char * argv[])
                    "[forgotten_timeout #timeout] "
                    "[double_click_delay #delay] "
                    "[button_remapping #mapping...] "
-                   "[no_mouse] "; /* don't remove this space! */
+                   "[no_mouse] "
+                   "[show_blank_words] "; /* don't remove this space! */
 
   main_spec_options = "[*copyright] "
                       "[*version] "
@@ -7930,6 +7939,8 @@ main(int argc, char * argv[])
                           "-br -buttons -button_remapping");
   ctxopt_add_opt_settings(parameters, "double_click_delay",
                           "-dc -dcd -double_click -double_click_delay");
+  ctxopt_add_opt_settings(parameters, "show_blank_words",
+                          "-sb -sbw -show_blank_words");
 
   /* ctxopt options incompatibilities. */
   /* """"""""""""""""""""""""""""""""" */
@@ -8092,6 +8103,8 @@ main(int argc, char * argv[])
   ctxopt_add_opt_settings(actions, "double_click_delay", double_click_action,
                           &mouse, &disable_double_click, (char *)0);
   ctxopt_add_opt_settings(actions, "no_mouse", toggle_action, &toggles,
+                          (char *)0);
+  ctxopt_add_opt_settings(actions, "show_blank_words", toggle_action, &toggles,
                           (char *)0);
 
   /* ctxopt constraints. */
