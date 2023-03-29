@@ -10063,7 +10063,7 @@ main(int argc, char * argv[])
       }
       /* Update the size of the longest expanded word. */
       /* """"""""""""""""""""""""""""""""""""""""""""" */
-      word_real_max_size = cols_real_max_size;
+      word_real_max_size = cols_real_max_size + 1;
     }
     else if (win.tab_mode)
     {
@@ -10611,7 +10611,7 @@ main(int argc, char * argv[])
   /* optimal but the loss is tiny and we have the guarantee that  */
   /* enough place will be allocated.                              */
   /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-  tmp_word = xcalloc(word_real_max_size + tab_max_size + 1, 1);
+  tmp_word = xcalloc(1, word_real_max_size + tab_max_size + 1);
 
   search_data.utf8_off_a = xmalloc(word_real_max_size * sizeof(long));
   search_data.utf8_len_a = xmalloc(word_real_max_size * sizeof(long));
