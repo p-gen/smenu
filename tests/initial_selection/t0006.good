@@ -1,4 +1,4 @@
-$ OUT=$(smenu -sbb t0006.in)
+$ OUT=$(smenu -s bb t0006.in)
 
 aab abb aa ab ba bb aba bab aaa 
 17:07 18:07 
