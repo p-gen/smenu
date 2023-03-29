@@ -77,4 +77,6 @@ swap_string_parts(char ** s, size_t first);
 void
 strrep(char * s, const char c1, const char c2);
 
+char *
+strprint(char * s);
 #endif

@@ -613,7 +613,7 @@ int
 parse_sed_like_string(sed_t * sed);
 
 void
-parse_selectors(char * str, filters_t * filter, char * unparsed,
+parse_selectors(char * str, filters_t * filter, char ** unparsed,
                 ll_t ** inc_interval_list, ll_t ** inc_regex_list,
                 ll_t ** exc_interval_list, ll_t ** exc_regex_list,
                 ll_t ** al_interval_list, ll_t ** al_regex_list,
@@ -622,7 +622,7 @@ parse_selectors(char * str, filters_t * filter, char * unparsed,
                 alignment_t * al_default, win_t * win, misc_t * misc);
 
 void
-parse_al_selectors(char * str, char * unparsed, ll_t ** al_regex_list,
+parse_al_selectors(char * str, char ** unparsed, ll_t ** al_regex_list,
                    ll_t ** ar_regex_list, ll_t ** ac_regex_list,
                    alignment_t * default_alignment, misc_t * misc);
 int

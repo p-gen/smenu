@@ -11,6 +11,7 @@
 /* ******************************** */
 
 #include "config.h"
+#include <stdio.h>
 #include <stdlib.h>
 #include <limits.h>
 #include <string.h>
@@ -379,4 +380,27 @@ strrep(char * s, const char c1, const char c2)
         *s = c2;
       s++;
     }
+}
+
+/* ================================================================== */
+/* Allocates and returns a string similar to s but with non printable */
+/* character changed in '_'                                           */
+/* ================================================================== */
+char *
+strprint(char * s)
+{
+  char * new = xcalloc(1, 4 * strlen(s) + 1);
+  char * p   = new;
+
+  while (*s)
+  {
+    if (isprint(*s))
+      *(p++) = *s++;
+    else
+    {
+      sprintf(p, "[%02x]", (unsigned char)*s++);
+      p += 4;
+    }
+  }
+  return new;
 }

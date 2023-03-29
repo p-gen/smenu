@@ -1705,7 +1705,7 @@ parse_regex_selector_part(char * str, ll_t ** regex_list)
 /*                         be aligned to the left, right or centered.    */
 /* ===================================================================== */
 void
-parse_selectors(char * str, filters_t * filter, char * unparsed,
+parse_selectors(char * str, filters_t * filter, char ** unparsed,
                 ll_t ** inc_interval_list, ll_t ** inc_regex_list,
                 ll_t ** exc_interval_list, ll_t ** exc_regex_list,
                 ll_t ** al_interval_list, ll_t ** al_regex_list,
@@ -1737,7 +1737,7 @@ parse_selectors(char * str, filters_t * filter, char * unparsed,
     case 'L':
       if (!win->col_mode)
       {
-        my_strcpy(unparsed, str);
+        *unparsed = xstrdup(str);
         return;
       }
       type = ALEFT;
@@ -1747,7 +1747,7 @@ parse_selectors(char * str, filters_t * filter, char * unparsed,
     case 'R':
       if (!win->col_mode)
       {
-        my_strcpy(unparsed, str);
+        *unparsed = xstrdup(str);
         return;
       }
       type = ARIGHT;
@@ -1757,7 +1757,7 @@ parse_selectors(char * str, filters_t * filter, char * unparsed,
     case 'C':
       if (!win->col_mode)
       {
-        my_strcpy(unparsed, str);
+        *unparsed = xstrdup(str);
         return;
       }
       type = ACENTER;
@@ -1792,7 +1792,7 @@ parse_selectors(char * str, filters_t * filter, char * unparsed,
     default:
       if (!isgraph(c))
       {
-        my_strcpy(unparsed, str);
+        *unparsed = strprint(str);
         return;
       }
 
@@ -1819,7 +1819,7 @@ parse_selectors(char * str, filters_t * filter, char * unparsed,
         *default_alignment = AL_CENTERED;
         break;
       default:
-        my_strcpy(unparsed, str);
+        *unparsed = xstrdup(str);
         return;
     }
 
@@ -1852,7 +1852,7 @@ parse_selectors(char * str, filters_t * filter, char * unparsed,
     /* """"""""""""""""""""""""""""""""""""" */
     if (*ptr == ',' && (*(ptr + 1) == '\0' || *(ptr + 1) == '-'))
     {
-      my_strcpy(unparsed, ptr);
+      *unparsed = strprint(ptr);
       return;
     }
 
@@ -1860,7 +1860,7 @@ parse_selectors(char * str, filters_t * filter, char * unparsed,
     /* """"""""""""""""""""""""""""""""""""""""" */
     if (oldptr == ptr)
     {
-      my_strcpy(unparsed, ptr);
+      *unparsed = strprint(ptr);
       return;
     }
 
@@ -1919,7 +1919,7 @@ parse_selectors(char * str, filters_t * filter, char * unparsed,
     {
       /* Both delimiter must be numeric if delim2 exist. */
       /* """"""""""""""""""""""""""""""""""""""""""""""" */
-      my_strcpy(unparsed, str + start);
+      *unparsed = strprint(str + start);
       return;
     }
 
@@ -1934,7 +1934,7 @@ parse_selectors(char * str, filters_t * filter, char * unparsed,
       rc = sscanf(str + start, "%zu-%zu%n", &first, &second, &pos);
       if (rc != 2 || *(str + start + pos) != '\0')
       {
-        my_strcpy(unparsed, str + start);
+        *unparsed = strprint(str + start);
         return;
       }
 
@@ -1942,7 +1942,7 @@ parse_selectors(char * str, filters_t * filter, char * unparsed,
       {
         /* Both interval boundaries must be strictly positive. */
         /* """"""""""""""""""""""""""""""""""""""""""""""""""" */
-        my_strcpy(unparsed, str + start);
+        *unparsed = strprint(str + start);
         return;
       }
 
@@ -1970,7 +1970,7 @@ parse_selectors(char * str, filters_t * filter, char * unparsed,
 
       if (sscanf(str + start, "%zu", &first) != 1)
       {
-        my_strcpy(unparsed, str + start);
+        *unparsed = strprint(str + start);
         return;
       }
 
@@ -2027,7 +2027,7 @@ parse_selectors(char * str, filters_t * filter, char * unparsed,
   /* If we are here, then all the intervals have be successfully parsed */
   /* Ensure that the unparsed string is empty.                          */
   /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-  *unparsed = '\0';
+  *unparsed = xstrdup("");
 }
 
 /* ===================================================================== */
@@ -2043,7 +2043,7 @@ parse_selectors(char * str, filters_t * filter, char * unparsed,
 /* misc              (in)  used by utf8_interpret.                       */
 /* ===================================================================== */
 void
-parse_al_selectors(char * str, char * unparsed, ll_t ** al_regex_list,
+parse_al_selectors(char * str, char ** unparsed, ll_t ** al_regex_list,
                    ll_t ** ar_regex_list, ll_t ** ac_regex_list,
                    alignment_t * default_alignment, misc_t * misc)
 {
@@ -2107,7 +2107,7 @@ parse_al_selectors(char * str, char * unparsed, ll_t ** al_regex_list,
         *default_alignment = AL_CENTERED;
         break;
       default:
-        my_strcpy(unparsed, str);
+        *unparsed = xstrdup(str);
         return;
     }
 
@@ -2132,7 +2132,7 @@ parse_al_selectors(char * str, char * unparsed, ll_t ** al_regex_list,
     /* """"""""""""""""""""""""""""""""""""" */
     if (*ptr == ',' && (*(ptr + 1) == '\0'))
     {
-      my_strcpy(unparsed, ptr);
+      *unparsed = xstrdup(ptr);
       return;
     }
 
@@ -2140,7 +2140,7 @@ parse_al_selectors(char * str, char * unparsed, ll_t ** al_regex_list,
     /* """"""""""""""""""""""""""""""""""""""""" */
     if (oldptr == ptr)
     {
-      my_strcpy(unparsed, ptr);
+      *unparsed = xstrdup(ptr);
       return;
     }
 
@@ -2192,7 +2192,7 @@ parse_al_selectors(char * str, char * unparsed, ll_t ** al_regex_list,
     }
     else
     {
-      my_strcpy(unparsed, ptr - 1);
+      *unparsed = xstrdup(ptr - 1);
       return;
     }
   }
@@ -2200,7 +2200,7 @@ parse_al_selectors(char * str, char * unparsed, ll_t ** al_regex_list,
   /* If we are here, then all the intervals have be successfully parsed */
   /* Ensure that the unparsed string is empty.                          */
   /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-  *unparsed = '\0';
+  *unparsed = xstrdup("");
 }
 
 /* ========================================================= */
@@ -8972,10 +8972,11 @@ main(int argc, char * argv[])
     rows_filter_type = UNKNOWN_FILTER;
     while (node_selector != NULL)
     {
-      rows_selector   = node_selector->data;
-      char * unparsed = xstrdup((char *)rows_selector);
+      char * unparsed;
 
-      parse_selectors(rows_selector, &filter_type, unparsed,
+      rows_selector = node_selector->data;
+
+      parse_selectors(rows_selector, &filter_type, &unparsed,
                       &inc_row_interval_list, &inc_row_regex_list,
                       &exc_row_interval_list, &exc_row_regex_list,
                       &al_row_interval_list, &al_row_regex_list,
@@ -9021,10 +9022,11 @@ main(int argc, char * argv[])
     cols_filter_type = UNKNOWN_FILTER;
     while (node_selector != NULL)
     {
-      cols_selector   = node_selector->data;
-      char * unparsed = xstrdup((char *)cols_selector);
+      char * unparsed;
 
-      parse_selectors(cols_selector, &filter_type, unparsed,
+      cols_selector = node_selector->data;
+
+      parse_selectors(cols_selector, &filter_type, &unparsed,
                       &inc_col_interval_list, &inc_col_regex_list,
                       &exc_col_interval_list, &exc_col_regex_list,
                       &al_col_interval_list, &al_col_regex_list,
@@ -9108,10 +9110,11 @@ main(int argc, char * argv[])
 
     while (node_selector != NULL)
     {
-      aligns_selector = node_selector->data;
-      char * unparsed = xstrdup((char *)aligns_selector);
+      char * unparsed;
 
-      parse_al_selectors(aligns_selector, unparsed, &al_word_regex_list,
+      aligns_selector = node_selector->data;
+
+      parse_al_selectors(aligns_selector, &unparsed, &al_word_regex_list,
                          &ar_word_regex_list, &ac_word_regex_list,
                          &default_alignment, &misc);
 
@@ -9122,6 +9125,8 @@ main(int argc, char * argv[])
 
         exit(EXIT_FAILURE);
       }
+
+      free(unparsed);
 
       node_selector = node_selector->next;
     }
