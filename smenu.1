@@ -1003,6 +1003,7 @@ At least one attribute prefixed attribute must be given.
 
 \fIprefix\fP can take the following values:
 .RS
+.PD 0
 .IP \fIi\fP
 included words.
 .IP \fIe\fP
@@ -1037,6 +1038,7 @@ matching words field with error.
 matching words text with error.
 .IP \fIda\fP
 direct access tag.
+.PD
 .RE
 .IP
 If more than one attribute is given, they must be separated by spaces.
@@ -1915,7 +1917,7 @@ to set the maximum number of columns allowed.
 Several sub-options, separated by spaces, can be given after this option.
 .RE
 
-.IP "[\fB-f\fP|\fB-forgotten_timeout\fP|\fB-global_timeout\fP \fItimeout\fP]"
+.IP "\fB-f\fP|\fB-forgotten_timeout\fP|\fB-global_timeout\fP \fItimeout\fP"
 (Allowed in all contexts.)
 
 This option defines a global timeout in seconds.
@@ -1928,14 +1930,13 @@ number (in tenths of seconds) to the "forgotten" entry in the [timers]
 section of the optional configuration file.
 See the example in the configuration sub-section.
 
-A value of 0 as an argument disables this timer and replaces the default
-value.
-.IP "[\fB-nm\fP|\fB-no_mouse\fP]"
+A \fItimeout\fP value equals to \fB0\fP explicitly disables this timer.
+.IP "\fB-nm\fP|\fB-no_mouse\fP"
 (Allowed in all contexts.)
 
 This option allows you to disable the mouse even if smenu can use it.
-.IP "[\fB-br\fP|\fB-buttons\fP|\fB-button_remapping\fP \fInew_button_1\fP \
-\fInew_button_3\fP]"
+.IP "\fB-br\fP|\fB-buttons\fP|\fB-button_remapping\fP \fInew_button_1\fP \
+\fInew_button_3\fP"
 (Allowed in all contexts.)
 
 This option allows one to remap the mouse buttons.  The buttons are numbered
@@ -1946,8 +1947,8 @@ By example, the syntax \f(CR-br 3 1\fP will reverse the first (left)
 and third (right?) buttons.
 
 The default mapping is \f(CR1 3\fP.
-.IP "[\fB-dc\fP|\fB-dcd\fP|\fB-double_click\fP|\fB-double_click_delay\fP \
-\fIdelay_in_ms\fP]"
+.IP "\fB-dc\fP|\fB-dcd\fP|\fB-double_click\fP|\fB-double_click_delay\fP \
+\fIdelay_in_ms\fP"
 (Allowed in all contexts.)
 
 This option allows one to set the double-click delay in the range of 100 ms
