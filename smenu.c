@@ -2964,7 +2964,7 @@ expand(char * src, char * dest, langinfo_t * langinfo, toggle_t * toggles,
   /* by underscores so that it can be seen.         */
   /* """""""""""""""""""""""""""""""""""""""""""""" */
   if (toggles->show_blank_words && all_spaces)
-    memset(dest, '_', len);
+    memset(dest, misc->blank_char_substitute, len);
 
   *ptr = '\0'; /* Ensure that dest has a nul terminator. */
 
@@ -5603,8 +5603,10 @@ init_main_ds(attrib_t * init_attr, win_t * win, limit_t * limits,
 
   /* Misc default values. */
   /* """""""""""""""""""" */
-  misc->default_search_method = NONE;
-  misc->ignore_quotes         = 0;
+  misc->default_search_method   = NONE;
+  misc->ignore_quotes           = 0;
+  misc->invalid_char_substitute = '.';
+  misc->blank_char_substitute   = '_';
 
   /* Mouse values. */
   /* """"""""""""" */
@@ -5870,8 +5872,6 @@ toggle_action(char * ctx_name, char * opt_name, char * param, int nb_values,
     toggles->incremental_search = 1;
   else if (strcmp(opt_name, "no_mouse") == 0)
     toggles->no_mouse = 1;
-  else if (strcmp(opt_name, "show_blank_words") == 0)
-    toggles->show_blank_words = 1;
 }
 
 void
@@ -5887,6 +5887,29 @@ invalid_char_action(char * ctx_name, char * opt_name, char * param,
     misc->invalid_char_substitute = ic;
   else
     misc->invalid_char_substitute = '.';
+}
+
+void
+show_blank_action(char * ctx_name, char * opt_name, char * param, int nb_values,
+                  char ** values, int nb_opt_data, void ** opt_data,
+                  int nb_ctx_data, void ** ctx_data)
+{
+  toggle_t * toggles = opt_data[0];
+  misc_t *   misc    = opt_data[1];
+
+  unsigned char bc;
+
+  toggles->show_blank_words = 1;
+
+  if (nb_values == 1)
+  {
+    bc = (unsigned char)*values[0];
+
+    if (isprint(bc))
+      misc->blank_char_substitute = bc;
+    else
+      misc->blank_char_substitute = '_';
+  }
 }
 
 void
@@ -7702,10 +7725,6 @@ main(int argc, char * argv[])
   close(old_fd0);
   close(old_fd1);
 
-  /* Default substitution character on invalid input. */
-  /* """""""""""""""""""""""""""""""""""""""""""""""" */
-  misc.invalid_char_substitute = '.';
-
   /* Build the full path of the .ini file. */
   /* """"""""""""""""""""""""""""""""""""" */
   home_ini_file  = make_ini_path(argv[0], "HOME");
@@ -7772,7 +7791,8 @@ main(int argc, char * argv[])
                    "[double_click_delay #delay] "
                    "[button_remapping #mapping...] "
                    "[no_mouse] "
-                   "[show_blank_words] "; /* don't remove this space! */
+                   "[show_blank_words [#blank_char]] "; /* <- don't remove *
+                                                         | this space!     */
 
   main_spec_options = "[*copyright] "
                       "[*version] "
@@ -8104,8 +8124,8 @@ main(int argc, char * argv[])
                           &mouse, &disable_double_click, (char *)0);
   ctxopt_add_opt_settings(actions, "no_mouse", toggle_action, &toggles,
                           (char *)0);
-  ctxopt_add_opt_settings(actions, "show_blank_words", toggle_action, &toggles,
-                          (char *)0);
+  ctxopt_add_opt_settings(actions, "show_blank_words", show_blank_action,
+                          &toggles, &misc, (char *)0);
 
   /* ctxopt constraints. */
   /* """"""""""""""""""" */

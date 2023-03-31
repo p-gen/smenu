@@ -230,6 +230,7 @@ struct misc_s
 {
   search_mode_t default_search_method;
   char          invalid_char_substitute;
+  char          blank_char_substitute;
   int           ignore_quotes;
 };
 
