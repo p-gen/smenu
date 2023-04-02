@@ -1714,8 +1714,10 @@ parse_selectors(char * str, filters_t * filter, char ** unparsed,
                 alignment_t * default_alignment, win_t * win, misc_t * misc)
 {
   char         c;
-  size_t       start = 1;     /* column string offset in the parsed string. */
-  size_t       first, second; /* range starting and ending values.          */
+  long         start = 1;     /* column string offset in the parsed string. */
+  long         first, second; /* range starting and ending values.          */
+  int          l_open_range;  /* 1 if the range is left-open.               */
+  int          r_open_range;  /* 1 if the range is right-open.              */
   char *       ptr;           /* pointer to the remaining string to parse.  */
   interval_t * interval;
   int          type;
@@ -1823,8 +1825,6 @@ parse_selectors(char * str, filters_t * filter, char ** unparsed,
         return;
     }
 
-  first = second = -1;
-
   /* Scan the comma separated ranges. */
   /* '\' can be used to escape a ','. */
   /* """""""""""""""""""""""""""""""" */
@@ -1834,7 +1834,10 @@ parse_selectors(char * str, filters_t * filter, char ** unparsed,
     char   delim1, delim2 = '\0';
     char * oldptr;
 
-    oldptr = ptr;
+    l_open_range = r_open_range = 0;
+    first = second = -1;
+    oldptr         = ptr;
+
     while (*ptr && *ptr != ',')
     {
       if (*ptr == '-')
@@ -1850,7 +1853,7 @@ parse_selectors(char * str, filters_t * filter, char ** unparsed,
 
     /* Forbid the trailing comma (ex: xxx,). */
     /* """"""""""""""""""""""""""""""""""""" */
-    if (*ptr == ',' && (*(ptr + 1) == '\0' || *(ptr + 1) == '-'))
+    if (*ptr == ',' && *(ptr + 1) == '\0')
     {
       *unparsed = strprint(ptr);
       return;
@@ -1877,10 +1880,16 @@ parse_selectors(char * str, filters_t * filter, char ** unparsed,
     /*                     delim1   delim2                         */
     /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
     delim1 = *(str + start);
+    if (delim1 == '-')
+      l_open_range = 1;
+
     if (*ptr == '\0')
       delim2 = *(ptr - 1);
     else if (ptr > str + start + 2)
       delim2 = *(ptr - 2);
+
+    if (delim2 == '-')
+      r_open_range = 1;
 
     /* Check is we have found a well described regular expression. */
     /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
@@ -1915,13 +1924,6 @@ parse_selectors(char * str, filters_t * filter, char ** unparsed,
 
       continue;
     }
-    else if (delim2 != '\0' && (!isdigit(delim1) || !isdigit(delim2)))
-    {
-      /* Both delimiter must be numeric if delim2 exist. */
-      /* """"""""""""""""""""""""""""""""""""""""""""""" */
-      *unparsed = strprint(str + start);
-      return;
-    }
 
     if (is_range)
     {
@@ -1930,12 +1932,41 @@ parse_selectors(char * str, filters_t * filter, char ** unparsed,
 
       int rc;
       int pos;
+      int good = 0;
 
-      rc = sscanf(str + start, "%zu-%zu%n", &first, &second, &pos);
-      if (rc != 2 || *(str + start + pos) != '\0')
+      if (l_open_range == 0 && r_open_range == 0)
       {
-        *unparsed = strprint(str + start);
-        return;
+        rc = sscanf(str + start, "%ld-%ld%n", &first, &second, &pos);
+
+        if (rc != 2 || *(str + start + pos) != '\0')
+        {
+          *unparsed = strprint(str + start);
+          return;
+        }
+      }
+      else if (l_open_range == 1 && r_open_range == 0)
+      {
+        rc = sscanf(str + start, "-%ld%n", &second, &pos);
+
+        if (rc != 1 || *(str + start + pos) != '\0')
+        {
+          *unparsed = strprint(str + start);
+          return;
+        }
+
+        first = 1;
+      }
+      else if (l_open_range == 0 && r_open_range == 1)
+      {
+        rc = sscanf(str + start, "%ld-%n", &first, &pos);
+
+        if (rc != 1 || *(str + start + pos) != '\0')
+        {
+          *unparsed = strprint(str + start);
+          return;
+        }
+
+        second = LONG_MAX;
       }
 
       if (first < 1 || second < 1)
@@ -1968,7 +1999,7 @@ parse_selectors(char * str, filters_t * filter, char ** unparsed,
       /* We must parse a single number. */
       /* """""""""""""""""""""""""""""" */
 
-      if (sscanf(str + start, "%zu", &first) != 1)
+      if (sscanf(str + start, "%ld", &first) != 1)
       {
         *unparsed = strprint(str + start);
         return;
