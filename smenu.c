@@ -5618,19 +5618,21 @@ init_main_ds(attrib_t * init_attr, win_t * win, limit_t * limits,
 
   /* Toggles initialization. */
   /* """"""""""""""""""""""" */
-  toggles->del_line            = 0;
-  toggles->enter_val_in_search = 0;
-  toggles->no_scrollbar        = 0;
-  toggles->blank_nonprintable  = 0;
-  toggles->keep_spaces         = 0;
-  toggles->taggable            = 0;
-  toggles->autotag             = 0;
-  toggles->noautotag           = 0;
-  toggles->pinable             = 0;
-  toggles->visual_bell         = 0;
-  toggles->incremental_search  = 0;
-  toggles->no_mouse            = 0;
-  toggles->show_blank_words    = 0;
+  toggles->del_line             = 0;
+  toggles->enter_val_in_search  = 0;
+  toggles->no_scrollbar         = 0;
+  toggles->blank_nonprintable   = 0;
+  toggles->keep_spaces          = 0;
+  toggles->taggable             = 0;
+  toggles->autotag              = 0;
+  toggles->noautotag            = 0;
+  toggles->pinable              = 0;
+  toggles->visual_bell          = 0;
+  toggles->incremental_search   = 0;
+  toggles->no_mouse             = 0;
+  toggles->show_blank_words     = 0;
+  toggles->raise_col_alignments = 0;
+  toggles->raise_row_alignments = 0;
 
   /* Misc default values. */
   /* """""""""""""""""""" */
@@ -5833,11 +5835,15 @@ columns_select_action(char * ctx_name, char * opt_name, char * param,
                       int nb_values, char ** values, int nb_opt_data,
                       void ** opt_data, int nb_ctx_data, void ** ctx_data)
 {
-  int     v;
-  ll_t ** cols_selector_list = opt_data[0];
+  int        v;
+  ll_t **    cols_selector_list = opt_data[0];
+  toggle_t * toggles            = opt_data[1];
 
   if (*cols_selector_list == NULL)
     *cols_selector_list = ll_new();
+
+  if (toggles->raise_col_alignments == 0 && toggles->raise_row_alignments == 0)
+    toggles->raise_col_alignments = 1;
 
   for (v = 0; v < nb_values; v++)
     ll_append(*cols_selector_list, xstrdup(values[v]));
@@ -5848,12 +5854,16 @@ rows_select_action(char * ctx_name, char * opt_name, char * param,
                    int nb_values, char ** values, int nb_opt_data,
                    void ** opt_data, int nb_ctx_data, void ** ctx_data)
 {
-  int     v;
-  ll_t ** rows_selector_list = opt_data[0];
-  win_t * win                = opt_data[1];
+  int        v;
+  ll_t **    rows_selector_list = opt_data[0];
+  win_t *    win                = opt_data[1];
+  toggle_t * toggles            = opt_data[2];
 
   if (*rows_selector_list == NULL)
     *rows_selector_list = ll_new();
+
+  if (toggles->raise_col_alignments == 0 && toggles->raise_row_alignments == 0)
+    toggles->raise_row_alignments = 1;
 
   for (v = 0; v < nb_values; v++)
     ll_append(*rows_selector_list, xstrdup(values[v]));
@@ -8043,9 +8053,9 @@ main(int argc, char * argv[])
   ctxopt_add_opt_settings(actions, "tab_mode", tab_mode_action, &win,
                           (char *)0);
   ctxopt_add_opt_settings(actions, "columns_select", columns_select_action,
-                          &cols_selector_list, (char *)0);
+                          &cols_selector_list, &toggles, (char *)0);
   ctxopt_add_opt_settings(actions, "rows_select", rows_select_action,
-                          &rows_selector_list, &win, (char *)0);
+                          &rows_selector_list, &win, &toggles, (char *)0);
   ctxopt_add_opt_settings(actions, "aligns_select", aligns_select_action,
                           &aligns_selector_list, (char *)0);
   ctxopt_add_opt_settings(actions, "include_re", include_re_action,
@@ -10301,10 +10311,10 @@ main(int argc, char * argv[])
       ll_node_t *  node;
       interval_t * interval;
 
-      /* Does this word matched by one of the alignment regex? */
-      /* If yes, then add the current column number to the list of the
-       * corresponding column_alignment list
-      /* """"""""""""""""""""""""""""""""""""""""""""""""""""" */
+      /* Does this word matched by one of the alignment regex?         */
+      /* If yes, then add the current column number to the list of the */
+      /* corresponding column_alignment list                           */
+      /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
       ll_t *  regex_list_a[3]    = { al_col_regex_list, ar_col_regex_list,
                                      ac_col_regex_list };
       ll_t ** interval_list_a[3] = { &al_col_interval_list,
@@ -10447,13 +10457,16 @@ main(int argc, char * argv[])
   /* """""""""""""""""""""""""""""""""""""""""""""""""" */
   if (win.col_mode)
   {
-    long        row_index = 0;
-    interval_t  interval;
-    size_t      n;
-    char *      words;
-    alignment_t row_alignment;
-    alignment_t word_alignment;
-    char *      str, *tstr;
+    long       row_index = 0;
+    interval_t interval;
+    size_t     n;
+    char *     words;
+
+    alignment_t alignment;      /* Furtrure value of the word alignment. */
+    alignment_t word_alignment; /* Specifice word alignment.             */
+    alignment_t row_alignment;  /* current row word alignments.          */
+
+    char *str, *tstr;
 
     col_index = 0;
 
@@ -10480,10 +10493,10 @@ main(int argc, char * argv[])
     alignment_t alignment_a[3] = { AL_LEFT, AL_RIGHT, AL_CENTERED };
 
     char * aligned_a; /* Array of indicators used to remember that a word *
-                       | has been aliugnes with -al in a row.             */
+                       | has been aligned with -al in a row.              */
 
-    /* Initialize each of its places with No ('N'). */
-    /* """""""""""""""""""""""""""""""""""""""""""" */
+    /* Initialize each chars of aligned_a with No ('N'). */
+    /* """"""""""""""""""""""""""""""""""""""""""""""""" */
     aligned_a = xmalloc(cols_number);
 
     for (int i = 0; i < cols_number; i++)
@@ -10495,15 +10508,20 @@ main(int argc, char * argv[])
     {
       word_alignment = AL_NONE;
 
+      if (row_alignment != AL_NONE)
+        alignment = row_alignment;
+      else
+        alignment = default_alignment;
+
       str  = strdup(word_a[wi].str + daccess.flength);
       tstr = strdup(str);
 
       rtrim(tstr, "\x05", 0);
       ltrim(tstr, "\x05");
 
-      /* First heck if the current word is matched by a word specified */
-      /* regular expression set by the * alignment option.             */
-      /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+      /* First check if the current word is matched by a word specified */
+      /* regular expression set by the * alignment option.              */
+      /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
 
       cur_word_node_a[0] = al_word_regex_list != NULL ? al_word_regex_list->head
                                                       : NULL;
@@ -10542,8 +10560,7 @@ main(int argc, char * argv[])
 
             /* Mark this word as aligned in this row. */
             /* """""""""""""""""""""""""""""""""""""" */
-            if (win.col_mode)
-              aligned_a[col_index] = 'Y';
+            aligned_a[col_index] = 'Y';
 
             break; /* Early exit of the while loop. */
           }
@@ -10566,8 +10583,13 @@ main(int argc, char * argv[])
           interval = *(interval_t *)(cur_col_node_a[i]->data);
           if (col_index >= interval.low && col_index <= interval.high)
           {
-            if (col_alignments[col_index] == AL_NONE)
-              col_alignments[col_index] = alignment_a[i];
+            /* Tell that the word is already aligned when column */
+            /* alignments have precedence over row alignments.   */
+            /* """"""""""""""""""""""""""""""""""""""""""""""""" */
+            if (toggles.raise_col_alignments)
+              aligned_a[col_index] = 'Y';
+
+            alignment = alignment_a[i];
           }
           else if (col_index > interval.high)
             cur_col_node_a[i] = cur_col_node_a[i]->next;
@@ -10586,7 +10608,11 @@ main(int argc, char * argv[])
         {
           interval = *(interval_t *)(cur_row_interval_node_a[i]->data);
           if (row_index >= interval.low && row_index <= interval.high)
+          {
             row_alignment = alignment_a[i];
+            if (aligned_a[col_index] == 'N')
+              alignment = alignment_a[i];
+          }
           else if (row_index > interval.high)
             cur_row_interval_node_a[i] = cur_row_interval_node_a[i]->next;
         }
@@ -10595,7 +10621,7 @@ main(int argc, char * argv[])
         /* '''''''''''''''''''''''''''' */
         if (cur_row_regex_node_a[i] != NULL)
         {
-          while (row_alignment == AL_NONE && cur_row_regex_node_a[i] != NULL)
+          while (cur_row_regex_node_a[i] != NULL)
           {
             regex_t * re;
 
@@ -10604,6 +10630,8 @@ main(int argc, char * argv[])
             if (regexec(re, tstr, (int)0, NULL, 0) == 0)
             {
               row_alignment = alignment_a[i];
+              if (aligned_a[col_index] == 'N')
+                alignment = alignment_a[i];
 
               /* Also aligns the previous words in the line to the */
               /* right, left or centre.                            */
@@ -10612,62 +10640,62 @@ main(int argc, char * argv[])
               while (j > 0 && !word_a[j - 1].is_last)
               {
                 j--;
+
                 /* Do not realign words already aligned with -al */
+                /* of if already aligned using a column RE when  */
+                /* column alignments have precedence.            */
                 /* ''''''''''''''''''''''''''''''''''''''''''''' */
                 if (aligned_a[col_index - (wi - j)] == 'N')
-                  align_word(&word_a[j], row_alignment, daccess.flength, 0x05);
+                  align_word(&word_a[j], alignment_a[i], daccess.flength, 0x05);
               }
 
               break; /* Early exit of the while loop. */
             }
+            else if (toggles.raise_row_alignments && row_alignment != AL_NONE)
+              alignment = row_alignment;
 
             cur_row_regex_node_a[i] = cur_row_regex_node_a[i]->next;
           }
         }
       }
 
-      /* Align the words. */
-      /* """""""""""""""" */
+      /* Force a word alignment ifit is set for this word. */
+      /* """"""""""""""""""""""""""""""""""""""""""""""""" */
       if (word_alignment != AL_NONE)
-        align_word(&word_a[wi], word_alignment, daccess.flength, 0x05);
-      else
-        switch (row_alignment)
-        {
-          case AL_NONE:
-            if (col_alignments[col_index] != AL_NONE)
-              align_word(&word_a[wi], col_alignments[col_index],
-                         daccess.flength, 0x05);
-            else
-              align_word(&word_a[wi], default_alignment, daccess.flength, 0x05);
-            break;
+        alignment = word_alignment;
 
-          default:
-            align_word(&word_a[wi], row_alignment, daccess.flength, 0x05);
-            break;
-        }
+      /* Do the aligment. */
+      /* """""""""""""""" */
+      align_word(&word_a[wi], alignment, daccess.flength, 0x05);
 
-      if (word_a[wi].is_last) /* About to start a new row? */
+      /* Adjusts things before a row change. */
+      /* """"""""""""""""""""""""""""""""""" */
+      if (word_a[wi].is_last || wi == count - 1) /* About to start a new row? */
       {
         row_index++;
-        row_alignment = AL_NONE;
 
         /* Re-initialize the array with No ('N'). */
         /* as this is a new row.                  */
         /* """""""""""""""""""""""""""""""""""""" */
         for (int i = 0; i < cols_number; i++)
+        {
           aligned_a[i] = 'N';
 
-        col_index = 0; /* Restart the columns counter. */
+          /* We can restore the spaces which are not part of the word */
+          /* now that the row is fully processed.                     */
+          /* """""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+          if (wi - i >= 0)
+            strrep(word_a[wi - i].str + daccess.flength, 0x05, ' ');
+        }
+
+        col_index     = 0; /* Restart the columns counter. */
+        row_alignment = AL_NONE;
       }
       else
         col_index++;
 
       free(str);
       free(tstr);
-
-      /* Restore the spaces which are not part of the word. */
-      /* """""""""""""""""""""""""""""""""""""""""""""""""" */
-      strrep(word_a[wi].str + daccess.flength, 0x05, ' ');
     }
   }
 
@@ -10685,8 +10713,8 @@ main(int argc, char * argv[])
   search_data.utf8_off_a = xmalloc(word_real_max_size * sizeof(long));
   search_data.utf8_len_a = xmalloc(word_real_max_size * sizeof(long));
 
-  win.start = 0; /* index of the first element in the    *
-                  | words array to be  displayed.        */
+  win.start = 0; /* index of the first element in the *
+                  | words array to be  displayed.     */
 
   /* We can now build the first metadata. */
   /* """""""""""""""""""""""""""""""""""" */

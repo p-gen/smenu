@@ -180,28 +180,32 @@ struct charsetinfo_s
 /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
 struct toggle_s
 {
-  int del_line;            /* 1 if the clean option is set (-d) else 0.   */
-  int enter_val_in_search; /* 1 if ENTER validates in search mode else 0. */
-  int no_scrollbar;        /* 1 to disable the scrollbar display else 0.  */
-  int blank_nonprintable;  /* 1 to try to display non-blanks in           *
-                            | symbolic form else 0.                       */
-  int keep_spaces;         /* 1 to keep the trailing spaces in columns    *
-                            | and tabulate mode.                          */
-  int taggable;            /* 1 if tagging is enabled.                    */
-  int pinable;             /* 1 if pinning is selected.                   */
-  int autotag;             /* 1 if tagging is selected and pinning is     *
-                            | not and we do no want an automatic tagging  *
-                            | when the users presses <ENTER>.             */
-  int noautotag;           /* 1 if the word under the cursor must not be  *
-                            | autotagged when no other word are tagged.   */
-  int visual_bell;         /* 1 to flash the window, 0 to make a sound.   */
-  int incremental_search;  /* 1 makes the searching process incremental.  *
-                            | 0 keeps it forgetful.                       */
-  int no_mouse;            /* 1 to disable the possibly auto-detected     *
-                            | mouse, 0 to let smenu auto-detect it.       */
-  int show_blank_words;    /* 1 if blank words are allowed then they will *
-                            | be filled by an underscore, 0 to leave them *
-                            | blank.                                      */
+  int del_line;             /* 1 if the clean option is set (-d) else 0.   */
+  int enter_val_in_search;  /* 1 if ENTER validates in search mode else 0. */
+  int no_scrollbar;         /* 1 to disable the scrollbar display else 0.  */
+  int blank_nonprintable;   /* 1 to try to display non-blanks in           *
+                             | symbolic form else 0.                       */
+  int keep_spaces;          /* 1 to keep the trailing spaces in columns    *
+                             | and tabulate mode.                          */
+  int taggable;             /* 1 if tagging is enabled.                    */
+  int pinable;              /* 1 if pinning is selected.                   */
+  int autotag;              /* 1 if tagging is selected and pinning is     *
+                             | not and we do no want an automatic tagging  *
+                             | when the users presses <ENTER>.             */
+  int noautotag;            /* 1 if the word under the cursor must not be  *
+                             | autotagged when no other word are tagged.   */
+  int visual_bell;          /* 1 to flash the window, 0 to make a sound.   */
+  int incremental_search;   /* 1 makes the searching process incremental.  *
+                             | 0 keeps it forgetful.                       */
+  int no_mouse;             /* 1 to disable the possibly auto-detected     *
+                             | mouse, 0 to let smenu auto-detect it.       */
+  int show_blank_words;     /* 1 if blank words are allowed then they will *
+                             | be filled by an underscore, 0 to leave them *
+                             | blank.                                      */
+  int raise_col_alignments; /* 1 if column alignment has priority over     *
+                             | row alignment else 0.                       */
+  int raise_row_alignments; /* 1 if row alignment has priority over        *
+                             | column alignment else 0.                    */
 };
 
 /* Structure to store the default or imposed smenu limits. */
@@ -299,20 +303,20 @@ struct term_s
 struct word_s
 {
   long           start, end;    /* start/end absolute horiz. word positions *
-                                | on the screen.                            */
+                                 | on the screen.                           */
   size_t         mb;            /* number of UTF-8 glyphs to display.       */
   long           tag_order;     /* each time a word is tagged, this value.  *
-                                | is increased.                             */
+                                 | is increased.                            */
   unsigned short tag_id;        /* tag id. 0 means no tag.                  */
   size_t         special_level; /* can vary from 0 to 9; 0 meaning normal.  */
   char *         str;           /* display string associated with this word */
   size_t         len;           /* number of bytes of str (for trimming).   */
   char *         orig;          /* NULL or original string if is had been.  *
-                                | shortened for being displayed or altered  *
-                                | by is expansion.                          */
+                                 | shortened for being displayed or altered *
+                                 | by is expansion.                         */
   char *         bitmap;        /* used to store the position of the.       *
-                                | currently searched chars in a word. The   *
-                                | objective is to speed their display.      */
+                                 | currently searched chars in a word. The  *
+                                 | objective is to speed their display.     */
   unsigned char  is_matching;   /* word is matching a search ERE.           */
   unsigned char  is_last;       /* 1 if the word is the last of a line.     */
   unsigned char  is_selectable; /* word is selectable.                      */
@@ -331,10 +335,10 @@ struct win_s
   long     max_lines;       /* effective number of lines in the window. */
   long     max_cols;        /* max number of words in a single line.    */
   long     real_max_width;  /* max line length. In column, tab or line  *
-                            | mode it can be greater than the          *
-                            | terminal width.                          */
+                             | mode it can be greater than the          *
+                             | terminal width.                          */
   long     message_lines;   /* number of lines taken by the messages    *
-                            | (updated by disp_message.                */
+                             | (updated by disp_message.                */
   long     max_width;       /* max usable line width or the terminal.   */
   long     offset;          /* Left margin, used in centered mode.      */
   char *   sel_sep;         /* output separator when tags are enabled.  */
@@ -342,7 +346,7 @@ struct win_s
   long     gutter_nb;       /* number of UTF-8 gutter glyphs.           */
   long     sb_column;       /* scroll bar column (-1) if no scroll bar. */
   unsigned next_tag_id;     /* Next tag ID, increased on each tagging   *
-                            | operation.                               */
+                             | operation.                               */
 
   unsigned char tab_mode;  /* -t */
   unsigned char col_mode;  /* -c */
@@ -446,20 +450,20 @@ struct daccess_s
 /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
 struct search_data_s
 {
-  char * buf;        /* search buffer.                            */
-  long   len;        /* current position in the search buffer.    */
-  long   utf8_len;   /* current position in the search buffer in  *
-                      | UTF-8 units.                              */
-  long * utf8_off_a; /* array of mb offsets in buf.               */
-  long * utf8_len_a; /* array of mb lengths in buf.               */
+  char * buf;        /* search buffer.                           */
+  long   len;        /* current position in the search buffer.   */
+  long   utf8_len;   /* current position in the search buffer in *
+                      | UTF-8 units.                             */
+  long * utf8_off_a; /* array of mb offsets in buf.              */
+  long * utf8_len_a; /* array of mb lengths in buf.              */
 
-  int  fuzzy_err;     /* fuzzy match error indicator.             */
-  long fuzzy_err_pos; /* last good position in search buffer.     */
+  int  fuzzy_err;     /* fuzzy match error indicator.            */
+  long fuzzy_err_pos; /* last good position in search buffer.    */
 
-  int only_ending;   /* only searches giving a result with the.   *
-                      | pattern at the end of the word will be    *
-                      | selected.                                 */
-  int only_starting; /* same with the pattern at the beginning.   */
+  int only_ending;   /* only searches giving a result with the.  *
+                      | pattern at the end of the word will be   *
+                      | selected.                                */
+  int only_starting; /* same with the pattern at the beginning.  */
 };
 
 /* *********** */

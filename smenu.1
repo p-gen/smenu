@@ -1522,14 +1522,19 @@ sets alignment the default one to the right.
 
 Other example where multiple selectors are used as multiple arguments:
 \f(CBps | smenu -col -cols e/TTY/ e/CMD/ e3\fP
-.PP
+
+\fBWarning\fP, if this option appears on the command line before any
+\fB-R\fP|\fB-rs\fP|\fB-rows\fP|\fB-rows_select\fP option, the specified
+column alignments will be protected from any future row alignment
+directives.
+Otherwise row alignment directives will take precedence.
 .IP "\fB-R\fP|\fB-rs\fP|\fB-rows\fP|\fB-rows_select\fP... \fIselectors\fP..."
 (Allowed in the "Columns" and "Lines" contexts.)
 
 Similar to \fB-C\fP|\fB-cs\fP|\fB-cols\fP|\fB-cols_select\fP but for
 the rows.
 
-Warning, the directives \fIl\fP, \fIL\fP, \fIr\fP, \fIR\fP, \fIc\fP
+\fBWarning\fP, the directives \fIl\fP, \fIL\fP, \fIr\fP, \fIR\fP, \fIc\fP
 and \fIC\fP are only allowed in column mode.
 
 \fB-C\fP|\fB-cs\fP|\fB-cols\fP|\fB-cols_select\fP and
@@ -1541,9 +1546,6 @@ occurrence of the options, the other occurrences will only update the
 selected or de-selected ranges.
 
 Once a column or a row has been excluded, it cannot be re-included.
-
-Alignments of row contents with this option have priority over alignments
-in columns.
 .IP "\fB-al\fP|\fBalign\fP... \fIregex_selectors\fP..."
 (Allowed in the "Columns" context.)
 
@@ -1824,7 +1826,7 @@ A normal string. In this case the cursor will be placed on the
 first word starting with that string (\fBCa\fP will match \fBCancel\fP
 by example).
 .PP
-Warning, when searching for a prefix or a regular expression, smenu
+\fBWarning\fP, when searching for a prefix or a regular expression, smenu
 only looks for them after an eventual modification, so for example,
 the command:
 \f(CBsmenu -I/c/x/ -s/c <<< "a b c d"\fP won't find c and put the cursor
