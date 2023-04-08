@@ -2,7 +2,7 @@ $ OUT=$(smenu -c -g: -Cr1,3-4 -Rl/'c d'/ -- t0001.in)
 
  a : b c d:e f : g h i 
 0:07 1:07 2:07 
-  a:b     :c d :e     :f:g: h i 
+  a:b     : c d:     e:f:g: h i 
 
  a :b     :   c:     d:e:f:g   :h:i 
 
