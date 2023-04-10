@@ -114,7 +114,14 @@ the current cursor position\fP, without clearing the screen first.
 The selection cursor is initially positioned on the first selectable word
 by default.
 .PP
-There are options to explicitly or implicitly include or exclude words
+In this window, words can be displayed next to each other, with a fixed
+size, or in rows or columns respecting the line ends as input.
+In column mode, words can also be centred, left aligned or right aligned.
+See the options \fB-C\fP|\fB-cs\fP|\fB-cols\fP|\fB-cols_select\fP,
+\fB-R\fP|\fB-rs\fP|\fB-rows\fP|\fB-rows_select\fP and
+\fB-al\fP|\fB-align\fP for more informations.
+.PP
+There are options to explicitly or implicitly include/exclude or align words
 using extended regular expressions.
 Note that once certain words are explicitly excluded, they cannot be
 re-included later.
