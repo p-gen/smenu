@@ -1534,7 +1534,28 @@ Other example where multiple selectors are used as multiple arguments:
 \fB-R\fP|\fB-rs\fP|\fB-rows\fP|\fB-rows_select\fP option, the specified
 column alignments will be protected from any future row alignment
 directives.
-Otherwise row alignment directives will take precedence.
+Otherwise row alignment directives will take precedence. For example:
+
+\f(CBecho "a b c\\\\naa bb cc\\\\naaaa bbbb cccc"
+| smenu -c -g\\| -C c2 -R r2\fP
+.br
+.nf
+Gives:
+\f(CRa   | b  |c\fP
+\f(CR  aa| bb |  cc <-- \fPCol. 2 remains centered as \f(CB-C\fP was used first.
+\f(CRaaaa|bbbb|cccc\fP
+.fi
+
+But
+\f(CBecho "a b c\\\\naa bb cc\\\\naaaa bbbb cccc"
+| smenu -c -g\\| -R r2 -C c2\fP
+.br
+.nf
+Gives:
+\f(CRa   | b  |c\fP
+\f(CR  aa|  bb|  cc <-- -R\fP takes precedence as it was used first.
+\f(CRaaaa|bbbb|cccc\fP
+.fi
 .IP "\fB-R\fP|\fB-rs\fP|\fB-rows\fP|\fB-rows_select\fP... \fIselectors\fP..."
 (Allowed in the "Columns" and "Lines" contexts.)
 
