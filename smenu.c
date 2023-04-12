@@ -10453,8 +10453,19 @@ main(int argc, char * argv[])
     }
   }
 
-  /* Sixth pass: Apply alignment rules in column modes. */
-  /* """""""""""""""""""""""""""""""""""""""""""""""""" */
+  /* Sixth pass: Apply alignment rules in column modes.                    */
+  /* The column alignments, based on regular expressions, have already     */
+  /* been processed in the fourth pass which converted this information    */
+  /* by adding new ranges to the three lists of column ranges.             */
+  /*                                                                       */
+  /* It remains to interpret these lists of column intervals and the lists */
+  /* of intervals and regular expressions for the rows.                    */
+  /*                                                                       */
+  /* To do this, a working table (aligned_a) is created and reset for      */
+  /* each row to store the statistics of alignments already processed,     */
+  /* taking into account the previous result and the order in which the    */
+  /* row and column alignment requests were made.                          */
+  /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
   if (win.col_mode)
   {
     long       row_index = 0;
@@ -10462,9 +10473,9 @@ main(int argc, char * argv[])
     size_t     n;
     char *     words;
 
-    alignment_t alignment;      /* Furtrure value of the word alignment. */
-    alignment_t word_alignment; /* Specifice word alignment.             */
-    alignment_t row_alignment;  /* current row word alignments.          */
+    alignment_t alignment;      /* Future value of the word alignment. */
+    alignment_t word_alignment; /* Specific word alignment.            */
+    alignment_t row_alignment;  /* current row word alignments.        */
 
     char *str, *tstr;
 
