@@ -3681,11 +3681,11 @@ void
 disp_matching_word(long pos, win_t * win, term_t * term, int is_current,
                    int err)
 {
-  size_t i;
-  int    att_set = 0;
-  char * p       = word_a[pos].str + daccess.flength;
-  char * np;
-  long   level = 0;
+  size_t        i;
+  int           att_set = 0;
+  char *        p       = word_a[pos].str + daccess.flength;
+  char *        np;
+  unsigned char level = 0;
 
   level = word_a[pos].special_level;
 
@@ -3968,7 +3968,7 @@ disp_word(long pos, search_mode_t search_mode, search_data_t * search_data,
       apply_attr(term, win->exclude_attr);
     else if (word_a[pos].special_level > 0)
     {
-      long level = word_a[pos].special_level - 1;
+      unsigned char level = word_a[pos].special_level - 1;
 
       apply_attr(term, win->special_attr[level]);
     }
@@ -9246,11 +9246,11 @@ main(int argc, char * argv[])
                           &langinfo, &win, &limits, &misc))
          != NULL)
   {
-    int         selectable;
-    int         is_first = 0;
-    int         special_level;
-    int         row_inc_matched = 0;
-    ll_node_t * node;
+    int           selectable;
+    int           is_first = 0;
+    unsigned char special_level;
+    int           row_inc_matched = 0;
+    ll_node_t *   node;
 
     if (*word == '\0')
       continue;
@@ -9307,7 +9307,7 @@ main(int argc, char * argv[])
       if (special_pattern[index] != NULL
           && regexec(&special_re[index], word, (int)0, NULL, 0) == 0)
       {
-        special_level = (int)index + 1;
+        special_level = index + 1;
         break;
       }
     }

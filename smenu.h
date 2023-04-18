@@ -308,7 +308,7 @@ struct word_s
   long           tag_order;     /* each time a word is tagged, this value.  *
                                  | is increased.                            */
   unsigned short tag_id;        /* tag id. 0 means no tag.                  */
-  size_t         special_level; /* can vary from 0 to 9; 0 meaning normal.  */
+  unsigned char  special_level; /* can vary from 0 to 9; 0 meaning normal.  */
   char *         str;           /* display string associated with this word */
   size_t         len;           /* number of bytes of str (for trimming).   */
   char *         orig;          /* NULL or original string if is had been.  *
