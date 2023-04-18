@@ -1932,7 +1932,6 @@ parse_selectors(char * str, filters_t * filter, char ** unparsed,
 
       int rc;
       int pos;
-      int good = 0;
 
       if (l_open_range == 0 && r_open_range == 0)
       {
@@ -2078,12 +2077,10 @@ parse_al_selectors(char * str, char ** unparsed, ll_t ** al_regex_list,
                    ll_t ** ar_regex_list, ll_t ** ac_regex_list,
                    alignment_t * default_alignment, misc_t * misc)
 {
-  char         mark; /* Value to set */
-  char         c;
-  size_t       start = 1; /* column string offset in the parsed string. */
-  char *       ptr;       /* pointer to the remaining string to parse.  */
-  interval_t * interval;
-  int          type;
+  char   c;
+  size_t start = 1; /* column string offset in the parsed string. */
+  char * ptr;       /* pointer to the remaining string to parse.  */
+  int    type;
 
   /* Replace the UTF-8 string representation in the selector by */
   /* their binary values.                                       */
@@ -10470,8 +10467,6 @@ main(int argc, char * argv[])
   {
     long       row_index = 0;
     interval_t interval;
-    size_t     n;
-    char *     words;
 
     alignment_t alignment;      /* Future value of the word alignment. */
     alignment_t word_alignment; /* Specific word alignment.            */
