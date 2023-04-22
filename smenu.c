@@ -6179,19 +6179,21 @@ attributes_action(char * ctx_name, char * opt_name, char * param, int nb_values,
 
   /* Flags to check if an attribute is already set */
   /* """"""""""""""""""""""""""""""""""""""""""""" */
-  int inc_attr_set           = 0; /* included words.                  */
-  int exc_attr_set           = 0; /* excluded words.                  */
-  int cur_attr_set           = 0; /* highlighted word (cursor).       */
-  int bar_attr_set           = 0; /* scroll bar.                      */
-  int shift_attr_set         = 0; /* horizontal scrolling arrows.     */
-  int message_attr_set       = 0; /* message (title).                 */
-  int tag_attr_set           = 0; /* selected (tagged) words.         */
-  int cursor_on_tag_attr_set = 0; /* selected words under the cursor. */
-  int sf_attr_set            = 0; /* currently searched field color.  */
-  int st_attr_set            = 0; /* currently searched text color.   */
-  int mf_attr_set            = 0; /* matching word field color.       */
-  int mt_attr_set            = 0; /* matching word text color.        */
-  int daccess_attr_set       = 0; /* Direct access text color.        */
+  int inc_attr_set           = 0; /* included words.                       */
+  int exc_attr_set           = 0; /* excluded words.                       */
+  int cur_attr_set           = 0; /* highlighted word (cursor).            */
+  int bar_attr_set           = 0; /* scroll bar.                           */
+  int shift_attr_set         = 0; /* horizontal scrolling arrows.          */
+  int message_attr_set       = 0; /* message (title).                      */
+  int tag_attr_set           = 0; /* selected (tagged) words.              */
+  int cursor_on_tag_attr_set = 0; /* selected words under the cursor.      */
+  int sf_attr_set            = 0; /* currently searched field color.       */
+  int st_attr_set            = 0; /* currently searched text color.        */
+  int mf_attr_set            = 0; /* matching word field color.            */
+  int mt_attr_set            = 0; /* matching word text color.             */
+  int mfe_attr_set           = 0; /* matching word with error field color. */
+  int mte_attr_set           = 0; /* matching word with error text color.  */
+  int daccess_attr_set       = 0; /* Direct access text color.             */
 
   /* Information relatives to the attributes to be searched and set. */
   /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
@@ -6237,10 +6239,10 @@ attributes_action(char * ctx_name, char * opt_name, char * param, int nb_values,
       &mt_attr_set, "mt:", 3 },
     { &win->match_err_field_attr,
       "The matching word with error field attribute is already set.",
-      &mf_attr_set, "mfe:", 4 },
+      &mfe_attr_set, "mfe:", 4 },
     { &win->match_err_text_attr,
       "The matching word with error text attribute is already set.",
-      &mt_attr_set, "mte:", 4 },
+      &mte_attr_set, "mte:", 4 },
     { &win->daccess_attr, "The direct access tag attribute is already set.",
       &daccess_attr_set, "da:", 3 },
     { NULL, NULL, NULL, NULL, 0 }
