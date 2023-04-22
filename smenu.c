@@ -2001,7 +2001,12 @@ parse_selectors(char * str, filters_t * filter, char ** unparsed,
       /* We must parse a single number. */
       /* """""""""""""""""""""""""""""" */
 
-      if (sscanf(str + start, "%ld", &first) != 1)
+      int rc;
+      int pos;
+
+      rc = sscanf(str + start, "%ld%n", &first, &pos);
+
+      if (rc != 1 || *(str + start + pos) != '\0')
       {
         *unparsed = strprint(str + start);
         return;
