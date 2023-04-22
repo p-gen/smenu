@@ -375,14 +375,14 @@ decode_attr_toggles(char * s, attrib_t * attr)
   return rc;
 }
 
-/* =========================================================*/
-/* Parse attributes in str in the form [fg][/bg][,toggles]  */
-/* where:                                                   */
-/* fg and bg are short representing a color value           */
-/* toggles is an array of toggles (see decode_attr_toggles) */
-/* Returns 1 on success else 0.                             */
-/* attr will be filled by the function.                     */
-/* =========================================================*/
+/* =============================================================*/
+/* Parse attributes in str in the form [fg][/bg][[,.+]toggles]  */
+/* where:                                                       */
+/* fg and bg are short representing a color value               */
+/* toggles is an array of toggles (see decode_attr_toggles)     */
+/* Returns 1 on success else 0.                                 */
+/* attr will be filled by the function.                         */
+/* =============================================================*/
 int
 parse_attr(char * str, attrib_t * attr, short colors)
 {
@@ -396,11 +396,11 @@ parse_attr(char * str, attrib_t * attr, short colors)
 
   /* 11: 4 type+colon,2x3 for colors, 1 for slash.     */
   /* 8 : max size for the concatenation of attributes. */
-  /* """"""""""""""""""""""""""""""""""""""""""""""""" */
-  n = sscanf(str, "%11[^,],%8s%c", s1, s2, &c);
+  /* ''''''''''''''''''''''''''''''''''''''''''''''''' */
+  n = sscanf(str, "%11[^,.+]%*[,.+]%8s%c", s1, s2, &c);
 
   if (n == 0 || c != '\0')
-    return 0;
+    goto error;
 
   if ((pos = strchr(s1, '/')))
   {
@@ -411,19 +411,19 @@ parse_attr(char * str, attrib_t * attr, short colors)
       {
         d2 = -1;
         if (n == 1)
-          return 0;
+          goto error;
       }
       else if (d2 < 0)
-        return 0;
+        goto error;
     }
     else if (sscanf(s1, "%hd/%hd", &d1, &d2) < 2)
     {
       d1 = d2 = -1;
       if (n == 1)
-        return 0;
+        goto error;
     }
     else if (d1 < 0 || d2 < 0)
-      return 0;
+      goto error;
   }
   else /* no / in the first string. */
   {
@@ -432,7 +432,7 @@ parse_attr(char * str, attrib_t * attr, short colors)
     {
       d1 = -1;
       if (n == 2 || decode_attr_toggles(s1, attr) == 0)
-        return 0;
+        goto error;
     }
   }
 
@@ -451,6 +451,9 @@ parse_attr(char * str, attrib_t * attr, short colors)
     rc = decode_attr_toggles(s2, attr);
 
   return rc;
+
+error:
+  return 0;
 }
 
 /* ============================================== */
