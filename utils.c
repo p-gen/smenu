@@ -90,7 +90,7 @@ interval_swap(void ** a, void ** b)
 /* number of intervals to consider.                                       */
 /* ====================================================================== */
 void
-merge_intervals(ll_t * list)
+optimize_an_interval_list(ll_t * list)
 {
   ll_node_t * node1, *node2;
   interval_t *data1, *data2;

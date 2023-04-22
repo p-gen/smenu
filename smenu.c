@@ -9059,11 +9059,11 @@ main(int argc, char * argv[])
 
       free(unparsed);
     }
-    merge_intervals(inc_row_interval_list);
-    merge_intervals(exc_row_interval_list);
-    merge_intervals(al_row_interval_list);
-    merge_intervals(ar_row_interval_list);
-    merge_intervals(ac_row_interval_list);
+    optimize_an_interval_list(inc_row_interval_list);
+    optimize_an_interval_list(exc_row_interval_list);
+    optimize_an_interval_list(al_row_interval_list);
+    optimize_an_interval_list(ar_row_interval_list);
+    optimize_an_interval_list(ac_row_interval_list);
   }
 
   /* Parse the column selection string if any. */
@@ -9102,8 +9102,8 @@ main(int argc, char * argv[])
         exit(EXIT_FAILURE);
       }
 
-      merge_intervals(inc_col_interval_list);
-      merge_intervals(exc_col_interval_list);
+      optimize_an_interval_list(inc_col_interval_list);
+      optimize_an_interval_list(exc_col_interval_list);
 
       if (cols_filter_type == UNKNOWN_FILTER)
         cols_filter_type = filter_type;
@@ -9155,9 +9155,9 @@ main(int argc, char * argv[])
       free(unparsed);
     }
 
-    merge_intervals(al_col_interval_list);
-    merge_intervals(ar_col_interval_list);
-    merge_intervals(ac_col_interval_list);
+    optimize_an_interval_list(al_col_interval_list);
+    optimize_an_interval_list(ar_col_interval_list);
+    optimize_an_interval_list(ac_col_interval_list);
   }
 
   /* parse the alignment selector list if any. */
@@ -10370,9 +10370,9 @@ main(int argc, char * argv[])
       else
         col_index++;
     }
-    merge_intervals(al_col_interval_list);
-    merge_intervals(ar_col_interval_list);
-    merge_intervals(ac_col_interval_list);
+    optimize_an_interval_list(al_col_interval_list);
+    optimize_an_interval_list(ar_col_interval_list);
+    optimize_an_interval_list(ac_col_interval_list);
   }
   else if (win.tab_mode)
   {

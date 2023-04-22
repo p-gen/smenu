@@ -39,7 +39,7 @@ void
 interval_swap(void ** a, void ** b);
 
 void
-merge_intervals(ll_t * list);
+optimize_an_interval_list(ll_t * list);
 
 char *
 concat(const char * str1, ...);
