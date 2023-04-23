@@ -9055,7 +9055,7 @@ main(int argc, char * argv[])
       if (*unparsed != '\0')
       {
         fprintf(stderr,
-                "Bad not allowed row selection argument. "
+                "Bad or not allowed row selection argument. "
                 "Unparsed part: %s\n",
                 unparsed);
 
@@ -9105,7 +9105,7 @@ main(int argc, char * argv[])
       if (*unparsed != '\0')
       {
         fprintf(stderr,
-                "Bad not allowed column selection argument. "
+                "Bad or not allowed column selection argument. "
                 "Unparsed part: %s\n",
                 unparsed);
 
