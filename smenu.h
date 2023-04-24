@@ -180,32 +180,32 @@ struct charsetinfo_s
 /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
 struct toggle_s
 {
-  int del_line;             /* 1 if the clean option is set (-d) else 0.   */
-  int enter_val_in_search;  /* 1 if ENTER validates in search mode else 0. */
-  int no_scrollbar;         /* 1 to disable the scrollbar display else 0.  */
-  int blank_nonprintable;   /* 1 to try to display non-blanks in           *
-                             | symbolic form else 0.                       */
-  int keep_spaces;          /* 1 to keep the trailing spaces in columns    *
-                             | and tabulate mode.                          */
-  int taggable;             /* 1 if tagging is enabled.                    */
-  int pinable;              /* 1 if pinning is selected.                   */
-  int autotag;              /* 1 if tagging is selected and pinning is     *
-                             | not and we do no want an automatic tagging  *
-                             | when the users presses <ENTER>.             */
-  int noautotag;            /* 1 if the word under the cursor must not be  *
-                             | autotagged when no other word are tagged.   */
-  int visual_bell;          /* 1 to flash the window, 0 to make a sound.   */
-  int incremental_search;   /* 1 makes the searching process incremental.  *
-                             | 0 keeps it forgetful.                       */
-  int no_mouse;             /* 1 to disable the possibly auto-detected     *
-                             | mouse, 0 to let smenu auto-detect it.       */
-  int show_blank_words;     /* 1 if blank words are allowed then they will *
-                             | be filled by an underscore, 0 to leave them *
-                             | blank.                                      */
-  int raise_col_alignments; /* 1 if column alignment has priority over     *
-                             | row alignment else 0.                       */
-  int raise_row_alignments; /* 1 if row alignment has priority over        *
-                             | column alignment else 0.                    */
+  int del_line;            /* 1 if the clean option is set (-d) else 0.   */
+  int enter_val_in_search; /* 1 if ENTER validates in search mode else 0. */
+  int no_scrollbar;        /* 1 to disable the scrollbar display else 0.  */
+  int blank_nonprintable;  /* 1 to try to display non-blanks in           *
+                            | symbolic form else 0.                       */
+  int keep_spaces;         /* 1 to keep the trailing spaces in columns    *
+                            | and tabulate mode.                          */
+  int taggable;            /* 1 if tagging is enabled.                    */
+  int pinable;             /* 1 if pinning is selected.                   */
+  int autotag;             /* 1 if tagging is selected and pinning is     *
+                            | not and we do no want an automatic tagging  *
+                            | when the users presses <ENTER>.             */
+  int noautotag;           /* 1 if the word under the cursor must not be  *
+                            | autotagged when no other word are tagged.   */
+  int visual_bell;         /* 1 to flash the window, 0 to make a sound.   */
+  int incremental_search;  /* 1 makes the searching process incremental.  *
+                            | 0 keeps it forgetful.                       */
+  int no_mouse;            /* 1 to disable the possibly auto-detected     *
+                            | mouse, 0 to let smenu auto-detect it.       */
+  int show_blank_words;    /* 1 if blank words are allowed then they will *
+                            | be filled by an underscore, 0 to leave them *
+                            | blank.                                      */
+  int cols_first;          /* 1 if column alignment has priority over     *
+                            | row alignment else 0.                       */
+  int rows_first;          /* 1 if row alignment has priority over        *
+                            | column alignment else 0.                    */
 };
 
 /* Structure to store the default or imposed smenu limits. */

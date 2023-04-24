@@ -5623,21 +5623,21 @@ init_main_ds(attrib_t * init_attr, win_t * win, limit_t * limits,
 
   /* Toggles initialization. */
   /* """"""""""""""""""""""" */
-  toggles->del_line             = 0;
-  toggles->enter_val_in_search  = 0;
-  toggles->no_scrollbar         = 0;
-  toggles->blank_nonprintable   = 0;
-  toggles->keep_spaces          = 0;
-  toggles->taggable             = 0;
-  toggles->autotag              = 0;
-  toggles->noautotag            = 0;
-  toggles->pinable              = 0;
-  toggles->visual_bell          = 0;
-  toggles->incremental_search   = 0;
-  toggles->no_mouse             = 0;
-  toggles->show_blank_words     = 0;
-  toggles->raise_col_alignments = 0;
-  toggles->raise_row_alignments = 0;
+  toggles->del_line            = 0;
+  toggles->enter_val_in_search = 0;
+  toggles->no_scrollbar        = 0;
+  toggles->blank_nonprintable  = 0;
+  toggles->keep_spaces         = 0;
+  toggles->taggable            = 0;
+  toggles->autotag             = 0;
+  toggles->noautotag           = 0;
+  toggles->pinable             = 0;
+  toggles->visual_bell         = 0;
+  toggles->incremental_search  = 0;
+  toggles->no_mouse            = 0;
+  toggles->show_blank_words    = 0;
+  toggles->cols_first          = 0;
+  toggles->rows_first          = 0;
 
   /* Misc default values. */
   /* """""""""""""""""""" */
@@ -5847,8 +5847,8 @@ columns_select_action(char * ctx_name, char * opt_name, char * param,
   if (*cols_selector_list == NULL)
     *cols_selector_list = ll_new();
 
-  if (toggles->raise_col_alignments == 0 && toggles->raise_row_alignments == 0)
-    toggles->raise_col_alignments = 1;
+  if (toggles->cols_first == 0 && toggles->rows_first == 0)
+    toggles->cols_first = 1;
 
   for (v = 0; v < nb_values; v++)
     ll_append(*cols_selector_list, xstrdup(values[v]));
@@ -5867,8 +5867,8 @@ rows_select_action(char * ctx_name, char * opt_name, char * param,
   if (*rows_selector_list == NULL)
     *rows_selector_list = ll_new();
 
-  if (toggles->raise_col_alignments == 0 && toggles->raise_row_alignments == 0)
-    toggles->raise_row_alignments = 1;
+  if (toggles->cols_first == 0 && toggles->rows_first == 0)
+    toggles->rows_first = 1;
 
   for (v = 0; v < nb_values; v++)
     ll_append(*rows_selector_list, xstrdup(values[v]));
@@ -10602,7 +10602,7 @@ main(int argc, char * argv[])
             /* Tell that the word is already aligned when column */
             /* alignments have precedence over row alignments.   */
             /* """"""""""""""""""""""""""""""""""""""""""""""""" */
-            if (toggles.raise_col_alignments)
+            if (toggles.cols_first)
               aligned_a[col_index] = 'Y';
 
             alignment = alignment_a[i];
@@ -10667,7 +10667,7 @@ main(int argc, char * argv[])
 
               break; /* Early exit of the while loop. */
             }
-            else if (toggles.raise_row_alignments && row_alignment != AL_NONE)
+            else if (toggles.rows_first && row_alignment != AL_NONE)
               alignment = row_alignment;
 
             cur_row_regex_node_a[i] = cur_row_regex_node_a[i]->next;
