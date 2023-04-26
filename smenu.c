@@ -7553,9 +7553,6 @@ main(int argc, char * argv[])
   long * col_max_size = NULL; /* Array of maximum sizes (in display cells)   *
                                | of each column in column mode.              */
 
-  alignment_t * col_alignments; /* Alignment tag for each column in column   *
-                                 | mode.                                     */
-
   long word_real_max_size = 0; /* size of the longer word after expansion.   */
   long cols_real_max_size = 0; /* Max real width of all columns used when    *
                                 | -w and -c are both set.                    */
@@ -9638,12 +9635,6 @@ main(int argc, char * argv[])
         }
       }
     }
-
-    /* Initialize the alignment information of each column to be 'left'. */
-    /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-    col_alignments = xmalloc(cols_number * sizeof(alignment_t));
-    for (long ci = 0; ci < cols_number; ci++)
-      col_alignments[ci] = AL_NONE;
 
     /* Store some known values in the current word's structure. */
     /* """""""""""""""""""""""""""""""""""""""""""""""""""""""" */
