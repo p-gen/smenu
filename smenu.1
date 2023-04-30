@@ -86,8 +86,8 @@ and outputs the selection to stdout.
   [\fB-sb\fP|\fB-sbw\fP|\fB-show_blank_words\fP [\fIblank_char\fP]]
 
 
-  selectors    ::= \fIcol1\fP[-\fIcol2\fP],...|\fIrow1\fP[-\fIrow2\fP],...|\
-\fIRE\fP,...
+  selectors    ::= See the \fB-C\fP|\fB-cs\fP|\fB-cols\fP description for \
+more details.
   re_selectors ::= \fIRE\fP,...
   directive    ::= \fIi\fP|\fII\fP|\fIe\fP|\fIE\fP|\
 \fIl\fP|\fIL\fP|\fIr\fP|\fIR\fP|\fIc\fP|\fIC\fP
@@ -1446,8 +1446,8 @@ In this mode each column has the same width.
 .IP "\fB-w\fP|\fB-wide\fP|\fB-wide_mode\fP"
 (Allowed in the "Columns" and "Tabulations" contexts.)
 
-When \fB-t\fP|\fB-tab\fP|\fB-tab_mode\fP|\fB-tabulate_mode\fP is followed by a
-number of columns, the default is to compact the columns so that they
+When \fB-t\fP|\fB-tab\fP|\fB-tab_mode\fP|\fB-tabulate_mode\fP is followed
+by a number of columns, the default is to compact the columns so that they
 use the less terminal width as possible.
 This option enlarges the columns in order to use the whole terminal width.
 
@@ -1464,27 +1464,46 @@ This choice enables a faster display.
 .PP
 .IP "\fB-C\fP|\fB-cs\fP|\fB-cols\fP|\fB-cols_select\fP... \
 [\fIi\fP|\fII\fP|\fIe\fP|\fIE\fP|\
-\fIl\fP|\fIL\fP|\fIr\fP|\fIR\fP|\fIc\fP|\fIC\fP]\
+\fIl\fP|\fIL\fP|\fIr\fP|\fIR\fP|\fIc\fP|\fIC\fP|\
+\fIa\fP|\fIA\fP]\
 [\fIselectors\fP]..."
 (Allowed in the "Columns" context.)
 
-In column mode, this option is useful to restrict the selections to a
-subset of all columns.
-Either by including (nothing or \fIi\fP) or by excluding (\fIe\fP) them.
+In column mode, this option is useful for performing specific actions
+on a set of columns.
 
-The other letters (directives) \fIl\fP, \fIL\fP, \fIr\fP, \fIR\fP,
-\fIc\fP and \fIC\fP are useful to respectively align to the left, to
-the right or center the content columns (selected or not).
+These actions varies according to the directive given:
+.br
+- You can include (directive \fIi\fP or \fII\fP) or exclude (\fIe\fP or
+\fIE\fP) a set of selectable columns.
+.br
+- You can specified the kind of alignment (left, right or center) of the
+set of columns with the directives \fIl\fP, \fIL\fP, \fIr\fP, \fIR\fP,
+\fIc\fP or \fIC\fP.
+.br
+- You can also specified the attributes (colors...) of the set of columns
+with the directives \fIa\fP or \fIA\fP.
 
-Columns can be designated by their number (starting with 1) or by regular
-expressions surrounded by delimiters consisting of any printable ASCII
-character, except spaces and unprotected commas;
+When the directive is missing, the "include" directive is assumed
+(\fIi\fP).
+
+Note that it is best to use the lower case version of these directives,
+as their upper case alternative may have other meanings in the future.
+
+In selectors, columns can be designated by their number (starting with
+1) or by regular expressions surrounded by delimiters consisting of
+any printable ASCII character, except spaces and unprotected commas;
 commas can be protected by backslashes ('\fCD\\\fP')).
 
 Column ranges are defined  by separating their numbers with a dash. Open
 interval to the left or right are allowed, so these interval descriptions
 may be preceded or followed by a dash (e.g. \f(CB5-7\fP, \f(CB-2\fP
 or \f(CB8-\fP are allowed).
+
+When using the \fIa\fP|\fIA\fP directive, an attribute \fBmust\fP be
+appended prefixed by a colon (':') as in \f(CB-C a1-2:6+b\fP per example.
+Refer to the attribute option (\fB-a\fP|\fB-attr\fP|\fB-attributes\fP)
+for more details.
 
 Multiple selectors can be regrouped in one argument using commas to
 separate them.
@@ -1515,6 +1534,10 @@ and those containing a two characters word starting with '\fBX\fP'.
 If \fIe\fP was used in place of \fIi\fP, all the columns would have been
 selected \fBexcept\fP the columns \fB2\fP,\fB3\fP,\fB5\fP,\fB6\fP,\fB7\fP
 and those matching the extended regular expression '\f(CBX.\fP'.
+
+Example of defining the attributes of a column set:
+\f(CB-C a2-6:7/4+b\fP forces the columns from 2 to 6 to be bold and have
+a foreground color equal to 7 and a background color equal to 4.
 
 Example of mixing alignment and inclusion/exclusion directives:
 \f(CB-Ci1-5 -Ce/a+/ -Cr7,/b+/\fP makes columns 1 to 5 selectable, makes

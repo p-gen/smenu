@@ -302,6 +302,31 @@ help(win_t * win, term_t * term, long last_line)
 /* Attributes string parsing function. */
 /* *********************************** */
 
+/* =========================================================== */
+/* Allocation and initialization of a new attribute structure. */
+/* =========================================================== */
+attrib_t *
+attr_new(void)
+{
+  attrib_t * attr;
+
+  attr = xmalloc(sizeof(attrib_t));
+
+  attr->is_set    = UNSET;
+  attr->fg        = -1;
+  attr->bg        = -1;
+  attr->bold      = (signed char)-1;
+  attr->dim       = (signed char)-1;
+  attr->reverse   = (signed char)-1;
+  attr->standout  = (signed char)-1;
+  attr->underline = (signed char)-1;
+  attr->italic    = (signed char)-1;
+  attr->invis     = (signed char)-1;
+  attr->blink     = (signed char)-1;
+
+  return attr;
+}
+
 /* ================================= */
 /* Decode attributes toggles if any. */
 /* b -> bold                         */
@@ -1033,7 +1058,7 @@ update_bitmaps(search_mode_t mode, search_data_t * data,
 {
   long i, j, n; /* work variables.                                        */
 
-  long bm_len; /* number of chars taken by the bitmask.                   */
+  long bm_len; /* number of chars taken by the bit mask.                  */
 
   char * start; /* pointer on the position of the matching position       *
                  | of the last search buffer glyph in the word.           */
@@ -1677,6 +1702,42 @@ parse_regex_selector_part(char * str, ll_t ** regex_list)
   }
 }
 
+/* ================================================================= */
+/* Compare two elements of type attr_elem_t.                         */
+/* The comparison key is the first member of the structure which is  */
+/* of type attrib_t.                                                 */
+/* Returns 0 is the two elements are equals otherwise returns 1.     */
+/* ================================================================= */
+int
+attr_elem_cmp(void const * a, void const * b)
+{
+  const attr_elem_t * ai = a;
+  const attr_elem_t * bi = b;
+
+  if (ai->attr->fg != bi->attr->fg)
+    return 1;
+  if (ai->attr->bg != bi->attr->bg)
+    return 1;
+  if (ai->attr->bold != bi->attr->bold)
+    return 1;
+  if (ai->attr->dim != bi->attr->dim)
+    return 1;
+  if (ai->attr->reverse != bi->attr->reverse)
+    return 1;
+  if (ai->attr->standout != bi->attr->standout)
+    return 1;
+  if (ai->attr->underline != bi->attr->underline)
+    return 1;
+  if (ai->attr->italic != bi->attr->italic)
+    return 1;
+  if (ai->attr->invis != bi->attr->invis)
+    return 1;
+  if (ai->attr->blink != bi->attr->blink)
+    return 1;
+
+  return 0;
+}
+
 /* ===================================================================== */
 /* Parse a column or row selector string whose syntax is defines as:     */
 /* <letter><range1>,<range2>,...                                         */
@@ -1702,10 +1763,14 @@ parse_regex_selector_part(char * str, ll_t ** regex_list)
 /*                         excluded.                                     */
 /* exc_regex_list    (out) is a list of regex matching elements to       */
 /*                         be excluded.                                  */
-/* a{lrc}terval_list (out) is a list of the interval of elements to be   */
+/* aX_interval_list  (out) is a list of the interval of elements to be   */
 /*                         aligned to the left, right or centered.       */
-/* a{lrc}_regex_list (out) is a list of regex matching elements to       */
+/* aX_regex_list     (out) is a list of regex matching elements to       */
 /*                         be aligned to the left, right or centered.    */
+/* at_interval_list  (out) is a list of the interval of elements with    */
+/*                         a given attribute.                            */
+/* at_regex_list     (out) is a list of regex matching elements with     */
+/*                         a given attribute.                            */
 /* ===================================================================== */
 void
 parse_selectors(char * str, filters_t * filter, char ** unparsed,
@@ -1714,16 +1779,21 @@ parse_selectors(char * str, filters_t * filter, char ** unparsed,
                 ll_t ** al_interval_list, ll_t ** al_regex_list,
                 ll_t ** ar_interval_list, ll_t ** ar_regex_list,
                 ll_t ** ac_interval_list, ll_t ** ac_regex_list,
-                alignment_t * default_alignment, win_t * win, misc_t * misc)
+                ll_t ** at_interval_list, ll_t ** at_regex_list,
+                alignment_t * default_alignment, win_t * win, misc_t * misc,
+                term_t * term)
 {
-  char         c;
-  long         start = 1;     /* column string offset in the parsed string. */
-  long         first, second; /* range starting and ending values.          */
-  int          l_open_range;  /* 1 if the range is left-open.               */
-  int          r_open_range;  /* 1 if the range is right-open.              */
-  char *       ptr;           /* pointer to the remaining string to parse.  */
-  interval_t * interval;
-  int          type;
+  char          c;
+  long          start = 1;     /* column string offset in the parsed string. */
+  long          first, second; /* range starting and ending values.          */
+  int           l_open_range;  /* 1 if the range is left-open.               */
+  int           r_open_range;  /* 1 if the range is right-open.              */
+  char *        ptr;           /* pointer to the remaining string to parse.  */
+  interval_t *  interval;
+  selector_t    type;
+  char *        attr_str = NULL;
+  attrib_t *    attr;
+  attr_elem_t * attr_elem;
 
   /* Replace the UTF-8 string representation in the selector by */
   /* their binary values.                                       */
@@ -1794,6 +1864,10 @@ parse_selectors(char * str, filters_t * filter, char ** unparsed,
       start   = 0;
       break;
 
+    case 'a': /* Attribute. */
+      type = ATTR;
+      break;
+
     default:
       if (!isgraph(c))
       {
@@ -1836,6 +1910,7 @@ parse_selectors(char * str, filters_t * filter, char ** unparsed,
     int    is_range = 0;
     char   delim1, delim2 = '\0';
     char * oldptr;
+    char * colon = NULL;
 
     l_open_range = r_open_range = 0;
     first = second = -1;
@@ -1850,6 +1925,14 @@ parse_selectors(char * str, filters_t * filter, char ** unparsed,
       }
       else if (*ptr == '\\' && *(ptr + 1) != '\0' && *(ptr + 1) == ',')
         ptr += 2;
+      else if (type == ATTR && *ptr == '\\' && *(ptr + 1) != '\0'
+               && *(ptr + 1) == ':')
+        ptr += 2;
+      else if (type == ATTR && *ptr && *ptr == ':')
+      {
+        colon = ptr;
+        ptr++;
+      }
       else
         ptr++;
     }
@@ -1875,26 +1958,39 @@ parse_selectors(char * str, filters_t * filter, char ** unparsed,
     if (*ptr)
       *ptr++ = '\0';
 
-    /* If the regex contains at least three characters then delim1 */
-    /* and delim2 point to the first and last delimiter of the     */
-    /* regular expression. E.g. /abc/                              */
-    /*                          ^   ^                              */
-    /*                          |   |                              */
-    /*                     delim1   delim2                         */
-    /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
     delim1 = *(str + start);
     if (delim1 == '-')
       l_open_range = 1;
 
-    if (*ptr == '\0')
-      delim2 = *(ptr - 1);
-    else if (ptr > str + start + 2)
-      delim2 = *(ptr - 2);
+    if (type != ATTR)
+    {
+      if (*ptr == '\0')
+        delim2 = *(ptr - 1);
+      else if (ptr > str + start + 2)
+        delim2 = *(ptr - 2);
+    }
+    else
+    {
+      if (colon == NULL || colon == str + start)
+      {
+        *unparsed = strprint(str + start);
+        return;
+      }
+
+      delim2 = *(colon - 1);
+    }
 
     if (delim2 == '-')
       r_open_range = 1;
 
     /* Check is we have found a well described regular expression. */
+    /* If the segment to parse  contains at least three characters */
+    /* then delim1 and delim2 point to the first and last          */
+    /* delimiter of the regular expression.                        */
+    /* E.g. /abc/                                                  */
+    /*      ^   ^                                                  */
+    /*      |   |                                                  */
+    /* delim1   delim2                                             */
     /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
     if (ptr > str + start + 2 && delim1 == delim2 && isgraph(delim1)
         && isgraph(delim2) && !isdigit(delim1) && !isdigit(delim2))
@@ -1918,6 +2014,64 @@ parse_selectors(char * str, filters_t * filter, char ** unparsed,
         case ACENTER:
           parse_regex_selector_part(str + start, ac_regex_list);
           break;
+        case ATTR:
+          *colon = '\0';
+          /* xxxxx\0yyyy      */
+          /* |    | |         */
+          /* |    | attr part */
+          /* |    colon       */
+          /* str+start        */
+          /* """""""""""""""" */
+
+          attr = attr_new();
+
+          /* parse the attribute part (after the colon) */
+          /* """""""""""""""""""""""""""""""""""""""""" */
+          if (!parse_attr(colon + 1, attr, term->colors))
+          {
+            *unparsed = strprint(str + start);
+            free(attr);
+            return;
+          }
+
+          /* Parse the regex part (before the colon) and add it to the */
+          /* list of elements of type attr_elem_t.                     */
+          /* In each of these elements a list of regex for the same    */
+          /* attributes is updated.                                    */
+          /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+          if (*at_regex_list == NULL) /* The list doesn't already exists. */
+          {
+            *at_regex_list     = ll_new();
+            attr_elem_t * elem = xmalloc(sizeof(attr_elem_t));
+            elem->attr         = attr;
+            elem->list         = NULL;
+            parse_regex_selector_part(str + start, &elem->list);
+            ll_append(*at_regex_list, elem);
+          }
+          else
+          {
+            attr_elem_t e;
+            ll_node_t * node;
+            e.attr = attr;
+            /* Update the list of regex of the attribute attr. */
+            /* """"""""""""""""""""""""""""""""""""""""""""""" */
+            if ((node = ll_find(*at_regex_list, &e, attr_elem_cmp)) != NULL)
+            {
+              ((attr_elem_t *)(node->data))->attr = attr;
+              parse_regex_selector_part(str + start,
+                                        &((attr_elem_t *)(node->data))->list);
+            }
+            else
+            {
+              attr_elem_t * elem = xmalloc(sizeof(attr_elem_t));
+              elem->attr         = attr;
+              elem->list         = NULL;
+              parse_regex_selector_part(str + start, &elem->list);
+              ll_append(*at_regex_list, elem);
+            }
+          }
+
+          break;
       }
 
       /* Adjust the start of the new interval to read in the */
@@ -1940,20 +2094,52 @@ parse_selectors(char * str, filters_t * filter, char ** unparsed,
       {
         rc = sscanf(str + start, "%ld-%ld%n", &first, &second, &pos);
 
-        if (rc != 2 || *(str + start + pos) != '\0')
+        if (type != ATTR)
         {
-          *unparsed = strprint(str + start);
-          return;
+          if (rc != 2 || *(str + start + pos) != '\0')
+          {
+            *unparsed = strprint(str + start);
+            return;
+          }
+        }
+        else
+        {
+          if (*(str + start + pos) != ':')
+          {
+            if (rc != 2 || *(str + start + pos) != '\0')
+              *unparsed = strprint(str + start + pos);
+            else
+              *unparsed = strprint(str + start);
+            return;
+          }
+          else
+            attr_str = xstrdup(str + start + pos + 1);
         }
       }
       else if (l_open_range == 1 && r_open_range == 0)
       {
         rc = sscanf(str + start, "-%ld%n", &second, &pos);
 
-        if (rc != 1 || *(str + start + pos) != '\0')
+        if (type != ATTR)
         {
-          *unparsed = strprint(str + start);
-          return;
+          if (rc != 1 || *(str + start + pos) != '\0')
+          {
+            *unparsed = strprint(str + start);
+            return;
+          }
+        }
+        else
+        {
+          if (*(str + start + pos) != ':')
+          {
+            if (rc != 1 || *(str + start + pos) != '\0')
+              *unparsed = strprint(str + start + pos);
+            else
+              *unparsed = strprint(str + start);
+            return;
+          }
+          else
+            attr_str = xstrdup(str + start + pos + 1);
         }
 
         first = 1;
@@ -1962,10 +2148,26 @@ parse_selectors(char * str, filters_t * filter, char ** unparsed,
       {
         rc = sscanf(str + start, "%ld-%n", &first, &pos);
 
-        if (rc != 1 || *(str + start + pos) != '\0')
+        if (type != ATTR)
         {
-          *unparsed = strprint(str + start);
-          return;
+          if (rc != 1 || *(str + start + pos) != '\0')
+          {
+            *unparsed = strprint(str + start);
+            return;
+          }
+        }
+        else
+        {
+          if (*(str + start + pos) != ':')
+          {
+            if (rc != 1 || *(str + start + pos) != '\0')
+              *unparsed = strprint(str + start + pos);
+            else
+              *unparsed = strprint(str + start);
+            return;
+          }
+          else
+            attr_str = xstrdup(str + start + pos + 1);
         }
 
         second = LONG_MAX;
@@ -2006,10 +2208,26 @@ parse_selectors(char * str, filters_t * filter, char ** unparsed,
 
       rc = sscanf(str + start, "%ld%n", &first, &pos);
 
-      if (rc != 1 || *(str + start + pos) != '\0')
+      if (type != ATTR)
       {
-        *unparsed = strprint(str + start);
-        return;
+        if (rc != 1 || *(str + start + pos) != '\0')
+        {
+          *unparsed = strprint(str + start);
+          return;
+        }
+      }
+      else
+      {
+        if (*(str + start + pos) != ':')
+        {
+          if (rc != 1 || *(str + start + pos) != '\0')
+            *unparsed = strprint(str + start + pos);
+          else
+            *unparsed = strprint(str + start);
+          return;
+        }
+        else
+          attr_str = xstrdup(str + start + pos + 1);
       }
 
       interval      = interval_new();
@@ -2058,6 +2276,49 @@ parse_selectors(char * str, filters_t * filter, char ** unparsed,
           *ac_interval_list = ll_new();
 
         ll_append(*ac_interval_list, interval);
+        break;
+
+      case ATTR:
+        attr = attr_new();
+        if (parse_attr(attr_str, attr, term->colors))
+        {
+          free(attr_str);
+          attr_elem       = xmalloc(sizeof(attr_elem_t));
+          attr_elem->attr = attr;
+
+          if (*at_interval_list == NULL)
+          {
+            *at_interval_list = ll_new();
+            attr_elem->list   = ll_new();
+            ll_append(attr_elem->list, interval);
+            ll_append(*at_interval_list, attr_elem);
+          }
+          else
+          {
+            ll_node_t * node;
+            if ((node = ll_find(*at_interval_list, attr_elem, attr_elem_cmp))
+                != NULL)
+            {
+              free(attr_elem);
+              attr_elem = (attr_elem_t *)node->data;
+
+              ll_append(attr_elem->list, interval);
+            }
+            else
+            {
+              attr_elem->list = ll_new();
+              ll_append(attr_elem->list, interval);
+              ll_append(*at_interval_list, attr_elem);
+            }
+          }
+        }
+        else
+        {
+          free(attr_str);
+          *unparsed = strprint(str + start);
+          free(attr);
+          return;
+        }
         break;
     }
   }
@@ -3980,7 +4241,12 @@ disp_word(long pos, search_mode_t search_mode, search_data_t * search_data,
     else if (toggles->taggable && pos == marked)
       apply_attr(term, win->marked_attr);
     else
-      apply_attr(term, win->include_attr);
+    {
+      if (word_a[pos].iattr != NULL) /* is a specific attribute set? */
+        apply_attr(term, *(word_a[pos].iattr));
+      else
+        apply_attr(term, win->include_attr);
+    }
 
     if (word_a[pos].is_matching)
       disp_matching_word(pos, win, term, 0, search_data->fuzzy_err);
@@ -7465,12 +7731,18 @@ main(int argc, char * argv[])
   ll_t * ar_row_interval_list = NULL;
   ll_t * ac_row_interval_list = NULL;
 
+  ll_t * at_col_interval_list = NULL; /* list of attributes for rows and     */
+  ll_t * at_row_interval_list = NULL; /* columns.                            */
+
   ll_t * al_col_regex_list = NULL; /* Same for regular expression based      */
   ll_t * ar_col_regex_list = NULL; /* alignments.                            */
   ll_t * ac_col_regex_list = NULL;
   ll_t * al_row_regex_list = NULL;
   ll_t * ar_row_regex_list = NULL;
   ll_t * ac_row_regex_list = NULL;
+
+  ll_t * at_col_regex_list = NULL; /* list of attributes for rows and        */
+  ll_t * at_row_regex_list = NULL; /* columns.                               */
 
   ll_t * al_word_regex_list = NULL;
   ll_t * ar_word_regex_list = NULL;
@@ -7552,6 +7824,8 @@ main(int argc, char * argv[])
 
   long * col_max_size = NULL; /* Array of maximum sizes (in display cells)   *
                                | of each column in column mode.              */
+
+  attrib_t ** col_attrs; /* attributes for each column in column mode.        */
 
   long word_real_max_size = 0; /* size of the longer word after expansion.   */
   long cols_real_max_size = 0; /* Max real width of all columns used when    *
@@ -9031,8 +9305,10 @@ main(int argc, char * argv[])
   /* """""""""""""""""""""""""""""""""""""" */
   if (rows_selector_list != NULL)
   {
-    ll_node_t * node_selector = rows_selector_list->head;
-    filters_t   filter_type;
+    ll_node_t *   node_selector = rows_selector_list->head;
+    ll_node_t *   node;
+    filters_t     filter_type;
+    attr_elem_t * elem;
 
     rows_filter_type = UNKNOWN_FILTER;
     while (node_selector != NULL)
@@ -9047,7 +9323,8 @@ main(int argc, char * argv[])
                       &al_row_interval_list, &al_row_regex_list,
                       &ar_row_interval_list, &ar_row_regex_list,
                       &ac_row_interval_list, &ac_row_regex_list,
-                      &default_alignment, &win, &misc);
+                      &at_row_interval_list, &at_row_regex_list,
+                      &default_alignment, &win, &misc, &term);
 
       if (*unparsed != '\0')
       {
@@ -9071,16 +9348,28 @@ main(int argc, char * argv[])
     optimize_an_interval_list(al_row_interval_list);
     optimize_an_interval_list(ar_row_interval_list);
     optimize_an_interval_list(ac_row_interval_list);
+
+    if (at_row_interval_list != NULL)
+    {
+      node = at_row_interval_list->head;
+      while (node)
+      {
+        elem = node->data;
+        optimize_an_interval_list(elem->list);
+        node = node->next;
+      }
+    }
   }
 
   /* Parse the column selection string if any. */
   /* """"""""""""""""""""""""""""""""""""""""" */
   if (cols_selector_list != NULL)
   {
-    filters_t    filter_type, cols_filter_type;
-    interval_t * data;
-    ll_node_t *  node;
-    ll_node_t *  node_selector = cols_selector_list->head;
+    filters_t     filter_type, cols_filter_type;
+    interval_t *  data;
+    ll_node_t *   node;
+    ll_node_t *   node_selector = cols_selector_list->head;
+    attr_elem_t * elem;
 
     cols_filter = xmalloc(limits.cols);
 
@@ -9097,7 +9386,8 @@ main(int argc, char * argv[])
                       &al_col_interval_list, &al_col_regex_list,
                       &ar_col_interval_list, &ar_col_regex_list,
                       &ac_col_interval_list, &ac_col_regex_list,
-                      &default_alignment, &win, &misc);
+                      &at_col_interval_list, &at_col_regex_list,
+                      &default_alignment, &win, &misc, &term);
 
       if (*unparsed != '\0')
       {
@@ -9165,6 +9455,17 @@ main(int argc, char * argv[])
     optimize_an_interval_list(al_col_interval_list);
     optimize_an_interval_list(ar_col_interval_list);
     optimize_an_interval_list(ac_col_interval_list);
+
+    if (at_col_interval_list != NULL)
+    {
+      node = at_col_interval_list->head;
+      while (node)
+      {
+        elem = node->data;
+        optimize_an_interval_list(elem->list);
+        node = node->next;
+      }
+    }
   }
 
   /* parse the alignment selector list if any. */
@@ -9636,6 +9937,12 @@ main(int argc, char * argv[])
       }
     }
 
+    /* Initialize the alignment information of each column to be 'left'. */
+    /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+    col_attrs = xmalloc(cols_number * sizeof(attrib_t *));
+    for (long ci = 0; ci < cols_number; ci++)
+      col_attrs[ci] = NULL;
+
     /* Store some known values in the current word's structure. */
     /* """""""""""""""""""""""""""""""""""""""""""""""""""""""" */
     word_a[count].start = word_a[count].end = 0;
@@ -9648,6 +9955,7 @@ main(int argc, char * argv[])
     word_a[count].is_numbered   = 0;
     word_a[count].tag_order     = 0;
     word_a[count].tag_id        = 0;
+    word_a[count].iattr         = NULL;
 
     if (win.col_mode || win.line_mode || win.tab_mode)
     {
@@ -10348,6 +10656,67 @@ main(int argc, char * argv[])
         }
       }
 
+      /* Process regex based attributes and fill the attribute columns */
+      /* list accordingly.                                             */
+      /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+      if (at_col_regex_list != NULL)
+      {
+        attrib_t *    attr;
+        attr_elem_t * elem;
+        ll_node_t *   regex_node;
+        ll_node_t *   interval_node;
+
+        node = at_col_regex_list->head;
+        while (node)
+        {
+          elem = node->data;
+          attr = elem->attr;
+
+          regex_node = elem->list->head;
+          while (regex_node)
+          {
+            re = *(regex_t *)(regex_node->data);
+            if (regexec(&re, word_a[wi].str + daccess.flength, (int)0, NULL, 0)
+                == 0)
+            {
+              /* We have a match. */
+              /* '''''''''''''''' */
+              attr_elem_t * new_elem;
+
+              if (col_attrs[col_index] != NULL)
+                break;
+
+              new_elem       = xmalloc(sizeof(attr_elem_t));
+              new_elem->attr = attr;
+
+              interval      = xmalloc(sizeof(interval_t));
+              interval->low = interval->high = col_index;
+
+              col_attrs[col_index] = attr;
+
+              if (at_col_interval_list == NULL)
+                at_col_interval_list = ll_new();
+
+              if ((interval_node = ll_find(at_col_interval_list, elem,
+                                           attr_elem_cmp))
+                  != NULL)
+              {
+                ll_append(((attr_elem_t *)(interval_node->data))->list,
+                          interval);
+              }
+              else
+              {
+                new_elem->list = ll_new();
+                ll_append(new_elem->list, interval);
+                ll_append(at_col_interval_list, new_elem);
+              }
+            }
+            regex_node = regex_node->next;
+          }
+          node = node->next;
+        }
+      }
+
       s1         = (long)strlen(word_a[wi].str);
       word_width = mbstowcs(NULL, word_a[wi].str, 0);
       s2         = wcswidth((w = utf8_strtowcs(word_a[wi].str)), word_width);
@@ -10666,13 +11035,13 @@ main(int argc, char * argv[])
         }
       }
 
-      /* Force a word alignment ifit is set for this word. */
-      /* """"""""""""""""""""""""""""""""""""""""""""""""" */
+      /* Force a word alignment if it is set for this word. */
+      /* """""""""""""""""""""""""""""""""""""""""""""""""" */
       if (word_alignment != AL_NONE)
         alignment = word_alignment;
 
-      /* Do the aligment. */
-      /* """""""""""""""" */
+      /* Do the alignment. */
+      /* """"""""""""""""" */
       align_word(&word_a[wi], alignment, daccess.flength, 0x05);
 
       /* Adjusts things before a row change. */
@@ -10690,7 +11059,7 @@ main(int argc, char * argv[])
 
           /* We can restore the spaces which are not part of the word */
           /* now that the row is fully processed.                     */
-          /* """""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+          /* """""""""""""""""""""""""""""""""""""""""""""1G""""""""""" */
           if (wi - i >= 0)
             strrep(word_a[wi - i].str + daccess.flength, 0x05, ' ');
         }
@@ -10703,6 +11072,143 @@ main(int argc, char * argv[])
 
       free(str);
       free(tstr);
+    }
+  }
+
+  /* Seventh pass: sets default attributes. */
+  /* """""""""""""""""""""""""""""""""""""" */
+  if (win.col_mode)
+  {
+    if (at_row_interval_list != NULL || at_col_interval_list != NULL
+        || at_row_regex_list != NULL || at_col_regex_list != NULL)
+    {
+      long          row_index = 0;
+      interval_t *  interval;
+      attrib_t *    attr;
+      ll_t *        list;
+      attr_elem_t * attr_elem;
+      ll_node_t *   attr_elem_node;
+      ll_node_t *   node;
+      regex_t       re;
+
+      col_index = 0;
+
+      for (wi = 0; wi < count; wi++)
+      {
+        if (word_a[wi].iattr != NULL)
+          continue;
+
+        if (at_row_interval_list != NULL)
+        {
+          attr_elem_node = at_row_interval_list->head;
+          while (attr_elem_node != NULL)
+          {
+            attr_elem = attr_elem_node->data;
+            attr      = attr_elem->attr;
+            list      = attr_elem->list; /* Cannot be null by construction. */
+            node      = list->head;
+
+            while (node)
+            {
+              interval = node->data;
+              if (row_index >= interval->low && row_index <= interval->high)
+              {
+                word_a[wi].iattr = attr;
+                goto early_row_exit;
+              }
+              node = node->next;
+            }
+            attr_elem_node = attr_elem_node->next;
+          }
+        }
+      early_row_exit:
+
+        if (at_col_interval_list != NULL)
+        {
+          attr_elem_node = at_col_interval_list->head;
+          while (attr_elem_node != NULL)
+          {
+            attr_elem = attr_elem_node->data;
+            attr      = attr_elem->attr;
+            list      = attr_elem->list; /* Cannot be null by construction. */
+            node      = list->head;
+            while (node)
+            {
+              interval = node->data;
+              if (col_index >= interval->low && col_index <= interval->high)
+              {
+                if (word_a[wi].iattr == NULL || toggles.cols_first)
+                {
+                  if (col_attrs[col_index] == NULL)
+                  {
+                    word_a[wi].iattr     = attr;
+                    col_attrs[col_index] = attr;
+                  }
+                  else
+                    word_a[wi].iattr = col_attrs[col_index];
+
+                  goto early_col_exit;
+                }
+              }
+              node = node->next;
+            }
+            attr_elem_node = attr_elem_node->next;
+          }
+        }
+      early_col_exit:
+
+        if (at_row_regex_list != NULL)
+        {
+          attr_elem_node = at_row_regex_list->head;
+          while (attr_elem_node != NULL)
+          {
+            attr_elem = attr_elem_node->data;
+            attr      = attr_elem->attr;
+            list      = attr_elem->list; /* Cannot be null by construction. */
+            node      = list->head;
+            while (node)
+            {
+              re = *(regex_t *)(node->data);
+              if (regexec(&re, word_a[wi].str + daccess.flength, (int)0, NULL,
+                          0)
+                  == 0)
+              {
+                col_index = 0;
+                while (wi > 0 && !word_a[wi - 1].is_last)
+                  wi--;
+
+                while (wi < count)
+                {
+                  if (toggles.cols_first && col_attrs[col_index] != NULL)
+                    word_a[wi].iattr = col_attrs[col_index];
+                  else
+                    word_a[wi].iattr = attr;
+
+                  col_index++;
+
+                  if (word_a[wi].is_last)
+                    break;
+                  wi++;
+                }
+              }
+              node = node->next;
+            }
+            attr_elem_node = attr_elem_node->next;
+          }
+        }
+
+        /* Adjusts things before a row change. */
+        /* """"""""""""""""""""""""""""""""""" */
+        if (word_a[wi].is_last
+            || wi == count - 1) /* About to start a new row? */
+        {
+          row_index++;
+
+          col_index = 0; /* Restart the columns counter. */
+        }
+        else
+          col_index++;
+      }
     }
   }
 

@@ -54,6 +54,7 @@ typedef struct timeout_s     timeout_t;
 typedef struct output_s      output_t;
 typedef struct daccess_s     daccess_t;
 typedef struct search_data_s search_data_t;
+typedef struct attr_elem_s   attr_elem_t;
 
 /* ****** */
 /* Enums. */
@@ -72,11 +73,12 @@ typedef enum filter_types
 /* """"""""""""""""""" */
 typedef enum selector_types
 {
-  IN,     /* Inclusion. */
-  EX,     /* Exclusion. */
-  ALEFT,  /* Alignment to the left. */
-  ARIGHT, /* Alignment to the right. */
-  ACENTER /* Alignment to the center. */
+  IN,      /* Inclusion. */
+  EX,      /* Exclusion. */
+  ALEFT,   /* Alignment to the left. */
+  ARIGHT,  /* Alignment to the right. */
+  ACENTER, /* Alignment to the center. */
+  ATTR     /* Attribute. */
 } selector_t;
 
 /* Used by the -N -F and -D options. */
@@ -321,6 +323,8 @@ struct word_s
   unsigned char  is_last;       /* 1 if the word is the last of a line.     */
   unsigned char  is_selectable; /* word is selectable.                      */
   unsigned char  is_numbered;   /* word has a direct access index.          */
+  attrib_t *     iattr;         /* Specific attribute set with the -Ra/-Ca  *
+                                 | options.                                 */
 };
 
 /* Structure describing the window in which the user  */
@@ -464,6 +468,16 @@ struct search_data_s
                       | pattern at the end of the word will be   *
                       | selected.                                */
   int only_starting; /* same with the pattern at the beginning.  */
+};
+
+/* Structure used to store an attribute and the list of elements      */
+/* (columns, rows or RE) for which this attribute must be the default */
+/* one.                                                               */
+/* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+struct attr_elem_s
+{
+  attrib_t * attr; /* Attribute                           */
+  ll_t *     list; /* list of RE or intervals of columns. */
 };
 
 /* *********** */
@@ -624,7 +638,9 @@ parse_selectors(char * str, filters_t * filter, char ** unparsed,
                 ll_t ** al_interval_list, ll_t ** al_regex_list,
                 ll_t ** ar_interval_list, ll_t ** ar_regex_list,
                 ll_t ** ac_interval_list, ll_t ** ac_regex_list,
-                alignment_t * al_default, win_t * win, misc_t * misc);
+                ll_t ** at_interval_list, ll_t ** at_regex_list,
+                alignment_t * al_default, win_t * win, misc_t * misc,
+                term_t * term);
 
 void
 parse_al_selectors(char * str, char ** unparsed, ll_t ** al_regex_list,
