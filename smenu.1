@@ -1677,6 +1677,9 @@ This option forces them to be retained.
 This option can be used to specify the characters (or multibyte
 sequences) which will be used to delimit the input words.
 
+Each character or multibyte sequence in the given argument will be
+understood as a word delimiter.
+
 Multibyte sequences (\fBUTF-8\fP) can be natives of using the same ASCII
 representation used in words (a leading \fI\\u\fP or \fI\\U\fP following
 by up to 8 hexadecimal characters for the former and 6 hexadecimal
@@ -1693,6 +1696,9 @@ The default delimiters are: \fISPACE\fP, \fI$'\\t'\fP and \fI$'\\n'\fP.
 
 This option can be used to specify the characters (or multibyte
 sequences) which will be used to delimit the lines in the input stream.
+
+Each character or multibyte sequence in the given argument will be
+understood as a line delimiter.
 
 Multibyte sequences (\fBUTF-8\fP) can be natives of using the same ASCII
 representation used in words (a leading \fI\\u\fP or \fI\\U\fP following
