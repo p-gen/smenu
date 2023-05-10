@@ -10639,18 +10639,49 @@ main(int argc, char * argv[])
           if (regexec(&re, word_a[wi].str + daccess.flength, (int)0, NULL, 0)
               == 0)
           {
+            int already_aligned = 0;
+
             /* We have a match. */
             /* '''''''''''''''' */
             interval      = xmalloc(sizeof(interval_t));
             interval->low = interval->high = col_index;
 
-            /* Append a new interval containing the current column number */
-            /* in the interval list matching the regex list.              */
-            /* '''''''''''''''''''''''''''''''''''''''''''''''''''''''''' */
-            if (*interval_list_a[i] == NULL)
-              *interval_list_a[i] = ll_new();
+            /* Look if the column has already been inserted in another */
+            /* interval list.                                          */
+            /* ''''''''''''''''''''''''''''''''''''''''''''''''''''''' */
+            for (int j = 0; j < 3; j++)
+            {
+              interval_t  inter;
+              ll_node_t * n;
 
-            ll_append(*interval_list_a[i], interval);
+              /* Quick continuation. */
+              /* ''''''''''''''''''' */
+              if (i == j || *interval_list_a[j] == NULL)
+                continue;
+
+              n = (*interval_list_a[j])->head;
+              while (n)
+              {
+                inter = *(interval_t *)(n->data);
+                if (col_index >= inter.low && col_index <= inter.high)
+                {
+                  already_aligned = 1; /* This column is already aligned. */
+                  break;
+                }
+                n = n->next;
+              }
+            }
+
+            if (!already_aligned)
+            {
+              /* Append a new interval containing the current column number */
+              /* in the interval list matching the regex list.              */
+              /* '''''''''''''''''''''''''''''''''''''''''''''''''''''''''' */
+              if (*interval_list_a[i] == NULL)
+                *interval_list_a[i] = ll_new();
+
+              ll_append(*interval_list_a[i], interval);
+            }
           }
           node = node->next;
         }
@@ -10951,13 +10982,15 @@ main(int argc, char * argv[])
       /* modified to point to the next one of the list is the      */
       /* current column is greater than the  max column in the     */
       /* pointed interval.                                         */
+      /* An already aligned column will not be realigned.          */
       /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""" */
       for (int i = 0; i < 3; i++)
       {
         if (cur_col_node_a[i] != NULL)
         {
           interval = *(interval_t *)(cur_col_node_a[i]->data);
-          if (col_index >= interval.low && col_index <= interval.high)
+          if (aligned_a[col_index] == 'N' && col_index >= interval.low
+              && col_index <= interval.high)
           {
             /* Tell that the word is already aligned when column */
             /* alignments have precedence over row alignments.   */
@@ -10983,7 +11016,8 @@ main(int argc, char * argv[])
         if (cur_row_interval_node_a[i] != NULL)
         {
           interval = *(interval_t *)(cur_row_interval_node_a[i]->data);
-          if (row_index >= interval.low && row_index <= interval.high)
+          if (row_alignment == AL_NONE && row_index >= interval.low
+              && row_index <= interval.high)
           {
             row_alignment = alignment_a[i];
             if (aligned_a[col_index] == 'N')
@@ -11003,7 +11037,8 @@ main(int argc, char * argv[])
 
             re = (regex_t *)(cur_row_regex_node_a[i]->data);
 
-            if (regexec(re, tstr, (int)0, NULL, 0) == 0)
+            if (row_alignment == AL_NONE
+                && regexec(re, tstr, (int)0, NULL, 0) == 0)
             {
               row_alignment = alignment_a[i];
               if (aligned_a[col_index] == 'N')
