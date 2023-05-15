@@ -13609,7 +13609,6 @@ main(int argc, char * argv[])
             goto special_cmds_when_searching;
           break;
 
-        untag_last_tagged:
         case 'U':
           /* U has been pressed to undo the last tagging ioperation. */
           /* """""""""""""""""""""""""""""""""""""""""""""""""""""""" */
