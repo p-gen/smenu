@@ -1255,6 +1255,12 @@ format \fBx\fP:\fBy\fP where \fBx\fP can be:
 Here \fBy\fP is the \fBUTF-8\fP character (in native or \fI\\u\fP or
 \fI\\U\fP form) to print before the number.
 The default is a single space.
+
+Example:
+.br
+\f(CRecho test | smenu -N -D l:\\(\fP
+.br
+Will display: '\f(CB(1)\f(CR test\fR'
 .
 .TP
 \f(CBr\fP (\fB-F\fP|\fB-en\fP|\fB-embedded_number\fP, \
@@ -1262,6 +1268,12 @@ The default is a single space.
 Here \fBy\fP is the \fBUTF-8\fP character (in native or \fI\\u\fP or
 \fI\\U\fP form) to print after the number.
 The default is \f(CB)\fP.
+
+Example:
+.br
+\f(CRecho test | smenu -N -D r:\\>\fP
+.br
+Will display: ' \f(CB1>\f(CR test\fR'
 .
 .TP
 \f(CBa\fP (\fB-F\fP|\fB-en\fP|\fB-embedded_number\fP, \
@@ -1270,6 +1282,16 @@ Here \fBy\fP is '\f(CBleft\fP' (or one of its prefixes) if the number
 must be \fIleft\fP aligned, or '\f(CBright\fP' (or one of its prefixes)
 if it must be \fIright\fP aligned.
 The default is \f(CBright\fP.
+
+Example:
+.br
+\f(CRecho test | smenu -N -D a:right w:3\fP
+.br
+Will display: '   \f(CB1)\f(CR test\fR'
+
+\f(CRecho test | smenu -N -D a:left w:3\fP
+.br
+Will display: ' \f(CB1  )\f(CR test\fR'
 .
 .TP
 \f(CBp\fP (\fB-F\fP|\fB-en\fP|\fB-embedded_number\fP, \
