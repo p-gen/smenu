@@ -8522,6 +8522,12 @@ main(int argc, char * argv[])
   if (win.tab_mode && !win.max_cols)
     win.wide = 1;
 
+  /* Force the padding mode to all when words are numbered and not in */
+  /* col/line/tab_mode.                                               */
+  /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+  if (daccess.padding != 'a' && (win.col_mode || win.line_mode || win.tab_mode))
+    daccess.padding = 'a';
+
   win.start = 0;
 
   term.color_method = ANSI; /* We default to setaf/setbf to set colors. */
