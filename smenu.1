@@ -1305,11 +1305,26 @@ The default is \f(CBall\fP. These keywords can be abbreviated.
 
 \fBWARNING\fP: in column/line/tab mode this sub-option is ignored and
 non numbered words are always padded.
+
+Example:
+.br
+\f(CRecho a b c | smenu -eb -N -D l:\\( p:a\fP
+.br
+Will display:
+\f(CB(1)\f(CR a     b \f(CB(2) c\fR
+
+.br
+\f(CRecho a b c | smenu -eb -N -D l:\\( p:i\fP
+.br
+Will display:
+\f(CB(1)\f(CR a b \f(CB(2) c\fR
 .
 .TP
 \f(CBw\fP (\fB-F\fP|\fB-en\fP|\fB-embedded_number\fP, \
 \fB-N\fP|\fB-number\fP and \fB-U\fP|\fB-unnumber\fP options)
 Here \fBy\fP is the \fIw\fPidth of the number between 1 and 5 included.
+
+For an example, refer to the sub-option \fBa\fP above.
 .
 .TP
 \f(CBf\fP (\fB-F\fP|\fB-en\fP|\fB-embedded_number\fP, \
@@ -1319,6 +1334,19 @@ extracted number (defaults to \f(CByes\fP) or if it must remain
 independent.
 
 The possible values are \f(CByes\fP and \f(CBno\fP but can be abbreviated.
+
+Example:
+.br
+\f(CRecho 2a b c | smenu -F -D l:\\( f:n n:1 -N\fP
+.br
+Will display:
+\f(CB(2)\f(CR a \f(CB(1)\f(CR b \f(CB(2)\f(CR c\fR
+
+.br
+\f(CRecho 2a b c | smenu -F -D l:\\( f:y n:1 -N\fP
+.br
+Will display:
+\f(CB(2)\f(CR a \f(CB(3)\f(CR b \f(CB(4)\f(CR c\fR
 .
 .TP
 \f(CBm\fP (\fB-F\fP|\fB-en\fP|\fB-embedded_number\fP option)
@@ -1330,6 +1358,17 @@ sub-options are ignored.
 
 The possible values are \f(CByes\fP and \f(CBno\fP but can be abbreviated.
 .
+Example:
+.br
+\f(CRecho 2a b c | smenu -F -D l:\\( n:1 m:n -N\fP
+.br
+Will display:
+\f(CB(2)\f(CR a     b     c\fR
+
+\f(CRecho 2a b c | smenu -F -D l:\\( n:1 m:y -N\fP
+.br
+Will display:
+\f(CB(2)\f(CR a \f(CB(3)\f(CR b \f(CB(4)\f(CR c\fR
 .TP
 \f(CBh\fP (\fB-F\fP|\fB-en\fP|\fB-embedded_number\fP option)
 Tells what to do with the characters present before the embedded number if
@@ -1342,6 +1381,30 @@ at the beginning of the resulting word.
 
 The default value for this directive is '\f(CBkeep\fP', these keywords
 can be abbreviated.
+
+Example:
+.br
+\f(CBecho \\" 2x\\" | smenu -F -D l:\\( o:1 n:1\fR
+.br
+Will display:
+.br
+\f(CB(2)\f(CR  x\fR
+\f(CR    ^^\fR
+\f(CB    \fRSelection cursor
+
+\f(CBecho \\" 2x\\" | smenu -F -D l:\\( o:1 n:1 h:t\fR
+.br
+Will display:
+.br
+\f(CB(2)\f(CR x\fR
+\f(CR    ^\fR
+\f(CB    \fRSelection cursor
+
+\f(CBecho \\"x2y\\" | smenu -F -D l:\\( o:1 n:1 h:c\fR
+.br
+Will display:
+.br
+\f(CB(2)\f(CR y\fR
 .
 .TP
 \f(CBo\fP (\fB-F\fP|\fB-en\fP|\fB-embedded_number\fP option)
