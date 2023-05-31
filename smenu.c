@@ -7432,7 +7432,7 @@ align_word(word_t * word, alignment_t alignment, size_t prefix, char sp)
     case AL_LEFT:
       /* Left align the word. */
       /* """""""""""""""""""" */
-      str = strdup(word->str + prefix);
+      str = xstrdup(word->str + prefix);
       n   = 0;
 
       while (str[n] == sp)
@@ -7448,7 +7448,7 @@ align_word(word_t * word, alignment_t alignment, size_t prefix, char sp)
     case AL_RIGHT:
       /* Right align the word. */
       /* """"""""""""""""""""" */
-      str = strdup(word->str + prefix);
+      str = xstrdup(word->str + prefix);
       n   = strlen(str) - 1;
 
       while (n && str[n] == sp)
@@ -7464,7 +7464,7 @@ align_word(word_t * word, alignment_t alignment, size_t prefix, char sp)
     case AL_CENTERED:
       /* Center the word. */
       /* """""""""""""""" */
-      str = strdup(word->str + prefix);
+      str = xstrdup(word->str + prefix);
       n   = 0;
       l   = strlen(str);
       m   = l - 1;
@@ -7476,7 +7476,10 @@ align_word(word_t * word, alignment_t alignment, size_t prefix, char sp)
         m--;
 
       if (n > m)
+      {
+        free(str);
         break;
+      }
 
       wl = m - n + 1;
       memset(word->str + prefix, sp, l);
@@ -10926,8 +10929,8 @@ main(int argc, char * argv[])
       else
         alignment = default_alignment;
 
-      str  = strdup(word_a[wi].str + daccess.flength);
-      tstr = strdup(str);
+      str  = xstrdup(word_a[wi].str + daccess.flength);
+      tstr = xstrdup(str);
 
       rtrim(tstr, "\x05", 0);
       ltrim(tstr, "\x05");
