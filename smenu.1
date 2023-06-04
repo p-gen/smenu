@@ -1301,6 +1301,9 @@ Here \fBy\fP is '\f(CBincluded\fP' or '\f(CBall\fP' for the initial
 The keyword '\f(CBincluded\fP' means that only \fIincluded\fP word will
 be padded while '\f(CBall\fP' means pad \fIall\fP words.
 
+This sub-option may improve compactness when there is a lot of
+non-selectable words.
+
 The default is \f(CBall\fP. These keywords can be abbreviated.
 
 \fBWARNING\fP: in column/line/tab mode this sub-option is ignored and
@@ -1456,16 +1459,11 @@ Here \fBy\fP is the direct access number that will be set for the first
 numbered word.
 Its value is \fB1\fP by default, a value of \fB0\fP is possible.
 .P
-Example: \f(CR-data r:\\> l:\\< a:l d:_ \fP
-
 To number all words with the default parameters, use the
-syntax: "\f(CR-N .\fP" which is a shortcut for:
-"\f(CR-N . -D l:' ' r:')' a:r p:a\fP"
+syntax: "\f(CR-N\fP" which is a shortcut for:
+"\f(CR-N -D l:' ' r:')' a:r p:a\fP"
 
-The \fIpadding\fP sub-option specifies whether spaces must also be
-added in front of excluded words or not to improve compactness.
-
-When the \f(CBw\fP sub-option is not given the width of the numbers is
+When the \f(CBw\fP sub-option is not given, the width of the numbers is
 determined automatically but if \fB-F\fP|\fB-en\fP|\fB-embedded_number\fP
 is set and the value of the \f(CBn\fP sub-option is given then this
 value is used.
