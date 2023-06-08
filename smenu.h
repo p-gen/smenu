@@ -25,8 +25,11 @@
 #define FREQ 10
 #define TCK (SECOND / FREQ)
 
-/* Bit array management. */
-/* """"""""""""""""""""" */
+/* Large bit array management written by           */
+/* Scott Dudley, Auke Reitsma and Bob Stout.       */
+/* Assumes CHAR_BIT is one of either 8, 16, or 32. */
+/* Public domain.                                  */
+/* """"""""""""""""""""""""""""""""""""""""""""""" */
 #define MASK (CHAR_BIT - 1)
 #define SHIFT ((CHAR_BIT == 8) ? 3 : (CHAR_BIT == 16) ? 4 : 8)
 
