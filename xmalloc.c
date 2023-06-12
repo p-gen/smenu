@@ -126,25 +126,21 @@ xrealloc(void * p, size_t size)
 /* Displays an error message and exits gracefully if an error occurs. */
 /* ================================================================== */
 char *
-xstrdup(const char * p)
+xstrdup(const char * str)
 {
-  char * allocated;
+  char * p;
 
-#ifdef HAVE_STRDUP
-  allocated = strdup(p);
+  p = malloc(strlen(str) + 1);
 
-  if (allocated == NULL)
+  if (p == NULL)
   {
-    fprintf(stderr, "Error: Insufficient memory for strdup.\n");
-
+    fprintf(stderr, "Error: Insufficient memory for xstrdup.\n");
     exit(EXIT_FAILURE);
   }
-#else
-  allocated = xmalloc(strlen(p) + 1);
-  strcpy(allocated, p);
-#endif
 
-  return allocated;
+  strcpy(p, str);
+
+  return p;
 }
 
 /* ================================================================== */
@@ -156,26 +152,23 @@ char *
 xstrndup(const char * str, size_t len)
 {
   char * p;
+  size_t l;
 
-#ifdef HAVE_STRNDUP
-  p = strndup(str, len);
-
-  if (p == NULL)
-  {
-    fprintf(stderr, "Error: Insufficient memory for strndup.\n");
-
-    exit(EXIT_FAILURE);
-  }
-#else
   p = memchr(str, '\0', len);
 
   if (p)
     len = p - str;
 
-  p = xmalloc(len + 1);
+  p = malloc(len + 1);
+
+  if (p == NULL)
+  {
+    fprintf(stderr, "Error: Insufficient memory for xstrndup.\n");
+    exit(EXIT_FAILURE);
+  }
+
   memcpy(p, str, len);
   p[len] = '\0';
-#endif
 
   return p;
 }

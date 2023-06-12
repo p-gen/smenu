@@ -6270,18 +6270,6 @@ then :
   printf "%s\n" "#define HAVE_STRCASECMP 1" >>confdefs.h
 
 fi
-ac_fn_c_check_func "$LINENO" "strdup" "ac_cv_func_strdup"
-if test "x$ac_cv_func_strdup" = xyes
-then :
-  printf "%s\n" "#define HAVE_STRDUP 1" >>confdefs.h
-
-fi
-ac_fn_c_check_func "$LINENO" "strndup" "ac_cv_func_strndup"
-if test "x$ac_cv_func_strndup" = xyes
-then :
-  printf "%s\n" "#define HAVE_STRNDUP 1" >>confdefs.h
-
-fi
 
 
 
