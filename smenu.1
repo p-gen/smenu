@@ -1423,6 +1423,20 @@ of all the numbers to extract have the same size as the algorithm looks
 for a digit to identify the beginning of the number to extract.
 Hence, for example, \fB1\fP should appear as \fB01\fP in the input is
 \f(CBn\fP is set to \f(CB2\fP.
+
+Example:
+.br
+\f(CBecho x2y xx3y | smenu -F -D l:\\( o:1+ n:1\fR
+.br
+will display:
+.br
+\f(CB(2)\f(CR xy \f(CB(3)\f(CR xxy\fR
+
+\f(CBecho x2y xx3y | smenu -F -D l:\\( o:1 n:1\fR
+.br
+will display (note the absense of the '\f(CB+\fP' character):
+.br
+\f(CB(2)\f(CR xy     xx3y\fR
 .
 .TP
 \f(CBn\fP (\fB-F\fP|\fB-en\fP|\fB-embedded_number\fP option)
