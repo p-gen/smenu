@@ -1465,6 +1465,17 @@ Only the numbered word(s) will be prefixed.
 
 This directive can be useful when you want to post-process the output
 according to its direct access number.
+
+Example:
+.br
+\f(CBR=$(echo a b c | smenu -N -D d:-)\fR
+.br
+will display:
+.br
+\f(CB1)\f(CR a  \f(CB2)\f(CR b  \f(CB3)\f(CR c\fR
+.br
+The variable \f(CBR\fP will then contain the string \f(CB2-b\fP if
+\f(CBb\fP is selected.
 .
 .TP
 \f(CBs\fP (\fB-F\fP|\fB-en\fP|\fB-embedded_number\fP, \
