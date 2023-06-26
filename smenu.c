@@ -10088,7 +10088,7 @@ main(int argc, char * argv[])
       /* """""""""""""""""""""""""""""""""""""""""""""""" */
       if ((daccess.mode & DA_TYPE_AUTO) && daccess.length == -2)
       {
-        long n = count;
+        long n = count + daccess_index - 1;
 
         daccess.length = 0;
 
