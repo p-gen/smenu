@@ -1483,6 +1483,14 @@ The variable \f(CBR\fP will then contain the string \f(CB2-b\fP if
 Here \fBy\fP is the direct access number that will be set for the first
 numbered word.
 Its value is \fB1\fP by default, a value of \fB0\fP is possible.
+
+Example:
+.br
+\f(CBecho a b c | -N -D s:1000\fR
+.br
+will display:
+.br
+\f(CB1000)\f(CR a  \f(CB1001)\f(CR b  \f(CB1002) c\fR
 .P
 To number all words with the default parameters, use the
 syntax: "\f(CR-N\fP" which is a shortcut for:
