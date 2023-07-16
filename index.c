@@ -263,9 +263,14 @@ tst_prefix_search(tst_node_t * root, wchar_t * w, int (*callback)(void *))
 /* ========================================================= */
 /* Insertion of an integer in a already sorted integer array */
 /* without duplications.                                     */
+/*                                                           */
+/* IN/OUT array : pointer to the array to manage.            */
+/* IN/OUT size  : allocated size of the array.               */
+/* IN/OUT nb    : number of longs in the array.              */
+/* IN value     : long value to be inserted in the array.    */
 /* ========================================================= */
 void
-insert_sorted_index(long ** array, long * size, long * nb, long value)
+insert_sorted_index(long ** array_ptr, long * size, long * nb, long value)
 {
   long pos  = *nb;
   long left = 0, right = *nb, middle;
@@ -277,10 +282,10 @@ insert_sorted_index(long ** array, long * size, long * nb, long value)
     while (left < right)
     {
       middle = (left + right) / 2;
-      if ((*array)[middle] == value)
+      if ((*array_ptr)[middle] == value)
         return; /* Value already in array. */
 
-      if (value < (*array)[middle])
+      if (value < (*array_ptr)[middle])
         right = middle;
       else
         left = middle + 1;
@@ -291,20 +296,21 @@ insert_sorted_index(long ** array, long * size, long * nb, long value)
   if (*nb == *size)
   {
     *size += 64;
-    *array = xrealloc(*array, *size * sizeof(long));
+    *array_ptr = xrealloc(*array_ptr, *size * sizeof(long));
   }
 
   /* Shift remaining array elements at position pos to position pos+1 */
   /* (shift right one position).                                      */
   /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
   if (*nb > pos)
-    memmove((*array) + pos + 1, (*array) + pos, sizeof(value) * (*nb - pos));
+    memmove((*array_ptr) + pos + 1, (*array_ptr) + pos,
+            sizeof(value) * (*nb - pos));
 
   (*nb)++;
 
   /* Set the value of the element at position pos in the passed array. */
   /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-  (*array)[pos] = value;
+  (*array_ptr)[pos] = value;
 }
 
 /* ========================================================= */
@@ -312,11 +318,11 @@ insert_sorted_index(long ** array, long * size, long * nb, long value)
 /* without duplications.                                     */
 /* ========================================================= */
 void
-insert_sorted_ptr(tst_node_t *** array, unsigned long long * size,
-                  unsigned long long * nb, tst_node_t * ptr)
+insert_sorted_ptr(tst_node_t *** array_ptr, long * size, long * nb,
+                  tst_node_t * ptr)
 {
-  unsigned long long pos  = *nb;
-  unsigned long long left = 0, right = *nb, middle;
+  long pos  = *nb;
+  long left = 0, right = *nb, middle;
 
   if (*nb > 0)
   {
@@ -325,10 +331,10 @@ insert_sorted_ptr(tst_node_t *** array, unsigned long long * size,
     while (left < right)
     {
       middle = (left + right) / 2;
-      if ((intptr_t)((*array)[middle]) == (intptr_t)ptr)
+      if ((intptr_t)((*array_ptr)[middle]) == (intptr_t)ptr)
         return; /* Value already in array. */
 
-      if ((intptr_t)ptr < (intptr_t)((*array)[middle]))
+      if ((intptr_t)ptr < (intptr_t)((*array_ptr)[middle]))
         right = middle;
       else
         left = middle + 1;
@@ -339,13 +345,14 @@ insert_sorted_ptr(tst_node_t *** array, unsigned long long * size,
   if (*nb == *size)
   {
     *size += 64;
-    *array = xrealloc(*array, *size * sizeof(long));
+    *array_ptr = xrealloc(*array_ptr, *size * sizeof(long));
   }
 
   if (*nb > pos)
-    memmove((*array) + pos + 1, (*array) + pos, sizeof(ptr) * (*nb - pos));
+    memmove((*array_ptr) + pos + 1, (*array_ptr) + pos,
+            sizeof(ptr) * (*nb - pos));
 
   (*nb)++;
 
-  (*array)[pos] = ptr;
+  (*array_ptr)[pos] = ptr;
 }

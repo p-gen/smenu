@@ -46,8 +46,8 @@ void
 insert_sorted_index(long ** array, long * size, long * filled, long value);
 
 void
-insert_sorted_ptr(tst_node_t *** array, unsigned long long * size,
-                  unsigned long long * filled, tst_node_t * ptr);
+insert_sorted_ptr(tst_node_t *** array, long * size, long * filled,
+                  tst_node_t * ptr);
 
 /* Ternary node structure */
 /* """""""""""""""""""""" */
@@ -64,9 +64,9 @@ struct tst_node_s
 /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
 struct sub_tst_s
 {
-  tst_node_t **      array;
-  unsigned long long size;
-  unsigned long long count;
+  tst_node_t ** array;
+  long          size;
+  long          count;
 };
 
 #endif
