@@ -1983,6 +1983,16 @@ be any prefix of '\fIprefix\fP', '\fIsubstring\fP' or '\fIfuzzy\fP'.
 
 Place the cursor on the first word corresponding to the specified pattern.
 
+Note that although only the first matching word is highlighted,  all
+matching words (if any) can be accessed using \fBn\fP/\fBs\fP/\fBSPACE\fP
+and \fBN\fP/\fBS\fP keys as if they were the result of one of the
+search actions.
+
+These matching words can also be tagged at once if the tagging/pinning
+function is activated.  See the "Tagging" section for more information.
+
+\fBESC\fP can be used to disable navigation among matching words.
+
 \fIpattern\fP can be:
 .RS
 .IP \(bu 2

@@ -11357,9 +11357,16 @@ main(int argc, char * argv[])
 
         if (regexec(&re, word, (int)0, NULL, 0) == 0)
         {
-          current = index;
-          found   = 1;
-          break;
+          if (!found)
+          {
+            found   = 1;
+            current = index;
+          }
+
+          /* Insert the index in the search array. */
+          /* """"""""""""""""""""""""""""""""""""" */
+          insert_sorted_index(&matching_words_a, &matching_words_a_size,
+                              &matches_count, index);
         }
       }
 
@@ -11369,8 +11376,8 @@ main(int argc, char * argv[])
   }
   else if (*pre_selection_index == '=') /* exact search. */
   {
-    /* A prefix is expected. */
-    /* """"""""""""""""""""" */
+    /* An exact match is expected. */
+    /* """"""""""""""""""""""""""" */
     wchar_t * w;
 
     ll_t *      list;
@@ -11381,6 +11388,15 @@ main(int argc, char * argv[])
     {
       node    = list->head;
       current = *(long *)(node->data);
+
+      while (node)
+      {
+        /* Insert the index in the search array. */
+        /* """"""""""""""""""""""""""""""""""""" */
+        insert_sorted_index(&matching_words_a, &matching_words_a_size,
+                            &matches_count, *(long *)(node->data));
+        node = node->next;
+      }
     }
     else
       current = first_selectable;
@@ -11434,19 +11450,31 @@ main(int argc, char * argv[])
     }
     else
     {
+      int found = 0;
+
       /* A prefix is expected. */
       /* """"""""""""""""""""" */
       for (new_current = first_selectable; new_current < count; new_current++)
       {
+
         if (strprefix(word_a[new_current].str, ptr)
             && word_a[new_current].is_selectable)
-          break;
+        {
+          if (!found)
+          {
+            current = new_current;
+            found   = 1;
+          }
+
+          /* Insert the index in the search array. */
+          /* """"""""""""""""""""""""""""""""""""" */
+          insert_sorted_index(&matching_words_a, &matching_words_a_size,
+                              &matches_count, new_current);
+        }
       }
 
-      if (new_current == count)
+      if (!found)
         current = first_selectable;
-      else
-        current = new_current;
     }
   }
   else
