@@ -17,21 +17,21 @@ What is it?
 ===========
 **smenu** is a selection filter just like ``sed`` is an editing filter.
 
-This tool takes words from standard input or from a file and presents
-them on the screen in different layouts in a scrolling window.
-A cursor that you can easily move with the **keyboard** and/or the
-**mouse** lets you select one or more of them.
+This tool reads words from standard input or from a file, and presents
+them to the terminal screen in different layouts in a scrolling window.
+A cursor, easily moved using the **keyboard** and/or the **mouse**,
+makes it possible to select one or more words.
 
-Note that the screen is not cleared at the beginning and end of the
-**smenu** execution. The selection window is displayed at the cursor
-position and the previous contents of the terminal are not changed
-or lost.
+Note that the screen is not cleared at the start and end of **smenu**
+execution.
+The selection window is displayed at the cursor position, and the
+previous contents of the terminal are neither modified nor lost.
 
-I tried to make its use as simple as possible. It supports the ``UTF-8``
-encoding and should work on all terminals managed by the ``terminfo``
+I've tried to make it as easy to use as possible. It supports ``UTF-8``
+encoding and should work on all terminals managed in the ``terminfo``
 database.
 
-Please refer to the included man page to learn more about this little
+Please refer to the included man page to find out more about this little
 program.
 
 The `wiki <https://github.com/p-gen/smenu/wiki>`_ contains screenshots and
