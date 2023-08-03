@@ -1980,6 +1980,14 @@ parse_selectors(char * str, filters_t * filter, char ** unparsed,
       delim2 = *(colon - 1);
     }
 
+    /* Regex ranges are not yet supported in selectors. */
+    /* """""""""""""""""""""""""""""""""""""""""""""""" */
+    if (!isdigit(delim1) && delim1 != '-' && is_range)
+    {
+      *unparsed = strprint(str + start);
+      return;
+    }
+
     if (delim2 == '-')
       r_open_range = 1;
 
