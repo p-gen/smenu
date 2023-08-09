@@ -1739,9 +1739,12 @@ attr_elem_cmp(void const * a, void const * b)
 }
 
 /* ===================================================================== */
-/* Parse a column or row selector string whose syntax is defines as:     */
-/* <letter><range1>,<range2>,...                                         */
-/* <range> is n1-n2 | n1 where n1 starts with 1.                         */
+/* Parse a column or row selector string whose syntax is defined as:     */
+/* [<letter>]<item1>|,<item>|,...                                        */
+/* <item> is <range>| <delimited regex>                                  */
+/* <item> is (<range>| <delimited regex>):<attribute> if letter is a|A.  */
+/* <range> is n1-n2 | n1 | -n2 | n1- where n1 starts with 1.             */
+/* <delimited regex> is <char><regex><char> (e.g. /<regex>/).            */
 /*                                                                       */
 /* <letter> is a|A|s|S|r|R|u|U where:                                    */
 /* i|I is for 'include'.                                                 */
@@ -1749,6 +1752,7 @@ attr_elem_cmp(void const * a, void const * b)
 /* l|L is for 'left' alignment.                                          */
 /* r|R is for 'right' alignment.                                         */
 /* c|C is for 'center' alignment.                                        */
+/* a|A for defining attributes for rows or columns.                      */
 /*                                                                       */
 /* str               (in)  string to parse.                              */
 /* filter            (out) is INCLUDE_FILTER or EXCLUDE_FILTER according */
