@@ -1,3 +1,34 @@
+- Version 1.3.0
+* Fixes:
+  * Correction of an error in the calculation of the size of the longest word.
+  * Corrects the calculation of the space taken by the first direct access
+    numbers when it is explicitly specified.
+  * Increase the size of the buffer to store the scancode to prevent it
+    being truncated.
+  * Make decoding the column or row number more robust in command line analysis.
+  * Prevents the introduction of colours outside the range supported by
+    the terminal.
+* Improvements:
+  * Add the -sb|-sbw|-show_blank_words option to help display all words
+    composed entirely of spaces.
+  * Allow selection intervals to have no start or end number.
+  * In column mode, words can now be aligned left/right or centred.
+  * When numbering is active, unnumbered words are now always filled in with
+    blanks in col/line/tab mode.
+  * The -start_pattern option has been extended so that all words matching
+    the pattern can be searched directly using the Next/previous keys,
+    without having to enter search mode.
+  * The order in which -C/-R elements appear on the command line is now
+    taken into account.
+  * In column mode, columns and/or rows can have their own colour
+    and/or style.
+ Miscellaneous:
+  * Corrections and improvements to the manual.
+  * Removal of dead code.
+  * Addition of an FAQ entry on alignments.
+  * The memory consumption has been reduced.
+
+
 - Version 1.2.0
 * Fixes:
   * Correction of word selections with the mouse in long lines.
