@@ -2374,6 +2374,8 @@ parse_al_selectors(char * str, char ** unparsed, ll_t ** al_regex_list,
   if (sscanf(str, "%c", &c) == 0)
     return;
 
+  type = *default_alignment;
+
   switch (c)
   {
     case 'l':
