@@ -28,33 +28,33 @@ size_t
 utf8_offset(char *, size_t);
 
 char *
-utf8_strprefix(char * d, char * s, long n, long * pos);
+utf8_strprefix(char *d, char *s, long n, long *pos);
 
 size_t
-utf8_strlen(char * str);
+utf8_strlen(char *str);
 
 wchar_t *
-utf8_strtowcs(char * s);
+utf8_strtowcs(char *s);
 
 void
-utf8_sanitize(char * s, char sc);
+utf8_sanitize(char *s, char sc);
 
 int
-cptoutf8(char * utf8_str, uint32_t c);
+cptoutf8(char *utf8_str, uint32_t c);
 
 int
-utf8_interpret(char * s, char sc);
+utf8_interpret(char *s, char sc);
 
 char *
-utf8_validate(char * str);
+utf8_validate(char *str);
 
 char *
-utf8_prev(const char * str, const char * p);
+utf8_prev(const char *str, const char *p);
 
 char *
-utf8_next(char * p);
+utf8_next(char *p);
 
 void
-utf8_strtolower(char * dst, char * src);
+utf8_strtolower(char *dst, char *src);
 
 #endif

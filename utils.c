@@ -41,10 +41,10 @@ interval_new(void)
 /* same return values as for strcmp.       */
 /* ======================================= */
 int
-interval_comp(void const * a, void const * b)
+interval_comp(void const *a, void const *b)
 {
-  interval_t * ia = (interval_t *)a;
-  interval_t * ib = (interval_t *)b;
+  interval_t *ia = (interval_t *)a;
+  interval_t *ib = (interval_t *)b;
 
   if (ia->low < ib->low)
     /* ia: [...      */
@@ -70,11 +70,11 @@ interval_comp(void const * a, void const * b)
 /* Swaps the values of two intervals. */
 /* ================================== */
 void
-interval_swap(void ** a, void ** b)
+interval_swap(void **a, void **b)
 {
-  interval_t * ia = (interval_t *)*a;
-  interval_t * ib = (interval_t *)*b;
-  long         tmp;
+  interval_t *ia = (interval_t *)*a;
+  interval_t *ib = (interval_t *)*b;
+  long        tmp;
 
   tmp     = ia->low;
   ia->low = ib->low;
@@ -90,9 +90,9 @@ interval_swap(void ** a, void ** b)
 /* number of intervals to consider.                                       */
 /* ====================================================================== */
 void
-optimize_an_interval_list(ll_t * list)
+optimize_an_interval_list(ll_t *list)
 {
-  ll_node_t * node1, *node2;
+  ll_node_t  *node1, *node2;
   interval_t *data1, *data2;
 
   if (!list || list->len < 2)
@@ -103,7 +103,7 @@ optimize_an_interval_list(ll_t * list)
   ll_sort(list, interval_comp, interval_swap);
 
   /* Step 2: merge the list by merging the consecutive intervals. */
-  /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+  /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
   node1 = list->head;
   node2 = node1->next;
 
@@ -142,12 +142,12 @@ optimize_an_interval_list(ll_t * list)
 /* http://openwall.info/wiki/people/solar/software/public-domain-source-code */
 /* ========================================================================= */
 char *
-concat(const char * s1, ...)
+concat(const char *s1, ...)
 {
-  va_list      args;
-  const char * s;
-  char *       p, *result;
-  size_t       l, m, n;
+  va_list     args;
+  const char *s;
+  char       *p, *result;
+  size_t      l, m, n;
 
   m = n = strlen(s1);
   va_start(args, s1);
@@ -190,7 +190,7 @@ concat(const char * s1, ...)
 /* Returns 1 if true, else 0.                      */
 /* =============================================== */
 int
-strprefix(char * str1, char * str2)
+strprefix(char *str1, char *str2)
 {
   while (*str1 != '\0' && *str1 == *str2)
   {
@@ -205,7 +205,7 @@ strprefix(char * str1, char * str2)
 /* Trims leading characters. */
 /* ========================= */
 void
-ltrim(char * str, const char * trim_str)
+ltrim(char *str, const char *trim_str)
 {
   size_t len   = strlen(str);
   size_t begin = strspn(str, trim_str);
@@ -226,7 +226,7 @@ ltrim(char * str, const char * trim_str)
 /* deleted may remain.                                                  */
 /* ==================================================================== */
 void
-rtrim(char * str, const char * trim_str, size_t min)
+rtrim(char *str, const char *trim_str, size_t min)
 {
   size_t len = strlen(str);
   while (len > min && strchr(trim_str, str[len - 1]))
@@ -238,7 +238,7 @@ rtrim(char * str, const char * trim_str, size_t min)
 /* from http://c.snippets.org/code/stricmp.c */
 /* ========================================= */
 int
-my_strcasecmp(const char * str1, const char * str2)
+my_strcasecmp(const char *str1, const char *str2)
 {
 #ifdef HAVE_STRCASECMP
   return strcasecmp(str1, str2);
@@ -265,7 +265,7 @@ my_strcasecmp(const char * str1, const char * str2)
 /* memmove based strcpy (tolerates overlapping). */
 /* ============================================= */
 char *
-my_strcpy(char * str1, char * str2)
+my_strcpy(char *str1, char *str2)
 {
   if (str1 == NULL || str2 == NULL)
     return NULL;
@@ -299,7 +299,7 @@ isprint8(int i)
 /* Private implementation of wcscasecmp missing in c99. */
 /* ==================================================== */
 int
-my_wcscasecmp(const wchar_t * s1, const wchar_t * s2)
+my_wcscasecmp(const wchar_t *s1, const wchar_t *s2)
 {
   wchar_t c1, c2;
 
@@ -343,9 +343,9 @@ is_integer(const char * const s)
 /* Returns 1 on success.                                 */
 /* ===================================================== */
 int
-swap_string_parts(char ** s, size_t first)
+swap_string_parts(char **s, size_t first)
 {
-  char * tmp;
+  char  *tmp;
   size_t size;
 
   if (*s == NULL || **s == '\0')
@@ -369,7 +369,7 @@ swap_string_parts(char ** s, size_t first)
 /* Substitute all the characters c1 by c2 in the string s in place. */
 /* ================================================================ */
 void
-strrep(char * s, const char c1, const char c2)
+strrep(char *s, const char c1, const char c2)
 {
   if (s)
     while (*s)
@@ -385,10 +385,10 @@ strrep(char * s, const char c1, const char c2)
 /* character changed in '_'                                           */
 /* ================================================================== */
 char *
-strprint(char * s)
+strprint(char *s)
 {
-  char * new = xcalloc(1, 4 * strlen(s) + 1);
-  char * p   = new;
+  char *new = xcalloc(1, 4 * strlen(s) + 1);
+  char *p   = new;
 
   while (*s)
   {

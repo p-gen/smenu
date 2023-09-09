@@ -29,7 +29,7 @@
 #ifdef malloc
 
 #undef malloc
-extern void * malloc(size_t);
+extern void *malloc(size_t);
 
 void *
 rpl_malloc(size_t size)
@@ -44,7 +44,7 @@ extern void *
 realloc(void *, size_t);
 
 void *
-rpl_realloc(void * ptr, size_t size)
+rpl_realloc(void *ptr, size_t size)
 {
   if (!size)
     size++;
@@ -60,7 +60,7 @@ rpl_realloc(void * ptr, size_t size)
 void *
 xmalloc(size_t size)
 {
-  void * allocated;
+  void  *allocated;
   size_t real_size;
 
   real_size = (size > 0) ? size : 1;
@@ -68,7 +68,8 @@ xmalloc(size_t size)
   if (allocated == NULL)
   {
     fprintf(stderr,
-            "Error: Insufficient memory (attempt to malloc %zu bytes)\n", size);
+            "Error: Insufficient memory (attempt to malloc %zu bytes)\n",
+            size);
 
     exit(EXIT_FAILURE);
   }
@@ -83,7 +84,7 @@ xmalloc(size_t size)
 void *
 xcalloc(size_t n, size_t size)
 {
-  void * allocated;
+  void *allocated;
 
   n         = (n > 0) ? n : 1;
   size      = (size > 0) ? size : 1;
@@ -91,7 +92,8 @@ xcalloc(size_t n, size_t size)
   if (allocated == NULL)
   {
     fprintf(stderr,
-            "Error: Insufficient memory (attempt to calloc %zu bytes)\n", size);
+            "Error: Insufficient memory (attempt to calloc %zu bytes)\n",
+            size);
 
     exit(EXIT_FAILURE);
   }
@@ -104,9 +106,9 @@ xcalloc(size_t n, size_t size)
 /* Displays an error message and exits gracefully if an error occurs. */
 /* ================================================================== */
 void *
-xrealloc(void * p, size_t size)
+xrealloc(void *p, size_t size)
 {
-  void * allocated;
+  void *allocated;
 
   allocated = realloc(p, size);
   if (allocated == NULL && size > 0)
@@ -126,9 +128,9 @@ xrealloc(void * p, size_t size)
 /* Displays an error message and exits gracefully if an error occurs. */
 /* ================================================================== */
 char *
-xstrdup(const char * str)
+xstrdup(const char *str)
 {
-  char * p;
+  char *p;
 
   p = malloc(strlen(str) + 1);
 
@@ -149,9 +151,9 @@ xstrdup(const char * str)
 /* Displays an error message and exits gracefully if an error occurs. */
 /* ================================================================== */
 char *
-xstrndup(const char * str, size_t len)
+xstrndup(const char *str, size_t len)
 {
-  char * p;
+  char  *p;
   size_t l;
 
   p = memchr(str, '\0', len);

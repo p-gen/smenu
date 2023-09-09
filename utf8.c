@@ -28,7 +28,7 @@
 /* not a valid codepoint.                                      */
 /* =========================================================== */
 int
-cptoutf8(char * utf8_str, uint32_t c)
+cptoutf8(char *utf8_str, uint32_t c)
 {
   int len = 0;
 
@@ -73,9 +73,9 @@ cptoutf8(char * utf8_str, uint32_t c)
 /* Returns 0 if the conversion has failed else 1.                          */
 /* ======================================================================= */
 int
-utf8_interpret(char * s, char substitute)
+utf8_interpret(char *s, char substitute)
 {
-  char * utf8_str;          /* \uxx...                                     */
+  char  *utf8_str;          /* \uxx...                                     */
   size_t utf8_to_eos_len;   /* bytes in s starting from the first          *
                              * occurrence of \u.                           */
   size_t init_len;          /* initial lengths of the string to interpret  */
@@ -94,8 +94,9 @@ utf8_interpret(char * s, char substitute)
 
   /* Manage \U codepoints. */
   /* """"""""""""""""""""" */
-  while ((utf8_str = strstr(s, "\\"
-                               "U"))
+  while ((utf8_str = strstr(s,
+                            "\\"
+                            "U"))
          != NULL)
   {
     char     str[7];
@@ -114,7 +115,8 @@ utf8_interpret(char * s, char substitute)
                "abcdef"
                "ABCDEF"
                "]%n",
-               tmp, &utf8_str_len);
+               tmp,
+               &utf8_str_len);
 
     subst = 0;
 
@@ -142,7 +144,8 @@ utf8_interpret(char * s, char substitute)
     if (subst)
     {
       *utf8_str = substitute;
-      memmove(utf8_str + 1, utf8_str + 2 + utf8_str_len,
+      memmove(utf8_str + 1,
+              utf8_str + 2 + utf8_str_len,
               utf8_to_eos_len - (utf8_str_len + 2 - 1));
       len_to_remove += utf8_str_len + 2 - 1;
     }
@@ -154,8 +157,9 @@ utf8_interpret(char * s, char substitute)
 
   /* Manage \u UTF-8 byte sequences. */
   /* """"""""""""""""""""""""""""""" */
-  while ((utf8_str = strstr(s, "\\"
-                               "u"))
+  while ((utf8_str = strstr(s,
+                            "\\"
+                            "u"))
          != NULL)
   {
     utf8_to_eos_len = strlen(utf8_str);
@@ -169,7 +173,7 @@ utf8_interpret(char * s, char substitute)
     else /* s is long enough. */
     {
       unsigned byte;
-      char *   utf8_seq_offset = utf8_str + 2;
+      char    *utf8_seq_offset = utf8_str + 2;
 
       /* Get the first 2 UTF-8 bytes. */
       /* """""""""""""""""""""""""""" */
@@ -265,7 +269,8 @@ utf8_interpret(char * s, char substitute)
           if (utf8_to_eos_len < utf8_ascii_len)
             *(utf8_str + 1) = '\0';
           else
-            memmove(utf8_str + 1, utf8_seq_offset + utf8_ascii_len,
+            memmove(utf8_str + 1,
+                    utf8_seq_offset + utf8_ascii_len,
                     utf8_to_eos_len - utf8_ascii_len - 2 + 1);
 
           utf8_ascii_len = 2;
@@ -309,7 +314,7 @@ utf8_get_length(unsigned char c)
 /* Returns the byte offset of the nth UTF-8 glyph in s. */
 /* ==================================================== */
 size_t
-utf8_offset(char * s, size_t n)
+utf8_offset(char *s, size_t n)
 {
   size_t i = 0;
 
@@ -329,7 +334,7 @@ utf8_offset(char * s, size_t n)
 /* from the given position.                       */
 /* ============================================== */
 char *
-utf8_prev(const char * str, const char * p)
+utf8_prev(const char *str, const char *p)
 {
   while ((*p & 0xc0) == 0x80)
     p--;
@@ -347,7 +352,7 @@ utf8_prev(const char * str, const char * p)
 /* from the current position.                 */
 /* ========================================== */
 char *
-utf8_next(char * p)
+utf8_next(char *p)
 {
   if (*p)
   {
@@ -364,9 +369,9 @@ utf8_next(char * p)
 /* s will be modified but its address in memory will not change. */
 /* ============================================================= */
 void
-utf8_sanitize(char * s, char substitute)
+utf8_sanitize(char *s, char substitute)
 {
-  char * p = s;
+  char  *p = s;
   int    n;
   size_t len;
 
@@ -404,9 +409,9 @@ utf8_sanitize(char * s, char substitute)
 /* License: http://www.cl.cam.ac.uk/~mgk25/short-license.html              */
 /* ======================================================================= */
 char *
-utf8_validate(char * s)
+utf8_validate(char *s)
 {
-  unsigned char * us = (unsigned char *)s;
+  unsigned char *us = (unsigned char *)s;
 
   /* clang-format off */
   while (*us)
@@ -430,7 +435,7 @@ utf8_validate(char * s)
           (us[0] == 0xe0 && (us[1] & 0xe0) == 0x80) || /* overlong?         */
           (us[0] == 0xed && (us[1] & 0xe0) == 0xa0) || /* surrogate?        */
           (us[0] == 0xef && us[1] == 0xbf &&
-            (us[2] & 0xfe) == 0xbe))                  /* U+FFFE or U+FFFF? */
+            (us[2] & 0xfe) == 0xbe))                   /* U+FFFE or U+FFFF? */
         return (char *)us;
 
       us += 3;
@@ -441,7 +446,7 @@ utf8_validate(char * s)
       if ((us[1] & 0xc0) != 0x80 ||
           (us[2] & 0xc0) != 0x80 ||
           (us[3] & 0xc0) != 0x80 ||
-          (us[0] == 0xf0 && (us[1] & 0xf0) == 0x80) ||    /* overlong?   */
+          (us[0] == 0xf0 && (us[1] & 0xf0) == 0x80) ||     /* overlong?   */
           (us[0] == 0xf4 && us[1] > 0x8f) || us[0] > 0xf4) /* > U+10FFFF? */
         return (char *)us;
 
@@ -459,7 +464,7 @@ utf8_validate(char * s)
 /* Multibyte UTF-8 strlen. */
 /* ======================= */
 size_t
-utf8_strlen(char * str)
+utf8_strlen(char *str)
 {
   size_t i = 0, j = 0;
 
@@ -478,7 +483,7 @@ utf8_strlen(char * str)
 /* pos is updated to reflect the position AFTER the prefix.             */
 /* ==================================================================== */
 char *
-utf8_strprefix(char * d, char * s, long n, long * pos)
+utf8_strprefix(char *d, char *s, long n, long *pos)
 {
   long i = 0;
   long j = 0;
@@ -509,12 +514,12 @@ utf8_strprefix(char * d, char * s, long n, long * pos)
 /* The returned string must be freed by the caller.   */
 /* ================================================== */
 wchar_t *
-utf8_strtowcs(char * s)
+utf8_strtowcs(char *s)
 {
-  int             converted = 0;
-  unsigned char * ch;
-  wchar_t *       wptr, *w;
-  size_t          size;
+  int            converted = 0;
+  unsigned char *ch;
+  wchar_t       *wptr, *w;
+  size_t         size;
 
   size = (long)strlen(s);
   w    = xmalloc((size + 1) * sizeof(wchar_t));
@@ -543,7 +548,7 @@ utf8_strtowcs(char * s)
 /* dst must be preallocated before the call.                      */
 /* ============================================================== */
 void
-utf8_strtolower(char * dst, char * src)
+utf8_strtolower(char *dst, char *src)
 {
   unsigned char c;
 

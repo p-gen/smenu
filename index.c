@@ -28,13 +28,13 @@
 
 /* List of words matching the current search. */
 /* """""""""""""""""""""""""""""""""""""""""" */
-ll_t * tst_search_list; /* Must be initialized by ll_new() before use. */
+ll_t *tst_search_list; /* Must be initialized by ll_new() before use. */
 
 /* ======================================= */
 /* Ternary search tree insertion function. */
 /* ======================================= */
 tst_node_t *
-tst_insert(tst_node_t * p, wchar_t * w, void * data)
+tst_insert(tst_node_t *p, wchar_t *w, void *data)
 {
   if (p == NULL)
   {
@@ -67,7 +67,7 @@ tst_insert(tst_node_t * p, wchar_t * w, void * data)
 /* User data area not cleaned.            */
 /* ====================================== */
 void
-tst_cleanup(tst_node_t * p)
+tst_cleanup(tst_node_t *p)
 {
   if (p)
   {
@@ -88,7 +88,7 @@ tst_cleanup(tst_node_t * p)
 /* variable.                                                  */
 /* ========================================================== */
 int
-tst_traverse(tst_node_t * p, int (*callback)(void *), int first_call)
+tst_traverse(tst_node_t *p, int (*callback)(void *), int first_call)
 {
   static int rc;
 
@@ -113,7 +113,9 @@ tst_traverse(tst_node_t * p, int (*callback)(void *), int first_call)
 /* next wchar os the search string.                                        */
 /* ======================================================================= */
 int
-tst_substring_traverse(tst_node_t * p, int (*callback)(void *), int first_call,
+tst_substring_traverse(tst_node_t *p,
+                       int (*callback)(void *),
+                       int     first_call,
                        wchar_t w)
 {
   static int rc;
@@ -126,15 +128,17 @@ tst_substring_traverse(tst_node_t * p, int (*callback)(void *), int first_call,
 
   if (p->splitchar == w)
   {
-    ll_node_t * node;
-    sub_tst_t * sub_tst_data;
+    ll_node_t *node;
+    sub_tst_t *sub_tst_data;
 
     node         = tst_search_list->tail;
     sub_tst_data = (sub_tst_t *)(node->data);
 
     if (p->eqkid)
-      insert_sorted_ptr(&(sub_tst_data->array), &(sub_tst_data->size),
-                        &(sub_tst_data->count), p->eqkid);
+      insert_sorted_ptr(&(sub_tst_data->array),
+                        &(sub_tst_data->size),
+                        &(sub_tst_data->count),
+                        p->eqkid);
 
     rc = 1;
   }
@@ -155,7 +159,9 @@ tst_substring_traverse(tst_node_t * p, int (*callback)(void *), int first_call,
 /* the next wchar os the search string.                                     */
 /* ======================================================================== */
 int
-tst_fuzzy_traverse(tst_node_t * p, int (*callback)(void *), int first_call,
+tst_fuzzy_traverse(tst_node_t *p,
+                   int (*callback)(void *),
+                   int     first_call,
                    wchar_t w)
 {
   static int rc;
@@ -175,15 +181,17 @@ tst_fuzzy_traverse(tst_node_t * p, int (*callback)(void *), int first_call,
 
   if (my_wcscasecmp(w1s, w2s) == 0)
   {
-    ll_node_t * node;
-    sub_tst_t * sub_tst_data;
+    ll_node_t *node;
+    sub_tst_t *sub_tst_data;
 
     node         = tst_search_list->tail;
     sub_tst_data = (sub_tst_t *)(node->data);
 
     if (p->eqkid != NULL)
-      insert_sorted_ptr(&(sub_tst_data->array), &(sub_tst_data->size),
-                        &(sub_tst_data->count), p->eqkid);
+      insert_sorted_ptr(&(sub_tst_data->array),
+                        &(sub_tst_data->size),
+                        &(sub_tst_data->count),
+                        p->eqkid);
 
     rc += 1;
   }
@@ -202,9 +210,9 @@ tst_fuzzy_traverse(tst_node_t * p, int (*callback)(void *), int first_call,
 /* Searches a complete string in a ternary tree starting from a root node. */
 /* ======================================================================= */
 void *
-tst_search(tst_node_t * root, wchar_t * w)
+tst_search(tst_node_t *root, wchar_t *w)
 {
-  tst_node_t * p;
+  tst_node_t *p;
 
   p = root;
 
@@ -231,11 +239,11 @@ tst_search(tst_node_t * root, wchar_t * w)
 /* returns NULL if no string matched the prefix.                     */
 /* ================================================================= */
 void *
-tst_prefix_search(tst_node_t * root, wchar_t * w, int (*callback)(void *))
+tst_prefix_search(tst_node_t *root, wchar_t *w, int (*callback)(void *))
 {
-  tst_node_t * p   = root;
-  size_t       len = wcslen(w);
-  size_t       rc;
+  tst_node_t *p   = root;
+  size_t      len = wcslen(w);
+  size_t      rc;
 
   while (p)
   {
@@ -270,7 +278,7 @@ tst_prefix_search(tst_node_t * root, wchar_t * w, int (*callback)(void *))
 /* IN value     : long value to be inserted in the array.    */
 /* ========================================================= */
 void
-insert_sorted_index(long ** array_ptr, long * size, long * nb, long value)
+insert_sorted_index(long **array_ptr, long *size, long *nb, long value)
 {
   long pos  = *nb;
   long left = 0, right = *nb, middle;
@@ -303,7 +311,8 @@ insert_sorted_index(long ** array_ptr, long * size, long * nb, long value)
   /* (shift right one position).                                      */
   /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
   if (*nb > pos)
-    memmove((*array_ptr) + pos + 1, (*array_ptr) + pos,
+    memmove((*array_ptr) + pos + 1,
+            (*array_ptr) + pos,
             sizeof(value) * (*nb - pos));
 
   (*nb)++;
@@ -318,8 +327,10 @@ insert_sorted_index(long ** array_ptr, long * size, long * nb, long value)
 /* without duplications.                                     */
 /* ========================================================= */
 void
-insert_sorted_ptr(tst_node_t *** array_ptr, long * size, long * nb,
-                  tst_node_t * ptr)
+insert_sorted_ptr(tst_node_t ***array_ptr,
+                  long         *size,
+                  long         *nb,
+                  tst_node_t   *ptr)
 {
   long pos  = *nb;
   long left = 0, right = *nb, middle;
@@ -349,7 +360,8 @@ insert_sorted_ptr(tst_node_t *** array_ptr, long * size, long * nb,
   }
 
   if (*nb > pos)
-    memmove((*array_ptr) + pos + 1, (*array_ptr) + pos,
+    memmove((*array_ptr) + pos + 1,
+            (*array_ptr) + pos,
             sizeof(ptr) * (*nb - pos));
 
   (*nb)++;

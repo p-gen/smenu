@@ -12,9 +12,9 @@
 #include <errno.h>
 
 int
-my_fgetc(FILE * input);
+my_fgetc(FILE *input);
 
 int
-my_ungetc(int c, FILE * input);
+my_ungetc(int c, FILE *input);
 
 #endif

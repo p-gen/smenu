@@ -26,7 +26,7 @@ static long next_buffer_pos = 0; /* Next free position in the getc buffer. */
 /* Gets a (possibly pushed-back) character. */
 /* ======================================== */
 int
-my_fgetc(FILE * input)
+my_fgetc(FILE *input)
 {
   int c;
 
@@ -51,7 +51,7 @@ my_fgetc(FILE * input)
 /* Pushes character back on input. */
 /* =============================== */
 int
-my_ungetc(int c, FILE * input)
+my_ungetc(int c, FILE *input)
 {
   int rc;
 

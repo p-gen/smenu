@@ -33,31 +33,31 @@ interval_t *
 interval_new(void);
 
 int
-interval_comp(void const * a, void const * b);
+interval_comp(void const *a, void const *b);
 
 void
-interval_swap(void ** a, void ** b);
+interval_swap(void **a, void **b);
 
 void
-optimize_an_interval_list(ll_t * list);
+optimize_an_interval_list(ll_t *list);
 
 char *
-concat(const char * str1, ...);
+concat(const char *str1, ...);
 
 int
-strprefix(char * str1, char * str2);
+strprefix(char *str1, char *str2);
 
 void
-ltrim(char * str, const char * trim);
+ltrim(char *str, const char *trim);
 
 void
-rtrim(char * str, const char * trim, size_t min_len);
+rtrim(char *str, const char *trim, size_t min_len);
 
 int
-my_strcasecmp(const char * str1, const char * str2);
+my_strcasecmp(const char *str1, const char *str2);
 
 char *
-my_strcpy(char * dst, char * src);
+my_strcpy(char *dst, char *src);
 
 int
 isprint7(int i);
@@ -66,17 +66,17 @@ int
 isprint8(int i);
 
 int
-my_wcscasecmp(const wchar_t * w1s, const wchar_t * w2s);
+my_wcscasecmp(const wchar_t *w1s, const wchar_t *w2s);
 
 int
 is_integer(const char * const s);
 
 int
-swap_string_parts(char ** s, size_t first);
+swap_string_parts(char **s, size_t first);
 
 void
-strrep(char * s, const char c1, const char c2);
+strrep(char *s, const char c1, const char c2);
 
 char *
-strprint(char * s);
+strprint(char *s);
 #endif

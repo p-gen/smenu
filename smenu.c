@@ -47,25 +47,25 @@
 /* Extern variables. */
 /* ***************** */
 
-extern ll_t * tst_search_list;
+extern ll_t *tst_search_list;
 
 /* ***************** */
 /* Global variables. */
 /* ***************** */
 
-word_t * word_a;       /* array containing words data (size: count).        */
-long     count = 0;    /* number of words read from stdin.                  */
-long     current;      /* index the current selection under the cursor).    */
-long     new_current;  /* final cur. position, (used in search function).   */
-long     prev_current; /* prev. position stored when using direct access.   */
+word_t *word_a;       /* array containing words data (size: count).        */
+long    count = 0;    /* number of words read from stdin.                  */
+long    current;      /* index the current selection under the cursor).    */
+long    new_current;  /* final cur. position, (used in search function).   */
+long    prev_current; /* prev. position stored when using direct access.   */
 
-long * line_nb_of_word_a;     /* array containing the line number (from 0)  *
-                               | of each word read.                         */
-long * first_word_in_line_a;  /* array containing the index of the first    *
-                               | word of each lines.                        */
-long * shift_right_sym_pos_a; /* screen column number of the right          *
-                                 scrolling symbol if any when in line or    *
-                                 column mode.                               */
+long *line_nb_of_word_a;     /* array containing the line number (from 0)  *
+                              | of each word read.                         */
+long *first_word_in_line_a;  /* array containing the index of the first    *
+                              | word of each lines.                        */
+long *shift_right_sym_pos_a; /* screen column number of the right          *
+                                scrolling symbol if any when in line or    *
+                                column mode.                               */
 
 int forgotten_timer = -1;
 int help_timer      = -1;
@@ -80,7 +80,7 @@ int help_mode = 0; /* 1 if help is displayed else 0. */
 
 int marked = -1; /* Index of the marked word or -1. */
 
-char * word_buffer;
+char *word_buffer;
 
 int (*my_isprint)(int);
 
@@ -105,21 +105,21 @@ char * msg_arr_down    = "\xe2\x96\xbc"; /* ▼ black down pointing triangle.  *
 
 /* Mouse tracking. */
 /* """"""""""""""" */
-char * mouse_trk_on;
-char * mouse_trk_off;
+char *mouse_trk_on;
+char *mouse_trk_off;
 
 /* Variables used to manage the direct access entries. */
 /* """"""""""""""""""""""""""""""""""""""""""""""""""" */
 daccess_t daccess;
-char *    daccess_stack;
+char     *daccess_stack;
 int       daccess_stack_head;
 
 /* Variables used for fuzzy and substring searching. */
 /* """"""""""""""""""""""""""""""""""""""""""""""""" */
 long matches_count; /* Number of all matching words. */
 
-long * matching_words_a; /* Array containing the index of all matching *
-                          | words.                                     */
+long *matching_words_a; /* Array containing the index of all matching *
+                         | words.                                     */
 
 long matching_words_a_size; /* Allocated size for the previous array. */
 
@@ -127,15 +127,15 @@ long best_matches_count; /* Number of matching words whose matching   *
                           | part form a consecutive suite of matching *
                           | glyphs.                                   */
 
-long * best_matching_words_a; /* Array containing the index of matching  *
-                               | words containing a consecutive suite of *
-                               | matching glyphs.                        */
+long *best_matching_words_a; /* Array containing the index of matching  *
+                              | words containing a consecutive suite of *
+                              | matching glyphs.                        */
 
 long best_matching_words_a_size; /* Allocated size for the previous array. */
 
-long * alt_matching_words_a = NULL; /* Alternate array to contain only the    *
-                                     | matching candidates having potentially *
-                                     | a starting/ending pattern.             */
+long *alt_matching_words_a = NULL; /* Alternate array to contain only the    *
+                                    | matching candidates having potentially *
+                                    | a starting/ending pattern.             */
 
 /* Variables used in signal handlers. */
 /* """""""""""""""""""""""""""""""""" */
@@ -154,8 +154,8 @@ volatile sig_atomic_t got_sighup         = 0;
 /* Variables used when a timeout is set (option -x). */
 /* """"""""""""""""""""""""""""""""""""""""""""""""" */
 timeout_t timeout;
-char *    timeout_word;      /* printed word when the timeout type is WORD. */
-char *    timeout_seconds;   /* string containing the number of remaining   *
+char     *timeout_word;      /* printed word when the timeout type is WORD. */
+char     *timeout_seconds;   /* string containing the number of remaining   *
                               | seconds.                                    */
 int       quiet_timeout = 0; /* 1 when we want no message to be displayed.  */
 
@@ -167,24 +167,27 @@ int       quiet_timeout = 0; /* 1 when we want no message to be displayed.  */
 /* Help message display. */
 /* ===================== */
 void
-help(win_t * win, term_t * term, long last_line)
+help(win_t *win, term_t *term, long last_line)
 {
   int  index;      /* used to identify the objects long the help line. */
   int  line = 0;   /* number of windows lines used by the help line.   */
   int  len  = 0;   /* length of the help line.                         */
   int  max_col;    /* when to split the help line.                     */
-  int  entries_nb; /* number of help entries to display.             */
+  int  entries_nb; /* number of help entries to display.               */
   long i;
 
   struct entry_s
   {
-    char * str;  /* string to be displayed for an object in the help line. */
-    int    len;  /* screen space taken by of one of these objects.         */
-    char   attr; /* r=reverse, n=normal, b=bold, uu=underlined.            */
+    char *str;  /* string to be displayed for an object in the help line. */
+    int   len;  /* screen space taken by of one of these objects.         */
+    char  attr; /* r=reverse, n=normal, b=bold, uu=underlined.            */
   };
 
-  char * arrows = concat(left_arrow, up_arrow, right_arrow, down_arrow,
-                         (char *)0);
+  char *arrows = concat(left_arrow,
+                        up_arrow,
+                        right_arrow,
+                        down_arrow,
+                        (char *)0);
 
   struct entry_s entries[] = {
     { "Move:", 5, 'r' }, { "Mouse:", 6, 'u' }, { "B1", 2, 'b' },
@@ -308,7 +311,7 @@ help(win_t * win, term_t * term, long last_line)
 attrib_t *
 attr_new(void)
 {
-  attrib_t * attr;
+  attrib_t *attr;
 
   attr = xmalloc(sizeof(attrib_t));
 
@@ -342,7 +345,7 @@ attr_new(void)
 /* toggle is found else 0.           */
 /* ================================= */
 int
-decode_attr_toggles(char * s, attrib_t * attr)
+decode_attr_toggles(char *s, attrib_t *attr)
 {
   int rc = 1;
 
@@ -409,15 +412,15 @@ decode_attr_toggles(char * s, attrib_t * attr)
 /* attr will be filled by the function.                         */
 /* =============================================================*/
 int
-parse_attr(char * str, attrib_t * attr, short colors)
+parse_attr(char *str, attrib_t *attr, short colors)
 {
-  int    n;
-  char * pos;
-  char   s1[12] = { (char)0 }; /* For the colors.     */
-  char   s2[9]  = { (char)0 }; /* For the attributes. */
-  short  d1 = -1, d2 = -1;     /* colors. */
-  int    rc = 1;
-  char   c  = '\0';
+  int   n;
+  char *pos;
+  char  s1[12] = { (char)0 }; /* For the colors.     */
+  char  s2[9]  = { (char)0 }; /* For the attributes. */
+  short d1 = -1, d2 = -1;     /* colors. */
+  int   rc = 1;
+  char  c  = '\0';
 
   /* 11: 4 type+colon,2x3 for colors, 1 for slash.     */
   /* 8 : max size for the concatenation of attributes. */
@@ -485,7 +488,7 @@ error:
 /* Set the terminal attributes according to attr. */
 /* ============================================== */
 void
-apply_attr(term_t * term, attrib_t attr)
+apply_attr(term_t *term, attrib_t attr)
 {
   if (attr.fg >= 0)
     set_foreground_color(term, attr.fg);
@@ -528,9 +531,15 @@ apply_attr(term_t * term, attrib_t attr)
 /* Returns 0 if OK, 1 if not.                            */
 /* ===================================================== */
 int
-ini_cb(win_t * win, term_t * term, limit_t * limits, ticker_t * timers,
-       misc_t * misc, mouse_t * mouse, const char * section, const char * name,
-       char * value)
+ini_cb(win_t      *win,
+       term_t     *term,
+       limit_t    *limits,
+       ticker_t   *timers,
+       misc_t     *misc,
+       mouse_t    *mouse,
+       const char *section,
+       const char *name,
+       char       *value)
 {
   int error      = 0;
   int has_colors = term->colors > 7;
@@ -796,19 +805,30 @@ out:
 /* Jon Mayo April 2011.                                                     */
 /* ======================================================================== */
 int
-ini_load(const char * filename, win_t * win, term_t * term, limit_t * limits,
-         ticker_t * timers, misc_t * misc, mouse_t * mouse,
-         int (*report)(win_t * win, term_t * term, limit_t * limits,
-                       ticker_t * timers, misc_t * misc, mouse_t * mouse,
-                       const char * section, const char * name, char * value))
+ini_load(const char *filename,
+         win_t      *win,
+         term_t     *term,
+         limit_t    *limits,
+         ticker_t   *timers,
+         misc_t     *misc,
+         mouse_t    *mouse,
+         int (*report)(win_t      *win,
+                       term_t     *term,
+                       limit_t    *limits,
+                       ticker_t   *timers,
+                       misc_t     *misc,
+                       mouse_t    *mouse,
+                       const char *section,
+                       const char *name,
+                       char       *value))
 {
-  char   name[64]     = "";
-  char   value[256]   = "";
-  char   section[128] = "";
-  char * s;
-  FILE * f;
-  int    cnt;
-  int    error;
+  char  name[64]     = "";
+  char  value[256]   = "";
+  char  section[128] = "";
+  char *s;
+  FILE *f;
+  int   cnt;
+  int   error;
 
   /* If the filename is empty we skip this phase and use the */
   /* default values.                                         */
@@ -852,8 +872,8 @@ ini_load(const char * filename, win_t * win, term_t * term, limit_t * limits,
 
       /* Callback function calling. */
       /* """""""""""""""""""""""""" */
-      error = report(win, term, limits, timers, misc, mouse, section, name,
-                     value);
+      error =
+        report(win, term, limits, timers, misc, mouse, section, name, value);
 
       if (error)
         goto out;
@@ -877,7 +897,10 @@ out:
   fclose(f);
 
   if (error)
-    fprintf(stderr, "Invalid entry found: %s=%s in %s.\n", name, value,
+    fprintf(stderr,
+            "Invalid entry found: %s=%s in %s.\n",
+            name,
+            value,
             filename);
 
   return error;
@@ -889,12 +912,12 @@ out:
 /* NULL is returned if the built path is too large.        */
 /* ======================================================= */
 char *
-make_ini_path(char * name, char * base)
+make_ini_path(char *name, char *base)
 {
-  char * path;
-  char * home;
-  long   path_max;
-  long   len;
+  char *path;
+  char *home;
+  long  path_max;
+  long  len;
 
   /* Set the prefix of the path from the environment */
   /* base can be "HOME" or "PWD".                    */
@@ -912,7 +935,7 @@ make_ini_path(char * name, char * base)
 
   if (len <= path_max)
   {
-    char * conf;
+    char *conf;
 
     path = xmalloc(len);
     conf = strrchr(name, '/');
@@ -940,10 +963,10 @@ make_ini_path(char * name, char * base)
 /* equal to the second and 1 if it is greater than the second.         */
 /* =================================================================== */
 int
-tag_comp(void const * a, void const * b)
+tag_comp(void const *a, void const *b)
 {
-  output_t * oa = (output_t *)a;
-  output_t * ob = (output_t *)b;
+  output_t *oa = (output_t *)a;
+  output_t *ob = (output_t *)b;
 
   if (oa->order == ob->order)
     return 0;
@@ -955,13 +978,13 @@ tag_comp(void const * a, void const * b)
 /* Swap the values of two selected words in the output list. */
 /* ========================================================= */
 void
-tag_swap(void ** a, void ** b)
+tag_swap(void **a, void **b)
 {
-  output_t * oa = (output_t *)*a;
-  output_t * ob = (output_t *)*b;
+  output_t *oa = (output_t *)*a;
+  output_t *ob = (output_t *)*b;
 
-  char * tmp_str;
-  long   tmp_order;
+  char *tmp_str;
+  long  tmp_order;
 
   tmp_str        = oa->output_str;
   oa->output_str = ob->output_str;
@@ -984,7 +1007,7 @@ tag_swap(void ** a, void ** b)
 sub_tst_t *
 sub_tst_new(void)
 {
-  sub_tst_t * elem = xmalloc(sizeof(sub_tst_t));
+  sub_tst_t *elem = xmalloc(sizeof(sub_tst_t));
 
   elem->size  = 64;
   elem->count = 0;
@@ -997,7 +1020,7 @@ sub_tst_new(void)
 /* Emit a small (visual) beep warn the user. */
 /* ========================================= */
 void
-my_beep(toggle_t * toggles)
+my_beep(toggle_t *toggles)
 {
   struct timespec ts, rem;
 
@@ -1030,7 +1053,7 @@ my_beep(toggle_t * toggles)
 /* Return 1 if par is the representation of an integer else return 0. */
 /* ================================================================== */
 int
-check_integer_constraint(int nb_args, char ** args, char * value, char * par)
+check_integer_constraint(int nb_args, char **args, char *value, char *par)
 {
   if (!is_integer(value))
   {
@@ -1053,37 +1076,38 @@ check_integer_constraint(int nb_args, char ** args, char * value, char * par)
 /*          the start, the end or if we just don't care.                   */
 /* ======================================================================= */
 void
-update_bitmaps(search_mode_t mode, search_data_t * data,
+update_bitmaps(search_mode_t     mode,
+               search_data_t    *data,
                bitmap_affinity_t affinity)
 {
-  long i, j, n; /* work variables.                                        */
+  long i, j, n; /* work variables.                                       */
 
-  long bm_len; /* number of chars taken by the bit mask.                  */
+  long bm_len; /* number of chars taken by the bit mask.                 */
 
-  char * start; /* pointer on the position of the matching position       *
-                 | of the last search buffer glyph in the word.           */
+  char *start; /* pointer on the position of the matching position       *
+                | of the last search buffer glyph in the word.           */
 
-  char * bm; /* the word's current bitmap.                                */
+  char *bm; /* the word's current bitmap.                                */
 
-  char * str;      /* copy of the current word put in lower case.         */
-  char * str_orig; /* original version of the word.                       */
+  char *str;      /* copy of the current word put in lower case.         */
+  char *str_orig; /* original version of the word.                       */
 
-  char * sb_orig = data->buf; /* sb: search buffer.                       */
+  char *sb_orig = data->buf; /* sb: search buffer.                       */
 
-  long * o    = data->utf8_off_a;   /* array of the offsets of the search *
-                                     | buffer glyphs.                     */
-  long * l    = data->utf8_len_a;   /* array of the lengths in bytes of   *
-                                     | the search buffer glyphs.          */
-  long   last = data->utf8_len - 1; /* offset of the last glyph in the    *
-                                     | search buffer.                     */
+  long *o    = data->utf8_off_a;   /* array of the offsets of the search *
+                                    | buffer glyphs.                     */
+  long *l    = data->utf8_len_a;   /* array of the lengths in bytes of   *
+                                    | the search buffer glyphs.          */
+  long  last = data->utf8_len - 1; /* offset of the last glyph in the    *
+                                    | search buffer.                     */
 
   best_matches_count = 0;
 
   if (mode == FUZZY || mode == SUBSTRING)
   {
-    char * sb;
-    char * first_glyph;
-    long   badness = 0; /* number of 0s between two 1s. */
+    char *sb;
+    char *first_glyph;
+    long  badness = 0; /* number of 0s between two 1s. */
 
     first_glyph = xmalloc(5);
 
@@ -1127,8 +1151,8 @@ update_bitmaps(search_mode_t mode, search_data_t * data,
       start = str;
       lmg   = 0;
 
-      /* start points to the first UTF-8 glyph of the word. */
-      /* """"""""""""""""""""""""""""""""""""""""""""""""""" */
+      /* Start points to the first UTF-8 glyph of the word. */
+      /* """""""""""""""""""""""""""""""""""""""""""""""""" */
       while ((size_t)(start - str) < word_a[n].len - daccess.flength)
       {
         /* Reset the bitmap. */
@@ -1141,10 +1165,10 @@ update_bitmaps(search_mode_t mode, search_data_t * data,
         /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
         if (memcmp(start, sb + o[last], l[last]) == 0)
         {
-          char * p; /* Pointer to the beginning of an UTF-8 glyph in *
-                     | the potential lowercase version of the word.  */
+          char *p; /* Pointer to the beginning of an UTF-8 glyph in *
+                    | the potential lowercase version of the word.  */
 
-          long sg; /* index going from lmg backward to 0 of the tested *
+          long sg; /* Index going from lmg backward to 0 of the tested *
                     | glyphs of the search buffer (searched glyph).    */
 
           if (last == 0)
@@ -1220,7 +1244,9 @@ update_bitmaps(search_mode_t mode, search_data_t * data,
             if (!isblank(*(word_a[n].str + daccess.flength + i)))
               break;
 
-          first_glyph = utf8_strprefix(first_glyph, word_a[n].str + i, 1,
+          first_glyph = utf8_strprefix(first_glyph,
+                                       word_a[n].str + i,
+                                       1,
                                        &utf8_len);
 
           if (!BIT_ISSET(word_a[n].bitmap, i))
@@ -1332,7 +1358,7 @@ update_bitmaps(search_mode_t mode, search_data_t * data,
 /* Set the value of index to -1 and returns -1 if not found. */
 /* ========================================================= */
 long
-find_next_matching_word(long * array, long nb, long value, long * index)
+find_next_matching_word(long *array, long nb, long value, long *index)
 {
   /* Use the cached value when possible. */
   /* """"""""""""""""""""""""""""""""""" */
@@ -1381,7 +1407,7 @@ find_next_matching_word(long * array, long nb, long value, long * index)
 /* set the value of index to -1 and returns -1 if not found.  */
 /* ========================================================== */
 long
-find_prev_matching_word(long * array, long nb, long value, long * index)
+find_prev_matching_word(long *array, long nb, long value, long *index)
 {
   /* Use the cached value when possible. */
   /* """"""""""""""""""""""""""""""""""" */
@@ -1435,7 +1461,7 @@ find_prev_matching_word(long * array, long nb, long value, long * index)
 /* Remove all traces of matched words and redisplay the windows. */
 /* ============================================================= */
 void
-clean_matches(search_data_t * search_data, long size)
+clean_matches(search_data_t *search_data, long size)
 {
   long i;
 
@@ -1444,8 +1470,8 @@ clean_matches(search_data_t * search_data, long size)
   /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
   if (tst_search_list)
   {
-    ll_node_t * fuzzy_node;
-    sub_tst_t * sub_tst_data;
+    ll_node_t *fuzzy_node;
+    sub_tst_t *sub_tst_data;
 
     fuzzy_node = tst_search_list->tail;
 
@@ -1482,7 +1508,8 @@ clean_matches(search_data_t * search_data, long size)
 
     word_a[n].is_matching = 0;
 
-    memset(word_a[n].bitmap, '\0',
+    memset(word_a[n].bitmap,
+           '\0',
            (word_a[n].mb - daccess.flength) / CHAR_BIT + 1);
   }
 
@@ -1513,8 +1540,9 @@ outch(int c)
 /* wait for at least one byte, no timeout.         */
 /* =============================================== */
 void
-setup_term(int const fd, struct termios * old_in_attrs,
-           struct termios * new_in_attrs)
+setup_term(int const       fd,
+           struct termios *old_in_attrs,
+           struct termios *new_in_attrs)
 {
   int error;
 
@@ -1543,7 +1571,7 @@ setup_term(int const fd, struct termios * old_in_attrs,
 /* Set the terminal in its previous mode. */
 /* ====================================== */
 void
-restore_term(int const fd, struct termios * old_in_attrs)
+restore_term(int const fd, struct termios *old_in_attrs)
 {
   int error;
 
@@ -1562,7 +1590,7 @@ restore_term(int const fd, struct termios * old_in_attrs)
 /* Defaults to 80x24.                             */
 /* ============================================== */
 void
-get_terminal_size(int * const r, int * const c, term_t * term)
+get_terminal_size(int * const r, int * const c, term_t *term)
 {
   struct winsize ws;
 
@@ -1596,8 +1624,8 @@ get_terminal_size(int * const r, int * const c, term_t * term)
 int
 get_cursor_position(int * const r, int * const c)
 {
-  char   buf[32] = { 0 };
-  char * s;
+  char  buf[32] = { 0 };
+  char *s;
 
   int attempts = 64;
   int v;
@@ -1661,7 +1689,7 @@ read:
 /* TODO: take all UTF-8 spaces into account.              */
 /* ====================================================== */
 int
-isempty(const char * s)
+isempty(const char *s)
 {
   while (*s != '\0')
   {
@@ -1681,9 +1709,9 @@ isempty(const char * s)
 /* regex_list     (out) regex list to modify.                               */
 /* ======================================================================== */
 void
-parse_regex_selector_part(char * str, ll_t ** regex_list)
+parse_regex_selector_part(char *str, ll_t **regex_list)
 {
-  regex_t * regex;
+  regex_t *regex;
 
   /* Remove the last character of str (the delimiter).*/
   /* """""""""""""""""""""""""""""""""""""""""""""""" */
@@ -1709,10 +1737,10 @@ parse_regex_selector_part(char * str, ll_t ** regex_list)
 /* Returns 0 is the two elements are equals otherwise returns 1.     */
 /* ================================================================= */
 int
-attr_elem_cmp(void const * a, void const * b)
+attr_elem_cmp(void const *a, void const *b)
 {
-  const attr_elem_t * ai = a;
-  const attr_elem_t * bi = b;
+  const attr_elem_t *ai = a;
+  const attr_elem_t *bi = b;
 
   if (ai->attr->fg != bi->attr->fg)
     return 1;
@@ -1777,27 +1805,37 @@ attr_elem_cmp(void const * a, void const * b)
 /*                         a given attribute.                            */
 /* ===================================================================== */
 void
-parse_selectors(char * str, filters_t * filter, char ** unparsed,
-                ll_t ** inc_interval_list, ll_t ** inc_regex_list,
-                ll_t ** exc_interval_list, ll_t ** exc_regex_list,
-                ll_t ** al_interval_list, ll_t ** al_regex_list,
-                ll_t ** ar_interval_list, ll_t ** ar_regex_list,
-                ll_t ** ac_interval_list, ll_t ** ac_regex_list,
-                ll_t ** at_interval_list, ll_t ** at_regex_list,
-                alignment_t * default_alignment, win_t * win, misc_t * misc,
-                term_t * term)
+parse_selectors(char        *str,
+                filters_t   *filter,
+                char       **unparsed,
+                ll_t       **inc_interval_list,
+                ll_t       **inc_regex_list,
+                ll_t       **exc_interval_list,
+                ll_t       **exc_regex_list,
+                ll_t       **al_interval_list,
+                ll_t       **al_regex_list,
+                ll_t       **ar_interval_list,
+                ll_t       **ar_regex_list,
+                ll_t       **ac_interval_list,
+                ll_t       **ac_regex_list,
+                ll_t       **at_interval_list,
+                ll_t       **at_regex_list,
+                alignment_t *default_alignment,
+                win_t       *win,
+                misc_t      *misc,
+                term_t      *term)
 {
-  char          c;
-  long          start = 1;     /* column string offset in the parsed string. */
-  long          first, second; /* range starting and ending values.          */
-  int           l_open_range;  /* 1 if the range is left-open.               */
-  int           r_open_range;  /* 1 if the range is right-open.              */
-  char *        ptr;           /* pointer to the remaining string to parse.  */
-  interval_t *  interval;
-  selector_t    type;
-  char *        attr_str = NULL;
-  attrib_t *    attr;
-  attr_elem_t * attr_elem;
+  char         c;
+  long         start = 1;     /* column string offset in the parsed string. */
+  long         first, second; /* range starting and ending values.          */
+  int          l_open_range;  /* 1 if the range is left-open.               */
+  int          r_open_range;  /* 1 if the range is right-open.              */
+  char        *ptr;           /* pointer to the remaining string to parse.  */
+  interval_t  *interval;
+  selector_t   type;
+  char        *attr_str = NULL;
+  attrib_t    *attr;
+  attr_elem_t *attr_elem;
 
   /* Replace the UTF-8 string representation in the selector by */
   /* their binary values.                                       */
@@ -1911,10 +1949,10 @@ parse_selectors(char * str, filters_t * filter, char ** unparsed,
   /* """""""""""""""""""""""""""""""" */
   while (*ptr)
   {
-    int    is_range = 0;
-    char   delim1, delim2 = '\0';
-    char * oldptr;
-    char * colon = NULL;
+    int   is_range = 0;
+    char  delim1, delim2 = '\0';
+    char *oldptr;
+    char *colon = NULL;
 
     l_open_range = r_open_range = 0;
     first = second = -1;
@@ -2053,17 +2091,17 @@ parse_selectors(char * str, filters_t * filter, char ** unparsed,
           /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""" */
           if (*at_regex_list == NULL) /* The list doesn't already exists. */
           {
-            *at_regex_list     = ll_new();
-            attr_elem_t * elem = xmalloc(sizeof(attr_elem_t));
-            elem->attr         = attr;
-            elem->list         = NULL;
+            *at_regex_list    = ll_new();
+            attr_elem_t *elem = xmalloc(sizeof(attr_elem_t));
+            elem->attr        = attr;
+            elem->list        = NULL;
             parse_regex_selector_part(str + start, &elem->list);
             ll_append(*at_regex_list, elem);
           }
           else
           {
             attr_elem_t e;
-            ll_node_t * node;
+            ll_node_t  *node;
             e.attr = attr;
             /* Update the list of regex of the attribute attr. */
             /* """"""""""""""""""""""""""""""""""""""""""""""" */
@@ -2075,9 +2113,9 @@ parse_selectors(char * str, filters_t * filter, char ** unparsed,
             }
             else
             {
-              attr_elem_t * elem = xmalloc(sizeof(attr_elem_t));
-              elem->attr         = attr;
-              elem->list         = NULL;
+              attr_elem_t *elem = xmalloc(sizeof(attr_elem_t));
+              elem->attr        = attr;
+              elem->list        = NULL;
               parse_regex_selector_part(str + start, &elem->list);
               ll_append(*at_regex_list, elem);
             }
@@ -2307,7 +2345,7 @@ parse_selectors(char * str, filters_t * filter, char ** unparsed,
           }
           else
           {
-            ll_node_t * node;
+            ll_node_t *node;
             if ((node = ll_find(*at_interval_list, attr_elem, attr_elem_cmp))
                 != NULL)
             {
@@ -2354,13 +2392,17 @@ parse_selectors(char * str, filters_t * filter, char ** unparsed,
 /* misc              (in)  used by utf8_interpret.                       */
 /* ===================================================================== */
 void
-parse_al_selectors(char * str, char ** unparsed, ll_t ** al_regex_list,
-                   ll_t ** ar_regex_list, ll_t ** ac_regex_list,
-                   alignment_t * default_alignment, misc_t * misc)
+parse_al_selectors(char        *str,
+                   char       **unparsed,
+                   ll_t       **al_regex_list,
+                   ll_t       **ar_regex_list,
+                   ll_t       **ac_regex_list,
+                   alignment_t *default_alignment,
+                   misc_t      *misc)
 {
   char   c;
   size_t start = 1; /* column string offset in the parsed string. */
-  char * ptr;       /* pointer to the remaining string to parse.  */
+  char  *ptr;       /* pointer to the remaining string to parse.  */
   int    type;
 
   /* Replace the UTF-8 string representation in the selector by */
@@ -2427,8 +2469,8 @@ parse_al_selectors(char * str, char ** unparsed, ll_t ** al_regex_list,
   /* """""""""""""""""""""""""""""""" */
   while (*ptr)
   {
-    char   delim1, delim2 = '\0';
-    char * oldptr;
+    char  delim1, delim2 = '\0';
+    char *oldptr;
 
     oldptr = ptr;
     while (*ptr && *ptr != ',')
@@ -2520,12 +2562,12 @@ parse_al_selectors(char * str, char ** unparsed, ll_t ** al_regex_list,
 /* Return 1 on success and 0 on error.                       */
 /* ========================================================= */
 int
-parse_sed_like_string(sed_t * sed)
+parse_sed_like_string(sed_t *sed)
 {
   char          sep;
-  char *        first_sep_pos;
-  char *        last_sep_pos;
-  char *        buf;
+  char         *first_sep_pos;
+  char         *last_sep_pos;
+  char         *buf;
   long          index;
   unsigned char icase;
   char          c;
@@ -2589,7 +2631,8 @@ parse_sed_like_string(sed_t * sed)
 
   /* Compile the regular expression and abort on failure. */
   /* """""""""""""""""""""""""""""""""""""""""""""""""""" */
-  if (regcomp(&(sed->re), buf + 1,
+  if (regcomp(&(sed->re),
+              buf + 1,
               !icase ? REG_EXTENDED : (REG_EXTENDED | REG_ICASE))
       != 0)
     goto err;
@@ -2623,12 +2666,18 @@ err:
 /* The modified string according to the content of repl.                 */
 /* ===================================================================== */
 char *
-build_repl_string(char * orig, char * repl, long match_start, long match_end,
-                  range_t * subs_a, long subs_nb, long match, int * error)
+build_repl_string(char    *orig,
+                  char    *repl,
+                  long     match_start,
+                  long     match_end,
+                  range_t *subs_a,
+                  long     subs_nb,
+                  long     match,
+                  int     *error)
 {
   size_t allocated = 16;
   size_t rsize     = 0;
-  char * str       = xmalloc(allocated);
+  char  *str       = xmalloc(allocated);
   int    special   = 0;
   long   offset    = match * subs_nb; /* offset of the 1st sub       *
                                        | corresponding to the match. */
@@ -2775,7 +2824,7 @@ build_repl_string(char * orig, char * repl, long match_start, long match_end,
 /* uses the global variable word_buffer.                                  */
 /* ====================================================================== */
 int
-replace(char * orig, sed_t * sed)
+replace(char *orig, sed_t *sed)
 {
   size_t match_nb   = 0; /* number of matches in the original string. */
   int    sub_nb     = 0; /* number of remembered matches in the       *
@@ -2786,12 +2835,12 @@ replace(char * orig, sed_t * sed)
   if (*orig == '\0')
     return 1;
 
-  range_t * matches_a = xmalloc(strlen(orig) * sizeof(range_t));
-  range_t * subs_a    = xmalloc(10 * sizeof(range_t));
+  range_t *matches_a = xmalloc(strlen(orig) * sizeof(range_t));
+  range_t *subs_a    = xmalloc(10 * sizeof(range_t));
 
-  const char * p = orig; /* points to the end of the previous match. */
-  regmatch_t   m[10];    /* array containing the start/end offsets   *
-                          | of the matches found.                    */
+  const char *p = orig; /* points to the end of the previous match. */
+  regmatch_t  m[10];    /* array containing the start/end offsets   *
+                         | of the matches found.                    */
 
   while (1)
   {
@@ -2799,7 +2848,7 @@ replace(char * orig, sed_t * sed)
     size_t match;       /* current match index.                        */
     size_t index   = 0; /* current char index in the original string.  */
     int    nomatch = 0; /* equals to 1 when there is no more matching. */
-    char * exp_repl;    /* expanded replacement string.                */
+    char  *exp_repl;    /* expanded replacement string.                */
 
     if (*p == '\0')
       nomatch = 1;
@@ -2819,10 +2868,14 @@ replace(char * orig, sed_t * sed)
           size_t end;
           int    error;
 
-          exp_repl = build_repl_string(orig, sed->substitution,
+          exp_repl = build_repl_string(orig,
+                                       sed->substitution,
                                        matches_a[match].start,
-                                       matches_a[match].end, subs_a, subs_max,
-                                       match, &error);
+                                       matches_a[match].end,
+                                       subs_a,
+                                       subs_max,
+                                       match,
+                                       &error);
 
           if (error)
           {
@@ -2913,10 +2966,10 @@ fail:
 /* Memory space for d must have been allocated before.          */
 /* ============================================================ */
 void
-strip_ansi_color(char * s, toggle_t * toggles, misc_t * misc)
+strip_ansi_color(char *s, toggle_t *toggles, misc_t *misc)
 {
-  char * p   = s;
-  long   len = strlen(s);
+  char *p   = s;
+  long  len = strlen(s);
 
   while (*s != '\0')
   {
@@ -2953,11 +3006,11 @@ strip_ansi_color(char * s, toggle_t * toggles, misc_t * misc)
 /* Always succeeds and returns 1.                                     */
 /* ================================================================== */
 int
-set_matching_flag(void * elem)
+set_matching_flag(void *elem)
 {
-  ll_t * list = (ll_t *)elem;
+  ll_t *list = (ll_t *)elem;
 
-  ll_node_t * node = list->head;
+  ll_node_t *node = list->head;
 
   while (node)
   {
@@ -2967,8 +3020,10 @@ set_matching_flag(void * elem)
     if (word_a[pos].is_selectable)
       word_a[pos].is_matching = 1;
 
-    insert_sorted_index(&matching_words_a, &matching_words_a_size,
-                        &matches_count, pos);
+    insert_sorted_index(&matching_words_a,
+                        &matching_words_a_size,
+                        &matches_count,
+                        pos);
 
     node = node->next;
   }
@@ -2987,15 +3042,15 @@ set_matching_flag(void * elem)
 /* Always succeeds and returns 1.                                          */
 /* ======================================================================= */
 int
-tst_cb(void * elem)
+tst_cb(void *elem)
 {
   /* The data attached to the string in the tst is a linked list of   */
   /* position of the string in the input flow, This list is naturally */
   /* sorted.                                                          */
   /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-  ll_t * list = (ll_t *)elem;
+  ll_t *list = (ll_t *)elem;
 
-  ll_node_t * node = list->head;
+  ll_node_t *node = list->head;
 
   while (node)
   {
@@ -3004,8 +3059,10 @@ tst_cb(void * elem)
     pos = *(long *)(node->data);
 
     word_a[pos].is_matching = 1;
-    insert_sorted_index(&matching_words_a, &matching_words_a_size,
-                        &matches_count, pos);
+    insert_sorted_index(&matching_words_a,
+                        &matching_words_a_size,
+                        &matches_count,
+                        pos);
 
     node = node->next;
   }
@@ -3024,7 +3081,7 @@ tst_cb(void * elem)
 /* in main.                                                              */
 /* ===================================================================== */
 int
-get_scancode(unsigned char * s, size_t max)
+get_scancode(unsigned char *s, size_t max)
 {
   int            c;
   size_t         i = 1;
@@ -3093,7 +3150,7 @@ get_scancode(unsigned char * s, size_t max)
 /* Helper function to compare to delimiters for use by ll_find. */
 /* ============================================================ */
 int
-buffer_cmp(const void * a, const void * b)
+buffer_cmp(const void *a, const void *b)
 {
   return strcmp((const char *)a, (const char *)b);
 }
@@ -3105,8 +3162,11 @@ buffer_cmp(const void * a, const void * b)
 /* the character.                                                        */
 /* ===================================================================== */
 int
-get_bytes(FILE * input, char * utf8_buffer, ll_t * zapped_glyphs_list,
-          langinfo_t * langinfo, misc_t * misc)
+get_bytes(FILE       *input,
+          char       *utf8_buffer,
+          ll_t       *zapped_glyphs_list,
+          langinfo_t *langinfo,
+          misc_t     *misc)
 {
   int byte;
   int last;
@@ -3166,13 +3226,16 @@ get_bytes(FILE * input, char * utf8_buffer, ll_t * zapped_glyphs_list,
 /* Return the number of resulting glyphs.                                 */
 /* ====================================================================== */
 size_t
-expand(char * src, char * dest, langinfo_t * langinfo, toggle_t * toggles,
-       misc_t * misc)
+expand(char       *src,
+       char       *dest,
+       langinfo_t *langinfo,
+       toggle_t   *toggles,
+       misc_t     *misc)
 {
   char   c;
   int    n;
   int    all_spaces = 1;
-  char * ptr        = dest;
+  char  *ptr        = dest;
   size_t len        = 0;
 
   while ((c = *(src++)))
@@ -3291,12 +3354,19 @@ expand(char * src, char * dest, langinfo_t * langinfo, toggle_t * toggles,
 /*    On Failure: the return value will be set to NULL.                  */
 /* ===================================================================== */
 char *
-get_word(FILE * input, ll_t * word_delims_list, ll_t * line_delims_list,
-         ll_t * zapped_glyphs_list, char * utf8_buffer, unsigned char * is_last,
-         toggle_t * toggles, langinfo_t * langinfo, win_t * win,
-         limit_t * limits, misc_t * misc)
+get_word(FILE          *input,
+         ll_t          *word_delims_list,
+         ll_t          *line_delims_list,
+         ll_t          *zapped_glyphs_list,
+         char          *utf8_buffer,
+         unsigned char *is_last,
+         toggle_t      *toggles,
+         langinfo_t    *langinfo,
+         win_t         *win,
+         limit_t       *limits,
+         misc_t        *misc)
 {
-  char *        temp = NULL;
+  char         *temp = NULL;
   int           byte;
   long          utf8_count = 0; /* count chars used in current allocation. */
   long          wordsize;       /* size of current allocation in chars.    */
@@ -3526,7 +3596,7 @@ color_transcode(short color)
 /* Set a foreground color according to terminal capabilities. */
 /* ========================================================== */
 void
-set_foreground_color(term_t * term, short color)
+set_foreground_color(term_t *term, short color)
 {
   if (term->color_method == CLASSIC)
   {
@@ -3549,7 +3619,7 @@ set_foreground_color(term_t * term, short color)
 /* Set a background color according to terminal capabilities. */
 /* ========================================================== */
 void
-set_background_color(term_t * term, short color)
+set_background_color(term_t *term, short color)
 {
   if (term->color_method == CLASSIC)
   {
@@ -3572,7 +3642,7 @@ set_background_color(term_t * term, short color)
 /* Put a scrolling symbol at the first column of the line. */
 /* ======================================================= */
 void
-left_margin_putp(char * s, term_t * term, win_t * win)
+left_margin_putp(char *s, term_t *term, win_t *win)
 {
   apply_attr(term, win->shift_attr);
 
@@ -3588,21 +3658,29 @@ left_margin_putp(char * s, term_t * term, win_t * win)
 /* Put a scrolling symbol at the last column of the line. */
 /* ====================================================== */
 void
-right_margin_putp(char * s1, char * s2, langinfo_t * langinfo, term_t * term,
-                  win_t * win, long line, long offset)
+right_margin_putp(char       *s1,
+                  char       *s2,
+                  langinfo_t *langinfo,
+                  term_t     *term,
+                  win_t      *win,
+                  long        line,
+                  long        offset)
 {
   apply_attr(term, win->bar_attr);
 
   if (term->has_hpa)
     (void)tputs(TPARM2(column_address, offset + win->max_width + 1), 1, outch);
   else if (term->has_cursor_address)
-    (void)tputs(TPARM3(cursor_address, term->curs_line + line - 2,
+    (void)tputs(TPARM3(cursor_address,
+                       term->curs_line + line - 2,
                        offset + win->max_width + 1),
-                1, outch);
+                1,
+                outch);
   else if (term->has_parm_right_cursor)
   {
     fputc_safe('\r', stdout);
-    (void)tputs(TPARM2(parm_right_cursor, offset + win->max_width + 1), 1,
+    (void)tputs(TPARM2(parm_right_cursor, offset + win->max_width + 1),
+                1,
                 outch);
   }
   else
@@ -3633,14 +3711,16 @@ right_margin_putp(char * s1, char * s2, langinfo_t * langinfo, term_t * term,
 /* of bytes of the longest line.                                  */
 /* ============================================================== */
 void
-get_message_lines(char * message, ll_t * message_lines_list,
-                  long * message_max_width, long * message_max_len)
+get_message_lines(char *message,
+                  ll_t *message_lines_list,
+                  long *message_max_width,
+                  long *message_max_len)
 {
-  char *    str;
-  char *    ptr;
-  char *    cr_ptr;
-  long      n;
-  wchar_t * w = NULL;
+  char    *str;
+  char    *ptr;
+  char    *cr_ptr;
+  long     n;
+  wchar_t *w = NULL;
 
   *message_max_width = 0;
   *message_max_len   = 0;
@@ -3705,7 +3785,7 @@ get_message_lines(char * message, ll_t * message_lines_list,
 /* to the current cursor position.                                     */
 /* =================================================================== */
 void
-set_win_start_end(win_t * win, long current, long last)
+set_win_start_end(win_t *win, long current, long last)
 {
   long cur_line, end_line;
 
@@ -3741,16 +3821,16 @@ set_win_start_end(win_t * win, long current, long last)
 /* potentially when the search function is used.                            */
 /* ======================================================================== */
 long
-build_metadata(term_t * term, long count, win_t * win)
+build_metadata(term_t *term, long count, win_t *win)
 {
-  long      i = 0;
-  long      word_len;
-  long      len  = 0;
-  long      last = 0;
-  long      word_width; /* Number of screen positions taken by the word. */
-  long      tab_count;  /* Current number of words in the line, used in  *
+  long     i = 0;
+  long     word_len;
+  long     len  = 0;
+  long     last = 0;
+  long     word_width; /* Number of screen positions taken by the word. */
+  long     tab_count;  /* Current number of words in the line, used in  *
                          | tab_mode.                                     */
-  wchar_t * w;
+  wchar_t *w;
 
   line_nb_of_word_a[0]    = 0;
   first_word_in_line_a[0] = 0;
@@ -3860,12 +3940,12 @@ build_metadata(term_t * term, long count, win_t * win)
 /* characters of the word highlighted.                                     */
 /* ======================================================================= */
 void
-disp_cursor_word(long pos, win_t * win, term_t * term, int err)
+disp_cursor_word(long pos, win_t *win, term_t *term, int err)
 {
   size_t i;
   int    att_set = 0;
-  char * p       = word_a[pos].str + daccess.flength;
-  char * np;
+  char  *p       = word_a[pos].str + daccess.flength;
+  char  *np;
 
   /* Set the cursor attribute. */
   /* """"""""""""""""""""""""" */
@@ -3958,13 +4038,12 @@ disp_cursor_word(long pos, win_t * win, term_t * term, int err)
 /* with the matching characters of the word highlighted.      */
 /* ========================================================== */
 void
-disp_matching_word(long pos, win_t * win, term_t * term, int is_current,
-                   int err)
+disp_matching_word(long pos, win_t *win, term_t *term, int is_current, int err)
 {
   size_t        i;
   int           att_set = 0;
-  char *        p       = word_a[pos].str + daccess.flength;
-  char *        np;
+  char         *p       = word_a[pos].str + daccess.flength;
+  char         *np;
   unsigned char level = 0;
 
   level = word_a[pos].special_level;
@@ -4072,14 +4151,19 @@ disp_matching_word(long pos, win_t * win, term_t * term, int is_current,
 /* - Color or mono display                                                */
 /* ====================================================================== */
 void
-disp_word(long pos, search_mode_t search_mode, search_data_t * search_data,
-          term_t * term, win_t * win, toggle_t * toggles, char * tmp_word)
+disp_word(long           pos,
+          search_mode_t  search_mode,
+          search_data_t *search_data,
+          term_t        *term,
+          win_t         *win,
+          toggle_t      *toggles,
+          char          *tmp_word)
 {
   long s = word_a[pos].start;
   long e = word_a[pos].end;
   long p;
 
-  char * buffer = search_data->buf;
+  char *buffer = search_data->buf;
 
   if (pos == current)
   {
@@ -4284,19 +4368,22 @@ disp_word(long pos, search_mode_t search_mode, search_data_t * search_data,
 /* Display a message above the window. */
 /* =================================== */
 void
-disp_message(ll_t * message_lines_list, long message_max_width,
-             long message_max_len, term_t * term, win_t * win,
-             langinfo_t * langinfo)
+disp_message(ll_t       *message_lines_list,
+             long        message_max_width,
+             long        message_max_len,
+             term_t     *term,
+             win_t      *win,
+             langinfo_t *langinfo)
 {
-  ll_node_t * node;
-  char *      line;
-  char *      buf;
-  size_t      len;
-  long        size;
-  long        offset;
-  wchar_t *   w;
-  int         n   = 0; /* Counter used to display message lines. */
-  int         cut = 0; /* Will be 1 if the message is shortened. */
+  ll_node_t *node;
+  char      *line;
+  char      *buf;
+  size_t     len;
+  long       size;
+  long       offset;
+  wchar_t   *w;
+  int        n   = 0; /* Counter used to display message lines. */
+  int        cut = 0; /* Will be 1 if the message is shortened. */
 
   sigset_t mask;
 
@@ -4414,10 +4501,16 @@ disp_message(ll_t * message_lines_list, long message_max_width,
 /* Display the selection window. */
 /* ============================= */
 long
-disp_lines(win_t * win, toggle_t * toggles, long current, long count,
-           search_mode_t search_mode, search_data_t * search_data,
-           term_t * term, long last_line, char * tmp_word,
-           langinfo_t * langinfo)
+disp_lines(win_t         *win,
+           toggle_t      *toggles,
+           long           current,
+           long           count,
+           search_mode_t  search_mode,
+           search_data_t *search_data,
+           term_t        *term,
+           long           last_line,
+           char          *tmp_word,
+           langinfo_t    *langinfo)
 {
   long lines_disp;
   long i;
@@ -4590,33 +4683,68 @@ disp_lines(win_t * win, toggle_t * toggles, long current, long count,
           if (line_nb_of_word_a[i] == 0)
           {
             if (win->max_lines > 1)
-              right_margin_putp(sbar_top, "\\", langinfo, term, win, lines_disp,
+              right_margin_putp(sbar_top,
+                                "\\",
+                                langinfo,
+                                term,
+                                win,
+                                lines_disp,
                                 win->offset);
             else
-              right_margin_putp(sbar_arr_down, "^", langinfo, term, win,
-                                lines_disp, win->offset);
+              right_margin_putp(sbar_arr_down,
+                                "^",
+                                langinfo,
+                                term,
+                                win,
+                                lines_disp,
+                                win->offset);
           }
           else if (lines_disp == 1)
-            right_margin_putp(sbar_arr_up, "^", langinfo, term, win, lines_disp,
+            right_margin_putp(sbar_arr_up,
+                              "^",
+                              langinfo,
+                              term,
+                              win,
+                              lines_disp,
                               win->offset);
           else if (line_nb_of_word_a[i] == last_line)
           {
             if (win->max_lines > 1)
-              right_margin_putp(sbar_down, "/", langinfo, term, win, lines_disp,
+              right_margin_putp(sbar_down,
+                                "/",
+                                langinfo,
+                                term,
+                                win,
+                                lines_disp,
                                 win->offset);
             else
-              right_margin_putp(sbar_arr_up, "^", langinfo, term, win,
-                                lines_disp, win->offset);
+              right_margin_putp(sbar_arr_up,
+                                "^",
+                                langinfo,
+                                term,
+                                win,
+                                lines_disp,
+                                win->offset);
           }
           else if (last_line + 1 > win->max_lines
                    && (long)((float)(line_nb_of_word_a[current])
                                / (last_line + 1) * (win->max_lines - 2)
                              + 2)
                         == lines_disp)
-            right_margin_putp(sbar_curs, "+", langinfo, term, win, lines_disp,
+            right_margin_putp(sbar_curs,
+                              "+",
+                              langinfo,
+                              term,
+                              win,
+                              lines_disp,
                               win->offset);
           else
-            right_margin_putp(sbar_line, "|", langinfo, term, win, lines_disp,
+            right_margin_putp(sbar_line,
+                              "|",
+                              langinfo,
+                              term,
+                              win,
+                              lines_disp,
                               win->offset);
         }
 
@@ -4664,18 +4792,33 @@ disp_lines(win_t * win, toggle_t * toggles, long current, long count,
           if (!toggles->no_scrollbar)
           {
             if (win->max_lines > 1)
-              right_margin_putp(sbar_down, "/", langinfo, term, win, lines_disp,
+              right_margin_putp(sbar_down,
+                                "/",
+                                langinfo,
+                                term,
+                                win,
+                                lines_disp,
                                 win->offset);
             else
-              right_margin_putp(sbar_arr_up, "^", langinfo, term, win,
-                                lines_disp, win->offset);
+              right_margin_putp(sbar_arr_up,
+                                "^",
+                                langinfo,
+                                term,
+                                win,
+                                lines_disp,
+                                win->offset);
           }
         }
         else
         {
           if (display_bar && !toggles->no_scrollbar)
-            right_margin_putp(sbar_arr_down, "v", langinfo, term, win,
-                              lines_disp, win->offset);
+            right_margin_putp(sbar_arr_down,
+                              "v",
+                              langinfo,
+                              term,
+                              win,
+                              lines_disp,
+                              win->offset);
           break;
         }
       }
@@ -4794,7 +4937,7 @@ sig_handler(int s)
 /* Alter win->first_column.                                  */
 /* ========================================================= */
 void
-set_new_first_column(win_t * win, term_t * term)
+set_new_first_column(win_t *win, term_t *term)
 {
   long pos;
 
@@ -4825,19 +4968,21 @@ set_new_first_column(win_t * win, term_t * term)
 /* Restrict the matches to word ending with the pattern. */
 /* ===================================================== */
 void
-select_ending_matches(win_t * win, term_t * term, search_data_t * search_data,
-                      long * last_line)
+select_ending_matches(win_t         *win,
+                      term_t        *term,
+                      search_data_t *search_data,
+                      long          *last_line)
 {
   if (matches_count > 0)
   {
-    long   i;
-    long   j = 0;
-    long   index;
-    long   nb;
-    long * tmp;
-    char * ptr;
-    char * last_glyph;
-    int    utf8_len;
+    long  i;
+    long  j = 0;
+    long  index;
+    long  nb;
+    long *tmp;
+    char *ptr;
+    char *last_glyph;
+    int   utf8_len;
 
     /* Creation of an alternate array which will      */
     /* contain only the candidates having potentially */
@@ -4849,8 +4994,8 @@ select_ending_matches(win_t * win, term_t * term, search_data_t * search_data,
 
     for (i = 0; i < matches_count; i++)
     {
-      index      = matching_words_a[i];
-      char * str = word_a[index].str;
+      index     = matching_words_a[i];
+      char *str = word_a[index].str;
 
       /* count the trailing blanks non counted in the bitmap. */
       /* """""""""""""""""""""""""""""""""""""""""""""""""""" */
@@ -4890,7 +5035,8 @@ select_ending_matches(win_t * win, term_t * term, search_data_t * search_data,
           if (memcmp(ptr, last_glyph, utf8_len) == 0)
             alt_matching_words_a[j++] = index;
           else
-            memset(word_a[index].bitmap, '\0',
+            memset(word_a[index].bitmap,
+                   '\0',
                    (word_a[index].mb - daccess.flength) / CHAR_BIT + 1);
         }
         else
@@ -4902,7 +5048,8 @@ select_ending_matches(win_t * win, term_t * term, search_data_t * search_data,
           if (memcmp(ptr, search_data->buf, search_data->len) == 0)
             alt_matching_words_a[j++] = index;
           else
-            memset(word_a[index].bitmap, '\0',
+            memset(word_a[index].bitmap,
+                   '\0',
                    (word_a[index].mb - daccess.flength) / CHAR_BIT + 1);
         }
       }
@@ -4939,8 +5086,10 @@ select_ending_matches(win_t * win, term_t * term, search_data_t * search_data,
 /* Restrict the matches to word starting with the pattern. */
 /* ======================================================= */
 void
-select_starting_matches(win_t * win, term_t * term, search_data_t * search_data,
-                        long * last_line)
+select_starting_matches(win_t         *win,
+                        term_t        *term,
+                        search_data_t *search_data,
+                        long          *last_line)
 {
   if (matches_count > 0)
   {
@@ -4948,9 +5097,9 @@ select_starting_matches(win_t * win, term_t * term, search_data_t * search_data,
     long   j = 0;
     long   index;
     size_t nb;
-    long * tmp;
+    long  *tmp;
     long   pos;
-    char * first_glyph;
+    char  *first_glyph;
     int    utf8_len;
 
     alt_matching_words_a = xrealloc(alt_matching_words_a,
@@ -4975,7 +5124,8 @@ select_starting_matches(win_t * win, term_t * term, search_data_t * search_data,
         {
           first_glyph = utf8_strprefix(first_glyph,
                                        word_a[index].str + nb + daccess.flength,
-                                       1, &pos);
+                                       1,
+                                       &pos);
           utf8_len    = pos;
 
           /* in fuzzy search mode we only look the first glyph. */
@@ -4983,19 +5133,22 @@ select_starting_matches(win_t * win, term_t * term, search_data_t * search_data,
           if (memcmp(search_data->buf, first_glyph, utf8_len) == 0)
             alt_matching_words_a[j++] = index;
           else
-            memset(word_a[index].bitmap, '\0',
+            memset(word_a[index].bitmap,
+                   '\0',
                    (word_a[index].mb + nb - daccess.flength) / CHAR_BIT + 1);
         }
         else
         {
           /* in not fuzzy search mode use all the pattern. */
           /* """"""""""""""""""""""""""""""""""""""""""""" */
-          if (memcmp(search_data->buf, word_a[index].str + nb,
+          if (memcmp(search_data->buf,
+                     word_a[index].str + nb,
                      search_data->len - nb)
               == 0)
             alt_matching_words_a[j++] = index;
           else
-            memset(word_a[index].bitmap, '\0',
+            memset(word_a[index].bitmap,
+                   '\0',
                    (word_a[index].mb + nb - daccess.flength) / CHAR_BIT + 1);
         }
       }
@@ -5032,9 +5185,14 @@ select_starting_matches(win_t * win, term_t * term, search_data_t * search_data,
 /* Moves the cursor to the left. */
 /* ============================= */
 void
-move_left(win_t * win, term_t * term, toggle_t * toggles,
-          search_data_t * search_data, langinfo_t * langinfo, long * nl,
-          long last_line, char * tmp_word)
+move_left(win_t         *win,
+          term_t        *term,
+          toggle_t      *toggles,
+          search_data_t *search_data,
+          langinfo_t    *langinfo,
+          long          *nl,
+          long           last_line,
+          char          *tmp_word)
 {
   long old_current      = current;
   long old_start        = win->start;
@@ -5110,8 +5268,16 @@ move_left(win_t * win, term_t * term, toggle_t * toggles,
   }
 
   if (current != old_current)
-    *nl = disp_lines(win, toggles, current, count, search_mode, search_data,
-                     term, last_line, tmp_word, langinfo);
+    *nl = disp_lines(win,
+                     toggles,
+                     current,
+                     count,
+                     search_mode,
+                     search_data,
+                     term,
+                     last_line,
+                     tmp_word,
+                     langinfo);
 }
 
 /* ============================================ */
@@ -5119,9 +5285,15 @@ move_left(win_t * win, term_t * term, toggle_t * toggles,
 /* Stop if the cursor will stop to be visible.  */
 /* ============================================ */
 void
-shift_left(win_t * win, term_t * term, toggle_t * toggles,
-           search_data_t * search_data, langinfo_t * langinfo, long * nl,
-           long last_line, char * tmp_word, long line)
+shift_left(win_t         *win,
+           term_t        *term,
+           toggle_t      *toggles,
+           search_data_t *search_data,
+           langinfo_t    *langinfo,
+           long          *nl,
+           long           last_line,
+           char          *tmp_word,
+           long           line)
 {
   long pos;
   long len;
@@ -5156,17 +5328,30 @@ shift_left(win_t * win, term_t * term, toggle_t * toggles,
 
   win->first_column = word_a[pos].start;
 
-  *nl = disp_lines(win, toggles, current, count, search_mode, search_data, term,
-                   last_line, tmp_word, langinfo);
+  *nl = disp_lines(win,
+                   toggles,
+                   current,
+                   count,
+                   search_mode,
+                   search_data,
+                   term,
+                   last_line,
+                   tmp_word,
+                   langinfo);
 }
 
 /* ============================== */
 /* Moves the cursor to the right. */
 /* ============================== */
 void
-move_right(win_t * win, term_t * term, toggle_t * toggles,
-           search_data_t * search_data, langinfo_t * langinfo, long * nl,
-           long last_line, char * tmp_word)
+move_right(win_t         *win,
+           term_t        *term,
+           toggle_t      *toggles,
+           search_data_t *search_data,
+           langinfo_t    *langinfo,
+           long          *nl,
+           long           last_line,
+           char          *tmp_word)
 {
   long old_current      = current;
   long old_start        = win->start;
@@ -5255,8 +5440,16 @@ move_right(win_t * win, term_t * term, toggle_t * toggles,
   }
 
   if (current != old_current)
-    *nl = disp_lines(win, toggles, current, count, search_mode, search_data,
-                     term, last_line, tmp_word, langinfo);
+    *nl = disp_lines(win,
+                     toggles,
+                     current,
+                     count,
+                     search_mode,
+                     search_data,
+                     term,
+                     last_line,
+                     tmp_word,
+                     langinfo);
 }
 
 /* =========================================== */
@@ -5264,9 +5457,15 @@ move_right(win_t * win, term_t * term, toggle_t * toggles,
 /* Stop if the cursor will stop to be visible. */
 /* ============================================*/
 void
-shift_right(win_t * win, term_t * term, toggle_t * toggles,
-            search_data_t * search_data, langinfo_t * langinfo, long * nl,
-            long last_line, char * tmp_word, long line)
+shift_right(win_t         *win,
+            term_t        *term,
+            toggle_t      *toggles,
+            search_data_t *search_data,
+            langinfo_t    *langinfo,
+            long          *nl,
+            long           last_line,
+            char          *tmp_word,
+            long           line)
 {
   long pos;
 
@@ -5285,7 +5484,8 @@ shift_right(win_t * win, term_t * term, toggle_t * toggles,
     /* Search for at least one line not fully displayed. */
     /* ''''''''''''''''''''''''''''''''''''''''''''''''' */
     for (long l = line_nb_of_word_a[win->start];
-         l < line_nb_of_word_a[win->start] + win->max_lines; l++)
+         l < line_nb_of_word_a[win->start] + win->max_lines;
+         l++)
     {
       if (shift_right_sym_pos_a[l] == term->ncolumns) /* fully displayed. */
         continue;
@@ -5319,8 +5519,16 @@ shift_right(win_t * win, term_t * term, toggle_t * toggles,
   else
     return;
 
-  *nl = disp_lines(win, toggles, current, count, search_mode, search_data, term,
-                   last_line, tmp_word, langinfo);
+  *nl = disp_lines(win,
+                   toggles,
+                   current,
+                   count,
+                   search_mode,
+                   search_data,
+                   term,
+                   last_line,
+                   tmp_word,
+                   langinfo);
 }
 
 /* ================================================================== */
@@ -5495,9 +5703,16 @@ find_best_word_downwards(long last_word, long s, long e)
 /* Moves the cursor upwards. */
 /* ========================= */
 void
-move_up(win_t * win, term_t * term, toggle_t * toggles,
-        search_data_t * search_data, langinfo_t * langinfo, long * nl,
-        long page, long first_selectable, long last_line, char * tmp_word)
+move_up(win_t         *win,
+        term_t        *term,
+        toggle_t      *toggles,
+        search_data_t *search_data,
+        langinfo_t    *langinfo,
+        long          *nl,
+        long           page,
+        long           first_selectable,
+        long           last_line,
+        char          *tmp_word)
 {
   long line;                  /* The line being processed (target line).    */
   long start_line;            /* The first line of the window.              */
@@ -5650,17 +5865,32 @@ move_up(win_t * win, term_t * term, toggle_t * toggles,
 
   /* Redisplay the window. */
   /* """"""""""""""""""""" */
-  *nl = disp_lines(win, toggles, current, count, search_mode, search_data, term,
-                   last_line, tmp_word, langinfo);
+  *nl = disp_lines(win,
+                   toggles,
+                   current,
+                   count,
+                   search_mode,
+                   search_data,
+                   term,
+                   last_line,
+                   tmp_word,
+                   langinfo);
 }
 
 /* =========================== */
 /* Moves the cursor downwards. */
 /* =========================== */
 void
-move_down(win_t * win, term_t * term, toggle_t * toggles,
-          search_data_t * search_data, langinfo_t * langinfo, long * nl,
-          long page, long last_selectable, long last_line, char * tmp_word)
+move_down(win_t         *win,
+          term_t        *term,
+          toggle_t      *toggles,
+          search_data_t *search_data,
+          langinfo_t    *langinfo,
+          long          *nl,
+          long           page,
+          long           last_selectable,
+          long           last_line,
+          char          *tmp_word)
 {
   long line;                 /* The line being processed (target line).     */
   long start_line;           /* The first line of the window.               */
@@ -5815,17 +6045,31 @@ move_down(win_t * win, term_t * term, toggle_t * toggles,
 
   /* Redisplay the window. */
   /* """"""""""""""""""""" */
-  *nl = disp_lines(win, toggles, current, count, search_mode, search_data, term,
-                   last_line, tmp_word, langinfo);
+  *nl = disp_lines(win,
+                   toggles,
+                   current,
+                   count,
+                   search_mode,
+                   search_data,
+                   term,
+                   last_line,
+                   tmp_word,
+                   langinfo);
 }
 
 /* ========================================= */
 /* Initialize some internal data structures. */
 /* ========================================= */
 void
-init_main_ds(attrib_t * init_attr, win_t * win, limit_t * limits,
-             ticker_t * timers, toggle_t * toggles, misc_t * misc,
-             mouse_t * mouse, timeout_t * timeout, daccess_t * daccess)
+init_main_ds(attrib_t  *init_attr,
+             win_t     *win,
+             limit_t   *limits,
+             ticker_t  *timers,
+             toggle_t  *toggles,
+             misc_t    *misc,
+             mouse_t   *mouse,
+             timeout_t *timeout,
+             daccess_t *daccess)
 {
   int i;
 
@@ -5969,9 +6213,15 @@ init_main_ds(attrib_t * init_attr, win_t * win, limit_t * limits,
 /* ******************************** */
 
 void
-help_action(char * ctx_name, char * opt_name, char * param, int nb_values,
-            char ** values, int nb_opt_data, void ** opt_data, int nb_ctx_data,
-            void ** ctx_data)
+help_action(char  *ctx_name,
+            char  *opt_name,
+            char  *param,
+            int    nb_values,
+            char **values,
+            int    nb_opt_data,
+            void **opt_data,
+            int    nb_ctx_data,
+            void **ctx_data)
 {
   if (strcmp(ctx_name, "Columns") == 0)
     columns_help();
@@ -5988,9 +6238,15 @@ help_action(char * ctx_name, char * opt_name, char * param, int nb_values,
 }
 
 void
-long_help_action(char * ctx_name, char * opt_name, char * param, int nb_values,
-                 char ** values, int nb_opt_data, void ** opt_data,
-                 int nb_ctx_data, void ** ctx_data)
+long_help_action(char  *ctx_name,
+                 char  *opt_name,
+                 char  *param,
+                 int    nb_values,
+                 char **values,
+                 int    nb_opt_data,
+                 void **opt_data,
+                 int    nb_ctx_data,
+                 void **ctx_data)
 {
   ctxopt_disp_usage(continue_after);
 
@@ -6000,19 +6256,31 @@ long_help_action(char * ctx_name, char * opt_name, char * param, int nb_values,
 }
 
 void
-usage_action(char * ctx_name, char * opt_name, char * param, int nb_values,
-             char ** values, int nb_opt_data, void ** opt_data, int nb_ctx_data,
-             void ** ctx_data)
+usage_action(char  *ctx_name,
+             char  *opt_name,
+             char  *param,
+             int    nb_values,
+             char **values,
+             int    nb_opt_data,
+             void **opt_data,
+             int    nb_ctx_data,
+             void **ctx_data)
 {
   ctxopt_ctx_disp_usage(ctx_name, exit_after);
 }
 
 void
-lines_action(char * ctx_name, char * opt_name, char * param, int nb_values,
-             char ** values, int nb_opt_data, void ** opt_data, int nb_ctx_data,
-             void ** ctx_data)
+lines_action(char  *ctx_name,
+             char  *opt_name,
+             char  *param,
+             int    nb_values,
+             char **values,
+             int    nb_opt_data,
+             void **opt_data,
+             int    nb_ctx_data,
+             void **ctx_data)
 {
-  win_t * win = opt_data[0];
+  win_t *win = opt_data[0];
 
   if (nb_values == 1)
     /* No need to validate if values are numeric here, they have      */
@@ -6024,11 +6292,17 @@ lines_action(char * ctx_name, char * opt_name, char * param, int nb_values,
 }
 
 void
-tab_mode_action(char * ctx_name, char * opt_name, char * param, int nb_values,
-                char ** values, int nb_opt_data, void ** opt_data,
-                int nb_ctx_data, void ** ctx_data)
+tab_mode_action(char  *ctx_name,
+                char  *opt_name,
+                char  *param,
+                int    nb_values,
+                char **values,
+                int    nb_opt_data,
+                void **opt_data,
+                int    nb_ctx_data,
+                void **ctx_data)
 {
-  win_t * win = opt_data[0];
+  win_t *win = opt_data[0];
 
   long max_cols;
 
@@ -6048,26 +6322,38 @@ tab_mode_action(char * ctx_name, char * opt_name, char * param, int nb_values,
 }
 
 void
-set_pattern_action(char * ctx_name, char * opt_name, char * param,
-                   int nb_values, char ** values, int nb_opt_data,
-                   void ** opt_data, int nb_ctx_data, void ** ctx_data)
+set_pattern_action(char  *ctx_name,
+                   char  *opt_name,
+                   char  *param,
+                   int    nb_values,
+                   char **values,
+                   int    nb_opt_data,
+                   void **opt_data,
+                   int    nb_ctx_data,
+                   void **ctx_data)
 {
-  char **  pattern = opt_data[0];
-  misc_t * misc    = opt_data[1];
+  char  **pattern = opt_data[0];
+  misc_t *misc    = opt_data[1];
 
   *pattern = xstrdup(values[0]);
   utf8_interpret(*pattern, misc->invalid_char_substitute);
 }
 
 void
-int_action(char * ctx_name, char * opt_name, char * param, int nb_values,
-           char ** values, int nb_opt_data, void ** opt_data, int nb_ctx_data,
-           void ** ctx_data)
+int_action(char  *ctx_name,
+           char  *opt_name,
+           char  *param,
+           int    nb_values,
+           char **values,
+           int    nb_opt_data,
+           void **opt_data,
+           int    nb_ctx_data,
+           void **ctx_data)
 {
-  char **      string     = opt_data[0];
-  int *        shell_like = opt_data[1];
-  langinfo_t * langinfo   = opt_data[2];
-  misc_t *     misc       = opt_data[3];
+  char      **string     = opt_data[0];
+  int        *shell_like = opt_data[1];
+  langinfo_t *langinfo   = opt_data[2];
+  misc_t     *misc       = opt_data[3];
 
   if (nb_values == 1)
   {
@@ -6081,13 +6367,19 @@ int_action(char * ctx_name, char * opt_name, char * param, int nb_values,
 }
 
 void
-set_string_action(char * ctx_name, char * opt_name, char * param, int nb_values,
-                  char ** values, int nb_opt_data, void ** opt_data,
-                  int nb_ctx_data, void ** ctx_data)
+set_string_action(char  *ctx_name,
+                  char  *opt_name,
+                  char  *param,
+                  int    nb_values,
+                  char **values,
+                  int    nb_opt_data,
+                  void **opt_data,
+                  int    nb_ctx_data,
+                  void **ctx_data)
 {
-  char **      string   = opt_data[0];
-  langinfo_t * langinfo = opt_data[1];
-  misc_t *     misc     = opt_data[2];
+  char      **string   = opt_data[0];
+  langinfo_t *langinfo = opt_data[1];
+  misc_t     *misc     = opt_data[2];
 
   *string = xstrdup(values[0]);
   if (!langinfo->utf8)
@@ -6096,33 +6388,51 @@ set_string_action(char * ctx_name, char * opt_name, char * param, int nb_values,
 }
 
 void
-wide_mode_action(char * ctx_name, char * opt_name, char * param, int nb_values,
-                 char ** values, int nb_opt_data, void ** opt_data,
-                 int nb_ctx_data, void ** ctx_data)
+wide_mode_action(char  *ctx_name,
+                 char  *opt_name,
+                 char  *param,
+                 int    nb_values,
+                 char **values,
+                 int    nb_opt_data,
+                 void **opt_data,
+                 int    nb_ctx_data,
+                 void **ctx_data)
 {
-  win_t * win = opt_data[0];
+  win_t *win = opt_data[0];
 
   win->wide = 1;
 }
 
 void
-center_mode_action(char * ctx_name, char * opt_name, char * param,
-                   int nb_values, char ** values, int nb_opt_data,
-                   void ** opt_data, int nb_ctx_data, void ** ctx_data)
+center_mode_action(char  *ctx_name,
+                   char  *opt_name,
+                   char  *param,
+                   int    nb_values,
+                   char **values,
+                   int    nb_opt_data,
+                   void **opt_data,
+                   int    nb_ctx_data,
+                   void **ctx_data)
 {
-  win_t * win = opt_data[0];
+  win_t *win = opt_data[0];
 
   win->center = 1;
 }
 
 void
-columns_select_action(char * ctx_name, char * opt_name, char * param,
-                      int nb_values, char ** values, int nb_opt_data,
-                      void ** opt_data, int nb_ctx_data, void ** ctx_data)
+columns_select_action(char  *ctx_name,
+                      char  *opt_name,
+                      char  *param,
+                      int    nb_values,
+                      char **values,
+                      int    nb_opt_data,
+                      void **opt_data,
+                      int    nb_ctx_data,
+                      void **ctx_data)
 {
-  int        v;
-  ll_t **    cols_selector_list = opt_data[0];
-  toggle_t * toggles            = opt_data[1];
+  int       v;
+  ll_t    **cols_selector_list = opt_data[0];
+  toggle_t *toggles            = opt_data[1];
 
   if (*cols_selector_list == NULL)
     *cols_selector_list = ll_new();
@@ -6135,14 +6445,20 @@ columns_select_action(char * ctx_name, char * opt_name, char * param,
 }
 
 void
-rows_select_action(char * ctx_name, char * opt_name, char * param,
-                   int nb_values, char ** values, int nb_opt_data,
-                   void ** opt_data, int nb_ctx_data, void ** ctx_data)
+rows_select_action(char  *ctx_name,
+                   char  *opt_name,
+                   char  *param,
+                   int    nb_values,
+                   char **values,
+                   int    nb_opt_data,
+                   void **opt_data,
+                   int    nb_ctx_data,
+                   void **ctx_data)
 {
-  int        v;
-  ll_t **    rows_selector_list = opt_data[0];
-  win_t *    win                = opt_data[1];
-  toggle_t * toggles            = opt_data[2];
+  int       v;
+  ll_t    **rows_selector_list = opt_data[0];
+  win_t    *win                = opt_data[1];
+  toggle_t *toggles            = opt_data[2];
 
   if (*rows_selector_list == NULL)
     *rows_selector_list = ll_new();
@@ -6157,12 +6473,18 @@ rows_select_action(char * ctx_name, char * opt_name, char * param,
 }
 
 void
-aligns_select_action(char * ctx_name, char * opt_name, char * param,
-                     int nb_values, char ** values, int nb_opt_data,
-                     void ** opt_data, int nb_ctx_data, void ** ctx_data)
+aligns_select_action(char  *ctx_name,
+                     char  *opt_name,
+                     char  *param,
+                     int    nb_values,
+                     char **values,
+                     int    nb_opt_data,
+                     void **opt_data,
+                     int    nb_ctx_data,
+                     void **ctx_data)
 {
-  int     v;
-  ll_t ** aligns_selector_list = opt_data[0];
+  int    v;
+  ll_t **aligns_selector_list = opt_data[0];
 
   if (*aligns_selector_list == NULL)
     *aligns_selector_list = ll_new();
@@ -6172,11 +6494,17 @@ aligns_select_action(char * ctx_name, char * opt_name, char * param,
 }
 
 void
-toggle_action(char * ctx_name, char * opt_name, char * param, int nb_values,
-              char ** values, int nb_opt_data, void ** opt_data,
-              int nb_ctx_data, void ** ctx_data)
+toggle_action(char  *ctx_name,
+              char  *opt_name,
+              char  *param,
+              int    nb_values,
+              char **values,
+              int    nb_opt_data,
+              void **opt_data,
+              int    nb_ctx_data,
+              void **ctx_data)
 {
-  toggle_t * toggles = opt_data[0];
+  toggle_t *toggles = opt_data[0];
 
   if (strcmp(opt_name, "clean") == 0)
     toggles->del_line = 1;
@@ -6201,11 +6529,17 @@ toggle_action(char * ctx_name, char * opt_name, char * param, int nb_values,
 }
 
 void
-invalid_char_action(char * ctx_name, char * opt_name, char * param,
-                    int nb_values, char ** values, int nb_opt_data,
-                    void ** opt_data, int nb_ctx_data, void ** ctx_data)
+invalid_char_action(char  *ctx_name,
+                    char  *opt_name,
+                    char  *param,
+                    int    nb_values,
+                    char **values,
+                    int    nb_opt_data,
+                    void **opt_data,
+                    int    nb_ctx_data,
+                    void **ctx_data)
 {
-  misc_t * misc = opt_data[0];
+  misc_t *misc = opt_data[0];
 
   char ic = *values[0];
 
@@ -6216,12 +6550,18 @@ invalid_char_action(char * ctx_name, char * opt_name, char * param,
 }
 
 void
-show_blank_action(char * ctx_name, char * opt_name, char * param, int nb_values,
-                  char ** values, int nb_opt_data, void ** opt_data,
-                  int nb_ctx_data, void ** ctx_data)
+show_blank_action(char  *ctx_name,
+                  char  *opt_name,
+                  char  *param,
+                  int    nb_values,
+                  char **values,
+                  int    nb_opt_data,
+                  void **opt_data,
+                  int    nb_ctx_data,
+                  void **ctx_data)
 {
-  toggle_t * toggles = opt_data[0];
-  misc_t *   misc    = opt_data[1];
+  toggle_t *toggles = opt_data[0];
+  misc_t   *misc    = opt_data[1];
 
   unsigned char bc;
 
@@ -6239,13 +6579,19 @@ show_blank_action(char * ctx_name, char * opt_name, char * param, int nb_values,
 }
 
 void
-gutter_action(char * ctx_name, char * opt_name, char * param, int nb_values,
-              char ** values, int nb_opt_data, void ** opt_data,
-              int nb_ctx_data, void ** ctx_data)
+gutter_action(char  *ctx_name,
+              char  *opt_name,
+              char  *param,
+              int    nb_values,
+              char **values,
+              int    nb_opt_data,
+              void **opt_data,
+              int    nb_ctx_data,
+              void **ctx_data)
 {
-  win_t *      win      = opt_data[0];
-  langinfo_t * langinfo = opt_data[1];
-  misc_t *     misc     = opt_data[2];
+  win_t      *win      = opt_data[0];
+  langinfo_t *langinfo = opt_data[1];
+  misc_t     *misc     = opt_data[2];
 
   if (nb_values == 0)
   {
@@ -6266,16 +6612,16 @@ gutter_action(char * ctx_name, char * opt_name, char * param, int nb_values,
     /* The argument is used to feed the gutter array, each of its character */
     /* Will serve as gutter in a round-robin way.                           */
     /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-    long      n;
-    wchar_t * w;
-    long      i, offset;
-    char *    gutter;
+    long     n;
+    wchar_t *w;
+    long     i, offset;
+    char    *gutter;
 
     gutter = xstrdup(values[0]);
 
     utf8_interpret(gutter,
                    misc->invalid_char_substitute); /* Guarantees a well    *
-                                                    | formed UTF-8 string/ */
+                                                    | formed UTF-8 string. */
 
     win->gutter_nb = utf8_strlen(gutter);
     win->gutter_a  = xmalloc(win->gutter_nb * sizeof(char *));
@@ -6306,11 +6652,17 @@ gutter_action(char * ctx_name, char * opt_name, char * param, int nb_values,
 }
 
 void
-column_mode_action(char * ctx_name, char * opt_name, char * param,
-                   int nb_values, char ** values, int nb_opt_data,
-                   void ** opt_data, int nb_ctx_data, void ** ctx_data)
+column_mode_action(char  *ctx_name,
+                   char  *opt_name,
+                   char  *param,
+                   int    nb_values,
+                   char **values,
+                   int    nb_opt_data,
+                   void **opt_data,
+                   int    nb_ctx_data,
+                   void **ctx_data)
 {
-  win_t * win = opt_data[0];
+  win_t *win = opt_data[0];
 
   win->tab_mode  = 0;
   win->col_mode  = 1;
@@ -6319,11 +6671,17 @@ column_mode_action(char * ctx_name, char * opt_name, char * param,
 }
 
 void
-line_mode_action(char * ctx_name, char * opt_name, char * param, int nb_values,
-                 char ** values, int nb_opt_data, void ** opt_data,
-                 int nb_ctx_data, void ** ctx_data)
+line_mode_action(char  *ctx_name,
+                 char  *opt_name,
+                 char  *param,
+                 int    nb_values,
+                 char **values,
+                 int    nb_opt_data,
+                 void **opt_data,
+                 int    nb_ctx_data,
+                 void **ctx_data)
 {
-  win_t * win = opt_data[0];
+  win_t *win = opt_data[0];
 
   win->line_mode = 1;
   win->tab_mode  = 0;
@@ -6332,13 +6690,19 @@ line_mode_action(char * ctx_name, char * opt_name, char * param, int nb_values,
 }
 
 void
-include_re_action(char * ctx_name, char * opt_name, char * param, int nb_values,
-                  char ** values, int nb_opt_data, void ** opt_data,
-                  int nb_ctx_data, void ** ctx_data)
+include_re_action(char  *ctx_name,
+                  char  *opt_name,
+                  char  *param,
+                  int    nb_values,
+                  char **values,
+                  int    nb_opt_data,
+                  void **opt_data,
+                  int    nb_ctx_data,
+                  void **ctx_data)
 {
-  int *    pattern_def_include = opt_data[0];
-  char **  include_pattern     = opt_data[1];
-  misc_t * misc                = opt_data[2];
+  int    *pattern_def_include = opt_data[0];
+  char  **include_pattern     = opt_data[1];
+  misc_t *misc                = opt_data[2];
 
   /* Set the default behaviour if not already set. */
   /* """"""""""""""""""""""""""""""""""""""""""""" */
@@ -6348,7 +6712,10 @@ include_re_action(char * ctx_name, char * opt_name, char * param, int nb_values,
   if (*include_pattern == NULL)
     *include_pattern = concat("(", values[0], ")", (char *)0);
   else
-    *include_pattern = concat(*include_pattern, "|(", values[0], ")",
+    *include_pattern = concat(*include_pattern,
+                              "|(",
+                              values[0],
+                              ")",
                               (char *)0);
 
   /* Replace the UTF-8 ASCII representations by their binary values in */
@@ -6358,13 +6725,19 @@ include_re_action(char * ctx_name, char * opt_name, char * param, int nb_values,
 }
 
 void
-exclude_re_action(char * ctx_name, char * opt_name, char * param, int nb_values,
-                  char ** values, int nb_opt_data, void ** opt_data,
-                  int nb_ctx_data, void ** ctx_data)
+exclude_re_action(char  *ctx_name,
+                  char  *opt_name,
+                  char  *param,
+                  int    nb_values,
+                  char **values,
+                  int    nb_opt_data,
+                  void **opt_data,
+                  int    nb_ctx_data,
+                  void **ctx_data)
 {
-  int *    pattern_def_include = opt_data[0];
-  char **  exclude_pattern     = opt_data[1];
-  misc_t * misc                = opt_data[2];
+  int    *pattern_def_include = opt_data[0];
+  char  **exclude_pattern     = opt_data[1];
+  misc_t *misc                = opt_data[2];
 
   /* Set the default behaviour if not already set. */
   /* """"""""""""""""""""""""""""""""""""""""""""" */
@@ -6374,7 +6747,10 @@ exclude_re_action(char * ctx_name, char * opt_name, char * param, int nb_values,
   if (*exclude_pattern == NULL)
     *exclude_pattern = concat("(", values[0], ")", (char *)0);
   else
-    *exclude_pattern = concat(*exclude_pattern, "|(", values[0], ")",
+    *exclude_pattern = concat(*exclude_pattern,
+                              "|(",
+                              values[0],
+                              ")",
                               (char *)0);
 
   /* Replace the UTF-8 ASCII representations by their binary values in */
@@ -6384,12 +6760,18 @@ exclude_re_action(char * ctx_name, char * opt_name, char * param, int nb_values,
 }
 
 void
-post_subst_action(char * ctx_name, char * opt_name, char * param, int nb_values,
-                  char ** values, int nb_opt_data, void ** opt_data,
-                  int nb_ctx_data, void ** ctx_data)
+post_subst_action(char  *ctx_name,
+                  char  *opt_name,
+                  char  *param,
+                  int    nb_values,
+                  char **values,
+                  int    nb_opt_data,
+                  void **opt_data,
+                  int    nb_ctx_data,
+                  void **ctx_data)
 {
-  ll_t **  list = opt_data[0];
-  misc_t * misc = opt_data[1];
+  ll_t  **list = opt_data[0];
+  misc_t *misc = opt_data[1];
 
   int i;
 
@@ -6398,7 +6780,7 @@ post_subst_action(char * ctx_name, char * opt_name, char * param, int nb_values,
 
   for (i = 0; i < nb_values; i++)
   {
-    sed_t * sed_node;
+    sed_t *sed_node;
 
     sed_node          = xmalloc(sizeof(sed_t));
     sed_node->pattern = xstrdup(values[i]);
@@ -6409,15 +6791,21 @@ post_subst_action(char * ctx_name, char * opt_name, char * param, int nb_values,
 }
 
 void
-special_level_action(char * ctx_name, char * opt_name, char * param,
-                     int nb_values, char ** values, int nb_opt_data,
-                     void ** opt_data, int nb_ctx_data, void ** ctx_data)
+special_level_action(char  *ctx_name,
+                     char  *opt_name,
+                     char  *param,
+                     int    nb_values,
+                     char **values,
+                     int    nb_opt_data,
+                     void **opt_data,
+                     int    nb_ctx_data,
+                     void **ctx_data)
 {
-  char **    special_pattern = opt_data[0];
-  win_t *    win             = opt_data[1];
-  term_t *   term            = opt_data[2];
-  attrib_t * init_attr       = opt_data[3];
-  misc_t *   misc            = opt_data[4];
+  char    **special_pattern = opt_data[0];
+  win_t    *win             = opt_data[1];
+  term_t   *term            = opt_data[2];
+  attrib_t *init_attr       = opt_data[3];
+  misc_t   *misc            = opt_data[4];
 
   attrib_t attr = *init_attr;
   char     opt  = param[strlen(param) - 1]; /* last character of param. */
@@ -6450,20 +6838,26 @@ special_level_action(char * ctx_name, char * opt_name, char * param,
 }
 
 void
-attributes_action(char * ctx_name, char * opt_name, char * param, int nb_values,
-                  char ** values, int nb_opt_data, void ** opt_data,
-                  int nb_ctx_data, void ** ctx_data)
+attributes_action(char  *ctx_name,
+                  char  *opt_name,
+                  char  *param,
+                  int    nb_values,
+                  char **values,
+                  int    nb_opt_data,
+                  void **opt_data,
+                  int    nb_ctx_data,
+                  void **ctx_data)
 {
-  win_t *    win       = opt_data[0];
-  term_t *   term      = opt_data[1];
-  attrib_t * init_attr = opt_data[2];
+  win_t    *win       = opt_data[0];
+  term_t   *term      = opt_data[1];
+  attrib_t *init_attr = opt_data[2];
 
   long i, a;       /* loop index.                               */
   long offset = 0; /* nb of chars to ship to find the attribute *
                     | representation (prefix size).             */
 
-  attrib_t   attr;
-  attrib_t * attr_to_set = NULL;
+  attrib_t  attr;
+  attrib_t *attr_to_set = NULL;
 
   /* Flags to check if an attribute is already set */
   /* """"""""""""""""""""""""""""""""""""""""""""" */
@@ -6487,52 +6881,97 @@ attributes_action(char * ctx_name, char * opt_name, char * param, int nb_values,
   /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
   struct
   {
-    attrib_t * attr;
-    char *     msg;
-    int *      flag;
-    char *     prefix;
-    int        prefix_len;
+    attrib_t *attr;
+    char     *msg;
+    int      *flag;
+    char     *prefix;
+    int       prefix_len;
   } attr_infos[] = {
-    { &win->exclude_attr, "The exclude attribute is already set.",
-      &exc_attr_set, "e:", 2 },
-    { &win->include_attr, "The include attribute is already set.",
-      &inc_attr_set, "i:", 2 },
-    { &win->cursor_attr, "The cursor attribute is already set.", &cur_attr_set,
-      "c:", 2 },
-    { &win->bar_attr, "The scroll bar attribute is already set.", &bar_attr_set,
-      "b:", 2 },
-    { &win->shift_attr, "The shift attribute is already set.", &shift_attr_set,
-      "s:", 2 },
-    { &win->message_attr, "The message attribute is already set.",
-      &message_attr_set, "m:", 2 },
-    { &win->tag_attr, "The tag attribute is already set.", &tag_attr_set,
-      "t:", 2 },
+    { &win->exclude_attr,
+      "The exclude attribute is already set.",
+      &exc_attr_set,
+      "e:",
+      2 },
+    { &win->include_attr,
+      "The include attribute is already set.",
+      &inc_attr_set,
+      "i:",
+      2 },
+    { &win->cursor_attr,
+      "The cursor attribute is already set.",
+      &cur_attr_set,
+      "c:",
+      2 },
+    { &win->bar_attr,
+      "The scroll bar attribute is already set.",
+      &bar_attr_set,
+      "b:",
+      2 },
+    { &win->shift_attr,
+      "The shift attribute is already set.",
+      &shift_attr_set,
+      "s:",
+      2 },
+    { &win->message_attr,
+      "The message attribute is already set.",
+      &message_attr_set,
+      "m:",
+      2 },
+    { &win->tag_attr,
+      "The tag attribute is already set.",
+      &tag_attr_set,
+      "t:",
+      2 },
     { &win->cursor_on_tag_attr,
       "The cursor on tagged word attribute is already set.",
-      &cursor_on_tag_attr_set, "ct:", 3 },
-    { &win->search_field_attr, "The search field attribute is already set.",
-      &sf_attr_set, "sf:", 3 },
-    { &win->search_text_attr, "The search text attribute is already set.",
-      &st_attr_set, "st:", 3 },
+      &cursor_on_tag_attr_set,
+      "ct:",
+      3 },
+    { &win->search_field_attr,
+      "The search field attribute is already set.",
+      &sf_attr_set,
+      "sf:",
+      3 },
+    { &win->search_text_attr,
+      "The search text attribute is already set.",
+      &st_attr_set,
+      "st:",
+      3 },
     { &win->search_err_field_attr,
-      "The search with error field attribute is already set.", &sf_attr_set,
-      "sfe:", 4 },
+      "The search with error field attribute is already set.",
+      &sf_attr_set,
+      "sfe:",
+      4 },
     { &win->search_err_text_attr,
-      "The search text with error attribute is already set.", &st_attr_set,
-      "ste:", 4 },
+      "The search text with error attribute is already set.",
+      &st_attr_set,
+      "ste:",
+      4 },
     { &win->match_field_attr,
-      "The matching word field attribute is already set.", &mf_attr_set,
-      "mf:", 3 },
-    { &win->match_text_attr, "The matching word text attribute is already set.",
-      &mt_attr_set, "mt:", 3 },
+      "The matching word field attribute is already set.",
+      &mf_attr_set,
+      "mf:",
+      3 },
+    { &win->match_text_attr,
+      "The matching word text attribute is already set.",
+      &mt_attr_set,
+      "mt:",
+      3 },
     { &win->match_err_field_attr,
       "The matching word with error field attribute is already set.",
-      &mfe_attr_set, "mfe:", 4 },
+      &mfe_attr_set,
+      "mfe:",
+      4 },
     { &win->match_err_text_attr,
       "The matching word with error text attribute is already set.",
-      &mte_attr_set, "mte:", 4 },
-    { &win->daccess_attr, "The direct access tag attribute is already set.",
-      &daccess_attr_set, "da:", 3 },
+      &mte_attr_set,
+      "mte:",
+      4 },
+    { &win->daccess_attr,
+      "The direct access tag attribute is already set.",
+      &daccess_attr_set,
+      "da:",
+      3 },
     { NULL, NULL, NULL, NULL, 0 }
   };
 
@@ -6598,18 +7037,24 @@ attributes_action(char * ctx_name, char * opt_name, char * param, int nb_values,
 }
 
 void
-limits_action(char * ctx_name, char * opt_name, char * param, int nb_values,
-              char ** values, int nb_opt_data, void ** opt_data,
-              int nb_ctx_data, void ** ctx_data)
+limits_action(char  *ctx_name,
+              char  *opt_name,
+              char  *param,
+              int    nb_values,
+              char **values,
+              int    nb_opt_data,
+              void **opt_data,
+              int    nb_ctx_data,
+              void **ctx_data)
 {
-  limit_t * limits = opt_data[0];
+  limit_t *limits = opt_data[0];
 
   long l;
   long val;
 
-  char * lim;
-  char * endptr;
-  char * p;
+  char *lim;
+  char *endptr;
+  char *p;
 
   /* Parse the arguments. */
   /* """""""""""""""""""" */
@@ -6627,7 +7072,8 @@ limits_action(char * ctx_name, char * opt_name, char * param, int nb_values,
             || *endptr != '\0')
         {
           fprintf(stderr, "%s: Invalid word length limit. ", p);
-          fprintf(stderr, "Using the default value: %ld\n",
+          fprintf(stderr,
+                  "Using the default value: %ld\n",
                   limits->word_length);
         }
         else
@@ -6666,31 +7112,51 @@ limits_action(char * ctx_name, char * opt_name, char * param, int nb_values,
 }
 
 void
-copyright_action(char * ctx_name, char * opt_name, char * param, int nb_values,
-                 char ** values, int nb_opt_data, void ** opt_data,
-                 int nb_ctx_data, void ** ctx_data)
+copyright_action(char  *ctx_name,
+                 char  *opt_name,
+                 char  *param,
+                 int    nb_values,
+                 char **values,
+                 int    nb_opt_data,
+                 void **opt_data,
+                 int    nb_ctx_data,
+                 void **ctx_data)
 {
   fputs_safe("Copyright 2015 - Pierre Gentile <p.gen.progs@gmail.com> - "
              "MPL-2.0\n",
              stdout);
+
   exit(EXIT_SUCCESS);
 }
 
 void
-version_action(char * ctx_name, char * opt_name, char * param, int nb_values,
-               char ** values, int nb_opt_data, void ** opt_data,
-               int nb_ctx_data, void ** ctx_data)
+version_action(char  *ctx_name,
+               char  *opt_name,
+               char  *param,
+               int    nb_values,
+               char **values,
+               int    nb_opt_data,
+               void **opt_data,
+               int    nb_ctx_data,
+               void **ctx_data)
 {
   fputs_safe("Version: " VERSION "\n", stdout);
+
   exit(EXIT_SUCCESS);
 }
 
 void
-timeout_action(char * ctx_name, char * opt_name, char * param, int nb_values,
-               char ** values, int nb_opt_data, void ** opt_data,
-               int nb_ctx_data, void ** ctx_data)
+timeout_action(char  *ctx_name,
+               char  *opt_name,
+               char  *param,
+               int    nb_values,
+               char **values,
+               int    nb_opt_data,
+               void **opt_data,
+               int    nb_ctx_data,
+               void **ctx_data)
 {
-  misc_t * misc = opt_data[0];
+  misc_t *misc = opt_data[0];
 
   if (strcmp(opt_name, "hidden_timeout") == 0)
     quiet_timeout = 1;
@@ -6727,13 +7193,19 @@ timeout_action(char * ctx_name, char * opt_name, char * param, int nb_values,
 }
 
 void
-tag_mode_action(char * ctx_name, char * opt_name, char * param, int nb_values,
-                char ** values, int nb_opt_data, void ** opt_data,
-                int nb_ctx_data, void ** ctx_data)
+tag_mode_action(char  *ctx_name,
+                char  *opt_name,
+                char  *param,
+                int    nb_values,
+                char **values,
+                int    nb_opt_data,
+                void **opt_data,
+                int    nb_ctx_data,
+                void **ctx_data)
 {
-  toggle_t * toggles = opt_data[0];
-  win_t *    win     = opt_data[1];
-  misc_t *   misc    = opt_data[2];
+  toggle_t *toggles = opt_data[0];
+  win_t    *win     = opt_data[1];
+  misc_t   *misc    = opt_data[2];
 
   toggles->taggable = 1;
 
@@ -6745,13 +7217,19 @@ tag_mode_action(char * ctx_name, char * opt_name, char * param, int nb_values,
 }
 
 void
-pin_mode_action(char * ctx_name, char * opt_name, char * param, int nb_values,
-                char ** values, int nb_opt_data, void ** opt_data,
-                int nb_ctx_data, void ** ctx_data)
+pin_mode_action(char  *ctx_name,
+                char  *opt_name,
+                char  *param,
+                int    nb_values,
+                char **values,
+                int    nb_opt_data,
+                void **opt_data,
+                int    nb_ctx_data,
+                void **ctx_data)
 {
-  toggle_t * toggles = opt_data[0];
-  win_t *    win     = opt_data[1];
-  misc_t *   misc    = opt_data[2];
+  toggle_t *toggles = opt_data[0];
+  win_t    *win     = opt_data[1];
+  misc_t   *misc    = opt_data[2];
 
   toggles->taggable = 1;
   toggles->pinable  = 1;
@@ -6764,11 +7242,17 @@ pin_mode_action(char * ctx_name, char * opt_name, char * param, int nb_values,
 }
 
 void
-search_method_action(char * ctx_name, char * opt_name, char * param,
-                     int nb_values, char ** values, int nb_opt_data,
-                     void ** opt_data, int nb_ctx_data, void ** ctx_data)
+search_method_action(char  *ctx_name,
+                     char  *opt_name,
+                     char  *param,
+                     int    nb_values,
+                     char **values,
+                     int    nb_opt_data,
+                     void **opt_data,
+                     int    nb_ctx_data,
+                     void **ctx_data)
 {
-  misc_t * misc = opt_data[0];
+  misc_t *misc = opt_data[0];
 
   if (strprefix("prefix", values[0]))
     misc->default_search_method = PREFIX;
@@ -6784,12 +7268,18 @@ search_method_action(char * ctx_name, char * opt_name, char * param,
 }
 
 void
-auto_da_action(char * ctx_name, char * opt_name, char * param, int nb_values,
-               char ** values, int nb_opt_data, void ** opt_data,
-               int nb_ctx_data, void ** ctx_data)
+auto_da_action(char  *ctx_name,
+               char  *opt_name,
+               char  *param,
+               int    nb_values,
+               char **values,
+               int    nb_opt_data,
+               void **opt_data,
+               int    nb_ctx_data,
+               void **ctx_data)
 {
-  char ** daccess_pattern = opt_data[0];
-  int     i;
+  char **daccess_pattern = opt_data[0];
+  int    i;
 
   if (nb_values == 0)
   {
@@ -6807,7 +7297,7 @@ auto_da_action(char * ctx_name, char * opt_name, char * param, int nb_values,
   else
     for (i = 0; i < nb_values; i++)
     {
-      char * value;
+      char *value;
 
       if (*values[i] == '\0'
           && (daccess.missing == 'y' || ((daccess.mode & DA_TYPE_POS) == 0)))
@@ -6821,7 +7311,10 @@ auto_da_action(char * ctx_name, char * opt_name, char * param, int nb_values,
         daccess.mode |= DA_TYPE_AUTO; /* Auto. */
       }
       else
-        *daccess_pattern = concat(*daccess_pattern, "|(", value, ")",
+        *daccess_pattern = concat(*daccess_pattern,
+                                  "|(",
+                                  value,
+                                  ")",
                                   (char *)0);
     }
 
@@ -6835,25 +7328,37 @@ auto_da_action(char * ctx_name, char * opt_name, char * param, int nb_values,
 }
 
 void
-field_da_number_action(char * ctx_name, char * opt_name, char * param,
-                       int nb_values, char ** values, int nb_opt_data,
-                       void ** opt_data, int nb_ctx_data, void ** ctx_data)
+field_da_number_action(char  *ctx_name,
+                       char  *opt_name,
+                       char  *param,
+                       int    nb_values,
+                       char **values,
+                       int    nb_opt_data,
+                       void **opt_data,
+                       int    nb_ctx_data,
+                       void **ctx_data)
 {
   daccess.mode |= DA_TYPE_POS;
 }
 
 void
-da_options_action(char * ctx_name, char * opt_name, char * param, int nb_values,
-                  char ** values, int nb_opt_data, void ** opt_data,
-                  int nb_ctx_data, void ** ctx_data)
+da_options_action(char  *ctx_name,
+                  char  *opt_name,
+                  char  *param,
+                  int    nb_values,
+                  char **values,
+                  int    nb_opt_data,
+                  void **opt_data,
+                  int    nb_ctx_data,
+                  void **ctx_data)
 {
-  long *   daccess_index = opt_data[0];
-  misc_t * misc          = opt_data[1];
+  long   *daccess_index = opt_data[0];
+  misc_t *misc          = opt_data[1];
 
-  int       pos;
-  wchar_t * w;
-  int       n;
-  int       i;
+  int      pos;
+  wchar_t *w;
+  int      n;
+  int      i;
 
   /* Parse optional additional arguments.                              */
   /* The syntax of the arguments has already been pre validated by the */
@@ -6861,7 +7366,7 @@ da_options_action(char * ctx_name, char * opt_name, char * param, int nb_values,
   /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
   for (i = 0; i < nb_values; i++)
   {
-    char * value = values[i];
+    char *value = values[i];
 
     switch (*value)
     {
@@ -7112,25 +7617,37 @@ da_options_action(char * ctx_name, char * opt_name, char * param, int nb_values,
 }
 
 void
-ignore_quotes_action(char * ctx_name, char * opt_name, char * param,
-                     int nb_values, char ** values, int nb_opt_data,
-                     void ** opt_data, int nb_ctx_data, void ** ctx_data)
+ignore_quotes_action(char  *ctx_name,
+                     char  *opt_name,
+                     char  *param,
+                     int    nb_values,
+                     char **values,
+                     int    nb_opt_data,
+                     void **opt_data,
+                     int    nb_ctx_data,
+                     void **ctx_data)
 {
-  misc_t * misc = opt_data[0];
+  misc_t *misc = opt_data[0];
 
   misc->ignore_quotes = 1;
 }
 
 void
-forgotten_action(char * ctx_name, char * opt_name, char * param, int nb_values,
-                 char ** values, int nb_opt_data, void ** opt_data,
-                 int nb_ctx_data, void ** ctx_data)
+forgotten_action(char  *ctx_name,
+                 char  *opt_name,
+                 char  *param,
+                 int    nb_values,
+                 char **values,
+                 int    nb_opt_data,
+                 void **opt_data,
+                 int    nb_ctx_data,
+                 void **ctx_data)
 {
-  ticker_t * timers = opt_data[0];
+  ticker_t *timers = opt_data[0];
 
   long   val;
-  char * endptr;
-  char * p;
+  char  *endptr;
+  char  *p;
   size_t l = strlen(values[0]);
 
   /* Add a 0 at the end of the parameter to multiply it by 10 */
@@ -7157,15 +7674,21 @@ forgotten_action(char * ctx_name, char * opt_name, char * param, int nb_values,
 }
 
 void
-button_action(char * ctx_name, char * opt_name, char * param, int nb_values,
-              char ** values, int nb_opt_data, void ** opt_data,
-              int nb_ctx_data, void ** ctx_data)
+button_action(char  *ctx_name,
+              char  *opt_name,
+              char  *param,
+              int    nb_values,
+              char **values,
+              int    nb_opt_data,
+              void **opt_data,
+              int    nb_ctx_data,
+              void **ctx_data)
 {
-  mouse_t * mouse = opt_data[0];
+  mouse_t *mouse = opt_data[0];
 
-  char * endptr;
-  char * p;
-  long   val;
+  char *endptr;
+  char *p;
+  long  val;
 
   if (nb_values != 2)
   {
@@ -7196,16 +7719,22 @@ button_action(char * ctx_name, char * opt_name, char * param, int nb_values,
 }
 
 void
-double_click_action(char * ctx_name, char * opt_name, char * param,
-                    int nb_values, char ** values, int nb_opt_data,
-                    void ** opt_data, int nb_ctx_data, void ** ctx_data)
+double_click_action(char  *ctx_name,
+                    char  *opt_name,
+                    char  *param,
+                    int    nb_values,
+                    char **values,
+                    int    nb_opt_data,
+                    void **opt_data,
+                    int    nb_ctx_data,
+                    void **ctx_data)
 {
-  mouse_t * mouse = opt_data[0];
-  int *     ddc   = opt_data[1];
+  mouse_t *mouse = opt_data[0];
+  int     *ddc   = opt_data[1];
 
-  char * endptr;
-  char * p = values[0];
-  long   val;
+  char *endptr;
+  char *p = values[0];
+  long  val;
 
   errno = 0;
   val   = strtol(p, &endptr, 0);
@@ -7222,10 +7751,16 @@ double_click_action(char * ctx_name, char * opt_name, char * param,
 /* initiated and the incremental_search option is not used.            */
 /* =================================================================== */
 void
-reset_search_buffer(win_t * win, search_data_t * search_data, ticker_t * timers,
-                    toggle_t * toggles, term_t * term, daccess_t * daccess,
-                    langinfo_t * langinfo, long last_line, char * tmp_word,
-                    long word_real_max_size)
+reset_search_buffer(win_t         *win,
+                    search_data_t *search_data,
+                    ticker_t      *timers,
+                    toggle_t      *toggles,
+                    term_t        *term,
+                    daccess_t     *daccess,
+                    langinfo_t    *langinfo,
+                    long           last_line,
+                    char          *tmp_word,
+                    long           word_real_max_size)
 {
   /* ESC key has been pressed. */
   /* """"""""""""""""""""""""" */
@@ -7240,8 +7775,16 @@ reset_search_buffer(win_t * win, search_data_t * search_data, ticker_t * timers,
   search_data->only_ending   = 0;
 
   if (help_mode)
-    disp_lines(win, toggles, current, count, search_mode, search_data, term,
-               last_line, tmp_word, langinfo);
+    disp_lines(win,
+               toggles,
+               current,
+               count,
+               search_mode,
+               search_data,
+               term,
+               last_line,
+               tmp_word,
+               langinfo);
 
   /* Reset the direct access selector stack. */
   /* """"""""""""""""""""""""""""""""""""""" */
@@ -7257,8 +7800,16 @@ reset_search_buffer(win_t * win, search_data_t * search_data, ticker_t * timers,
   {
     clean_matches(search_data, word_real_max_size);
 
-    disp_lines(win, toggles, current, count, search_mode, search_data, term,
-               last_line, tmp_word, langinfo);
+    disp_lines(win,
+               toggles,
+               current,
+               count,
+               search_mode,
+               search_data,
+               term,
+               last_line,
+               tmp_word,
+               langinfo);
   }
 }
 
@@ -7289,8 +7840,11 @@ is_in_foreground_process_group(void)
 /* did not click on a word.                                              */
 /* ===================================================================== */
 long
-get_clicked_index(win_t * win, term_t * term, int line_click, int column_click,
-                  int * error)
+get_clicked_index(win_t  *win,
+                  term_t *term,
+                  int     line_click,
+                  int     column_click,
+                  int    *error)
 {
   long new_current;  /* Future new current word on success.              */
   long clicked_line; /* Number of the clicked line in smenu internal     *
@@ -7402,8 +7956,12 @@ get_clicked_index(win_t * win, term_t * term, int line_click, int column_click,
 /* Returns 0 is no arrow wa clicked else 1.                             */
 /* ==================================================================== */
 int
-shift_arrow_clicked(win_t * win, term_t * term, int line_click,
-                    int column_click, long * clicked_line, int * arrow)
+shift_arrow_clicked(win_t  *win,
+                    term_t *term,
+                    int     line_click,
+                    int     column_click,
+                    long   *clicked_line,
+                    int    *arrow)
 {
   /* Get the internal line number of the click. */
   /* """""""""""""""""""""""""""""""""""""""""" */
@@ -7433,11 +7991,11 @@ shift_arrow_clicked(win_t * win, term_t * term, int line_click,
 /* alignment IN     kind of alignments.                           */
 /* ============================================================== */
 void
-align_word(word_t * word, alignment_t alignment, size_t prefix, char sp)
+align_word(word_t *word, alignment_t alignment, size_t prefix, char sp)
 {
   switch (alignment)
   {
-    char * str;
+    char  *str;
     size_t n;
     size_t m;
     size_t wl;
@@ -7512,7 +8070,7 @@ align_word(word_t * word, alignment_t alignment, size_t prefix, char sp)
 /* Main entry point. */
 /* ================= */
 int
-main(int argc, char * argv[])
+main(int argc, char *argv[])
 {
   /* Mapping of supported charsets and the number of bits used in them. */
   /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
@@ -7681,39 +8239,39 @@ main(int argc, char * argv[])
 
   /* Interval timers used. */
   /* """"""""""""""""""""" */
-  struct itimerval periodic_itv; /* refresh rate for the timeout counter. */
+  struct itimerval periodic_itv; /* refresh rate for the timeout counter.    */
 
-  int     nb_rem_args = 0; /* Remaining non analyzed command line arguments. */
-  char ** rem_args    = NULL; /* Remaining non analyzed command line         *
-                               | arguments array.                            */
+  int    nb_rem_args = 0; /* Remaining non analyzed command line arguments.  */
+  char **rem_args    = NULL; /* Remaining non analyzed command line          *
+                              | arguments array.                             */
 
-  char * message = NULL; /* message to be displayed above the selection      *
-                          | window.                                          */
-  ll_t * message_lines_list = NULL; /* list of the lines in the message to   *
-                                     | be displayed.                         */
-  long message_max_width = 0; /* total width of the message (longest line).  */
-  long message_max_len   = 0; /* max number of bytes taken by a message      *
-                               | line.                                       */
+  char *message = NULL; /* message to be displayed above the selection       *
+                         | window.                                           */
+  ll_t *message_lines_list = NULL; /* list of the lines in the message to    *
+                                    | be displayed.                          */
+  long  message_max_width  = 0; /* total width of the message (longest line). */
+  long  message_max_len    = 0; /* max number of bytes taken by a message     *
+                                | line.                                      */
 
-  char * int_string      = NULL; /* String to be output when typing ^C.      */
-  int    int_as_in_shell = 1; /* CTRL-C mimics the shell behaviour.          */
+  char *int_string      = NULL; /* String to be output when typing ^C.       */
+  int   int_as_in_shell = 1; /* CTRL-C mimics the shell behaviour.           */
 
-  FILE * input_file; /* The name of the file passed as argument if any.      */
+  FILE *input_file; /* The name of the file passed as argument if any.       */
 
   long index; /* generic counter.                                            */
 
   long daccess_index = 1; /* First index of the numbered words.              */
 
-  char *  daccess_np = NULL; /* direct access numbered pattern.              */
+  char   *daccess_np = NULL; /* direct access numbered pattern.              */
   regex_t daccess_np_re; /* variable to store the compiled direct access     *
                           | pattern (-N) RE.                                 */
 
-  char *  daccess_up = NULL; /* direct access not numbered pattern.          */
+  char   *daccess_up = NULL; /* direct access not numbered pattern.          */
   regex_t daccess_up_re; /* variable to store the compiled direct access     *
                           | pattern (-U) RE.                                 */
 
-  char * include_pattern = NULL; /* ASCII version of the include RE          */
-  char * exclude_pattern = NULL; /* ASCII version of the exclude RE          */
+  char *include_pattern = NULL; /* ASCII version of the include RE           */
+  char *exclude_pattern = NULL; /* ASCII version of the exclude RE           */
 
   int pattern_def_include = -1; /* Set to -1 until an -i or -e option is     *
                                  | specified, This variable remembers  if    *
@@ -7724,57 +8282,57 @@ main(int argc, char * argv[])
   regex_t include_re; /* variable to store the compiled include (-i) REs.    */
   regex_t exclude_re; /* variable to store the compiled exclude (-e) REs.    */
 
-  ll_t * early_sed_list   = NULL; /* List of sed like string representation  *
-                                   | of regex given after (-ES).             */
-  ll_t * sed_list         = NULL; /* List of sed like string representation  *
-                                   | of regex given after (-S).              */
-  ll_t * include_sed_list = NULL; /* idem for -I.                            */
-  ll_t * exclude_sed_list = NULL; /* idem for -E.                            */
+  ll_t *early_sed_list   = NULL; /* List of sed like string representation   *
+                                  | of regex given after (-ES).              */
+  ll_t *sed_list         = NULL; /* List of sed like string representation   *
+                                  | of regex given after (-S).               */
+  ll_t *include_sed_list = NULL; /* idem for -I.                             */
+  ll_t *exclude_sed_list = NULL; /* idem for -E.                             */
 
-  ll_t * inc_col_interval_list = NULL; /* Lists of included or               */
-  ll_t * exc_col_interval_list = NULL; /* excluded numerical intervals       */
-  ll_t * inc_row_interval_list = NULL; /* for lines and columns.             */
-  ll_t * exc_row_interval_list = NULL;
+  ll_t *inc_col_interval_list = NULL; /* Lists of included or                */
+  ll_t *exc_col_interval_list = NULL; /* excluded numerical intervals        */
+  ll_t *inc_row_interval_list = NULL; /* for lines and columns.              */
+  ll_t *exc_row_interval_list = NULL;
 
-  ll_t * inc_col_regex_list = NULL; /* Same for lines and columns specified. */
-  ll_t * exc_col_regex_list = NULL; /* by regular expressions.               */
-  ll_t * inc_row_regex_list = NULL;
-  ll_t * exc_row_regex_list = NULL;
+  ll_t *inc_col_regex_list = NULL; /* Same for lines and columns specified.  */
+  ll_t *exc_col_regex_list = NULL; /* by regular expressions.                */
+  ll_t *inc_row_regex_list = NULL;
+  ll_t *exc_row_regex_list = NULL;
 
-  ll_t * al_col_interval_list = NULL; /* Lists of left aligned rows/columns, */
-  ll_t * ar_col_interval_list = NULL; /* right aligned rows/columns,         */
-  ll_t * ac_col_interval_list = NULL; /* centered rows/columns               */
-  ll_t * al_row_interval_list = NULL;
-  ll_t * ar_row_interval_list = NULL;
-  ll_t * ac_row_interval_list = NULL;
+  ll_t *al_col_interval_list = NULL; /* Lists of left aligned rows/columns,  */
+  ll_t *ar_col_interval_list = NULL; /* right aligned rows/columns,          */
+  ll_t *ac_col_interval_list = NULL; /* centered rows/columns                */
+  ll_t *al_row_interval_list = NULL;
+  ll_t *ar_row_interval_list = NULL;
+  ll_t *ac_row_interval_list = NULL;
 
-  ll_t * at_col_interval_list = NULL; /* list of attributes for rows and     */
-  ll_t * at_row_interval_list = NULL; /* columns.                            */
+  ll_t *at_col_interval_list = NULL; /* list of attributes for rows and      */
+  ll_t *at_row_interval_list = NULL; /* columns.                             */
 
-  ll_t * al_col_regex_list = NULL; /* Same for regular expression based      */
-  ll_t * ar_col_regex_list = NULL; /* alignments.                            */
-  ll_t * ac_col_regex_list = NULL;
-  ll_t * al_row_regex_list = NULL;
-  ll_t * ar_row_regex_list = NULL;
-  ll_t * ac_row_regex_list = NULL;
+  ll_t *al_col_regex_list = NULL; /* Same for regular expression based       */
+  ll_t *ar_col_regex_list = NULL; /* alignments.                             */
+  ll_t *ac_col_regex_list = NULL;
+  ll_t *al_row_regex_list = NULL;
+  ll_t *ar_row_regex_list = NULL;
+  ll_t *ac_row_regex_list = NULL;
 
-  ll_t * at_col_regex_list = NULL; /* list of attributes for rows and        */
-  ll_t * at_row_regex_list = NULL; /* columns.                               */
+  ll_t *at_col_regex_list = NULL; /* list of attributes for rows and         */
+  ll_t *at_row_regex_list = NULL; /* columns.                                */
 
-  ll_t * al_word_regex_list = NULL;
-  ll_t * ar_word_regex_list = NULL;
-  ll_t * ac_word_regex_list = NULL;
+  ll_t *al_word_regex_list = NULL;
+  ll_t *ar_word_regex_list = NULL;
+  ll_t *ac_word_regex_list = NULL;
 
   alignment_t default_alignment = AL_NONE;
 
   filters_t rows_filter_type = UNKNOWN_FILTER;
 
-  char *  first_word_pattern = NULL; /* used by -A/-Z.                       */
-  char *  last_word_pattern  = NULL;
+  char   *first_word_pattern = NULL; /* used by -A/-Z.                       */
+  char   *last_word_pattern  = NULL;
   regex_t first_word_re; /* to hold the compiled first words RE.             */
   regex_t last_word_re;  /* to hold the compiled last words RE.              */
 
-  char *  special_pattern[9] = { NULL, NULL, NULL, NULL, NULL,
+  char   *special_pattern[9] = { NULL, NULL, NULL, NULL, NULL,
                                  NULL, NULL, NULL, NULL }; /* -1 .. -9 */
   regex_t special_re[9]; /* array to hold the compiled special patterns RE.  */
 
@@ -7783,28 +8341,28 @@ main(int argc, char * argv[])
   int exclude_visual_only = 0; /* visual representation was modified via     *
                                 | -S/-I/-E.                                  */
 
-  ll_t * cols_selector_list = NULL; /* to store ASCII representations of     */
-  char * cols_selector      = NULL; /* ranges add RE to select some columns  *
-                                     | with -C.                              */
+  ll_t *cols_selector_list = NULL; /* to store ASCII representations of      */
+  char *cols_selector      = NULL; /* ranges add RE to select some columns   *
+                                    | with -C.                               */
 
-  ll_t * rows_selector_list = NULL; /* to store ASCII representations of     */
-  char * rows_selector      = NULL; /* ranges and RE to select some rows     *
-                                     | with -R.                              */
+  ll_t *rows_selector_list = NULL; /* to store ASCII representations of      */
+  char *rows_selector      = NULL; /* ranges and RE to select some rows      *
+                                    | with -R.                               */
 
-  ll_t * aligns_selector_list = NULL; /* to store ASCII representations of   */
-  char * aligns_selector      = NULL; /* RE to select some rows with -al.    */
+  ll_t *aligns_selector_list = NULL; /* to store ASCII representations of    */
+  char *aligns_selector      = NULL; /* RE to select some rows with -al.     */
 
   long wi; /* word index.                                                    */
 
   term_t term; /* Terminal structure.                                        */
 
-  tst_node_t * tst_word    = NULL; /* TST used by the search function.       */
-  tst_node_t * tst_daccess = NULL; /* TST used by the direct access system.  */
+  tst_node_t *tst_word    = NULL; /* TST used by the search function.        */
+  tst_node_t *tst_daccess = NULL; /* TST used by the direct access system.   */
 
-  long   page;     /* Step for the vertical cursor moves.                    */
-  char * word;     /* Temporary variable to work on words.                   */
-  char * tmp_word; /* Temporary variable able to contain  the beginning of   *
-                    | the word to be displayed.                              */
+  long  page;     /* Step for the vertical cursor moves.                     */
+  char *word;     /* Temporary variable to work on words.                    */
+  char *tmp_word; /* Temporary variable able to contain  the beginning of    *
+                   | the word to be displayed.                               */
 
   long     last_line = 0; /* last logical line number (from 0).              */
   win_t    win;
@@ -7814,10 +8372,10 @@ main(int argc, char * argv[])
   mouse_t  mouse;   /* mouse default values.                                 */
   toggle_t toggles; /* set of binary indicators.                             */
 
-  int    old_fd0; /* backups of the old stdin file descriptor.               */
-  int    old_fd1; /* backups of the old stdout file descriptor.              */
-  FILE * old_stdin;
-  FILE * old_stdout; /* The selected word will go there.                     */
+  int   old_fd0; /* backups of the old stdin file descriptor.                */
+  int   old_fd1; /* backups of the old stdout file descriptor.               */
+  FILE *old_stdin;
+  FILE *old_stdout; /* The selected word will go there.                      */
 
   long nl; /* Number of lines displayed in the window.                       */
   long line_offset; /* Used to correctly put the cursor at the start of the  *
@@ -7836,13 +8394,13 @@ main(int argc, char * argv[])
   long tab_real_max_size; /* Maximum size in bytes of a column in tabular    *
                            | mode.                                           */
 
-  long * col_real_max_size = NULL; /* Array of maximum sizes (bytes) of each */
-                                   /* column in column mode.                 */
+  long *col_real_max_size = NULL; /* Array of maximum sizes (bytes) of each  */
+                                  /* column in column mode.                  */
 
-  long * col_max_size = NULL; /* Array of maximum sizes (in display cells)   *
-                               | of each column in column mode.              */
+  long *col_max_size = NULL; /* Array of maximum sizes (in display cells)    *
+                              | of each column in column mode.               */
 
-  attrib_t ** col_attrs; /* attributes for each column in column mode.        */
+  attrib_t **col_attrs; /* attributes for each column in column mode.        */
 
   long word_real_max_size = 0; /* size of the longer word after expansion.   */
   long cols_real_max_size = 0; /* Max real width of all columns used when    *
@@ -7851,12 +8409,12 @@ main(int argc, char * argv[])
   long cols_max_size = 0; /* Same as above for the columns widths            */
 
   long col_index = 0; /* Index of the current column when reading words,     *
-                         | used  in column mode.                             */
+                       | used  in column mode.                               */
 
   long cols_number = 0; /* Number of columns in column mode.                 */
 
-  char * pre_selection_index = NULL; /* pattern used to set the initial      *
-                                      | cursor position.                     */
+  char *pre_selection_index = NULL; /* pattern used to set the initial       *
+                                     | cursor position.                      */
 
   unsigned char buffer[64]; /* Input buffer which will contain the scancode. */
 
@@ -7875,46 +8433,46 @@ main(int argc, char * argv[])
   struct sigaction sa; /* Signal structure.                                  */
 
   char *iws = NULL, *ils = NULL, *zg = NULL; /* words/lines delimiters and   *
-                                               | zapped glyphs strings.      */
+                                              | zapped glyphs strings.       */
 
-  ll_t * word_delims_list   = NULL; /* and associated linked lists.          */
-  ll_t * line_delims_list   = NULL;
-  ll_t * zapped_glyphs_list = NULL;
+  ll_t *word_delims_list   = NULL; /* and associated linked lists.           */
+  ll_t *line_delims_list   = NULL;
+  ll_t *zapped_glyphs_list = NULL;
 
   char utf8_buffer[5]; /* buffer to store the bytes of a UTF-8 glyph         *
                         | (4 chars max).                                     */
   unsigned char is_last;
-  char *        charset;
+  char         *charset;
 
-  char * home_ini_file;  /* init file full path.                             */
-  char * local_ini_file; /* init file full path.                             */
+  char *home_ini_file;  /* init file full path.                              */
+  char *local_ini_file; /* init file full path.                              */
 
-  charsetinfo_t * charset_ptr;
-  langinfo_t      langinfo;
-  int             is_supported_charset;
+  charsetinfo_t *charset_ptr;
+  langinfo_t     langinfo;
+  int            is_supported_charset;
 
   long line_count = 0; /* Only used when -R is selected.                     */
 
   attrib_t init_attr;
 
-  ll_node_t * inc_interval_node = NULL; /* one node of this list.            */
-  ll_node_t * exc_interval_node = NULL; /* one node of this list.            */
+  ll_node_t *inc_interval_node = NULL; /* one node of this list.             */
+  ll_node_t *exc_interval_node = NULL; /* one node of this list.             */
 
-  interval_t * inc_interval;       /* the data in each node.                 */
-  interval_t * exc_interval;       /* the data in each node.                 */
-  int          row_def_selectable; /* default selectable value.              */
+  interval_t *inc_interval;       /* the data in each node.                  */
+  interval_t *exc_interval;       /* the data in each node.                  */
+  int         row_def_selectable; /* default selectable value.               */
 
   int line_selected_by_regex = 0;
   int line_excluded          = 0;
 
-  char * timeout_message;
+  char *timeout_message;
 
-  char * common_options;
-  char * main_options, *main_spec_options;
-  char * col_options, *col_spec_options;
-  char * line_options, *line_spec_options;
-  char * tab_options, *tab_spec_options;
-  char * tag_options, *tag_spec_options;
+  char *common_options;
+  char *main_options, *main_spec_options;
+  char *col_options, *col_spec_options;
+  char *line_options, *line_spec_options;
+  char *tab_options, *tab_spec_options;
+  char *tag_options, *tag_spec_options;
 
   /* Used to check if we can get the cursor position in the terminal. */
   /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
@@ -7925,8 +8483,15 @@ main(int argc, char * argv[])
 
   /* Initialize some internal data structures. */
   /* """"""""""""""""""""""""""""""""""""""""" */
-  init_main_ds(&init_attr, &win, &limits, &timers, &toggles, &misc, &mouse,
-               &timeout, &daccess);
+  init_main_ds(&init_attr,
+               &win,
+               &limits,
+               &timers,
+               &toggles,
+               &misc,
+               &mouse,
+               &timeout,
+               &daccess);
 
   /* direct access variable initialization. */
   /* """""""""""""""""""""""""""""""""""""" */
@@ -7953,7 +8518,7 @@ main(int argc, char * argv[])
 
   /* Columns selection variables. */
   /* """""""""""""""""""""""""""" */
-  char * cols_filter = NULL;
+  char *cols_filter = NULL;
 
   /* Initialize the count of tagged words. */
   /* """"""""""""""""""""""""""""""""""""" */
@@ -8068,11 +8633,23 @@ main(int argc, char * argv[])
 
   /* Set the attributes from the configuration file if possible. */
   /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-  if (ini_load(home_ini_file, &win, &term, &limits, &timers, &misc, &mouse,
+  if (ini_load(home_ini_file,
+               &win,
+               &term,
+               &limits,
+               &timers,
+               &misc,
+               &mouse,
                ini_cb))
     exit(EXIT_FAILURE);
 
-  if (ini_load(local_ini_file, &win, &term, &limits, &timers, &misc, &mouse,
+  if (ini_load(local_ini_file,
+               &win,
+               &term,
+               &limits,
+               &timers,
+               &misc,
+               &mouse,
                ini_cb))
     exit(EXIT_FAILURE);
 
@@ -8081,9 +8658,10 @@ main(int argc, char * argv[])
 
   /* Command line option settings using ctxopt. */
   /* """""""""""""""""""""""""""""""""""""""""" */
-  ctxopt_init(argv[0], "stop_if_non_option=No "
-                       "allow_abbreviations=No "
-                       "display_usage_on_error=Yes ");
+  ctxopt_init(argv[0],
+              "stop_if_non_option=No "
+              "allow_abbreviations=No "
+              "display_usage_on_error=Yes ");
 
   common_options = "[*help] "
                    "[*usage] "
@@ -8213,9 +8791,11 @@ main(int argc, char * argv[])
   ctxopt_add_opt_settings(parameters, "usage", "-? -u -usage");
   ctxopt_add_opt_settings(parameters, "copyright", "-copyright");
   ctxopt_add_opt_settings(parameters, "version", "-V -version");
-  ctxopt_add_opt_settings(parameters, "include_re",
+  ctxopt_add_opt_settings(parameters,
+                          "include_re",
                           "-i -in -inc -incl -include");
-  ctxopt_add_opt_settings(parameters, "exclude_re",
+  ctxopt_add_opt_settings(parameters,
+                          "exclude_re",
                           "-e -ex -exc -excl -exclude");
   ctxopt_add_opt_settings(parameters, "lines", "-n -lines -height");
   ctxopt_add_opt_settings(parameters, "title", "-m -msg -message -title");
@@ -8236,256 +8816,521 @@ main(int argc, char * argv[])
   ctxopt_add_opt_settings(parameters, "no_auto_tag", "-0 -noat -no_auto_tag");
   ctxopt_add_opt_settings(parameters, "auto_da_number", "-N -number");
   ctxopt_add_opt_settings(parameters, "auto_da_unnumber", "-U -unnumber");
-  ctxopt_add_opt_settings(parameters, "field_da_number",
+  ctxopt_add_opt_settings(parameters,
+                          "field_da_number",
                           "-F -en -embedded_number");
   ctxopt_add_opt_settings(parameters, "da_options", "-D -data -options");
   ctxopt_add_opt_settings(parameters, "invalid_character", "-. -dot -invalid");
   ctxopt_add_opt_settings(parameters, "blank_nonprintable", "-b -blank");
   ctxopt_add_opt_settings(parameters, "center_mode", "-M -middle -center");
-  ctxopt_add_opt_settings(parameters, "clean",
+  ctxopt_add_opt_settings(parameters,
+                          "clean",
                           "-d -restore -delete -clean "
                           "-delete_window -clean_window");
-  ctxopt_add_opt_settings(parameters, "column_mode",
+  ctxopt_add_opt_settings(parameters,
+                          "column_mode",
                           "-c -col -col_mode -column");
   ctxopt_add_opt_settings(parameters, "line_mode", "-l -line -line_mode");
-  ctxopt_add_opt_settings(parameters, "tab_mode",
+  ctxopt_add_opt_settings(parameters,
+                          "tab_mode",
                           "-t -tab -tab_mode -tabulate_mode");
   ctxopt_add_opt_settings(parameters, "wide_mode", "-w -wide -wide_mode");
-  ctxopt_add_opt_settings(parameters, "columns_select",
+  ctxopt_add_opt_settings(parameters,
+                          "columns_select",
                           "-C -cs -cols -cols_select");
-  ctxopt_add_opt_settings(parameters, "rows_select",
+  ctxopt_add_opt_settings(parameters,
+                          "rows_select",
                           "-R -rs -rows -rows_select");
   ctxopt_add_opt_settings(parameters, "aligns_select", "-al -align");
-  ctxopt_add_opt_settings(parameters, "force_first_column",
+  ctxopt_add_opt_settings(parameters,
+                          "force_first_column",
                           "-A -fc -first_column");
-  ctxopt_add_opt_settings(parameters, "force_last_column",
+  ctxopt_add_opt_settings(parameters,
+                          "force_last_column",
                           "-Z -lc -last_column");
   ctxopt_add_opt_settings(parameters, "gutter", "-g -gutter");
   ctxopt_add_opt_settings(parameters, "keep_spaces", "-k -ks -keep_spaces");
-  ctxopt_add_opt_settings(parameters, "word_separators",
+  ctxopt_add_opt_settings(parameters,
+                          "word_separators",
                           "-W -ws -wd -word_delimiters -word_separators");
-  ctxopt_add_opt_settings(parameters, "line_separators",
+  ctxopt_add_opt_settings(parameters,
+                          "line_separators",
                           "-L -ls -ld -line-delimiters -line_separators");
   ctxopt_add_opt_settings(parameters, "zapped_glyphs", "-z -zap -zap-glyphs");
-  ctxopt_add_opt_settings(parameters, "no_scroll_bar",
+  ctxopt_add_opt_settings(parameters,
+                          "no_scroll_bar",
                           "-q -no_bar -no-scroll_bar");
   ctxopt_add_opt_settings(parameters, "early_subst_all", "-ES -early_subst");
   ctxopt_add_opt_settings(parameters, "post_subst_all", "-S -subst");
-  ctxopt_add_opt_settings(parameters, "post_subst_included",
+  ctxopt_add_opt_settings(parameters,
+                          "post_subst_included",
                           "-I -si -subst_included");
-  ctxopt_add_opt_settings(parameters, "post_subst_excluded",
+  ctxopt_add_opt_settings(parameters,
+                          "post_subst_excluded",
                           "-E -se -subst_excluded");
   ctxopt_add_opt_settings(parameters, "search_method", "-/ -search_method");
-  ctxopt_add_opt_settings(parameters, "start_pattern",
+  ctxopt_add_opt_settings(parameters,
+                          "start_pattern",
                           "-s -sp -start -start_pattern");
   ctxopt_add_opt_settings(parameters, "timeout", "-x -tmout -timeout");
-  ctxopt_add_opt_settings(parameters, "hidden_timeout",
+  ctxopt_add_opt_settings(parameters,
+                          "hidden_timeout",
                           "-X -htmout -hidden_timeout");
-  ctxopt_add_opt_settings(parameters, "validate_in_search_mode",
+  ctxopt_add_opt_settings(parameters,
+                          "validate_in_search_mode",
                           "-r -auto_validate");
   ctxopt_add_opt_settings(parameters, "visual_bell", "-v -vb -visual_bell");
   ctxopt_add_opt_settings(parameters, "ignore_quotes", "-Q -ignore_quotes");
-  ctxopt_add_opt_settings(parameters, "incremental_search",
+  ctxopt_add_opt_settings(parameters,
+                          "incremental_search",
                           "-is -incremental_search");
   ctxopt_add_opt_settings(parameters, "limits", "-lim -limits");
-  ctxopt_add_opt_settings(parameters, "forgotten_timeout",
+  ctxopt_add_opt_settings(parameters,
+                          "forgotten_timeout",
                           "-f -forgotten_timeout -global_timeout");
   ctxopt_add_opt_settings(parameters, "no_mouse", "-nm -no_mouse");
-  ctxopt_add_opt_settings(parameters, "button_remapping",
+  ctxopt_add_opt_settings(parameters,
+                          "button_remapping",
                           "-br -buttons -button_remapping");
-  ctxopt_add_opt_settings(parameters, "double_click_delay",
+  ctxopt_add_opt_settings(parameters,
+                          "double_click_delay",
                           "-dc -dcd -double_click -double_click_delay");
-  ctxopt_add_opt_settings(parameters, "show_blank_words",
+  ctxopt_add_opt_settings(parameters,
+                          "show_blank_words",
                           "-sb -sbw -show_blank_words");
 
   /* ctxopt options incompatibilities. */
   /* """"""""""""""""""""""""""""""""" */
 
-  ctxopt_add_ctx_settings(incompatibilities, "Main",
+  ctxopt_add_ctx_settings(incompatibilities,
+                          "Main",
                           "column_mode line_mode tab_mode");
   ctxopt_add_ctx_settings(incompatibilities, "Main", "tag_mode pin_mode");
   ctxopt_add_ctx_settings(incompatibilities, "Main", "help usage");
   ctxopt_add_ctx_settings(incompatibilities, "Main", "timeout hidden_timeout");
-  ctxopt_add_ctx_settings(incompatibilities, "Main",
+  ctxopt_add_ctx_settings(incompatibilities,
+                          "Main",
                           "no_mouse button_remapping");
-  ctxopt_add_ctx_settings(incompatibilities, "Main",
+  ctxopt_add_ctx_settings(incompatibilities,
+                          "Main",
                           "no_mouse double_click_delay");
 
   /* ctxopt options requirements. */
   /* """""""""""""""""""""""""""" */
 
-  ctxopt_add_ctx_settings(requirements, "Main",
+  ctxopt_add_ctx_settings(requirements,
+                          "Main",
                           "da_options "
                           "field_da_number auto_da_number auto_da_unnumber");
-  ctxopt_add_ctx_settings(requirements, "Columns",
+  ctxopt_add_ctx_settings(requirements,
+                          "Columns",
                           "da_options "
                           "field_da_number auto_da_number auto_da_unnumber");
-  ctxopt_add_ctx_settings(requirements, "Lines",
+  ctxopt_add_ctx_settings(requirements,
+                          "Lines",
                           "da_options "
                           "field_da_number auto_da_number auto_da_unnumber");
-  ctxopt_add_ctx_settings(requirements, "Tabulations",
+  ctxopt_add_ctx_settings(requirements,
+                          "Tabulations",
                           "da_options "
                           "field_da_number auto_da_number auto_da_unnumber");
 
   /* ctxopt actions. */
   /* """"""""""""""" */
 
-  ctxopt_add_opt_settings(actions, "auto_tag", toggle_action, &toggles,
+  ctxopt_add_opt_settings(actions,
+                          "auto_tag",
+                          toggle_action,
+                          &toggles,
                           (char *)0);
-  ctxopt_add_opt_settings(actions, "no_auto_tag", toggle_action, &toggles,
+  ctxopt_add_opt_settings(actions,
+                          "no_auto_tag",
+                          toggle_action,
+                          &toggles,
                           (char *)0);
-  ctxopt_add_opt_settings(actions, "invalid_character", invalid_char_action,
-                          &misc, (char *)0);
-  ctxopt_add_opt_settings(actions, "blank_nonprintable", toggle_action,
-                          &toggles, (char *)0);
-  ctxopt_add_opt_settings(actions, "center_mode", center_mode_action, &win,
+  ctxopt_add_opt_settings(actions,
+                          "invalid_character",
+                          invalid_char_action,
+                          &misc,
+                          (char *)0);
+  ctxopt_add_opt_settings(actions,
+                          "blank_nonprintable",
+                          toggle_action,
+                          &toggles,
+                          (char *)0);
+  ctxopt_add_opt_settings(actions,
+                          "center_mode",
+                          center_mode_action,
+                          &win,
                           (char *)0);
   ctxopt_add_opt_settings(actions, "clean", toggle_action, &toggles, (char *)0);
-  ctxopt_add_opt_settings(actions, "column_mode", column_mode_action, &win,
+  ctxopt_add_opt_settings(actions,
+                          "column_mode",
+                          column_mode_action,
+                          &win,
                           (char *)0);
-  ctxopt_add_opt_settings(actions, "line_mode", line_mode_action, &win,
+  ctxopt_add_opt_settings(actions,
+                          "line_mode",
+                          line_mode_action,
+                          &win,
                           (char *)0);
-  ctxopt_add_opt_settings(actions, "tab_mode", tab_mode_action, &win,
+  ctxopt_add_opt_settings(actions,
+                          "tab_mode",
+                          tab_mode_action,
+                          &win,
                           (char *)0);
-  ctxopt_add_opt_settings(actions, "columns_select", columns_select_action,
-                          &cols_selector_list, &toggles, (char *)0);
-  ctxopt_add_opt_settings(actions, "rows_select", rows_select_action,
-                          &rows_selector_list, &win, &toggles, (char *)0);
-  ctxopt_add_opt_settings(actions, "aligns_select", aligns_select_action,
-                          &aligns_selector_list, (char *)0);
-  ctxopt_add_opt_settings(actions, "include_re", include_re_action,
-                          &pattern_def_include, &include_pattern, &misc,
+  ctxopt_add_opt_settings(actions,
+                          "columns_select",
+                          columns_select_action,
+                          &cols_selector_list,
+                          &toggles,
                           (char *)0);
-  ctxopt_add_opt_settings(actions, "exclude_re", exclude_re_action,
-                          &pattern_def_include, &exclude_pattern, &misc,
+  ctxopt_add_opt_settings(actions,
+                          "rows_select",
+                          rows_select_action,
+                          &rows_selector_list,
+                          &win,
+                          &toggles,
                           (char *)0);
-  ctxopt_add_opt_settings(actions, "gutter", gutter_action, &win, &langinfo,
-                          &misc, (char *)0);
+  ctxopt_add_opt_settings(actions,
+                          "aligns_select",
+                          aligns_select_action,
+                          &aligns_selector_list,
+                          (char *)0);
+  ctxopt_add_opt_settings(actions,
+                          "include_re",
+                          include_re_action,
+                          &pattern_def_include,
+                          &include_pattern,
+                          &misc,
+                          (char *)0);
+  ctxopt_add_opt_settings(actions,
+                          "exclude_re",
+                          exclude_re_action,
+                          &pattern_def_include,
+                          &exclude_pattern,
+                          &misc,
+                          (char *)0);
+  ctxopt_add_opt_settings(actions,
+                          "gutter",
+                          gutter_action,
+                          &win,
+                          &langinfo,
+                          &misc,
+                          (char *)0);
   ctxopt_add_opt_settings(actions, "help", help_action, (char *)0);
   ctxopt_add_opt_settings(actions, "long_help", long_help_action, (char *)0);
   ctxopt_add_opt_settings(actions, "usage", usage_action, (char *)0);
-  ctxopt_add_opt_settings(actions, "keep_spaces", toggle_action, &toggles,
+  ctxopt_add_opt_settings(actions,
+                          "keep_spaces",
+                          toggle_action,
+                          &toggles,
                           (char *)0);
   ctxopt_add_opt_settings(actions, "lines", lines_action, &win, (char *)0);
-  ctxopt_add_opt_settings(actions, "no_scroll_bar", toggle_action, &toggles,
+  ctxopt_add_opt_settings(actions,
+                          "no_scroll_bar",
+                          toggle_action,
+                          &toggles,
                           (char *)0);
-  ctxopt_add_opt_settings(actions, "start_pattern", set_pattern_action,
-                          &pre_selection_index, &misc, (char *)0);
-  ctxopt_add_opt_settings(actions, "title", set_string_action, &message,
-                          &langinfo, &misc, (char *)0);
-  ctxopt_add_opt_settings(actions, "int", int_action, &int_string,
-                          &int_as_in_shell, &langinfo, &misc, (char *)0);
-  ctxopt_add_opt_settings(actions, "validate_in_search_mode", toggle_action,
-                          &toggles, (char *)0);
+  ctxopt_add_opt_settings(actions,
+                          "start_pattern",
+                          set_pattern_action,
+                          &pre_selection_index,
+                          &misc,
+                          (char *)0);
+  ctxopt_add_opt_settings(actions,
+                          "title",
+                          set_string_action,
+                          &message,
+                          &langinfo,
+                          &misc,
+                          (char *)0);
+  ctxopt_add_opt_settings(actions,
+                          "int",
+                          int_action,
+                          &int_string,
+                          &int_as_in_shell,
+                          &langinfo,
+                          &misc,
+                          (char *)0);
+  ctxopt_add_opt_settings(actions,
+                          "validate_in_search_mode",
+                          toggle_action,
+                          &toggles,
+                          (char *)0);
   ctxopt_add_opt_settings(actions, "copyright", copyright_action, (char *)0);
   ctxopt_add_opt_settings(actions, "version", version_action, (char *)0);
-  ctxopt_add_opt_settings(actions, "visual_bell", toggle_action, &toggles,
+  ctxopt_add_opt_settings(actions,
+                          "visual_bell",
+                          toggle_action,
+                          &toggles,
                           (char *)0);
-  ctxopt_add_opt_settings(actions, "incremental_search", toggle_action,
-                          &toggles, (char *)0);
-  ctxopt_add_opt_settings(actions, "wide_mode", wide_mode_action, &win,
+  ctxopt_add_opt_settings(actions,
+                          "incremental_search",
+                          toggle_action,
+                          &toggles,
                           (char *)0);
-  ctxopt_add_opt_settings(actions, "early_subst_all", post_subst_action,
-                          &early_sed_list, &misc, (char *)0);
-  ctxopt_add_opt_settings(actions, "post_subst_all", post_subst_action,
-                          &sed_list, &misc, (char *)0);
-  ctxopt_add_opt_settings(actions, "post_subst_included", post_subst_action,
-                          &include_sed_list, &misc, (char *)0);
-  ctxopt_add_opt_settings(actions, "post_subst_excluded", post_subst_action,
-                          &exclude_sed_list, &misc, (char *)0);
-  ctxopt_add_opt_settings(actions, "special_level_1", special_level_action,
-                          special_pattern, &win, &term, &init_attr, &misc,
+  ctxopt_add_opt_settings(actions,
+                          "wide_mode",
+                          wide_mode_action,
+                          &win,
                           (char *)0);
-  ctxopt_add_opt_settings(actions, "special_level_2", special_level_action,
-                          special_pattern, &win, &term, &init_attr, &misc,
+  ctxopt_add_opt_settings(actions,
+                          "early_subst_all",
+                          post_subst_action,
+                          &early_sed_list,
+                          &misc,
                           (char *)0);
-  ctxopt_add_opt_settings(actions, "special_level_3", special_level_action,
-                          special_pattern, &win, &term, &init_attr, &misc,
+  ctxopt_add_opt_settings(actions,
+                          "post_subst_all",
+                          post_subst_action,
+                          &sed_list,
+                          &misc,
                           (char *)0);
-  ctxopt_add_opt_settings(actions, "special_level_4", special_level_action,
-                          special_pattern, &win, &term, &init_attr, &misc,
+  ctxopt_add_opt_settings(actions,
+                          "post_subst_included",
+                          post_subst_action,
+                          &include_sed_list,
+                          &misc,
                           (char *)0);
-  ctxopt_add_opt_settings(actions, "special_level_5", special_level_action,
-                          special_pattern, &win, &term, &init_attr, &misc,
+  ctxopt_add_opt_settings(actions,
+                          "post_subst_excluded",
+                          post_subst_action,
+                          &exclude_sed_list,
+                          &misc,
                           (char *)0);
-  ctxopt_add_opt_settings(actions, "special_level_6", special_level_action,
-                          special_pattern, &win, &term, &init_attr, &misc,
+  ctxopt_add_opt_settings(actions,
+                          "special_level_1",
+                          special_level_action,
+                          special_pattern,
+                          &win,
+                          &term,
+                          &init_attr,
+                          &misc,
                           (char *)0);
-  ctxopt_add_opt_settings(actions, "special_level_7", special_level_action,
-                          special_pattern, &win, &term, &init_attr, &misc,
+  ctxopt_add_opt_settings(actions,
+                          "special_level_2",
+                          special_level_action,
+                          special_pattern,
+                          &win,
+                          &term,
+                          &init_attr,
+                          &misc,
                           (char *)0);
-  ctxopt_add_opt_settings(actions, "special_level_8", special_level_action,
-                          special_pattern, &win, &term, &init_attr, &misc,
+  ctxopt_add_opt_settings(actions,
+                          "special_level_3",
+                          special_level_action,
+                          special_pattern,
+                          &win,
+                          &term,
+                          &init_attr,
+                          &misc,
                           (char *)0);
-  ctxopt_add_opt_settings(actions, "special_level_9", special_level_action,
-                          special_pattern, &win, &term, &init_attr, &misc,
+  ctxopt_add_opt_settings(actions,
+                          "special_level_4",
+                          special_level_action,
+                          special_pattern,
+                          &win,
+                          &term,
+                          &init_attr,
+                          &misc,
                           (char *)0);
-  ctxopt_add_opt_settings(actions, "attributes", attributes_action, &win, &term,
-                          &init_attr, (char *)0);
+  ctxopt_add_opt_settings(actions,
+                          "special_level_5",
+                          special_level_action,
+                          special_pattern,
+                          &win,
+                          &term,
+                          &init_attr,
+                          &misc,
+                          (char *)0);
+  ctxopt_add_opt_settings(actions,
+                          "special_level_6",
+                          special_level_action,
+                          special_pattern,
+                          &win,
+                          &term,
+                          &init_attr,
+                          &misc,
+                          (char *)0);
+  ctxopt_add_opt_settings(actions,
+                          "special_level_7",
+                          special_level_action,
+                          special_pattern,
+                          &win,
+                          &term,
+                          &init_attr,
+                          &misc,
+                          (char *)0);
+  ctxopt_add_opt_settings(actions,
+                          "special_level_8",
+                          special_level_action,
+                          special_pattern,
+                          &win,
+                          &term,
+                          &init_attr,
+                          &misc,
+                          (char *)0);
+  ctxopt_add_opt_settings(actions,
+                          "special_level_9",
+                          special_level_action,
+                          special_pattern,
+                          &win,
+                          &term,
+                          &init_attr,
+                          &misc,
+                          (char *)0);
+  ctxopt_add_opt_settings(actions,
+                          "attributes",
+                          attributes_action,
+                          &win,
+                          &term,
+                          &init_attr,
+                          (char *)0);
   ctxopt_add_opt_settings(actions, "timeout", timeout_action, &misc, (char *)0);
-  ctxopt_add_opt_settings(actions, "hidden_timeout", timeout_action, &misc,
+  ctxopt_add_opt_settings(actions,
+                          "hidden_timeout",
+                          timeout_action,
+                          &misc,
                           (char *)0);
-  ctxopt_add_opt_settings(actions, "force_first_column", set_pattern_action,
-                          &first_word_pattern, &misc, (char *)0);
-  ctxopt_add_opt_settings(actions, "force_last_column", set_pattern_action,
-                          &last_word_pattern, &misc, (char *)0);
-  ctxopt_add_opt_settings(actions, "word_separators", set_pattern_action, &iws,
-                          &misc, (char *)0);
-  ctxopt_add_opt_settings(actions, "line_separators", set_pattern_action, &ils,
-                          &misc, (char *)0);
-  ctxopt_add_opt_settings(actions, "zapped_glyphs", set_pattern_action, &zg,
-                          &misc, (char *)0);
-  ctxopt_add_opt_settings(actions, "tag_mode", tag_mode_action, &toggles, &win,
-                          &misc, (char *)0);
-  ctxopt_add_opt_settings(actions, "pin_mode", pin_mode_action, &toggles, &win,
-                          &misc, (char *)0);
-  ctxopt_add_opt_settings(actions, "search_method", search_method_action, &misc,
+  ctxopt_add_opt_settings(actions,
+                          "force_first_column",
+                          set_pattern_action,
+                          &first_word_pattern,
+                          &misc,
                           (char *)0);
-  ctxopt_add_opt_settings(actions, "auto_da_number", auto_da_action,
-                          &daccess_np, (char *)0);
-  ctxopt_add_opt_settings(actions, "auto_da_unnumber", auto_da_action,
-                          &daccess_up, (char *)0);
-  ctxopt_add_opt_settings(actions, "field_da_number", field_da_number_action,
+  ctxopt_add_opt_settings(actions,
+                          "force_last_column",
+                          set_pattern_action,
+                          &last_word_pattern,
+                          &misc,
                           (char *)0);
-  ctxopt_add_opt_settings(actions, "da_options", da_options_action,
-                          &daccess_index, &misc, (char *)0);
-  ctxopt_add_opt_settings(actions, "ignore_quotes", ignore_quotes_action, &misc,
+  ctxopt_add_opt_settings(actions,
+                          "word_separators",
+                          set_pattern_action,
+                          &iws,
+                          &misc,
+                          (char *)0);
+  ctxopt_add_opt_settings(actions,
+                          "line_separators",
+                          set_pattern_action,
+                          &ils,
+                          &misc,
+                          (char *)0);
+  ctxopt_add_opt_settings(actions,
+                          "zapped_glyphs",
+                          set_pattern_action,
+                          &zg,
+                          &misc,
+                          (char *)0);
+  ctxopt_add_opt_settings(actions,
+                          "tag_mode",
+                          tag_mode_action,
+                          &toggles,
+                          &win,
+                          &misc,
+                          (char *)0);
+  ctxopt_add_opt_settings(actions,
+                          "pin_mode",
+                          pin_mode_action,
+                          &toggles,
+                          &win,
+                          &misc,
+                          (char *)0);
+  ctxopt_add_opt_settings(actions,
+                          "search_method",
+                          search_method_action,
+                          &misc,
+                          (char *)0);
+  ctxopt_add_opt_settings(actions,
+                          "auto_da_number",
+                          auto_da_action,
+                          &daccess_np,
+                          (char *)0);
+  ctxopt_add_opt_settings(actions,
+                          "auto_da_unnumber",
+                          auto_da_action,
+                          &daccess_up,
+                          (char *)0);
+  ctxopt_add_opt_settings(actions,
+                          "field_da_number",
+                          field_da_number_action,
+                          (char *)0);
+  ctxopt_add_opt_settings(actions,
+                          "da_options",
+                          da_options_action,
+                          &daccess_index,
+                          &misc,
+                          (char *)0);
+  ctxopt_add_opt_settings(actions,
+                          "ignore_quotes",
+                          ignore_quotes_action,
+                          &misc,
                           (char *)0);
   ctxopt_add_opt_settings(actions, "limits", limits_action, &limits, (char *)0);
-  ctxopt_add_opt_settings(actions, "forgotten_timeout", forgotten_action,
-                          &timers, (char *)0);
-  ctxopt_add_opt_settings(actions, "button_remapping", button_action, &mouse,
+  ctxopt_add_opt_settings(actions,
+                          "forgotten_timeout",
+                          forgotten_action,
+                          &timers,
                           (char *)0);
-  ctxopt_add_opt_settings(actions, "double_click_delay", double_click_action,
-                          &mouse, &disable_double_click, (char *)0);
-  ctxopt_add_opt_settings(actions, "no_mouse", toggle_action, &toggles,
+  ctxopt_add_opt_settings(actions,
+                          "button_remapping",
+                          button_action,
+                          &mouse,
                           (char *)0);
-  ctxopt_add_opt_settings(actions, "show_blank_words", show_blank_action,
-                          &toggles, &misc, (char *)0);
+  ctxopt_add_opt_settings(actions,
+                          "double_click_delay",
+                          double_click_action,
+                          &mouse,
+                          &disable_double_click,
+                          (char *)0);
+  ctxopt_add_opt_settings(actions,
+                          "no_mouse",
+                          toggle_action,
+                          &toggles,
+                          (char *)0);
+  ctxopt_add_opt_settings(actions,
+                          "show_blank_words",
+                          show_blank_action,
+                          &toggles,
+                          &misc,
+                          (char *)0);
 
   /* ctxopt constraints. */
   /* """"""""""""""""""" */
 
-  ctxopt_add_opt_settings(constraints, "attributes", ctxopt_re_constraint,
+  ctxopt_add_opt_settings(constraints,
+                          "attributes",
+                          ctxopt_re_constraint,
                           "[^:]+:.+");
-  ctxopt_add_opt_settings(constraints, "da_options", ctxopt_re_constraint,
+  ctxopt_add_opt_settings(constraints,
+                          "da_options",
+                          ctxopt_re_constraint,
                           "[^:]+:.+");
   ctxopt_add_opt_settings(constraints, "lines", check_integer_constraint, "");
 
-  ctxopt_add_opt_settings(constraints, "tab_mode", check_integer_constraint,
+  ctxopt_add_opt_settings(constraints,
+                          "tab_mode",
+                          check_integer_constraint,
                           "");
-  ctxopt_add_opt_settings(constraints, "tab_mode", ctxopt_range_constraint,
+  ctxopt_add_opt_settings(constraints,
+                          "tab_mode",
+                          ctxopt_range_constraint,
                           "1 .");
-  ctxopt_add_opt_settings(constraints, "double_click_delay",
-                          check_integer_constraint, "");
+  ctxopt_add_opt_settings(constraints,
+                          "double_click_delay",
+                          check_integer_constraint,
+                          "");
 
   /* Evaluation order. */
   /* """"""""""""""""" */
 
-  ctxopt_add_opt_settings(after, "field_da_number",
+  ctxopt_add_opt_settings(after,
+                          "field_da_number",
                           "auto_da_number auto_da_unnumber");
 
-  ctxopt_add_opt_settings(after, "da_options",
+  ctxopt_add_opt_settings(after,
+                          "da_options",
                           "field_da_number auto_da_number auto_da_unnumber");
 
   /* In help settings. */
@@ -8508,7 +9353,8 @@ main(int argc, char * argv[])
     input_file = fopen_safe(rem_args[0], "r");
     if (input_file == NULL)
     {
-      fprintf(stderr, "The file \"%s\" does not exist or cannot be read.\n",
+      fprintf(stderr,
+              "The file \"%s\" does not exist or cannot be read.\n",
               rem_args[0]);
       ctxopt_ctx_disp_usage(NULL, exit_after);
       exit(EXIT_FAILURE); /* Avoid a compiler warning. */
@@ -8551,7 +9397,7 @@ main(int argc, char * argv[])
   term.curs_line = term.curs_column = 0;
 
   {
-    char * str;
+    char *str;
 
     str                        = tigetstr("cuu1");
     term.has_cursor_up         = (str == (char *)-1 || str == NULL) ? 0 : 1;
@@ -8603,8 +9449,9 @@ main(int argc, char * argv[])
       || !term.has_cursor_right || !term.has_save_cursor
       || !term.has_restore_cursor)
   {
-    fprintf(stderr, "The terminal does not have the required cursor "
-                    "management capabilities.\n");
+    fprintf(stderr,
+            "The terminal does not have the required cursor "
+            "management capabilities.\n");
 
     exit(EXIT_FAILURE);
   }
@@ -8989,7 +9836,7 @@ main(int argc, char * argv[])
 
       case WORD:
       {
-        char * s = "[     s before selecting the word \"";
+        char *s = "[     s before selecting the word \"";
 
         timeout_message = xcalloc(1, 4 + strlen(s) + strlen(timeout_word));
 
@@ -9016,7 +9863,9 @@ main(int argc, char * argv[])
     {
       long len;
 
-      get_message_lines(message, message_lines_list, &message_max_width,
+      get_message_lines(message,
+                        message_lines_list,
+                        &message_max_width,
                         &message_max_len);
       ll_append(message_lines_list, timeout_message);
 
@@ -9032,7 +9881,9 @@ main(int argc, char * argv[])
   else if (message)
   {
     message_lines_list = ll_new();
-    get_message_lines(message, message_lines_list, &message_max_width,
+    get_message_lines(message,
+                      message_lines_list,
+                      &message_max_width,
                       &message_max_len);
   }
 
@@ -9073,9 +9924,9 @@ main(int argc, char * argv[])
   zapped_glyphs_list = ll_new();
   if (zg != NULL)
   {
-    int    utf8_len;
-    char * zg_ptr = zg;
-    char * tmp;
+    int   utf8_len;
+    char *zg_ptr = zg;
+    char *tmp;
 
     utf8_len = mblen(zg_ptr, 4);
 
@@ -9105,9 +9956,9 @@ main(int argc, char * argv[])
   }
   else
   {
-    int    utf8_len;
-    char * iws_ptr = iws;
-    char * tmp;
+    int   utf8_len;
+    char *iws_ptr = iws;
+    char *tmp;
 
     utf8_len = mblen(iws_ptr, 4);
 
@@ -9136,9 +9987,9 @@ main(int argc, char * argv[])
     ll_append(line_delims_list, "\n");
   else
   {
-    int    utf8_len;
-    char * ils_ptr = ils;
-    char * tmp;
+    int   utf8_len;
+    char *ils_ptr = ils;
+    char *tmp;
 
     utf8_len = mblen(ils_ptr, 4);
 
@@ -9230,7 +10081,8 @@ main(int argc, char * argv[])
   for (index = 0; index < 9; index++)
   {
     if (special_pattern[index]
-        && regcomp(&special_re[index], special_pattern[index],
+        && regcomp(&special_re[index],
+                   special_pattern[index],
                    REG_EXTENDED | REG_NOSUB)
              != 0)
     {
@@ -9244,14 +10096,15 @@ main(int argc, char * argv[])
   /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
   if (early_sed_list != NULL)
   {
-    ll_node_t * node = early_sed_list->head;
+    ll_node_t *node = early_sed_list->head;
 
     while (node != NULL)
     {
       if (!parse_sed_like_string((sed_t *)(node->data)))
       {
-        fprintf(stderr, "Bad -ES argument. Must be something like: "
-                        "/regex/repl_string/[g][v][s][i].\n");
+        fprintf(stderr,
+                "Bad -ES argument. Must be something like: "
+                "/regex/repl_string/[g][v][s][i].\n");
 
         exit(EXIT_FAILURE);
       }
@@ -9262,14 +10115,15 @@ main(int argc, char * argv[])
 
   if (sed_list != NULL)
   {
-    ll_node_t * node = sed_list->head;
+    ll_node_t *node = sed_list->head;
 
     while (node != NULL)
     {
       if (!parse_sed_like_string((sed_t *)(node->data)))
       {
-        fprintf(stderr, "Bad -S argument. Must be something like: "
-                        "/regex/repl_string/[g][v][s][i].\n");
+        fprintf(stderr,
+                "Bad -S argument. Must be something like: "
+                "/regex/repl_string/[g][v][s][i].\n");
 
         exit(EXIT_FAILURE);
       }
@@ -9286,14 +10140,15 @@ main(int argc, char * argv[])
 
   if (include_sed_list != NULL)
   {
-    ll_node_t * node = include_sed_list->head;
+    ll_node_t *node = include_sed_list->head;
 
     while (node != NULL)
     {
       if (!parse_sed_like_string((sed_t *)(node->data)))
       {
-        fprintf(stderr, "Bad -I argument. Must be something like: "
-                        "/regex/repl_string/[g][v][s][i].\n");
+        fprintf(stderr,
+                "Bad -I argument. Must be something like: "
+                "/regex/repl_string/[g][v][s][i].\n");
 
         exit(EXIT_FAILURE);
       }
@@ -9306,14 +10161,15 @@ main(int argc, char * argv[])
 
   if (exclude_sed_list != NULL)
   {
-    ll_node_t * node = exclude_sed_list->head;
+    ll_node_t *node = exclude_sed_list->head;
 
     while (node != NULL)
     {
       if (!parse_sed_like_string((sed_t *)(node->data)))
       {
-        fprintf(stderr, "Bad -E argument. Must be something like: "
-                        "/regex/repl_string/[g][v][s][i].\n");
+        fprintf(stderr,
+                "Bad -E argument. Must be something like: "
+                "/regex/repl_string/[g][v][s][i].\n");
 
         exit(EXIT_FAILURE);
       }
@@ -9328,26 +10184,37 @@ main(int argc, char * argv[])
   /* """""""""""""""""""""""""""""""""""""" */
   if (rows_selector_list != NULL)
   {
-    ll_node_t *   node_selector = rows_selector_list->head;
-    ll_node_t *   node;
-    filters_t     filter_type;
-    attr_elem_t * elem;
+    ll_node_t   *node_selector = rows_selector_list->head;
+    ll_node_t   *node;
+    filters_t    filter_type;
+    attr_elem_t *elem;
 
     rows_filter_type = UNKNOWN_FILTER;
     while (node_selector != NULL)
     {
-      char * unparsed;
+      char *unparsed;
 
       rows_selector = node_selector->data;
 
-      parse_selectors(rows_selector, &filter_type, &unparsed,
-                      &inc_row_interval_list, &inc_row_regex_list,
-                      &exc_row_interval_list, &exc_row_regex_list,
-                      &al_row_interval_list, &al_row_regex_list,
-                      &ar_row_interval_list, &ar_row_regex_list,
-                      &ac_row_interval_list, &ac_row_regex_list,
-                      &at_row_interval_list, &at_row_regex_list,
-                      &default_alignment, &win, &misc, &term);
+      parse_selectors(rows_selector,
+                      &filter_type,
+                      &unparsed,
+                      &inc_row_interval_list,
+                      &inc_row_regex_list,
+                      &exc_row_interval_list,
+                      &exc_row_regex_list,
+                      &al_row_interval_list,
+                      &al_row_regex_list,
+                      &ar_row_interval_list,
+                      &ar_row_regex_list,
+                      &ac_row_interval_list,
+                      &ac_row_regex_list,
+                      &at_row_interval_list,
+                      &at_row_regex_list,
+                      &default_alignment,
+                      &win,
+                      &misc,
+                      &term);
 
       if (*unparsed != '\0')
       {
@@ -9388,29 +10255,40 @@ main(int argc, char * argv[])
   /* """"""""""""""""""""""""""""""""""""""""" */
   if (cols_selector_list != NULL)
   {
-    filters_t     filter_type, cols_filter_type;
-    interval_t *  data;
-    ll_node_t *   node;
-    ll_node_t *   node_selector = cols_selector_list->head;
-    attr_elem_t * elem;
+    filters_t    filter_type, cols_filter_type;
+    interval_t  *data;
+    ll_node_t   *node;
+    ll_node_t   *node_selector = cols_selector_list->head;
+    attr_elem_t *elem;
 
     cols_filter = xmalloc(limits.cols);
 
     cols_filter_type = UNKNOWN_FILTER;
     while (node_selector != NULL)
     {
-      char * unparsed;
+      char *unparsed;
 
       cols_selector = node_selector->data;
 
-      parse_selectors(cols_selector, &filter_type, &unparsed,
-                      &inc_col_interval_list, &inc_col_regex_list,
-                      &exc_col_interval_list, &exc_col_regex_list,
-                      &al_col_interval_list, &al_col_regex_list,
-                      &ar_col_interval_list, &ar_col_regex_list,
-                      &ac_col_interval_list, &ac_col_regex_list,
-                      &at_col_interval_list, &at_col_regex_list,
-                      &default_alignment, &win, &misc, &term);
+      parse_selectors(cols_selector,
+                      &filter_type,
+                      &unparsed,
+                      &inc_col_interval_list,
+                      &inc_col_regex_list,
+                      &exc_col_interval_list,
+                      &exc_col_regex_list,
+                      &al_col_interval_list,
+                      &al_col_regex_list,
+                      &ar_col_interval_list,
+                      &ar_col_regex_list,
+                      &ac_col_interval_list,
+                      &ac_col_regex_list,
+                      &at_col_interval_list,
+                      &at_col_regex_list,
+                      &default_alignment,
+                      &win,
+                      &misc,
+                      &term);
 
       if (*unparsed != '\0')
       {
@@ -9449,7 +10327,8 @@ main(int argc, char * argv[])
           if (data->high >= limits.cols)
             data->high = limits.cols - 1;
 
-          memset(cols_filter + data->low, INCLUDE_MARK,
+          memset(cols_filter + data->low,
+                 INCLUDE_MARK,
                  data->high - data->low + 1);
         }
 
@@ -9466,7 +10345,8 @@ main(int argc, char * argv[])
           if (data->high >= limits.cols)
             data->high = limits.cols - 1;
 
-          memset(cols_filter + data->low, EXCLUDE_MARK,
+          memset(cols_filter + data->low,
+                 EXCLUDE_MARK,
                  data->high - data->low + 1);
         }
 
@@ -9495,21 +10375,26 @@ main(int argc, char * argv[])
   /* """"""""""""""""""""""""""""""""""""""""" */
   if (aligns_selector_list != NULL)
   {
-    ll_node_t * node_selector = aligns_selector_list->head;
+    ll_node_t *node_selector = aligns_selector_list->head;
 
     while (node_selector != NULL)
     {
-      char * unparsed;
+      char *unparsed;
 
       aligns_selector = node_selector->data;
 
-      parse_al_selectors(aligns_selector, &unparsed, &al_word_regex_list,
-                         &ar_word_regex_list, &ac_word_regex_list,
-                         &default_alignment, &misc);
+      parse_al_selectors(aligns_selector,
+                         &unparsed,
+                         &al_word_regex_list,
+                         &ar_word_regex_list,
+                         &ac_word_regex_list,
+                         &default_alignment,
+                         &misc);
 
       if (*unparsed != '\0')
       {
-        fprintf(stderr, "Bad alignment selection argument. Unparsed part: %s\n",
+        fprintf(stderr,
+                "Bad alignment selection argument. Unparsed part: %s\n",
                 unparsed);
 
         exit(EXIT_FAILURE);
@@ -9549,7 +10434,7 @@ main(int argc, char * argv[])
     exc_interval_node = NULL;
 
   /* And get the first interval.*/
-  /* """"""""""""""""""""""""""" */
+  /* """""""""""""""""""""""""" */
   if (inc_interval_node)
     inc_interval = (interval_t *)inc_interval_node->data;
   else
@@ -9569,16 +10454,24 @@ main(int argc, char * argv[])
   /* - The -R is taken into account                               */
   /* - The first part of the -C option is done                    */
   /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-  while ((word = get_word(input_file, word_delims_list, line_delims_list,
-                          zapped_glyphs_list, utf8_buffer, &is_last, &toggles,
-                          &langinfo, &win, &limits, &misc))
+  while ((word = get_word(input_file,
+                          word_delims_list,
+                          line_delims_list,
+                          zapped_glyphs_list,
+                          utf8_buffer,
+                          &is_last,
+                          &toggles,
+                          &langinfo,
+                          &win,
+                          &limits,
+                          &misc))
          != NULL)
   {
     int           selectable;
     int           is_first = 0;
     unsigned char special_level;
     int           row_inc_matched = 0;
-    ll_node_t *   node;
+    ll_node_t    *node;
 
     if (*word == '\0')
       continue;
@@ -9587,7 +10480,7 @@ main(int argc, char * argv[])
     /* """"""""""""""""""" */
     if (early_sed_list != NULL)
     {
-      char * tmp;
+      char *tmp;
 
       node = early_sed_list->head;
 
@@ -9715,9 +10608,9 @@ main(int argc, char * argv[])
       /* ''''''''''''''''''''''''''''''''''''''''''''''''' */
       if (exc_row_regex_list != NULL)
       {
-        regex_t * row_re;
+        regex_t *row_re;
 
-        ll_node_t * row_regex_node = exc_row_regex_list->head;
+        ll_node_t *row_regex_node = exc_row_regex_list->head;
 
         while (row_regex_node != NULL)
         {
@@ -9758,9 +10651,9 @@ main(int argc, char * argv[])
       /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
       if (selectable != EXCLUDE_MARK && inc_row_regex_list != NULL)
       {
-        regex_t * row_re;
+        regex_t *row_re;
 
-        ll_node_t * row_regex_node = inc_row_regex_list->head;
+        ll_node_t *row_regex_node = inc_row_regex_list->head;
 
         while (row_regex_node != NULL)
         {
@@ -9896,7 +10789,7 @@ main(int argc, char * argv[])
       {
         long ci; /* column index. */
 
-        regex_t * col_re;
+        regex_t *col_re;
 
         if (cols_filter[col_index - 1] == EXCLUDE_MARK)
           selectable = EXCLUDE_MARK;
@@ -9906,7 +10799,7 @@ main(int argc, char * argv[])
           {
             /* Some columns must be excluded by regex. */
             /* ''''''''''''''''''''''''''''''''''''''' */
-            ll_node_t * col_regex_node = exc_col_regex_list->head;
+            ll_node_t *col_regex_node = exc_col_regex_list->head;
 
             while (col_regex_node != NULL)
             {
@@ -9941,7 +10834,7 @@ main(int argc, char * argv[])
           {
             /* Some columns must be included by regex. */
             /* ''''''''''''''''''''''''''''''''''''''' */
-            ll_node_t * col_regex_node = inc_col_regex_list->head;
+            ll_node_t *col_regex_node = inc_col_regex_list->head;
 
             while (col_regex_node != NULL)
             {
@@ -10042,15 +10935,15 @@ main(int argc, char * argv[])
   col_index = 0;
   for (wi = 0; wi < count; wi++)
   {
-    char *    unaltered_word;
-    long      size;
-    long      word_len;
-    wchar_t * tmpw;
-    word_t *  word;
-    long      s;
-    long      len;
-    char *    expanded_word;
-    long      i;
+    char    *unaltered_word;
+    long     size;
+    long     word_len;
+    wchar_t *tmpw;
+    word_t  *word;
+    long     s;
+    long     len;
+    char    *expanded_word;
+    long     i;
 
     /* If the column section argument is set, then adjust the final        */
     /* selectable attribute  according to the already set words and column */
@@ -10121,10 +11014,10 @@ main(int argc, char * argv[])
       if (word->is_selectable != EXCLUDE_MARK
           && word->is_selectable != SOFT_EXCLUDE_MARK)
       {
-        char * selector;
-        char * tmp      = xmalloc(strlen(word->str) + 4 + daccess.length);
-        long * word_pos = xmalloc(sizeof(long));
-        int    may_number;
+        char *selector;
+        char *tmp      = xmalloc(strlen(word->str) + 4 + daccess.length);
+        long *word_pos = xmalloc(sizeof(long));
+        int   may_number;
 
         if (!isempty(word->str))
         {
@@ -10166,14 +11059,14 @@ main(int argc, char * argv[])
                      <= utf8_strlen(word->str))
             {
               unsigned selector_value;  /* numerical value of the         *
-                                             | extracted selector.            */
+                                         | extracted selector.            */
               long     selector_offset; /* offset in byte to the selector *
-                                             | to extract.                    */
-              char *   ptr;             /* points just after the selector *
-                                             | to extract.                    */
+                                         | to extract.                    */
+              char    *ptr;             /* points just after the selector *
+                                         | to extract.                    */
               long     plus_offset;     /* points to the first occurrence *
-                                             | of a number in word->str after *
-                                             | the offset given.              */
+                                         | of a number in word->str after *
+                                         | the offset given.              */
 
               selector_offset = utf8_offset(word->str, daccess.offset);
 
@@ -10197,7 +11090,8 @@ main(int argc, char * argv[])
               {
                 sprintf(selector, "%u", selector_value);
 
-                sprintf(tmp + 1, "%*u",
+                sprintf(tmp + 1,
+                        "%*u",
                         daccess.alignment == 'l' ? -daccess.length
                                                  : daccess.length,
                         selector_value);
@@ -10222,7 +11116,7 @@ main(int argc, char * argv[])
                   /* h:t is present trim the leading characters   */
                   /* before the selector if they are ' ' or '\t'. */
                   /* '''''''''''''''''''''''''''''''''''''''''''' */
-                  char * p = word->str;
+                  char *p = word->str;
 
                   while (p != ptr && (*p == ' ' || *p == '\t'))
                     p++;
@@ -10234,7 +11128,8 @@ main(int argc, char * argv[])
                 ltrim(selector, " ");
                 rtrim(selector, " ", 0);
 
-                tst_daccess = tst_insert(tst_daccess, utf8_strtowcs(selector),
+                tst_daccess = tst_insert(tst_daccess,
+                                         utf8_strtowcs(selector),
                                          word_pos);
 
                 if (daccess.follow == 'y')
@@ -10250,7 +11145,8 @@ main(int argc, char * argv[])
             /* """"""""""""""""""""""""""""""""""""""""""""""""""""""" */
             if (!word->is_numbered && (daccess.mode & DA_TYPE_AUTO))
             {
-              sprintf(tmp + 1, "%*ld",
+              sprintf(tmp + 1,
+                      "%*ld",
                       daccess.alignment == 'l' ? -daccess.length
                                                : daccess.length,
                       daccess_index);
@@ -10262,7 +11158,8 @@ main(int argc, char * argv[])
               /* Insert it in the tst tree containing the selector's */
               /* digits.                                             */
               /* ''''''''''''''''''''''''''''''''''''''''''''''''''' */
-              tst_daccess = tst_insert(tst_daccess, utf8_strtowcs(selector),
+              tst_daccess = tst_insert(tst_daccess,
+                                       utf8_strtowcs(selector),
                                        word_pos);
               daccess_index++;
 
@@ -10310,11 +11207,11 @@ main(int argc, char * argv[])
       }
       else
       {
-        /* Should we also add space at the beginning of excluded words ? */
-        /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+        /* Should we also add space at the beginning of excluded words? */
+        /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
         if (daccess.padding == 'a')
         {
-          char * tmp = xmalloc(strlen(word->str) + 4 + daccess.length);
+          char *tmp = xmalloc(strlen(word->str) + 4 + daccess.length);
           for (i = 0; i < daccess.flength; i++)
             tmp[i] = ' ';
           my_strcpy(tmp + daccess.flength, word->str);
@@ -10336,8 +11233,8 @@ main(int argc, char * argv[])
     /* Possibly modify the word according to -S/-I/-E arguments. */
     /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""" */
     {
-      ll_node_t * node = NULL;
-      char *      tmp;
+      ll_node_t *node = NULL;
+      char      *tmp;
 
       /* Manage the -S case. */
       /* """"""""""""""""""" */
@@ -10352,7 +11249,8 @@ main(int argc, char * argv[])
           {
 
             free(word->str);
-            memmove(word_buffer + daccess.flength, word_buffer,
+            memmove(word_buffer + daccess.flength,
+                    word_buffer,
                     strlen(word_buffer) + 1);
             memmove(word_buffer, tmp, daccess.flength);
 
@@ -10391,7 +11289,8 @@ main(int argc, char * argv[])
           {
 
             free(word->str);
-            memmove(word_buffer + daccess.flength, word_buffer,
+            memmove(word_buffer + daccess.flength,
+                    word_buffer,
                     strlen(word_buffer) + 1);
             memmove(word_buffer, tmp, daccess.flength);
 
@@ -10607,7 +11506,7 @@ main(int argc, char * argv[])
   /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
   if (win.col_mode)
   {
-    char * temp;
+    char *temp;
 
     /* Sets all columns to the same size when -w and -c are both set. */
     /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
@@ -10633,22 +11532,23 @@ main(int argc, char * argv[])
     col_index = 0;
     for (wi = 0; wi < count; wi++)
     {
-      long         s1, s2;
-      long         word_width;
-      wchar_t *    w;
-      regex_t      re;
-      ll_node_t *  node;
-      interval_t * interval;
+      long        s1, s2;
+      long        word_width;
+      wchar_t    *w;
+      regex_t     re;
+      ll_node_t  *node;
+      interval_t *interval;
 
       /* Does this word matched by one of the alignment regex?         */
       /* If yes, then add the current column number to the list of the */
       /* corresponding column_alignment list                           */
       /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-      ll_t *  regex_list_a[3]    = { al_col_regex_list, ar_col_regex_list,
-                                     ac_col_regex_list };
-      ll_t ** interval_list_a[3] = { &al_col_interval_list,
-                                     &ar_col_interval_list,
-                                     &ac_col_interval_list };
+      ll_t  *regex_list_a[3]    = { al_col_regex_list,
+                                    ar_col_regex_list,
+                                    ac_col_regex_list };
+      ll_t **interval_list_a[3] = { &al_col_interval_list,
+                                    &ar_col_interval_list,
+                                    &ac_col_interval_list };
 
       for (int i = 0; i < 3; i++) /* For each regex list. */
       {
@@ -10674,8 +11574,8 @@ main(int argc, char * argv[])
             /* ''''''''''''''''''''''''''''''''''''''''''''''''''''''' */
             for (int j = 0; j < 3; j++)
             {
-              interval_t  inter;
-              ll_node_t * n;
+              interval_t inter;
+              ll_node_t *n;
 
               /* Quick continuation. */
               /* ''''''''''''''''''' */
@@ -10715,10 +11615,10 @@ main(int argc, char * argv[])
       /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
       if (at_col_regex_list != NULL)
       {
-        attrib_t *    attr;
-        attr_elem_t * elem;
-        ll_node_t *   regex_node;
-        ll_node_t *   interval_node;
+        attrib_t    *attr;
+        attr_elem_t *elem;
+        ll_node_t   *regex_node;
+        ll_node_t   *interval_node;
 
         node = at_col_regex_list->head;
         while (node)
@@ -10735,7 +11635,7 @@ main(int argc, char * argv[])
             {
               /* We have a match. */
               /* '''''''''''''''' */
-              attr_elem_t * new_elem;
+              attr_elem_t *new_elem;
 
               if (col_attrs[col_index] != NULL)
                 break;
@@ -10751,7 +11651,8 @@ main(int argc, char * argv[])
               if (at_col_interval_list == NULL)
                 at_col_interval_list = ll_new();
 
-              if ((interval_node = ll_find(at_col_interval_list, elem,
+              if ((interval_node = ll_find(at_col_interval_list,
+                                           elem,
                                            attr_elem_cmp))
                   != NULL)
               {
@@ -10800,7 +11701,7 @@ main(int argc, char * argv[])
   }
   else if (win.tab_mode)
   {
-    char * temp;
+    char *temp;
 
     if (tab_max_size < min_size)
     {
@@ -10811,9 +11712,9 @@ main(int argc, char * argv[])
 
     for (wi = 0; wi < count; wi++)
     {
-      long      s1, s2;
-      long      word_width;
-      wchar_t * w;
+      long     s1, s2;
+      long     word_width;
+      wchar_t *w;
 
       s1         = (long)strlen(word_a[wi].str);
       word_width = mbstowcs(NULL, word_a[wi].str, 0);
@@ -10833,9 +11734,9 @@ main(int argc, char * argv[])
   /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
   for (wi = 0; wi < count; wi++)
   {
-    long *    data;
-    wchar_t * w;
-    ll_t *    list;
+    long    *data;
+    wchar_t *w;
+    ll_t    *list;
 
     if (word_a[wi].is_selectable == SOFT_EXCLUDE_MARK)
       word_a[wi].is_selectable = EXCLUDE_MARK;
@@ -10900,30 +11801,30 @@ main(int argc, char * argv[])
 
     col_index = 0;
 
-    ll_node_t * cur_word_node_a[3];
+    ll_node_t *cur_word_node_a[3];
 
-    ll_t * col_interval_list_a[3] = { al_col_interval_list,
-                                      ar_col_interval_list,
-                                      ac_col_interval_list };
+    ll_t *col_interval_list_a[3] = { al_col_interval_list,
+                                     ar_col_interval_list,
+                                     ac_col_interval_list };
 
-    ll_node_t * cur_col_node_a[3] = {
+    ll_node_t *cur_col_node_a[3] = {
       al_col_interval_list != NULL ? al_col_interval_list->head : NULL,
       ar_col_interval_list != NULL ? ar_col_interval_list->head : NULL,
       ac_col_interval_list != NULL ? ac_col_interval_list->head : NULL
     };
 
-    ll_node_t * cur_row_interval_node_a[3] = {
+    ll_node_t *cur_row_interval_node_a[3] = {
       al_row_interval_list != NULL ? al_row_interval_list->head : NULL,
       ar_row_interval_list != NULL ? ar_row_interval_list->head : NULL,
       ac_row_interval_list != NULL ? ac_row_interval_list->head : NULL
     };
 
-    ll_node_t * cur_row_regex_node_a[3];
+    ll_node_t *cur_row_regex_node_a[3];
 
     alignment_t alignment_a[3] = { AL_LEFT, AL_RIGHT, AL_CENTERED };
 
-    char * aligned_a; /* Array of indicators used to remember that a word *
-                       | has been aligned with -al in a row.              */
+    char *aligned_a; /* Array of indicators used to remember that a word *
+                      | has been aligned with -al in a row.              */
 
     /* Initialize each chars of aligned_a with No ('N'). */
     /* """"""""""""""""""""""""""""""""""""""""""""""""" */
@@ -10980,7 +11881,7 @@ main(int argc, char * argv[])
       {
         while (word_alignment == AL_NONE && cur_word_node_a[i] != NULL)
         {
-          regex_t * re;
+          regex_t *re;
 
           re = (regex_t *)(cur_word_node_a[i]->data);
 
@@ -11056,7 +11957,7 @@ main(int argc, char * argv[])
         {
           while (cur_row_regex_node_a[i] != NULL)
           {
-            regex_t * re;
+            regex_t *re;
 
             re = (regex_t *)(cur_row_regex_node_a[i]->data);
 
@@ -11117,7 +12018,7 @@ main(int argc, char * argv[])
 
           /* We can restore the spaces which are not part of the word */
           /* now that the row is fully processed.                     */
-          /* """""""""""""""""""""""""""""""""""""""""""""1G""""""""""" */
+          /* """""""""""""""""""""""""""""""""""""""""""""""""""""""" */
           if (wi - i >= 0)
             strrep(word_a[wi - i].str + daccess.flength, 0x05, ' ');
         }
@@ -11140,14 +12041,14 @@ main(int argc, char * argv[])
     if (at_row_interval_list != NULL || at_col_interval_list != NULL
         || at_row_regex_list != NULL || at_col_regex_list != NULL)
     {
-      long          row_index = 0;
-      interval_t *  interval;
-      attrib_t *    attr;
-      ll_t *        list;
-      attr_elem_t * attr_elem;
-      ll_node_t *   attr_elem_node;
-      ll_node_t *   node;
-      regex_t       re;
+      long         row_index = 0;
+      interval_t  *interval;
+      attrib_t    *attr;
+      ll_t        *list;
+      attr_elem_t *attr_elem;
+      ll_node_t   *attr_elem_node;
+      ll_node_t   *node;
+      regex_t      re;
 
       col_index = 0;
 
@@ -11227,7 +12128,10 @@ main(int argc, char * argv[])
             while (node)
             {
               re = *(regex_t *)(node->data);
-              if (regexec(&re, word_a[wi].str + daccess.flength, (int)0, NULL,
+              if (regexec(&re,
+                          word_a[wi].str + daccess.flength,
+                          (int)0,
+                          NULL,
                           0)
                   == 0)
               {
@@ -11356,8 +12260,8 @@ main(int argc, char * argv[])
     }
     else
     {
-      int    found = 0;
-      char * word;
+      int   found = 0;
+      char *word;
 
       for (index = first_selectable; index <= last_selectable; index++)
       {
@@ -11379,8 +12283,10 @@ main(int argc, char * argv[])
 
           /* Insert the index in the search array. */
           /* """"""""""""""""""""""""""""""""""""" */
-          insert_sorted_index(&matching_words_a, &matching_words_a_size,
-                              &matches_count, index);
+          insert_sorted_index(&matching_words_a,
+                              &matching_words_a_size,
+                              &matches_count,
+                              index);
         }
       }
 
@@ -11392,10 +12298,10 @@ main(int argc, char * argv[])
   {
     /* An exact match is expected. */
     /* """"""""""""""""""""""""""" */
-    wchar_t * w;
+    wchar_t *w;
 
-    ll_t *      list;
-    ll_node_t * node;
+    ll_t      *list;
+    ll_node_t *node;
 
     list = tst_search(tst_word, w = utf8_strtowcs(pre_selection_index + 1));
     if (list != NULL)
@@ -11407,8 +12313,10 @@ main(int argc, char * argv[])
       {
         /* Insert the index in the search array. */
         /* """"""""""""""""""""""""""""""""""""" */
-        insert_sorted_index(&matching_words_a, &matching_words_a_size,
-                            &matches_count, *(long *)(node->data));
+        insert_sorted_index(&matching_words_a,
+                            &matching_words_a_size,
+                            &matches_count,
+                            *(long *)(node->data));
         node = node->next;
       }
     }
@@ -11421,8 +12329,8 @@ main(int argc, char * argv[])
   {
     /* A prefix string or an index is expected. */
     /* """""""""""""""""""""""""""""""""""""""" */
-    int    len;
-    char * ptr = pre_selection_index;
+    int   len;
+    char *ptr = pre_selection_index;
 
     if (*ptr == '#')
     {
@@ -11482,8 +12390,10 @@ main(int argc, char * argv[])
 
           /* Insert the index in the search array. */
           /* """"""""""""""""""""""""""""""""""""" */
-          insert_sorted_index(&matching_words_a, &matching_words_a_size,
-                              &matches_count, new_current);
+          insert_sorted_index(&matching_words_a,
+                              &matching_words_a_size,
+                              &matches_count,
+                              new_current);
         }
       }
 
@@ -11534,8 +12444,9 @@ main(int argc, char * argv[])
 
   if (!get_cursor_position(&row, &col))
   {
-    fprintf(stderr, "The terminal does not have the capability to report "
-                    "the cursor position.\n");
+    fprintf(stderr,
+            "The terminal does not have the capability to report "
+            "the cursor position.\n");
     restore_term(fileno(stdin), &old_in_attrs);
 
     exit(EXIT_FAILURE);
@@ -11558,8 +12469,12 @@ main(int argc, char * argv[])
 
   /* Display the words window and its title for the first time. */
   /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-  disp_message(message_lines_list, message_max_width, message_max_len, &term,
-               &win, &langinfo);
+  disp_message(message_lines_list,
+               message_max_width,
+               message_max_len,
+               &term,
+               &win,
+               &langinfo);
 
   /* Before displaying the word windows for the first time when in    */
   /* column or line mode, we need to ensure that the word under the   */
@@ -11589,8 +12504,16 @@ main(int argc, char * argv[])
   /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
   get_cursor_position(&term.curs_line, &term.curs_column);
 
-  nl = disp_lines(&win, &toggles, current, count, search_mode, &search_data,
-                  &term, last_line, tmp_word, &langinfo);
+  nl = disp_lines(&win,
+                  &toggles,
+                  current,
+                  count,
+                  search_mode,
+                  &search_data,
+                  &term,
+                  last_line,
+                  tmp_word,
+                  &langinfo);
 
   /* Determine the number of lines to move the cursor up if the window */
   /* display needed a terminal scrolling.                              */
@@ -11720,8 +12643,16 @@ main(int argc, char * argv[])
       last_line = build_metadata(&term, count, &win);
 
       help_mode = 0;
-      nl = disp_lines(&win, &toggles, current, count, search_mode, &search_data,
-                      &term, last_line, tmp_word, &langinfo);
+      nl        = disp_lines(&win,
+                      &toggles,
+                      current,
+                      count,
+                      search_mode,
+                      &search_data,
+                      &term,
+                      last_line,
+                      tmp_word,
+                      &langinfo);
     }
 
     /* Reset the direct access selector if the direct access alarm rang. */
@@ -11745,8 +12676,16 @@ main(int argc, char * argv[])
 
       search_mode = NONE;
 
-      nl = disp_lines(&win, &toggles, current, count, search_mode, &search_data,
-                      &term, last_line, tmp_word, &langinfo);
+      nl = disp_lines(&win,
+                      &toggles,
+                      current,
+                      count,
+                      search_mode,
+                      &search_data,
+                      &term,
+                      last_line,
+                      tmp_word,
+                      &langinfo);
     }
 
     if (got_winch)
@@ -11864,11 +12803,23 @@ main(int argc, char * argv[])
         win.first_column = word_a[pos].start;
       }
 
-      disp_message(message_lines_list, message_max_width, message_max_len,
-                   &term, &win, &langinfo);
+      disp_message(message_lines_list,
+                   message_max_width,
+                   message_max_len,
+                   &term,
+                   &win,
+                   &langinfo);
 
-      nl = disp_lines(&win, &toggles, current, count, search_mode, &search_data,
-                      &term, last_line, tmp_word, &langinfo);
+      nl = disp_lines(&win,
+                      &toggles,
+                      current,
+                      count,
+                      search_mode,
+                      &search_data,
+                      &term,
+                      last_line,
+                      tmp_word,
+                      &langinfo);
 
       /* Determine the number of lines to move the cursor up if the window  */
       /* display needed a terminal scrolling.                               */
@@ -11898,8 +12849,8 @@ main(int argc, char * argv[])
     if (timeout.initial_value && search_mode == NONE && !help_mode
         && got_timeout_tick)
     {
-      long   i;
-      char * timeout_string;
+      long  i;
+      char *timeout_string;
 
       got_timeout_tick = 0;
 
@@ -11926,8 +12877,12 @@ main(int argc, char * argv[])
 
         /* Display the words window and its title for the first time. */
         /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-        disp_message(message_lines_list, message_max_width, message_max_len,
-                     &term, &win, &langinfo);
+        disp_message(message_lines_list,
+                     message_max_width,
+                     message_max_len,
+                     &term,
+                     &win,
+                     &langinfo);
       }
       /* The timeout has expired. */
       /* """""""""""""""""""""""" */
@@ -11960,7 +12915,7 @@ main(int argc, char * argv[])
       if (timeout.initial_value && buffer[0] != 0x0d && buffer[0] != 'q'
           && buffer[0] != 'Q' && buffer[0] != 3)
       {
-        char * timeout_string;
+        char *timeout_string;
 
         /* Reset the timeout to its initial value. */
         /* """"""""""""""""""""""""""""""""""""""" */
@@ -11987,8 +12942,12 @@ main(int argc, char * argv[])
 
           /* Display the words window and its title for the first time. */
           /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-          disp_message(message_lines_list, message_max_width, message_max_len,
-                       &term, &win, &langinfo);
+          disp_message(message_lines_list,
+                       message_max_width,
+                       message_max_len,
+                       &term,
+                       &win,
+                       &langinfo);
         }
 
         setitimer(ITIMER_REAL, &periodic_itv, NULL);
@@ -12082,8 +13041,15 @@ main(int argc, char * argv[])
                 win.first_column = word_a[current].start;
             }
 
-            nl = disp_lines(&win, &toggles, current, count, search_mode,
-                            &search_data, &term, last_line, tmp_word,
+            nl = disp_lines(&win,
+                            &toggles,
+                            current,
+                            count,
+                            search_mode,
+                            &search_data,
+                            &term,
+                            last_line,
+                            tmp_word,
                             &langinfo);
             break;
           }
@@ -12130,8 +13096,15 @@ main(int argc, char * argv[])
                 set_new_first_column(&win, &term);
             }
 
-            nl = disp_lines(&win, &toggles, current, count, search_mode,
-                            &search_data, &term, last_line, tmp_word,
+            nl = disp_lines(&win,
+                            &toggles,
+                            current,
+                            count,
+                            search_mode,
+                            &search_data,
+                            &term,
+                            last_line,
+                            tmp_word,
                             &langinfo);
             break;
           }
@@ -12246,8 +13219,15 @@ main(int argc, char * argv[])
           {
             /* ESC key has been pressed. */
             /* """"""""""""""""""""""""" */
-            reset_search_buffer(&win, &search_data, &timers, &toggles, &term,
-                                &daccess, &langinfo, last_line, tmp_word,
+            reset_search_buffer(&win,
+                                &search_data,
+                                &timers,
+                                &toggles,
+                                &term,
+                                &daccess,
+                                &langinfo,
+                                last_line,
+                                tmp_word,
                                 word_real_max_size);
 
             /* Unmark the marked word. */
@@ -12333,8 +13313,16 @@ main(int argc, char * argv[])
           if (current < win.start || current > win.end)
             last_line = build_metadata(&term, count, &win);
 
-          nl = disp_lines(&win, &toggles, current, count, search_mode,
-                          &search_data, &term, last_line, tmp_word, &langinfo);
+          nl = disp_lines(&win,
+                          &toggles,
+                          current,
+                          count,
+                          search_mode,
+                          &search_data,
+                          &term,
+                          last_line,
+                          tmp_word,
+                          &langinfo);
           break;
 
         case 'n':
@@ -12346,7 +13334,8 @@ main(int argc, char * argv[])
 
           if (matches_count > 0)
           {
-            long pos = find_next_matching_word(matching_words_a, matches_count,
+            long pos = find_next_matching_word(matching_words_a,
+                                               matches_count,
                                                current,
                                                &matching_word_cur_index);
             if (pos >= 0)
@@ -12359,8 +13348,15 @@ main(int argc, char * argv[])
             /* """""""""""""""""""""""""""""""" */
             set_new_first_column(&win, &term);
 
-            nl = disp_lines(&win, &toggles, current, count, search_mode,
-                            &search_data, &term, last_line, tmp_word,
+            nl = disp_lines(&win,
+                            &toggles,
+                            current,
+                            count,
+                            search_mode,
+                            &search_data,
+                            &term,
+                            last_line,
+                            tmp_word,
                             &langinfo);
           }
           break;
@@ -12373,7 +13369,8 @@ main(int argc, char * argv[])
 
           if (matches_count > 0)
           {
-            long pos = find_prev_matching_word(matching_words_a, matches_count,
+            long pos = find_prev_matching_word(matching_words_a,
+                                               matches_count,
                                                current,
                                                &matching_word_cur_index);
             if (pos >= 0)
@@ -12387,8 +13384,16 @@ main(int argc, char * argv[])
           /* """""""""""""""""""""""""""""""" */
           set_new_first_column(&win, &term);
 
-          nl = disp_lines(&win, &toggles, current, count, search_mode,
-                          &search_data, &term, last_line, tmp_word, &langinfo);
+          nl = disp_lines(&win,
+                          &toggles,
+                          current,
+                          count,
+                          search_mode,
+                          &search_data,
+                          &term,
+                          last_line,
+                          tmp_word,
+                          &langinfo);
           break;
 
         case 's':
@@ -12403,11 +13408,14 @@ main(int argc, char * argv[])
 
             if (best_matches_count > 0)
               pos = find_next_matching_word(best_matching_words_a,
-                                            best_matches_count, current,
+                                            best_matches_count,
+                                            current,
                                             &matching_word_cur_index);
             else
-              pos = find_next_matching_word(matching_words_a, matches_count,
-                                            current, &matching_word_cur_index);
+              pos = find_next_matching_word(matching_words_a,
+                                            matches_count,
+                                            current,
+                                            &matching_word_cur_index);
 
             if (pos >= 0)
               current = pos;
@@ -12419,8 +13427,15 @@ main(int argc, char * argv[])
             /* """""""""""""""""""""""""""""""" */
             set_new_first_column(&win, &term);
 
-            nl = disp_lines(&win, &toggles, current, count, search_mode,
-                            &search_data, &term, last_line, tmp_word,
+            nl = disp_lines(&win,
+                            &toggles,
+                            current,
+                            count,
+                            search_mode,
+                            &search_data,
+                            &term,
+                            last_line,
+                            tmp_word,
                             &langinfo);
           }
           break;
@@ -12437,11 +13452,14 @@ main(int argc, char * argv[])
 
             if (best_matches_count > 0)
               pos = find_prev_matching_word(best_matching_words_a,
-                                            best_matches_count, current,
+                                            best_matches_count,
+                                            current,
                                             &matching_word_cur_index);
             else
-              pos = find_prev_matching_word(matching_words_a, matches_count,
-                                            current, &matching_word_cur_index);
+              pos = find_prev_matching_word(matching_words_a,
+                                            matches_count,
+                                            current,
+                                            &matching_word_cur_index);
 
             if (pos >= 0)
               current = pos;
@@ -12454,8 +13472,16 @@ main(int argc, char * argv[])
           /* """""""""""""""""""""""""""""""" */
           set_new_first_column(&win, &term);
 
-          nl = disp_lines(&win, &toggles, current, count, search_mode,
-                          &search_data, &term, last_line, tmp_word, &langinfo);
+          nl = disp_lines(&win,
+                          &toggles,
+                          current,
+                          count,
+                          search_mode,
+                          &search_data,
+                          &term,
+                          last_line,
+                          tmp_word,
+                          &langinfo);
           break;
 
         enter:
@@ -12464,21 +13490,28 @@ main(int argc, char * argv[])
           /* <Enter> has been pressed. */
           /* """"""""""""""""""""""""" */
 
-          int        extra_lines;
-          char *     output_str;
-          output_t * output_node;
+          int       extra_lines;
+          char     *output_str;
+          output_t *output_node;
 
           int width = 0;
 
-          wchar_t * w;
-          long      i; /* Generic index in this block. */
+          wchar_t *w;
+          long     i; /* Generic index in this block. */
 
           if (help_mode || marked >= 0)
           {
             marked = -1; /* Disable the marked mode unconditionally. */
-            nl     = disp_lines(&win, &toggles, current, count, search_mode,
-                                &search_data, &term, last_line, tmp_word,
-                                &langinfo);
+            nl     = disp_lines(&win,
+                            &toggles,
+                            current,
+                            count,
+                            search_mode,
+                            &search_data,
+                            &term,
+                            last_line,
+                            tmp_word,
+                            &langinfo);
           }
 
           if (search_mode != NONE)
@@ -12491,8 +13524,15 @@ main(int argc, char * argv[])
             search_data.only_starting = 0;
             search_data.only_ending   = 0;
 
-            nl = disp_lines(&win, &toggles, current, count, search_mode,
-                            &search_data, &term, last_line, tmp_word,
+            nl = disp_lines(&win,
+                            &toggles,
+                            current,
+                            count,
+                            search_mode,
+                            &search_data,
+                            &term,
+                            last_line,
+                            tmp_word,
                             &langinfo);
 
             if (!toggles.enter_val_in_search)
@@ -12535,13 +13575,13 @@ main(int argc, char * argv[])
             fprintf(old_stdout, "%s", timeout_word);
           else
           {
-            char * num_str;
-            char * str;
+            char *num_str;
+            char *str;
 
             if (toggles.taggable)
             {
-              ll_t *      output_list = ll_new();
-              ll_node_t * node;
+              ll_t      *output_list = ll_new();
+              ll_node_t *node;
 
               /* When using -P, updates the tagging order of this word to */
               /* make sure that the output will be correctly sorted.      */
@@ -12586,7 +13626,8 @@ main(int argc, char * argv[])
                     ltrim(num_str, " ");
                     rtrim(num_str, " ", 0);
 
-                    output_node->output_str = concat(num_str, daccess.num_sep,
+                    output_node->output_str = concat(num_str,
+                                                     daccess.num_sep,
                                                      str + daccess.flength,
                                                      (char *)0);
 
@@ -12672,8 +13713,10 @@ main(int argc, char * argv[])
                 ltrim(num_str, " ");
                 rtrim(num_str, " ", 0);
 
-                output_str = concat(num_str, daccess.num_sep,
-                                    str + daccess.flength, (char *)0);
+                output_str = concat(num_str,
+                                    daccess.num_sep,
+                                    str + daccess.flength,
+                                    (char *)0);
 
                 free(num_str);
               }
@@ -12760,8 +13803,15 @@ main(int argc, char * argv[])
             win.first_column = 0;
             set_new_first_column(&win, &term);
 
-            nl = disp_lines(&win, &toggles, current, count, search_mode,
-                            &search_data, &term, last_line, tmp_word,
+            nl = disp_lines(&win,
+                            &toggles,
+                            current,
+                            count,
+                            search_mode,
+                            &search_data,
+                            &term,
+                            last_line,
+                            tmp_word,
                             &langinfo);
           }
           else
@@ -12779,8 +13829,14 @@ main(int argc, char * argv[])
 
         case 'h':
           if (search_mode == NONE)
-            move_left(&win, &term, &toggles, &search_data, &langinfo, &nl,
-                      last_line, tmp_word);
+            move_left(&win,
+                      &term,
+                      &toggles,
+                      &search_data,
+                      &langinfo,
+                      &nl,
+                      last_line,
+                      tmp_word);
           else
             goto special_cmds_when_searching;
 
@@ -12790,8 +13846,15 @@ main(int argc, char * argv[])
         /* """"""""""""""""""""""""""""""""""""""""" */
         case '<':
           if (search_mode == NONE)
-            shift_left(&win, &term, &toggles, &search_data, &langinfo, &nl,
-                       last_line, tmp_word, line_nb_of_word_a[current]);
+            shift_left(&win,
+                       &term,
+                       &toggles,
+                       &search_data,
+                       &langinfo,
+                       &nl,
+                       last_line,
+                       tmp_word,
+                       line_nb_of_word_a[current]);
           else
             goto special_cmds_when_searching;
 
@@ -12818,8 +13881,15 @@ main(int argc, char * argv[])
 
             set_new_first_column(&win, &term);
 
-            nl = disp_lines(&win, &toggles, current, count, search_mode,
-                            &search_data, &term, last_line, tmp_word,
+            nl = disp_lines(&win,
+                            &toggles,
+                            current,
+                            count,
+                            search_mode,
+                            &search_data,
+                            &term,
+                            last_line,
+                            tmp_word,
                             &langinfo);
           }
           else
@@ -12837,8 +13907,14 @@ main(int argc, char * argv[])
 
         case 'l':
           if (search_mode == NONE)
-            move_right(&win, &term, &toggles, &search_data, &langinfo, &nl,
-                       last_line, tmp_word);
+            move_right(&win,
+                       &term,
+                       &toggles,
+                       &search_data,
+                       &langinfo,
+                       &nl,
+                       last_line,
+                       tmp_word);
           else
             goto special_cmds_when_searching;
 
@@ -12848,8 +13924,15 @@ main(int argc, char * argv[])
         /* """"""""""""""""""""""""""""""""""""""""" */
         case '>':
           if (search_mode == NONE)
-            shift_right(&win, &term, &toggles, &search_data, &langinfo, &nl,
-                        last_line, tmp_word, line_nb_of_word_a[current]);
+            shift_right(&win,
+                        &term,
+                        &toggles,
+                        &search_data,
+                        &langinfo,
+                        &nl,
+                        last_line,
+                        tmp_word,
+                        line_nb_of_word_a[current]);
           else
             goto special_cmds_when_searching;
 
@@ -12879,8 +13962,16 @@ main(int argc, char * argv[])
 
         case 'k':
           if (search_mode == NONE)
-            move_up(&win, &term, &toggles, &search_data, &langinfo, &nl, page,
-                    first_selectable, last_line, tmp_word);
+            move_up(&win,
+                    &term,
+                    &toggles,
+                    &search_data,
+                    &langinfo,
+                    &nl,
+                    page,
+                    first_selectable,
+                    last_line,
+                    tmp_word);
           else
             goto special_cmds_when_searching;
 
@@ -12919,8 +14010,16 @@ main(int argc, char * argv[])
             win.first_column = word_a[pos].start;
           }
 
-          nl = disp_lines(&win, &toggles, current, count, search_mode,
-                          &search_data, &term, last_line, tmp_word, &langinfo);
+          nl = disp_lines(&win,
+                          &toggles,
+                          current,
+                          count,
+                          search_mode,
+                          &search_data,
+                          &term,
+                          last_line,
+                          tmp_word,
+                          &langinfo);
           break;
 
         case 0x0a:
@@ -12947,8 +14046,16 @@ main(int argc, char * argv[])
 
         case 'j':
           if (search_mode == NONE)
-            move_down(&win, &term, &toggles, &search_data, &langinfo, &nl, page,
-                      last_selectable, last_line, tmp_word);
+            move_down(&win,
+                      &term,
+                      &toggles,
+                      &search_data,
+                      &langinfo,
+                      &nl,
+                      page,
+                      last_selectable,
+                      last_line,
+                      tmp_word);
           else
             goto special_cmds_when_searching;
 
@@ -12986,8 +14093,16 @@ main(int argc, char * argv[])
             win.first_column = word_a[pos].start;
           }
 
-          nl = disp_lines(&win, &toggles, current, count, search_mode,
-                          &search_data, &term, last_line, tmp_word, &langinfo);
+          nl = disp_lines(&win,
+                          &toggles,
+                          current,
+                          count,
+                          search_mode,
+                          &search_data,
+                          &term,
+                          last_line,
+                          tmp_word,
+                          &langinfo);
           break;
 
         case '/':
@@ -13012,8 +14127,15 @@ main(int argc, char * argv[])
           if (search_mode == NONE)
           {
             if (!toggles.incremental_search)
-              reset_search_buffer(&win, &search_data, &timers, &toggles, &term,
-                                  &daccess, &langinfo, last_line, tmp_word,
+              reset_search_buffer(&win,
+                                  &search_data,
+                                  &timers,
+                                  &toggles,
+                                  &term,
+                                  &daccess,
+                                  &langinfo,
+                                  last_line,
+                                  tmp_word,
                                   word_real_max_size);
 
             /* Set the search timer. */
@@ -13028,8 +14150,15 @@ main(int argc, char * argv[])
               clean_matches(&search_data, word_real_max_size);
             }
 
-            nl = disp_lines(&win, &toggles, current, count, search_mode,
-                            &search_data, &term, last_line, tmp_word,
+            nl = disp_lines(&win,
+                            &toggles,
+                            current,
+                            count,
+                            search_mode,
+                            &search_data,
+                            &term,
+                            last_line,
+                            tmp_word,
                             &langinfo);
           }
           else
@@ -13047,8 +14176,15 @@ main(int argc, char * argv[])
           if (search_mode == NONE)
           {
             if (!toggles.incremental_search)
-              reset_search_buffer(&win, &search_data, &timers, &toggles, &term,
-                                  &daccess, &langinfo, last_line, tmp_word,
+              reset_search_buffer(&win,
+                                  &search_data,
+                                  &timers,
+                                  &toggles,
+                                  &term,
+                                  &daccess,
+                                  &langinfo,
+                                  last_line,
+                                  tmp_word,
                                   word_real_max_size);
 
             /* Set the search timer. */
@@ -13063,8 +14199,15 @@ main(int argc, char * argv[])
               clean_matches(&search_data, word_real_max_size);
             }
 
-            nl = disp_lines(&win, &toggles, current, count, search_mode,
-                            &search_data, &term, last_line, tmp_word,
+            nl = disp_lines(&win,
+                            &toggles,
+                            current,
+                            count,
+                            search_mode,
+                            &search_data,
+                            &term,
+                            last_line,
+                            tmp_word,
                             &langinfo);
           }
           else
@@ -13082,8 +14225,15 @@ main(int argc, char * argv[])
           if (search_mode == NONE)
           {
             if (!toggles.incremental_search)
-              reset_search_buffer(&win, &search_data, &timers, &toggles, &term,
-                                  &daccess, &langinfo, last_line, tmp_word,
+              reset_search_buffer(&win,
+                                  &search_data,
+                                  &timers,
+                                  &toggles,
+                                  &term,
+                                  &daccess,
+                                  &langinfo,
+                                  last_line,
+                                  tmp_word,
                                   word_real_max_size);
 
             /* Set the search timer. */
@@ -13098,8 +14248,15 @@ main(int argc, char * argv[])
               clean_matches(&search_data, word_real_max_size);
             }
 
-            nl = disp_lines(&win, &toggles, current, count, search_mode,
-                            &search_data, &term, last_line, tmp_word,
+            nl = disp_lines(&win,
+                            &toggles,
+                            current,
+                            count,
+                            search_mode,
+                            &search_data,
+                            &term,
+                            last_line,
+                            tmp_word,
                             &langinfo);
             break;
           }
@@ -13120,8 +14277,15 @@ main(int argc, char * argv[])
             if (toggles.pinable)
               word_a[current].tag_order = tag_nb++;
 
-            nl = disp_lines(&win, &toggles, current, count, search_mode,
-                            &search_data, &term, last_line, tmp_word,
+            nl = disp_lines(&win,
+                            &toggles,
+                            current,
+                            count,
+                            search_mode,
+                            &search_data,
+                            &term,
+                            last_line,
+                            tmp_word,
                             &langinfo);
           }
           break;
@@ -13137,11 +14301,18 @@ main(int argc, char * argv[])
 
             /* We do not try to change tag_nb here to guaranty that */
             /* tag_nb will be greater than all those already stored */
-            /* in all word_a[*].tag_order.                               */
-            /* ''''''''''''''''''''''''''''''''''''''''''''''''''''''''' */
+            /* in all word_a[*].tag_order.                          */
+            /* '''''''''''''''''''''''''''''''''''''''''''''''''''' */
 
-            nl = disp_lines(&win, &toggles, current, count, search_mode,
-                            &search_data, &term, last_line, tmp_word,
+            nl = disp_lines(&win,
+                            &toggles,
+                            current,
+                            count,
+                            search_mode,
+                            &search_data,
+                            &term,
+                            last_line,
+                            tmp_word,
                             &langinfo);
           }
           break;
@@ -13168,8 +14339,15 @@ main(int argc, char * argv[])
                   word_a[current].tag_order = tag_nb++;
               }
 
-              nl = disp_lines(&win, &toggles, current, count, search_mode,
-                              &search_data, &term, last_line, tmp_word,
+              nl = disp_lines(&win,
+                              &toggles,
+                              current,
+                              count,
+                              search_mode,
+                              &search_data,
+                              &term,
+                              last_line,
+                              tmp_word,
                               &langinfo);
             }
           }
@@ -13190,8 +14368,15 @@ main(int argc, char * argv[])
                 word_a[current].tag_id = 0;
                 tagged_words--;
 
-                nl = disp_lines(&win, &toggles, current, count, search_mode,
-                                &search_data, &term, last_line, tmp_word,
+                nl = disp_lines(&win,
+                                &toggles,
+                                current,
+                                count,
+                                search_mode,
+                                &search_data,
+                                &term,
+                                last_line,
+                                tmp_word,
                                 &langinfo);
               }
             }
@@ -13217,8 +14402,15 @@ main(int argc, char * argv[])
                 word_a[wi].tag_order = 0;
               }
 
-              nl = disp_lines(&win, &toggles, current, count, search_mode,
-                              &search_data, &term, last_line, tmp_word,
+              nl = disp_lines(&win,
+                              &toggles,
+                              current,
+                              count,
+                              search_mode,
+                              &search_data,
+                              &term,
+                              last_line,
+                              tmp_word,
                               &langinfo);
             }
           }
@@ -13326,8 +14518,15 @@ main(int argc, char * argv[])
 
               marked = -1;
 
-              nl = disp_lines(&win, &toggles, current, count, search_mode,
-                              &search_data, &term, last_line, tmp_word,
+              nl = disp_lines(&win,
+                              &toggles,
+                              current,
+                              count,
+                              search_mode,
+                              &search_data,
+                              &term,
+                              last_line,
+                              tmp_word,
                               &langinfo);
             }
           }
@@ -13444,8 +14643,15 @@ main(int argc, char * argv[])
 
               marked = -1;
 
-              nl = disp_lines(&win, &toggles, current, count, search_mode,
-                              &search_data, &term, last_line, tmp_word,
+              nl = disp_lines(&win,
+                              &toggles,
+                              current,
+                              count,
+                              search_mode,
+                              &search_data,
+                              &term,
+                              last_line,
+                              tmp_word,
                               &langinfo);
             }
           }
@@ -13484,8 +14690,15 @@ main(int argc, char * argv[])
             {
               marked = current;
 
-              nl = disp_lines(&win, &toggles, current, count, search_mode,
-                              &search_data, &term, last_line, tmp_word,
+              nl = disp_lines(&win,
+                              &toggles,
+                              current,
+                              count,
+                              search_mode,
+                              &search_data,
+                              &term,
+                              last_line,
+                              tmp_word,
                               &langinfo);
             }
           }
@@ -13503,8 +14716,15 @@ main(int argc, char * argv[])
             {
               marked = -1;
 
-              nl = disp_lines(&win, &toggles, current, count, search_mode,
-                              &search_data, &term, last_line, tmp_word,
+              nl = disp_lines(&win,
+                              &toggles,
+                              current,
+                              count,
+                              search_mode,
+                              &search_data,
+                              &term,
+                              last_line,
+                              tmp_word,
                               &langinfo);
             }
           }
@@ -13607,8 +14827,15 @@ main(int argc, char * argv[])
                 }
               }
 
-              nl = disp_lines(&win, &toggles, current, count, search_mode,
-                              &search_data, &term, last_line, tmp_word,
+              nl = disp_lines(&win,
+                              &toggles,
+                              current,
+                              count,
+                              search_mode,
+                              &search_data,
+                              &term,
+                              last_line,
+                              tmp_word,
                               &langinfo);
             }
           }
@@ -13652,8 +14879,15 @@ main(int argc, char * argv[])
                   goto tag_to_mark;
               }
             }
-            nl = disp_lines(&win, &toggles, current, count, search_mode,
-                            &search_data, &term, last_line, tmp_word,
+            nl = disp_lines(&win,
+                            &toggles,
+                            current,
+                            count,
+                            search_mode,
+                            &search_data,
+                            &term,
+                            last_line,
+                            tmp_word,
                             &langinfo);
           }
           else
@@ -13661,8 +14895,8 @@ main(int argc, char * argv[])
           break;
 
         case 'U':
-          /* U has been pressed to undo the last tagging ioperation. */
-          /* """""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+          /* U has been pressed to undo the last tagging operation. */
+          /* """""""""""""""""""""""""""""""""""""""""""""""""""""" */
           if (search_mode == NONE)
           {
             if (toggles.taggable)
@@ -13685,8 +14919,15 @@ main(int argc, char * argv[])
               if (win.next_tag_id > 1)
                 win.next_tag_id--;
 
-              nl = disp_lines(&win, &toggles, current, count, search_mode,
-                              &search_data, &term, last_line, tmp_word,
+              nl = disp_lines(&win,
+                              &toggles,
+                              current,
+                              count,
+                              search_mode,
+                              &search_data,
+                              &term,
+                              last_line,
+                              tmp_word,
                               &langinfo);
             }
           }
@@ -13710,8 +14951,8 @@ main(int argc, char * argv[])
           {
             if (search_mode == NONE && daccess.mode != DA_TYPE_NONE)
             {
-              wchar_t * w;
-              long *    pos;
+              wchar_t *w;
+              long    *pos;
 
               /* Set prev_current to the initial current word to be    */
               /* able to return here if the first direct access fails. */
@@ -13739,8 +14980,15 @@ main(int argc, char * argv[])
                 /* """""""""""""""""""""""""""""""" */
                 set_new_first_column(&win, &term);
 
-                nl = disp_lines(&win, &toggles, current, count, search_mode,
-                                &search_data, &term, last_line, tmp_word,
+                nl = disp_lines(&win,
+                                &toggles,
+                                current,
+                                count,
+                                search_mode,
+                                &search_data,
+                                &term,
+                                last_line,
+                                tmp_word,
                                 &langinfo);
               }
               else
@@ -13756,8 +15004,15 @@ main(int argc, char * argv[])
                   /* """""""""""""""""""""""""""""""" */
                   set_new_first_column(&win, &term);
 
-                  nl = disp_lines(&win, &toggles, current, count, search_mode,
-                                  &search_data, &term, last_line, tmp_word,
+                  nl = disp_lines(&win,
+                                  &toggles,
+                                  current,
+                                  count,
+                                  search_mode,
+                                  &search_data,
+                                  &term,
+                                  last_line,
+                                  tmp_word,
                                   &langinfo);
                 }
               }
@@ -13783,7 +15038,7 @@ main(int argc, char * argv[])
             {
               if (search_data.utf8_len > 0)
               {
-                char * prev;
+                char *prev;
 
                 prev = utf8_prev(search_data.buf,
                                  search_data.buf + search_data.len - 1);
@@ -13814,14 +15069,22 @@ main(int argc, char * argv[])
 
                     word_a[n].is_matching = 0;
 
-                    memset(word_a[n].bitmap, '\0',
+                    memset(word_a[n].bitmap,
+                           '\0',
                            (word_a[n].mb - daccess.flength) / CHAR_BIT + 1);
                   }
 
                   matches_count = 0;
 
-                  nl = disp_lines(&win, &toggles, current, count, search_mode,
-                                  &search_data, &term, last_line, tmp_word,
+                  nl = disp_lines(&win,
+                                  &toggles,
+                                  current,
+                                  count,
+                                  search_mode,
+                                  &search_data,
+                                  &term,
+                                  last_line,
+                                  tmp_word,
                                   &langinfo);
                 }
               }
@@ -13838,8 +15101,8 @@ main(int argc, char * argv[])
                 /* """""""""""""""""""""""""""""""""""""""""""""""""""""""" */
                 if (search_mode != PREFIX)
                 {
-                  sub_tst_t * sub_tst_data;
-                  ll_node_t * node;
+                  sub_tst_t *sub_tst_data;
+                  ll_node_t *node;
 
                   node         = tst_search_list->tail;
                   sub_tst_data = (sub_tst_t *)(node->data);
@@ -13890,7 +15153,11 @@ main(int argc, char * argv[])
           switch (mouse_proto)
           {
             case MOUSE1006:
-              if (sscanf((char *)buffer + 3, "%u;%u;%u%c", &iCb, &iCx, &iCy,
+              if (sscanf((char *)buffer + 3,
+                         "%u;%u;%u%c",
+                         &iCb,
+                         &iCx,
+                         &iCy,
                          &action)
                   != 4)
                 goto ignore_mouse_event;
@@ -13908,7 +15175,11 @@ main(int argc, char * argv[])
               break;
 
             case MOUSE1015:
-              if (sscanf((char *)buffer + 2, "%u;%u;%u%c", &iCb, &iCx, &iCy,
+              if (sscanf((char *)buffer + 2,
+                         "%u;%u;%u%c",
+                         &iCb,
+                         &iCx,
+                         &iCy,
                          &action)
                   != 4)
                 goto ignore_mouse_event;
@@ -14039,34 +15310,66 @@ main(int argc, char * argv[])
 
                 set_new_first_column(&win, &term);
 
-                nl = disp_lines(&win, &toggles, current, count, search_mode,
-                                &search_data, &term, last_line, tmp_word,
+                nl = disp_lines(&win,
+                                &toggles,
+                                current,
+                                count,
+                                search_mode,
+                                &search_data,
+                                &term,
+                                last_line,
+                                tmp_word,
                                 &langinfo);
               }
             }
           }
 
-          /* manage clicks on the horizontal arrows if any. */
+          /* Manage clicks on the horizontal arrows if any. */
           /* """""""""""""""""""""""""""""""""""""""""""""" */
           if (win.has_truncated_lines
-              && shift_arrow_clicked(&win, &term, line_click, column_click,
-                                     &clicked_line, &clicked_arrow))
+              && shift_arrow_clicked(&win,
+                                     &term,
+                                     line_click,
+                                     column_click,
+                                     &clicked_line,
+                                     &clicked_arrow))
           {
             if (button == 0)
               switch (clicked_arrow)
               {
                 case 0: /* left */
-                  shift_left(&win, &term, &toggles, &search_data, &langinfo,
-                             &nl, last_line, tmp_word, clicked_line);
+                  shift_left(&win,
+                             &term,
+                             &toggles,
+                             &search_data,
+                             &langinfo,
+                             &nl,
+                             last_line,
+                             tmp_word,
+                             clicked_line);
                   break;
 
                 case 1: /* right */
-                  shift_right(&win, &term, &toggles, &search_data, &langinfo,
-                              &nl, last_line, tmp_word, clicked_line);
+                  shift_right(&win,
+                              &term,
+                              &toggles,
+                              &search_data,
+                              &langinfo,
+                              &nl,
+                              last_line,
+                              tmp_word,
+                              clicked_line);
                   break;
               }
-            nl = disp_lines(&win, &toggles, current, count, search_mode,
-                            &search_data, &term, last_line, tmp_word,
+            nl = disp_lines(&win,
+                            &toggles,
+                            current,
+                            count,
+                            search_mode,
+                            &search_data,
+                            &term,
+                            last_line,
+                            tmp_word,
                             &langinfo);
           }
           else
@@ -14074,8 +15377,11 @@ main(int argc, char * argv[])
             /* Get the new current word on click. */
             /* """""""""""""""""""""""""""""""""" */
             error       = 0;
-            new_current = get_clicked_index(&win, &term, line_click,
-                                            column_click, &error);
+            new_current = get_clicked_index(&win,
+                                            &term,
+                                            line_click,
+                                            column_click,
+                                            &error);
 
             /* Update the selection index and refresh if needed. */
             /* """"""""""""""""""""""""""""""""""""""""""""""""" */
@@ -14116,8 +15422,15 @@ main(int argc, char * argv[])
               /* otherwise reset the cursor position to its previous value. */
               /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
               if (button == 0 || button == 2)
-                nl = disp_lines(&win, &toggles, current, count, search_mode,
-                                &search_data, &term, last_line, tmp_word,
+                nl = disp_lines(&win,
+                                &toggles,
+                                current,
+                                count,
+                                search_mode,
+                                &search_data,
+                                &term,
+                                last_line,
+                                tmp_word,
                                 &langinfo);
               else
                 current = old_current;
@@ -14166,16 +15479,16 @@ main(int argc, char * argv[])
         special_cmds_when_searching:
         default:
         {
-          int         c; /* byte index in the scancode string .*/
-          sub_tst_t * sub_tst_data;
-          long        i;
+          int        c; /* byte index in the scancode string .*/
+          sub_tst_t *sub_tst_data;
+          long       i;
 
           if (search_mode != NONE)
           {
-            long        old_len      = search_data.len;
-            long        old_utf8_len = search_data.utf8_len;
-            ll_node_t * node;
-            wchar_t *   ws;
+            long       old_len      = search_data.len;
+            long       old_utf8_len = search_data.utf8_len;
+            ll_node_t *node;
+            wchar_t   *ws;
 
             /* Copy all the bytes included in the key press to buffer. */
             /* """"""""""""""""""""""""""""""""""""""""""""""""""""""" */
@@ -14220,7 +15533,8 @@ main(int argc, char * argv[])
 
                 word_a[n].is_matching = 0;
 
-                memset(word_a[n].bitmap, '\0',
+                memset(word_a[n].bitmap,
+                       '\0',
                        (word_a[n].mb - daccess.flength) / CHAR_BIT + 1);
               }
 
@@ -14250,8 +15564,15 @@ main(int argc, char * argv[])
                   /* """""""""""""""""""""""""""""""" */
                   set_new_first_column(&win, &term);
 
-                  nl = disp_lines(&win, &toggles, current, count, search_mode,
-                                  &search_data, &term, last_line, tmp_word,
+                  nl = disp_lines(&win,
+                                  &toggles,
+                                  current,
+                                  count,
+                                  search_mode,
+                                  &search_data,
+                                  &term,
+                                  last_line,
+                                  tmp_word,
                                   &langinfo);
                 }
               }
@@ -14275,7 +15596,7 @@ main(int argc, char * argv[])
               /* a sorted array to nodes in the words tst.              */
               /* Each of these node starts a matching candidate.        */
               /* """""""""""""""""""""""""""""""""""""""""""""""""""""" */
-              wchar_t * w = utf8_strtowcs(search_data.buf + old_len);
+              wchar_t *w = utf8_strtowcs(search_data.buf + old_len);
 
               /* zero previous matching indicators. */
               /* """""""""""""""""""""""""""""""""" */
@@ -14285,7 +15606,8 @@ main(int argc, char * argv[])
 
                 word_a[n].is_matching = 0;
 
-                memset(word_a[n].bitmap, '\0',
+                memset(word_a[n].bitmap,
+                       '\0',
                        (word_a[n].mb - daccess.flength) / CHAR_BIT + 1);
               }
 
@@ -14343,7 +15665,7 @@ main(int argc, char * argv[])
                     /* """""""""""""""""""""""""""""""""""""""""""""""""" */
                     int rc;
 
-                    sub_tst_t * tst_fuzzy_level_data;
+                    sub_tst_t *tst_fuzzy_level_data;
 
                     tst_fuzzy_level_data = sub_tst_new();
 
@@ -14354,8 +15676,10 @@ main(int argc, char * argv[])
 
                     rc = 0;
                     for (index = 0; index < sub_tst_data->count; index++)
-                      rc += tst_fuzzy_traverse(sub_tst_data->array[index], NULL,
-                                               1, w[0]);
+                      rc += tst_fuzzy_traverse(sub_tst_data->array[index],
+                                               NULL,
+                                               1,
+                                               w[0]);
 
                     if (rc == 0)
                     {
@@ -14395,7 +15719,9 @@ main(int argc, char * argv[])
               if (matches_count > 0)
               {
                 if (search_data.only_starting)
-                  select_starting_matches(&win, &term, &search_data,
+                  select_starting_matches(&win,
+                                          &term,
+                                          &search_data,
                                           &last_line);
                 else if (search_data.only_ending)
                   select_ending_matches(&win, &term, &search_data, &last_line);
@@ -14413,8 +15739,15 @@ main(int argc, char * argv[])
                 /* """""""""""""""""""""""""""""""" */
                 set_new_first_column(&win, &term);
 
-                nl = disp_lines(&win, &toggles, current, count, search_mode,
-                                &search_data, &term, last_line, tmp_word,
+                nl = disp_lines(&win,
+                                &toggles,
+                                current,
+                                count,
+                                search_mode,
+                                &search_data,
+                                &term,
+                                last_line,
+                                tmp_word,
                                 &langinfo);
               }
               else
@@ -14422,7 +15755,7 @@ main(int argc, char * argv[])
             }
             else /* SUBSTRING. */
             {
-              wchar_t * w = utf8_strtowcs(search_data.buf);
+              wchar_t *w = utf8_strtowcs(search_data.buf);
 
               /* Purge the matching words list. */
               /* """""""""""""""""""""""""""""" */
@@ -14432,7 +15765,8 @@ main(int argc, char * argv[])
 
                 word_a[n].is_matching = 0;
 
-                memset(word_a[n].bitmap, '\0',
+                memset(word_a[n].bitmap,
+                       '\0',
                        (word_a[n].mb - daccess.flength) / CHAR_BIT + 1);
               }
 
@@ -14450,7 +15784,8 @@ main(int argc, char * argv[])
                 sub_tst_data = (sub_tst_t *)(node->data);
 
                 for (index = 0; index < sub_tst_data->count; index++)
-                  tst_traverse(sub_tst_data->array[index], set_matching_flag,
+                  tst_traverse(sub_tst_data->array[index],
+                               set_matching_flag,
                                0);
               }
               else
@@ -14475,10 +15810,14 @@ main(int argc, char * argv[])
                 else
                 {
                   if (search_data.only_starting)
-                    select_starting_matches(&win, &term, &search_data,
+                    select_starting_matches(&win,
+                                            &term,
+                                            &search_data,
                                             &last_line);
                   else if (search_data.only_ending)
-                    select_ending_matches(&win, &term, &search_data,
+                    select_ending_matches(&win,
+                                          &term,
+                                          &search_data,
                                           &last_line);
                   else
                     update_bitmaps(search_mode, &search_data, NO_AFFINITY);
@@ -14492,8 +15831,15 @@ main(int argc, char * argv[])
                   /* """""""""""""""""""""""""""""""" */
                   set_new_first_column(&win, &term);
 
-                  nl = disp_lines(&win, &toggles, current, count, search_mode,
-                                  &search_data, &term, last_line, tmp_word,
+                  nl = disp_lines(&win,
+                                  &toggles,
+                                  current,
+                                  count,
+                                  search_mode,
+                                  &search_data,
+                                  &term,
+                                  last_line,
+                                  tmp_word,
                                   &langinfo);
                 }
               }

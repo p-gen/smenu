@@ -26,12 +26,14 @@
 #include "list.h"
 
 static ll_node_t *
-ll_partition(ll_node_t * l, ll_node_t * h,
+ll_partition(ll_node_t *l,
+             ll_node_t *h,
              int (*comp)(void const *, void const *),
              void (*swap)(void **, void **));
 
 static void
-ll_quicksort(ll_node_t * l, ll_node_t * h,
+ll_quicksort(ll_node_t *l,
+             ll_node_t *h,
              int (*comp)(void const *, void const *),
              void (*swap)(void **, void **));
 
@@ -41,7 +43,7 @@ ll_quicksort(ll_node_t * l, ll_node_t * h,
 ll_t *
 ll_new(void)
 {
-  ll_t * ret = xmalloc(sizeof(ll_t));
+  ll_t *ret = xmalloc(sizeof(ll_t));
   ll_init(ret);
 
   return ret;
@@ -51,7 +53,7 @@ ll_new(void)
 /* Initializes a linked list. */
 /* ========================== */
 void
-ll_init(ll_t * list)
+ll_init(ll_t *list)
 {
   list->head = NULL;
   list->tail = NULL;
@@ -76,11 +78,11 @@ ll_new_node(void)
 void
 ll_append(ll_t * const list, void * const data)
 {
-  ll_node_t * node;
+  ll_node_t *node;
 
   node = ll_new_node(); /* ll_new_node cannot return NULL because it   *
-                         * uses xmalloc which does not return if there *
-                         * is an allocation error.                     */
+                         | uses xmalloc which does not return if there *
+                         | is an allocation error.                     */
 
   node->data = data;
   node->next = NULL;       /* This node will be the last. */
@@ -100,7 +102,7 @@ ll_append(ll_t * const list, void * const data)
 /* Removes a node from a linked list. */
 /* ================================== */
 int
-ll_delete(ll_t * const list, ll_node_t * node)
+ll_delete(ll_t * const list, ll_node_t *node)
 {
   if (list->head == list->tail)
   {
@@ -146,7 +148,8 @@ ll_delete(ll_t * const list, ll_node_t * node)
 /* http://www.geeksforgeeks.org/quicksort-for-linked-list */
 /* ====================================================== */
 static ll_node_t *
-ll_partition(ll_node_t * l, ll_node_t * h,
+ll_partition(ll_node_t *l,
+             ll_node_t *h,
              int (*comp)(void const *, void const *),
              void (*swap)(void **, void **))
 {
@@ -157,10 +160,10 @@ ll_partition(ll_node_t * l, ll_node_t * h,
 
   /* Set pivot as h element. */
   /* """"""""""""""""""""""" */
-  void * x = h->data;
+  void *x = h->data;
 
-  ll_node_t * i = l->prev;
-  ll_node_t * j;
+  ll_node_t *i = l->prev;
+  ll_node_t *j;
 
   for (j = l; j != h; j = j->next)
   {
@@ -184,13 +187,14 @@ ll_partition(ll_node_t * l, ll_node_t * h,
 /* http://www.geeksforgeeks.org/quicksort-for-linked-list   */
 /* ======================================================== */
 static void
-ll_quicksort(ll_node_t * l, ll_node_t * h,
+ll_quicksort(ll_node_t *l,
+             ll_node_t *h,
              int (*comp)(void const *, void const *),
              void (*swap)(void **, void **))
 {
   if (h != NULL && l != h && l != h->next)
   {
-    ll_node_t * p = ll_partition(l, h, comp, swap);
+    ll_node_t *p = ll_partition(l, h, comp, swap);
     ll_quicksort(l, p->prev, comp, swap);
     ll_quicksort(p->next, h, comp, swap);
   }
@@ -200,7 +204,8 @@ ll_quicksort(ll_node_t * l, ll_node_t * h,
 /* A linked list sort function. */
 /* ============================ */
 void
-ll_sort(ll_t * list, int (*comp)(void const *, void const *),
+ll_sort(ll_t *list,
+        int (*comp)(void const *, void const *),
         void (*swap)(void **, void **))
 {
   /* Call the recursive ll_quicksort function. */
@@ -214,10 +219,11 @@ ll_sort(ll_t * list, int (*comp)(void const *, void const *),
 /* A comparison function must be provided to compare a and b (strcmp like).  */
 /* ==========================================================================*/
 ll_node_t *
-ll_find(ll_t * const list, void * const data,
+ll_find(ll_t * const list,
+        void * const data,
         int (*cmpfunc)(const void *, const void *))
 {
-  ll_node_t * node;
+  ll_node_t *node;
 
   if (NULL == (node = list->head))
     return NULL;
@@ -241,7 +247,7 @@ ll_free(ll_t * const list, void (*clean)(void *))
 {
   if (list)
   {
-    ll_node_t * node = list->head;
+    ll_node_t *node = list->head;
 
     while (node)
     {
@@ -261,7 +267,7 @@ ll_free(ll_t * const list, void (*clean)(void *))
 /* Destroy a list and all its elements. */
 /* ==================================== */
 void
-ll_destroy(ll_t * list, void (*clean)(void *))
+ll_destroy(ll_t *list, void (*clean)(void *))
 {
   if (list)
   {
