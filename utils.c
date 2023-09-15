@@ -382,12 +382,13 @@ strrep(char *s, const char c1, const char c2)
 
 /* ================================================================== */
 /* Allocates and returns a string similar to s but with non printable */
-/* character changed in '_'                                           */
+/* character changed by their ASCII hexadecimal notation.             */
 /* ================================================================== */
 char *
 strprint(char *s)
 {
-  char *new = xcalloc(1, 4 * strlen(s) + 1);
+  size_t l  = strlen(s);
+  char *new = xcalloc(1, 4 * l + 1);
   char *p   = new;
 
   while (*s)
@@ -396,9 +397,13 @@ strprint(char *s)
       *(p++) = *s++;
     else
     {
-      sprintf(p, "[%02x]", (unsigned char)*s++);
+      sprintf(p, "\\x%02X", (unsigned char)*s++);
       p += 4;
     }
   }
+
+  if (p - new > l)
+    new = xrealloc(new, p - new + 1);
+
   return new;
 }
