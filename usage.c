@@ -65,7 +65,7 @@ common_help(void)
   printf("  defines word separators in the input stream.\n");
   printf("-L|-ls|-ld|-line-delimiters|-line_separators\n");
   printf("  defines line separators in the input stream.\n");
-  printf("-q|-no_bar|-no-scroll_bar\n");
+  printf("-q|-no_bar|-no_scroll_bar\n");
   printf("  prevents the scroll bar from being displayed.\n");
   printf("-S|-subst\n");
   printf("  defines the post-substitution action to apply to all words.\n");

@@ -8859,7 +8859,7 @@ main(int argc, char *argv[])
   ctxopt_add_opt_settings(parameters, "zapped_glyphs", "-z -zap -zap-glyphs");
   ctxopt_add_opt_settings(parameters,
                           "no_scroll_bar",
-                          "-q -no_bar -no-scroll_bar");
+                          "-q -no_bar -no_scroll_bar");
   ctxopt_add_opt_settings(parameters, "early_subst_all", "-ES -early_subst");
   ctxopt_add_opt_settings(parameters, "post_subst_all", "-S -subst");
   ctxopt_add_opt_settings(parameters,
