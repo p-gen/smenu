@@ -3899,9 +3899,8 @@ build_metadata(term_t *term, long count, win_t *win)
       tab_count++;           /* We've seen another word in the line/ */
     }
 
-    /* If not in column mode, we need to calculate win->(real_)max_width */
-    /* as it hasn't been already done.                                   */
-    /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+    /* Update win->(real_)max_width if necessary. */
+    /* """""""""""""""""""""""""""""""""""""""""" */
     if (len > win->max_width)
     {
       /* Update the effective line width. */
