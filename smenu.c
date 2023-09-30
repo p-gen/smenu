@@ -1071,7 +1071,7 @@ check_integer_constraint(int nb_args, char **args, char *value, char *par)
 /* The disp_word function will use it to display these special characters. */
 /*                                                                         */
 /* mode     is the search method.                                          */
-/* data     contains informations about the search buffer.                 */
+/* data     contains information about the search buffer.                  */
 /* affinity determines if we must only consider matches that occur at      */
 /*          the start, the end or if we just don't care.                   */
 /* ======================================================================= */
@@ -2381,7 +2381,7 @@ parse_selectors(char        *str,
 
 /* ===================================================================== */
 /* Parse a commas separated sequence of regular expression.              */
-/* Uses to align to the left, right or center some words base on reguler */
+/* Uses to align to the left, right or center some words base on regular */
 /* expressions.                                                          */
 /*                                                                       */
 /* str               (in)  sequence of regular expression.               */
@@ -2815,7 +2815,7 @@ build_repl_string(char    *orig,
 /*                                                                        */
 /* orig: original string                                                  */
 /* sed:      composite variable containing the regular expression, a      */
-/*           substitution string and various other informations.          */
+/*           substitution string and various other information.           */
 /* output:   destination buffer.                                          */
 /*                                                                        */
 /* return 1 if the replacement has been successful else 0.                */
@@ -7884,8 +7884,8 @@ get_clicked_index(win_t  *win,
       offset = 0;
 
     /* Compensates for the offset of the window in the case of a centred */
-    /* window and the the additional space indtuduced by the display of  */
-    /* trucated lines.                                                   */
+    /* window and the additional space added by the display of truncated */
+    /* lines.                                                            */
     /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
     column_click -= win->offset;
 
