@@ -13059,12 +13059,6 @@ main(int argc, char *argv[])
             /* """"""""""""""""""""""""""""""" */
             goto kchome;
 
-          if (memcmp("\x1b[1;2H", buffer, 6) == 0
-              || memcmp("\x1b[7$", buffer, 4) == 0)
-            /* SHIFT HOME key has been pressed. */
-            /* """"""""""""""""""""""""""""""" */
-            goto kshome;
-
           if (memcmp("\x1bOF", buffer, 3) == 0
               || memcmp("\x1bj", buffer, 2) == 0
               || memcmp("\x1b[F", buffer, 3) == 0
@@ -13119,12 +13113,6 @@ main(int argc, char *argv[])
             /* """""""""""""""""""""""""""""" */
             goto kcend;
 
-          if (memcmp("\x1b[1;2F", buffer, 6) == 0
-              || memcmp("\x1b[8$", buffer, 4) == 0)
-            /* SHIFT END key has been pressed. */
-            /* """"""""""""""""""""""""""""""" */
-            goto ksend;
-
           if (memcmp("\x1bOD", buffer, 3) == 0
               || memcmp("\x1b[D", buffer, 3) == 0)
             /* Left arrow key has been pressed. */
@@ -13172,16 +13160,20 @@ main(int argc, char *argv[])
             /* """"""""""""""""""""""""" */
             goto kdel;
 
-          if (memcmp("\x1b[1;5C", buffer, 6) == 0
+          if (memcmp("\x1b[1;2F", buffer, 6) == 0
+              || memcmp("\x1b[1;5C", buffer, 6) == 0
+              || memcmp("\x1b[8$", buffer, 4) == 0
               || memcmp("\x1bOc", buffer, 3) == 0)
-            /* CTRL -> has been pressed. */
-            /* """""""""""""""""""""""""" */
+            /* SHIFT END or CTRL -> has been pressed. */
+            /* """""""""""""""""""""""""""""""""""""" */
             goto keol;
 
-          if (memcmp("\x1b[1;5D", buffer, 6) == 0
+          if (memcmp("\x1b[1;2H", buffer, 6) == 0
+              || memcmp("\x1b[1;5D", buffer, 6) == 0
+              || memcmp("\x1b[7$", buffer, 4) == 0
               || memcmp("\x1bOd", buffer, 3) == 0)
-            /* CTRL <- key has been pressed. */
-            /* """"""""""""""""""""""""""""" */
+            /* SHIFT HOME or CTRL <- key has been pressed. */
+            /* """"""""""""""""""""""""""""""""""""""""""" */
             goto ksol;
 
           if (!toggles.no_mouse)
@@ -13804,24 +13796,46 @@ main(int argc, char *argv[])
         case 'H':
           if (search_mode == NONE)
           {
-            current = first_word_in_line_a[line_nb_of_word_a[current]];
+            if (win.col_mode || win.line_mode)
+            {
+              long pos;
 
-            while (!word_a[current].is_selectable)
-              current++;
+              pos = first_word_in_line_a[line_nb_of_word_a[current]];
 
-            win.first_column = 0;
-            set_new_first_column(&win, &term);
+              search_mode = NONE;
 
-            nl = disp_lines(&win,
-                            &toggles,
-                            current,
-                            count,
-                            search_mode,
-                            &search_data,
-                            &term,
-                            last_line,
-                            tmp_word,
-                            &langinfo);
+              /* Find the first selectable word. */
+              /* """"""""""""""""""""""""""""""" */
+              while (!word_a[pos].is_last)
+              {
+                if (word_a[pos].is_selectable)
+                {
+                  current = pos;
+                  break;
+                }
+
+                pos++;
+
+                if (pos > current)
+                  break;
+              }
+
+              if (word_a[pos].is_last && word_a[pos].is_selectable)
+                current = pos;
+
+              set_new_first_column(&win, &term);
+
+              nl = disp_lines(&win,
+                              &toggles,
+                              current,
+                              count,
+                              search_mode,
+                              &search_data,
+                              &term,
+                              last_line,
+                              tmp_word,
+                              &langinfo);
+            }
           }
           else
             goto special_cmds_when_searching;
@@ -13849,52 +13863,6 @@ main(int argc, char *argv[])
           else
             goto special_cmds_when_searching;
 
-          break;
-
-        kshome:
-          /* SHIFT HOME key has been pressed.              */
-          /* -> first selectable word in the current line. */
-          /* """"""""""""""""""""""""""""""""""""""""""""" */
-          if (win.col_mode || win.line_mode)
-          {
-            long pos;
-
-            pos = first_word_in_line_a[line_nb_of_word_a[current]];
-
-            search_mode = NONE;
-
-            /* Find the first selectable word. */
-            /* """"""""""""""""""""""""""""""" */
-            while (!word_a[pos].is_last)
-            {
-              if (word_a[pos].is_selectable)
-              {
-                current = pos;
-                break;
-              }
-
-              pos++;
-
-              if (pos > current)
-                break;
-            }
-
-            if (word_a[pos].is_last && word_a[pos].is_selectable)
-              current = pos;
-
-            set_new_first_column(&win, &term);
-
-            nl = disp_lines(&win,
-                            &toggles,
-                            current,
-                            count,
-                            search_mode,
-                            &search_data,
-                            &term,
-                            last_line,
-                            tmp_word,
-                            &langinfo);
-          }
           break;
 
         /* shift the window to the left if possible. */
@@ -13926,26 +13894,40 @@ main(int argc, char *argv[])
         case 'L':
           if (search_mode == NONE)
           {
-            long cur_line = line_nb_of_word_a[current];
+            if (win.col_mode || win.line_mode)
+            {
+              long pos;
 
-            current          = get_line_last_word(cur_line, last_line);
-            win.first_column = win.real_max_width - 1 - (term.ncolumns - 3);
+              pos = current;
 
-            while (!word_a[current].is_selectable)
-              current--;
+              search_mode = NONE;
 
-            set_new_first_column(&win, &term);
+              /* Find the first selectable word. */
+              /* """"""""""""""""""""""""""""""" */
+              while (!word_a[pos].is_last)
+              {
+                if (word_a[pos].is_selectable)
+                  current = pos;
 
-            nl = disp_lines(&win,
-                            &toggles,
-                            current,
-                            count,
-                            search_mode,
-                            &search_data,
-                            &term,
-                            last_line,
-                            tmp_word,
-                            &langinfo);
+                pos++;
+              }
+
+              if (word_a[pos].is_selectable)
+                current = pos;
+
+              set_new_first_column(&win, &term);
+
+              nl = disp_lines(&win,
+                              &toggles,
+                              current,
+                              count,
+                              search_mode,
+                              &search_data,
+                              &term,
+                              last_line,
+                              tmp_word,
+                              &langinfo);
+            }
           }
           else
             goto special_cmds_when_searching;
@@ -13973,46 +13955,6 @@ main(int argc, char *argv[])
           else
             goto special_cmds_when_searching;
 
-          break;
-
-        ksend:
-          /* SHIFT END key has been pressed.              */
-          /* -> last selectable word in the current line. */
-          /* """""""""""""""""""""""""""""""""""""""""""" */
-          if (win.col_mode || win.line_mode)
-          {
-            long pos;
-
-            pos = current;
-
-            search_mode = NONE;
-
-            /* Find the first selectable word. */
-            /* """"""""""""""""""""""""""""""" */
-            while (!word_a[pos].is_last)
-            {
-              if (word_a[pos].is_selectable)
-                current = pos;
-
-              pos++;
-            }
-
-            if (word_a[pos].is_selectable)
-              current = pos;
-
-            set_new_first_column(&win, &term);
-
-            nl = disp_lines(&win,
-                            &toggles,
-                            current,
-                            count,
-                            search_mode,
-                            &search_data,
-                            &term,
-                            last_line,
-                            tmp_word,
-                            &langinfo);
-          }
           break;
 
         /* shift the window to the left if possible. */
