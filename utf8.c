@@ -99,9 +99,7 @@ utf8_interpret(char *s, char substitute)
                             "U"))
          != NULL)
   {
-    char     str[7];
     int      utf8_str_len;
-    int      len;
     int      n;
     uint32_t cp;
     int      subst; /* 0, the \U sequence is valid, else 1. */
@@ -127,6 +125,9 @@ utf8_interpret(char *s, char substitute)
         subst = 1; /* Invalid range. */
       else
       {
+        char str[7];
+        int  len;
+
         len             = cptoutf8(str, cp);
         str[len]        = '\0';
         *(utf8_str + 1) = 'u';
@@ -199,7 +200,6 @@ utf8_interpret(char *s, char substitute)
       }
       else
       {
-        int    n;
         char   end;
         size_t i;
         char   b[3] = { ' ', ' ', '\0' };
@@ -220,6 +220,7 @@ utf8_interpret(char *s, char substitute)
         for (i = 1; i < utf8_ascii_len / 2; i++)
         {
           int good = 1;
+          int n;
 
           n = sscanf(utf8_seq_offset + 2 * i, "%c%c", &b[0], &b[1]);
 
@@ -314,7 +315,7 @@ utf8_get_length(unsigned char c)
 /* Returns the byte offset of the nth UTF-8 glyph in s. */
 /* ==================================================== */
 size_t
-utf8_offset(char *s, size_t n)
+utf8_offset(char const *s, size_t n)
 {
   size_t i = 0;
 
@@ -372,19 +373,22 @@ void
 utf8_sanitize(char *s, char substitute)
 {
   char  *p = s;
-  int    n;
   size_t len;
 
   len = strlen(s);
   while (*p)
   {
+    int    n;
+
     n = utf8_get_length(*p);
+
     if (n > 1)
     {
       *p = substitute;
       memmove(p + 1, p + n, len - (p - s) - n + 1);
       len -= (n - 1);
     }
+
     p++;
   }
 }
@@ -464,7 +468,7 @@ utf8_validate(char *s)
 /* Multibyte UTF-8 strlen. */
 /* ======================= */
 size_t
-utf8_strlen(char *str)
+utf8_strlen(char const *str)
 {
   size_t i = 0, j = 0;
 
@@ -483,7 +487,7 @@ utf8_strlen(char *str)
 /* pos is updated to reflect the position AFTER the prefix.             */
 /* ==================================================================== */
 char *
-utf8_strprefix(char *d, char *s, long n, long *pos)
+utf8_strprefix(char *d, char const *s, long n, long *pos)
 {
   long i = 0;
   long j = 0;

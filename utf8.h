@@ -25,13 +25,13 @@ int
 utf8_get_length(unsigned char c);
 
 size_t
-utf8_offset(char *, size_t);
+utf8_offset(char const *, size_t);
 
 char *
-utf8_strprefix(char *d, char *s, long n, long *pos);
+utf8_strprefix(char *d, char const *s, long n, long *pos);
 
 size_t
-utf8_strlen(char *str);
+utf8_strlen(char const *str);
 
 wchar_t *
 utf8_strtowcs(char *s);
