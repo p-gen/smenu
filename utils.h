@@ -78,5 +78,5 @@ void
 strrep(char *s, const char c1, const char c2);
 
 char *
-strprint(char *s);
+strprint(char const *s);
 #endif

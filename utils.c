@@ -43,8 +43,8 @@ interval_new(void)
 int
 interval_comp(void const *a, void const *b)
 {
-  interval_t *ia = (interval_t *)a;
-  interval_t *ib = (interval_t *)b;
+  interval_t const *ia = (interval_t *)a;
+  interval_t const *ib = (interval_t *)b;
 
   if (ia->low < ib->low)
     /* ia: [...      */
@@ -209,10 +209,9 @@ ltrim(char *str, const char *trim_str)
 {
   size_t len   = strlen(str);
   size_t begin = strspn(str, trim_str);
-  size_t i;
 
   if (begin > 0)
-    for (i = begin; i <= len; ++i)
+    for (size_t i = begin; i <= len; ++i)
       str[i - begin] = str[i];
 }
 
@@ -385,7 +384,7 @@ strrep(char *s, const char c1, const char c2)
 /* character changed by their ASCII hexadecimal notation.             */
 /* ================================================================== */
 char *
-strprint(char *s)
+strprint(char const *s)
 {
   size_t l  = strlen(s);
   char *new = xcalloc(1, 4 * l + 1);
