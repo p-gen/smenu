@@ -153,8 +153,7 @@ xstrdup(const char *str)
 char *
 xstrndup(const char *str, size_t len)
 {
-  char  *p;
-  size_t l;
+  char *p;
 
   p = memchr(str, '\0', len);
 
