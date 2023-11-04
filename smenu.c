@@ -8603,9 +8603,22 @@ main(int argc, char *argv[])
   /* Temporarily set /dev/tty as stdin/stdout to get its size */
   /* even in a pipe.                                          */
   /* """""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-  old_fd0    = dup(0);
-  old_stdin  = freopen("/dev/tty", "r", stdin);
-  old_fd1    = dup(1);
+  old_fd0 = dup(0);
+  if (old_fd0 == -1)
+  {
+    fprintf(stderr, "Cannot save the standard input file descriptor.\n");
+    exit(EXIT_FAILURE);
+  }
+
+  old_stdin = freopen("/dev/tty", "r", stdin);
+
+  old_fd1 = dup(1);
+  if (old_fd1 == -1)
+  {
+    fprintf(stderr, "Cannot save the standard output file descriptor.\n");
+    exit(EXIT_FAILURE);
+  }
+
   old_stdout = freopen("/dev/tty", "w", stdout);
 
   if (old_stdin == NULL || old_stdout == NULL)
@@ -8620,8 +8633,18 @@ main(int argc, char *argv[])
 
   /* Restore the old stdin and stdout. */
   /* """"""""""""""""""""""""""""""""" */
-  dup2(old_fd0, 0);
-  dup2(old_fd1, 1);
+  if (dup2(old_fd0, 0) == -1)
+  {
+    fprintf(stderr, "Cannot restore the standard input file descriptor.\n");
+    exit(EXIT_FAILURE);
+  }
+
+  if (dup2(old_fd1, 1) == -1)
+  {
+    fprintf(stderr, "Cannot restore the standard output file descriptor.\n");
+    exit(EXIT_FAILURE);
+  }
+
   close(old_fd0);
   close(old_fd1);
 
