@@ -464,7 +464,7 @@ struct search_data_s
   long *utf8_off_a; /* array of mb offsets in buf.               */
   long *utf8_len_a; /* array of mb lengths in buf.               */
 
-  int  fuzzy_err;     /* fuzzy match error indicator.            */
+  int  err;           /* match error indicator.                  */
   long fuzzy_err_pos; /* last good position in search buffer.    */
 
   int only_ending;   /* only searches giving a result with the.  *

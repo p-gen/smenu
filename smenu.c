@@ -1489,7 +1489,7 @@ clean_matches(search_data_t *search_data, long size)
     sub_tst_data->count = 0;
   }
 
-  search_data->fuzzy_err = 0;
+  search_data->err = 0;
 
   /* Clean the search buffer. */
   /* """""""""""""""""""""""" */
@@ -4193,7 +4193,7 @@ disp_word(long           pos,
 
       /* Set the search cursor attribute. */
       /* """""""""""""""""""""""""""""""" */
-      if (search_data->fuzzy_err)
+      if (search_data->err)
         apply_attr(term, win->search_err_field_attr);
       else
         apply_attr(term, win->search_field_attr);
@@ -4220,12 +4220,12 @@ disp_word(long           pos,
 
         /* Set the search cursor attribute. */
         /* """""""""""""""""""""""""""""""" */
-        if (search_data->fuzzy_err)
+        if (search_data->err)
           apply_attr(term, win->search_err_field_attr);
         else
           apply_attr(term, win->search_field_attr);
 
-        disp_matching_word(pos, win, term, 1, search_data->fuzzy_err);
+        disp_matching_word(pos, win, term, 1, search_data->err);
       }
     }
     else
@@ -4262,7 +4262,7 @@ disp_word(long           pos,
       /* """""""""""""""""""""""""""""""""""""""""""""""""""""" */
       utf8_strprefix(tmp_word, word_a[pos].str, (long)word_a[pos].mb, &p);
       if (word_a[pos].is_matching)
-        disp_cursor_word(pos, win, term, search_data->fuzzy_err);
+        disp_cursor_word(pos, win, term, search_data->err);
       else
       {
         if (word_a[pos].tag_id > 0)
@@ -4346,7 +4346,7 @@ disp_word(long           pos,
     }
 
     if (word_a[pos].is_matching)
-      disp_matching_word(pos, win, term, 0, search_data->fuzzy_err);
+      disp_matching_word(pos, win, term, 0, search_data->err);
     else
     {
       if (word_a[pos].tag_id > 0)
@@ -7769,7 +7769,7 @@ reset_search_buffer(win_t         *win,
   /* """""""""""""""""""""""" */
   search_timer = 0;
 
-  search_data->fuzzy_err     = 0;
+  search_data->err           = 0;
   search_data->only_starting = 0;
   search_data->only_ending   = 0;
 
@@ -8418,11 +8418,11 @@ main(int argc, char *argv[])
   unsigned char buffer[64]; /* Input buffer which will contain the scancode. */
 
   search_data_t search_data;
-  search_data.buf = NULL;    /* Search buffer                                */
-  search_data.len = 0;       /* Current position in the search buffer        */
-  search_data.utf8_len  = 0; /* Current position in the search buffer in     *
+  search_data.buf = NULL;   /* Search buffer                                */
+  search_data.len = 0;      /* Current position in the search buffer        */
+  search_data.utf8_len = 0; /* Current position in the search buffer in     *
                               | UTF-8 units.                                 */
-  search_data.fuzzy_err = 0; /* reset the error indicator.                   */
+  search_data.err      = 0; /* reset the error indicator.                   */
   search_data.fuzzy_err_pos = -1; /* no last error position in search        *
                                   buffer.                                    */
 
@@ -15106,9 +15106,10 @@ main(int argc, char *argv[])
                 /* Reset the error indicator if we erase the first non */
                 /* matching element of the search buffer.              */
                 /* """"""""""""""""""""""""""""""""""""""""""""""""""" */
-                if (search_data.utf8_len == search_data.fuzzy_err_pos - 1)
+                if (search_mode != FUZZY
+                    || search_data.utf8_len == search_data.fuzzy_err_pos - 1)
                 {
-                  search_data.fuzzy_err     = 0;
+                  search_data.err           = 0;
                   search_data.fuzzy_err_pos = -1;
                 }
                 search_data.utf8_len--;
@@ -15149,7 +15150,25 @@ main(int argc, char *argv[])
                 }
               }
               else
+              {
                 my_beep(&toggles);
+                if (search_data.err)
+                {
+                  search_data.err           = 0;
+                  search_data.fuzzy_err_pos = -1;
+
+                  nl = disp_lines(&win,
+                                  &toggles,
+                                  current,
+                                  count,
+                                  search_mode,
+                                  &search_data,
+                                  &term,
+                                  last_line,
+                                  tmp_word,
+                                  &langinfo);
+                }
+              }
 
               if (search_data.utf8_len > 0)
                 goto special_cmds_when_searching;
@@ -15167,7 +15186,7 @@ main(int argc, char *argv[])
                   node         = tst_search_list->tail;
                   sub_tst_data = (sub_tst_t *)(node->data);
 
-                  search_data.fuzzy_err = 0;
+                  search_data.err = 0;
 
                   sub_tst_data->count = 0;
                 }
@@ -15640,9 +15659,25 @@ main(int argc, char *argv[])
               {
                 my_beep(&toggles);
 
+                search_data.err                  = 1;
                 search_data.len                  = old_len;
                 search_data.utf8_len             = old_utf8_len;
                 search_data.buf[search_data.len] = '\0';
+
+                /* Set new first column to display. */
+                /* """""""""""""""""""""""""""""""" */
+                set_new_first_column(&win, &term);
+
+                nl = disp_lines(&win,
+                                &toggles,
+                                current,
+                                count,
+                                search_mode,
+                                &search_data,
+                                &term,
+                                last_line,
+                                tmp_word,
+                                &langinfo);
               }
             }
             else if (search_mode == FUZZY)
@@ -15748,7 +15783,7 @@ main(int argc, char *argv[])
 
                       ll_delete(tst_search_list, tst_search_list->tail);
 
-                      search_data.fuzzy_err = 1;
+                      search_data.err = 1;
                       if (search_data.fuzzy_err_pos == -1)
                         search_data.fuzzy_err_pos = search_data.utf8_len;
 
@@ -15907,9 +15942,25 @@ main(int argc, char *argv[])
               {
                 my_beep(&toggles);
 
+                search_data.err = 1;
                 search_data.len = old_len;
                 search_data.utf8_len--;
                 search_data.buf[search_data.len] = '\0';
+
+                /* Set new first column to display. */
+                /* """""""""""""""""""""""""""""""" */
+                set_new_first_column(&win, &term);
+
+                nl = disp_lines(&win,
+                                &toggles,
+                                current,
+                                count,
+                                search_mode,
+                                &search_data,
+                                &term,
+                                last_line,
+                                tmp_word,
+                                &langinfo);
               }
             }
           }
