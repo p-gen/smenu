@@ -13,7 +13,7 @@
 
 typedef struct langinfo_s langinfo_t;
 
-/* Locale informations */
+/* Locale information. */
 /* """"""""""""""""""" */
 struct langinfo_s
 {

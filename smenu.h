@@ -233,8 +233,8 @@ struct ticker_s
   int direct_access;
 };
 
-/* Structure to store miscellaneous informations. */
-/* """""""""""""""""""""""""""""""""""""""""""""" */
+/* Structure to store miscellaneous information. */
+/* """"""""""""""""""""""""""""""""""""""""""""" */
 struct misc_s
 {
   search_mode_t default_search_method;
@@ -243,8 +243,8 @@ struct misc_s
   int           ignore_quotes;
 };
 
-/* Structure to store mouse informations. */
-/* """""""""""""""""""""""""""""""""""""" */
+/* Structure to store mouse information. */
+/* """"""""""""""""""""""""""""""""""""" */
 struct mouse_s
 {
   int double_click_delay;
