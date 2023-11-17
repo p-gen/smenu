@@ -4455,7 +4455,7 @@ ctxopt_re_constraint(int nb_args, char **args, char *value, char *par)
 int
 ctxopt_range_constraint(int nb_args, char **args, char *value, char *par)
 {
-  long  min, max;
+  long  min = LONG_MIN, max = LONG_MAX;
   char  c;
   char *ptr;
   int   n;
@@ -4466,6 +4466,7 @@ ctxopt_range_constraint(int nb_args, char **args, char *value, char *par)
   if (nb_args != 2)
     fatal_internal("Range constraint, invalid number of parameters.");
 
+  n = 0;
   if (strcmp(args[0], ".") == 0)
     max_only = 1;
   else
@@ -4474,6 +4475,7 @@ ctxopt_range_constraint(int nb_args, char **args, char *value, char *par)
   if (!max_only && n != 1)
     fatal_internal("Range constraint, min: invalid parameters.");
 
+  n = 0;
   if (strcmp(args[1], ".") == 0)
     min_only = 1;
   else
