@@ -212,9 +212,9 @@ while true; do
     # ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
     [[ $SEL == @EXIT@* ]] && exit 0
 
-    # Lauch the user action which has the responsibility to act according
+    # Launch the user action which has the responsibility to act according
     # to the tag passed as argument.
-    # '''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+    # ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
     $USER_PROGRAM $SEL
 
     # And re-generate the current menu
