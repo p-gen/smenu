@@ -316,20 +316,18 @@ my_wcscasecmp(const wchar_t *s1, const wchar_t *s2)
   return -*s2;
 }
 
-/* ==================================================================== */
-/* Returns 1 if s can be converted into an integer otherwise returns 0. */
-/* ==================================================================== */
+/* ================================================================ */
+/* Returns 1 if s can be converted into an int otherwise returns 0. */
+/* ================================================================ */
 int
 is_integer(const char * const s)
 {
   long int n;
+  char    *endptr;
 
-  if (!s || (strspn(s, "0123456789 ") != strlen(s)))
-    return 0;
+  n = strtol(s, &endptr, 10);
 
-  n = strtol(s, NULL, 10);
-
-  if (errno != ERANGE && n >= INT_MIN && n <= INT_MAX)
+  if (errno != ERANGE && n >= INT_MIN && n <= INT_MAX && *endptr == '\0')
     return 1;
 
   return 0;
