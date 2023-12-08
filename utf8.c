@@ -378,7 +378,7 @@ utf8_sanitize(char *s, char substitute)
   len = strlen(s);
   while (*p)
   {
-    int    n;
+    int n;
 
     n = utf8_get_length(*p);
 

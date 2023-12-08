@@ -7695,8 +7695,8 @@ button_action(char  *ctx_name,
     ctxopt_ctx_disp_usage(ctx_name, exit_after);
   }
 
-  int index[2] = { 0, 2 };
-  int ind;
+  int const index[2] = { 0, 2 };
+  int       ind;
 
   mouse->button[0] = 0;
   mouse->button[1] = 0;
@@ -9490,7 +9490,7 @@ main(int argc, char *argv[])
   /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
   if (term.colors > 7)
   {
-    int special_def_attr[9] = { 1, 2, 3, 5, 6, 7, 7, 7, 7 };
+    int const special_def_attr[9] = { 1, 2, 3, 5, 6, 7, 7, 7, 7 };
 
     if (!win.cursor_attr.is_set)
     {
@@ -11843,7 +11843,7 @@ main(int argc, char *argv[])
 
     ll_node_t *cur_row_regex_node_a[3];
 
-    alignment_t alignment_a[3] = { AL_LEFT, AL_RIGHT, AL_CENTERED };
+    alignment_t const alignment_a[3] = { AL_LEFT, AL_RIGHT, AL_CENTERED };
 
     char *aligned_a; /* Array of indicators used to remember that a word *
                       | has been aligned with -al in a row.              */
