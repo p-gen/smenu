@@ -5001,11 +5001,14 @@ select_ending_matches(win_t         *win,
       ptr = str + strlen(str);
 
       nb = 0;
-      while ((ptr = utf8_prev(str, ptr)) && isblank(*ptr))
+      while ((ptr = utf8_prev(str, ptr)) != NULL && isblank(*ptr))
         if (ptr - str > 0)
           nb++;
         else
           break;
+
+      if (ptr == NULL) /* str is blank or contain an invalid uft8 sequence. */
+        ptr = str;
 
       /* NOTE: utf8_prev cannot return NULL in the previous loop */
       /* because str always contains at least one UTF-8 valid    */
