@@ -79,4 +79,8 @@ strrep(char *s, const char c1, const char c2);
 
 char *
 strprint(char const *s);
+
+void
+hexdump(const char *buf, FILE *fp, const char *prefix, size_t size);
+
 #endif

@@ -404,3 +404,57 @@ strprint(char const *s)
 
   return new;
 }
+
+void
+hexdump(const char *buf, FILE *fp, const char *prefix, size_t size)
+{
+  unsigned int  b;
+  unsigned char d[17];
+  unsigned int  o, mo;
+  size_t        l;
+
+  o = mo = 0;
+  l      = strlen(prefix);
+
+  memset(d, '\0', 17);
+  for (b = 0; b < size; b++)
+  {
+
+    d[b % 16] = isprint(buf[b]) ? (unsigned char)buf[b] : '.';
+
+    if ((b % 16) == 0)
+    {
+      o = l + 7;
+      if (o > mo)
+        mo = o;
+      fprintf(fp, "%s: %04x:", prefix, b);
+    }
+
+    o += 3;
+    if (o > mo)
+      mo = o;
+    fprintf(fp, " %02x", (unsigned char)buf[b]);
+
+    if ((b % 16) == 15)
+    {
+      mo = o;
+      o  = 0;
+      fprintf(fp, " |%s|", d);
+      memset(d, '\0', 17);
+      fprintf(fp, "\n");
+    }
+  }
+  if ((b % 16) != 0)
+  {
+    for (unsigned int i = 0; i < mo - o; i++)
+      fprintf(fp, "%c", ' ');
+
+    fprintf(fp, " |%s", d);
+    if (mo > o)
+      for (unsigned int i = 0; i < 16 - strlen(d); i++)
+        fprintf(fp, "%c", ' ');
+    fprintf(fp, "%c", '|');
+    memset(d, '\0', 17);
+    fprintf(fp, "\n");
+  }
+}
