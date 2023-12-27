@@ -4549,7 +4549,7 @@ ctxopt_add_global_settings(settings s, ...)
     {
       typedef void fn(errors e, state_t * state);
 
-      void (*function)(errors e, state_t * state);
+      void (*function)(errors e, state_t *state);
 
       errors e;
       e                = va_arg(args, errors);
