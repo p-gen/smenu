@@ -157,7 +157,7 @@ xstrndup(const char *str, size_t len)
 
   p = memchr(str, '\0', len);
 
-  if (p)
+  if (p != NULL)
     len = p - str;
 
   p = malloc(len + 1);

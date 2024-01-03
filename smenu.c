@@ -839,7 +839,7 @@ ini_load(const char *filename,
   /* We do that if the file is not readable as well. */
   /* """"""""""""""""""""""""""""""""""""""""""""""" */
   f = fopen_safe(filename, "r");
-  if (!f)
+  if (f == NULL)
     return 0; /* Returns success as the presence of this file *
                | is optional.                                 */
 
@@ -1468,7 +1468,7 @@ clean_matches(search_data_t *search_data, long size)
   /* Clean the list of lists data-structure containing the search levels */
   /* Note that the first element of the list is never deleted.           */
   /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-  if (tst_search_list)
+  if (tst_search_list != NULL)
   {
     ll_node_t *fuzzy_node;
     sub_tst_t *sub_tst_data;
@@ -10069,7 +10069,7 @@ main(int argc, char *argv[])
     exit(EXIT_FAILURE);
   }
 
-  if (include_pattern
+  if (include_pattern != NULL
       && regcomp(&include_re, include_pattern, REG_EXTENDED | REG_NOSUB) != 0)
   {
     fprintf(stderr, "%s: Bad regular expression.\n", include_pattern);
@@ -10077,7 +10077,7 @@ main(int argc, char *argv[])
     exit(EXIT_FAILURE);
   }
 
-  if (exclude_pattern
+  if (exclude_pattern != NULL
       && regcomp(&exclude_re, exclude_pattern, REG_EXTENDED | REG_NOSUB) != 0)
   {
     fprintf(stderr, "%s: Bad regular expression.\n", exclude_pattern);
@@ -10085,7 +10085,7 @@ main(int argc, char *argv[])
     exit(EXIT_FAILURE);
   }
 
-  if (first_word_pattern
+  if (first_word_pattern != NULL
       && regcomp(&first_word_re, first_word_pattern, REG_EXTENDED | REG_NOSUB)
            != 0)
   {
@@ -10094,7 +10094,7 @@ main(int argc, char *argv[])
     exit(EXIT_FAILURE);
   }
 
-  if (last_word_pattern
+  if (last_word_pattern != NULL
       && regcomp(&last_word_re, last_word_pattern, REG_EXTENDED | REG_NOSUB)
            != 0)
   {
@@ -10105,7 +10105,7 @@ main(int argc, char *argv[])
 
   for (index = 0; index < 9; index++)
   {
-    if (special_pattern[index]
+    if (special_pattern[index] != NULL
         && regcomp(&special_re[index],
                    special_pattern[index],
                    REG_EXTENDED | REG_NOSUB)
@@ -10536,11 +10536,11 @@ main(int argc, char *argv[])
     /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
     if (win.col_mode || win.line_mode || win.tab_mode)
     {
-      if (first_word_pattern
+      if (first_word_pattern != NULL
           && regexec(&first_word_re, word, (int)0, NULL, 0) == 0)
         is_first = 1;
 
-      if (last_word_pattern && !is_last
+      if (last_word_pattern != NULL && !is_last
           && regexec(&last_word_re, word, (int)0, NULL, 0) == 0)
         is_last = 1;
     }
@@ -10733,7 +10733,8 @@ main(int argc, char *argv[])
         /* Check if the word will be excluded in the list of selectable */
         /* words or not.                                                */
         /* '''''''''''''''''''''''''''''''''''''''''''''''''''''''''''' */
-        if (exclude_pattern && regexec(&exclude_re, word, (int)0, NULL, 0) == 0)
+        if (exclude_pattern != NULL
+            && regexec(&exclude_re, word, (int)0, NULL, 0) == 0)
           selectable = EXCLUDE_MARK;
 
         if (selectable != 0 && !line_selected_by_regex)
@@ -10741,7 +10742,7 @@ main(int argc, char *argv[])
           /* Check if the word will be included in the list of selectable */
           /* words or not.                                                */
           /* '''''''''''''''''''''''''''''''''''''''''''''''''''''''''''' */
-          if (include_pattern)
+          if (include_pattern != NULL)
           {
             if (regexec(&include_re, word, (int)0, NULL, 0) == 0)
               selectable = INCLUDE_MARK;

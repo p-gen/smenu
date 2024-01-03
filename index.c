@@ -69,10 +69,10 @@ tst_insert(tst_node_t *p, wchar_t *w, void *data)
 void
 tst_cleanup(tst_node_t *p)
 {
-  if (p)
+  if (p != NULL)
   {
     tst_cleanup(p->lokid);
-    if (p->splitchar)
+    if (p->splitchar != L'\0')
       tst_cleanup(p->eqkid);
     tst_cleanup(p->hikid);
     free(p);
@@ -95,7 +95,7 @@ tst_traverse(tst_node_t *p, int (*callback)(void *), int first_call)
   if (first_call)
     rc = 0;
 
-  if (!p)
+  if (p == NULL)
     return 0;
   tst_traverse(p->lokid, callback, 0);
   if (p->splitchar != L'\0')
@@ -123,7 +123,7 @@ tst_substring_traverse(tst_node_t *p,
   if (first_call)
     rc = 0;
 
-  if (!p)
+  if (p == NULL)
     return 0;
 
   if (p->splitchar == w)
@@ -134,7 +134,7 @@ tst_substring_traverse(tst_node_t *p,
     node         = tst_search_list->tail;
     sub_tst_data = (sub_tst_t *)(node->data);
 
-    if (p->eqkid)
+    if (p->eqkid != NULL)
       insert_sorted_ptr(&(sub_tst_data->array),
                         &(sub_tst_data->size),
                         &(sub_tst_data->count),
@@ -173,7 +173,7 @@ tst_fuzzy_traverse(tst_node_t *p,
   if (first_call)
     rc = 0;
 
-  if (!p)
+  if (p == NULL)
     return 0;
 
   w1s[0] = p->splitchar;

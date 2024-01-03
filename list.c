@@ -88,7 +88,7 @@ ll_append(ll_t * const list, void * const data)
   node->next = NULL;       /* This node will be the last. */
   node->prev = list->tail; /* NULL if it is a new list.   */
 
-  if (list->tail)
+  if (list->tail != NULL)
     list->tail->next = node;
   else
     list->head = node;
@@ -245,7 +245,7 @@ ll_find(ll_t * const list,
 void
 ll_free(ll_t * const list, void (*clean)(void *))
 {
-  if (list)
+  if (list != NULL)
   {
     ll_node_t *node = list->head;
 
@@ -269,7 +269,7 @@ ll_free(ll_t * const list, void (*clean)(void *))
 void
 ll_destroy(ll_t *list, void (*clean)(void *))
 {
-  if (list)
+  if (list != NULL)
   {
     ll_free(list, clean);
     free(list);
