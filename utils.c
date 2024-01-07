@@ -451,7 +451,7 @@ hexdump(const char *buf, FILE *fp, const char *prefix, size_t size)
 
     fprintf(fp, " |%s", d);
     if (mo > o)
-      for (unsigned int i = 0; i < 16 - strlen(d); i++)
+      for (unsigned int i = 0; i < 16 - strlen((char *)d); i++)
         fprintf(fp, "%c", ' ');
     fprintf(fp, "%c", '|');
     memset(d, '\0', 17);
