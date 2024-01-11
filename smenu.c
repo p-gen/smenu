@@ -5982,9 +5982,9 @@ move_down(win_t         *win,
       /* """"""""""""""""""""""""""""""" */
       line += page;
 
-      /* The target line cannot be before the line containing the first */
-      /* selectable word.                                               */
-      /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+      /* The target line cannot be after the line containing the last */
+      /* selectable word.                                             */
+      /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
       if (line > last_selectable_line)
       {
         line      = last_selectable_line;
@@ -5993,9 +5993,9 @@ move_down(win_t         *win,
       }
       else
       {
-        /* If this is not the case, search upwards for the line with a */
-        /* selectable word. This line is guaranteed to exist.          */
-        /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+        /* If this is not the case, search downwards for the line with a */
+        /* selectable word. This line is guaranteed to exist.            */
+        /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
         while (line <= last_selectable_line)
         {
           last_word = get_line_last_word(line, last_line);
