@@ -11,6 +11,7 @@
 /* ******************************** */
 
 #include "config.h"
+#include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <limits.h>
@@ -399,12 +400,20 @@ strprint(char const *s)
     }
   }
 
-  if (p - new > l)
+  if (p - new > (ptrdiff_t)l)
     new = xrealloc(new, p - new + 1);
 
   return new;
 }
 
+/* =============================================== */
+/* Hexadecimal dump of part of a buffer to a file. */
+/*                                                 */
+/* buf   : buffer to dump.                         */
+/* fp    : file to dump to.                        */
+/* prefix: string to be printed before each line.  */
+/* size  : length of the buffer to consider.       */
+/* =============================================== */
 void
 hexdump(const char *buf, FILE *fp, const char *prefix, size_t size)
 {
