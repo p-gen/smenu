@@ -1,4 +1,4 @@
-\S[150]\s[10]OUT=$(LANG=en_US.UTF-8 smenu -n 4 -l t0001.in)
-\S[150]\s[50]hhhhhlj>>ll<<h>>kklll<<j>>\r
-\S[150]\s[10]echo ":$\s[10]OUT:"
+\S[300]\s[80]OUT=$(LANG=en_US.UTF-8 smenu -n 4 -l t0001.in)
+\S[300]\s[200]hhhhhlj>>ll<<h>>kklll<<j>>\r
+\S[300]\s[80]echo ":$\s[80]OUT:"
 exit 0

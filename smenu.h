@@ -33,10 +33,10 @@
 #define MASK (CHAR_BIT - 1)
 #define SHIFT ((CHAR_BIT == 8) ? 3 : (CHAR_BIT == 16) ? 4 : 8)
 
-#define BIT_OFF(a, x) ((void)((a)[(x) >> SHIFT] &= ~(1 << ((x)&MASK))))
-#define BIT_ON(a, x) ((void)((a)[(x) >> SHIFT] |= (1 << ((x)&MASK))))
-#define BIT_FLIP(a, x) ((void)((a)[(x) >> SHIFT] ^= (1 << ((x)&MASK))))
-#define BIT_ISSET(a, x) ((a)[(x) >> SHIFT] & (1 << ((x)&MASK)))
+#define BIT_OFF(a, x) ((void)((a)[(x) >> SHIFT] &= ~(1 << ((x) & MASK))))
+#define BIT_ON(a, x) ((void)((a)[(x) >> SHIFT] |= (1 << ((x) & MASK))))
+#define BIT_FLIP(a, x) ((void)((a)[(x) >> SHIFT] ^= (1 << ((x) & MASK))))
+#define BIT_ISSET(a, x) ((a)[(x) >> SHIFT] & (1 << ((x) & MASK)))
 
 /* ********* */
 /* Typedefs. */
@@ -188,6 +188,8 @@ struct toggle_s
   int del_line;            /* 1 if the clean option is set (-d) else 0.   */
   int enter_val_in_search; /* 1 if ENTER validates in search mode else 0. */
   int no_scrollbar;        /* 1 to disable the scrollbar display else 0.  */
+  int no_hor_scrollbar;    /* 1 to disable the horizontab scrollbar       *
+                            | display else 0.                             */
   int blank_nonprintable;  /* 1 to try to display non-blanks in           *
                             | symbolic form else 0.                       */
   int keep_spaces;         /* 1 to keep the trailing spaces in columns    *
@@ -300,7 +302,8 @@ struct term_s
   char has_italic;            /* has italic mode.                        */
   char has_invis;             /* has invis mode.                         */
   char has_blink;             /* has blink mode.                         */
-  char has_kmous;             /* has mouse reporting                     */
+  char has_kmous;             /* has mouse reporting.                    */
+  char has_rep;               /* has repeact char.                       */
 };
 
 /* Structure describing a word. */
@@ -336,22 +339,26 @@ struct word_s
 struct win_s
 {
   long     start, end;      /* index of the first and last word.        */
-  long     first_column;    /* number of the first character displayed. */
-  long     cur_line;        /* relative number of the cursor line (1+). */
-  long     asked_max_lines; /* requested number of lines in the window. */
-  long     max_lines;       /* effective number of lines in the window. */
-  long     max_cols;        /* max number of words in a single line.    */
-  long     real_max_width;  /* max line length. In column, tab or line  *
+  int      first_column;    /* number of the first character displayed. */
+  int      cur_line;        /* relative number of the cursor line (1+). */
+  int      asked_max_lines; /* requested number of lines in the window. */
+  int      has_hbar;        /* 1 if an horizontal bar must be           *
+                             | displayed else 0.                        */
+  int      hbar_displayed;  /* 1 if an hozizontal bas has ever been     *
+                             | displayed else 0.                        */
+  int      max_lines;       /* effective number of lines in the window. */
+  int      max_cols;        /* max number of words in a single line.    */
+  int      real_max_width;  /* max line length. In column, tab or line  *
                              | mode it can be greater than the          *
                              | terminal width.                          */
-  long     message_lines;   /* number of lines taken by the messages    *
+  int      message_lines;   /* number of lines taken by the messages    *
                              | (updated by disp_message.                */
-  long     max_width;       /* max usable line width or the terminal.   */
-  long     offset;          /* Left margin, used in centered mode.      */
+  int      max_width;       /* max usable line width or the terminal.   */
+  int      offset;          /* Left margin, used in centered mode.      */
   char    *sel_sep;         /* output separator when tags are enabled.  */
   char   **gutter_a;        /* array of UTF-8 gutter glyphs.            */
-  long     gutter_nb;       /* number of UTF-8 gutter glyphs.           */
-  long     sb_column;       /* scroll bar column (-1) if no scroll bar. */
+  int      gutter_nb;       /* number of UTF-8 gutter glyphs.           */
+  int      sb_column;       /* scroll bar column (-1) if no scroll bar. */
   unsigned next_tag_id;     /* Next tag ID, increased on each tagging   *
                              | operation.                               */
 

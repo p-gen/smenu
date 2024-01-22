@@ -1,4 +1,4 @@
-\S[150]\s[10]OUT=$(smenu -c -k -F -D f:no n:2 i:1 -- t0009.in)
-\S[150]\s[50]lllllll\r
-\S[150]\s[10]echo ":$\s[10]OUT:"
+\S[300]\s[80]OUT=$(smenu -c -k -F -D f:no n:2 i:1 -- t0009.in)
+\S[300]\s[200]lllllll\r
+\S[300]\s[80]echo ":$\s[80]OUT:"
 exit 0

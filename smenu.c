@@ -95,9 +95,15 @@ char * vertical_bar    = "\xe2\x94\x82"; /* │ box drawings light vertical.   *
 char * shift_left_sym  = "\xe2\x97\x80"; /* ◀ black left-pointing triangle.  */
 char * shift_right_sym = "\xe2\x96\xb6"; /* ▶ black right-pointing triangle. */
 char * sbar_line       = "\xe2\x94\x82"; /* │ box drawings light vertical.   */
+char * hbar_line       = "\xe2\x94\x80"; /* ─ box drawings light horizontal. */
+char * hbar_left       = "\xe2\x97\x80"; /* ◀ black left-pointing triangle.  */
+char * hbar_right      = "\xe2\x96\xb6"; /* ▶ black right-pointing triangle. */
 char * sbar_top        = "\xe2\x94\x90"; /* ┐ box drawings light down and l. */
 char * sbar_down       = "\xe2\x94\x98"; /* ┘ box drawings light up and l.   */
-char * sbar_curs       = "\xe2\x96\x88"; /* █ full Block.                    */
+char * hbar_begin      = "\xe2\x94\x94"; /* └ box drawings light up and r.   */
+char * hbar_end        = "\xe2\x94\x98"; /* ┘ box drawings light up and l.   */
+char * sbar_curs       = "\xe2\x94\x83"; /* ┃ box drawings heavy vertical.   */
+char * hbar_curs       = "\xe2\x94\x81"; /* ━ box drawings heavy horizontal. */
 char * sbar_arr_up     = "\xe2\x96\xb2"; /* ▲ black up pointing triangle.    */
 char * sbar_arr_down   = "\xe2\x96\xbc"; /* ▼ black down pointing triangle.  */
 char * msg_arr_down    = "\xe2\x96\xbc"; /* ▼ black down pointing triangle.  */
@@ -169,12 +175,12 @@ int       quiet_timeout = 0; /* 1 when we want no message to be displayed.  */
 void
 help(win_t *win, term_t *term, long last_line)
 {
-  int  index;      /* used to identify the objects long the help line. */
-  int  line = 0;   /* number of windows lines used by the help line.   */
-  int  len  = 0;   /* length of the help line.                         */
-  int  max_col;    /* when to split the help line.                     */
-  int  entries_nb; /* number of help entries to display.               */
-  long i;
+  int index;      /* used to identify the objects long the help line. */
+  int line = 0;   /* number of windows lines used by the help line.   */
+  int len  = 0;   /* length of the help line.                         */
+  int max_col;    /* when to split the help line.                     */
+  int entries_nb; /* number of help entries to display.               */
+  int i;
 
   struct entry_s
   {
@@ -2791,6 +2797,8 @@ build_repl_string(char    *orig,
           /* character when protected.                      */
           /* '''''''''''''''''''''''''''''''''''''''''''''' */
 
+          /* FALLTHROUGH */
+
         default:
           if (allocated == rsize)
             str = xrealloc(str, allocated += 16);
@@ -3700,6 +3708,133 @@ right_margin_putp(char       *s1,
   (void)tputs(TPARM1(exit_attribute_mode), 1, outch);
 }
 
+/* ==========================================================*/
+/* Displays an horizontal scroll bar below the window.       */
+/* The bar if only displayed in line or column mode when the */
+/* line containing the cursor is truncated.                  */
+/*                                                           */
+/* mark is the offset of the cursor in the bar.              */
+/* ==========================================================*/
+void
+disp_hbar(win_t *win, term_t *term, langinfo_t *langinfo, int pos1, int pos2)
+{
+  int i;
+
+  apply_attr(term, win->bar_attr);
+
+  (void)tputs(TPARM1(clr_eol), 1, outch);
+
+  /* Draw the left symbol arrow. */
+  /* """""""""""""""""""""""""""" */
+  if (langinfo->utf8)
+  {
+    if (pos1 == 0)
+      fputs_safe(hbar_begin, stdout);
+    else
+      fputs_safe(hbar_left, stdout);
+  }
+  else
+  {
+    if (pos1 == 0)
+      fputc_safe('<', stdout);
+    else
+      fputc_safe('\\', stdout);
+  }
+
+  /* Draw the line in the horizontal bar. */
+  /* """""""""""""""""""""""""""""""""""" */
+  if (term->has_rep && !langinfo->utf8)
+    (void)tputs(TPARM3(repeat_char, '-', term->ncolumns - 2), 1, outch);
+  else
+  {
+    char *s;
+
+    if (langinfo->utf8)
+      s = hbar_line;
+    else
+      s = "-";
+
+    for (i = 0; i < term->ncolumns - 3; i++)
+      fputs_safe(s, stdout);
+  }
+
+  /* Draw the cursor. */
+  /* """""""""""""""" */
+  if (term->has_hpa)
+  {
+    char *s;
+
+    if (langinfo->utf8)
+      s = hbar_curs;
+    else
+      s = "#";
+
+    (void)tputs(TPARM2(column_address, pos1 + 1), 1, outch);
+    for (i = pos1 + 1; i <= pos2 + 1; i++)
+      fputs_safe(s, stdout);
+
+    (void)tputs(TPARM2(column_address, term->ncolumns - 2), 1, outch);
+  }
+  else if (term->has_parm_right_cursor)
+  {
+    char *s;
+
+    if (langinfo->utf8)
+      s = hbar_curs;
+    else
+      s = "#";
+
+    fputs_safe("\r", stdout);
+    (void)tputs(TPARM2(parm_right_cursor, pos1 + 1), 1, outch);
+
+    for (i = pos1 + 2; i <= pos2 + 1; i++)
+      fputs_safe(s, stdout);
+
+    (void)tputs(TPARM2(parm_right_cursor, term->ncolumns - 3 - pos2 - 2),
+                1,
+                outch);
+  }
+  else
+  {
+    char *s;
+
+    if (langinfo->utf8)
+      s = hbar_curs;
+    else
+      s = "#";
+
+    fputs_safe("\r", stdout);
+    (void)tputs(TPARM2(cursor_right, 1), 1, outch);
+    for (i = 0; i < pos1; i++)
+      (void)tputs(TPARM1(cursor_right), 1, outch);
+
+    for (i = pos1 + 2; i <= pos2 + 1; i++)
+      fputs_safe(s, stdout);
+
+    for (i = pos1; i < term->ncolumns - 3 - pos2 - 2; i++)
+      (void)tputs(TPARM1(cursor_right), 1, outch);
+  }
+
+  /* Draw the right symbol arrow. */
+  /* """""""""""""""""""""""""""" */
+  if (langinfo->utf8)
+  {
+    if (pos2 == term->ncolumns - 4)
+      fputs_safe(hbar_end, stdout);
+    else
+      fputs_safe(hbar_right, stdout);
+  }
+  else
+  {
+    if (pos2 == term->ncolumns - 4)
+      fputc_safe('>', stdout);
+    else
+      fputc_safe('/', stdout);
+  }
+
+  (void)tputs(TPARM1(exit_attribute_mode), 1, outch);
+}
+
 /* *************** */
 /* Core functions. */
 /* *************** */
@@ -3839,7 +3974,10 @@ build_metadata(term_t *term, long count, win_t *win)
   /* it to 0 and increment it later in the loop.                          */
   /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
   if (!win->col_mode)
-    win->max_width = 0;
+  {
+    win->max_width      = 0;
+    win->real_max_width = 0;
+  }
 
   tab_count = 0;
   while (i < count)
@@ -3906,7 +4044,9 @@ build_metadata(term_t *term, long count, win_t *win)
       /* Update the effective line width. */
       /* '''''''''''''''''''''''''''''''' */
       if (len > term->ncolumns)
+      {
         win->max_width = term->ncolumns - 2;
+      }
       else
         win->max_width = len;
     }
@@ -4513,10 +4653,20 @@ disp_lines(win_t         *win,
 {
   long lines_disp;
   long i;
-  char scroll_symbol[5];
+  char left_margin_symbol[5]; /* Placeholder for the arrow symbols. */
   long len;
-  long display_bar;
+  long has_vbar; /* Flag to signal the presence of the vertical bar. */
   long first_start;
+  int  leftmost_start; /* Starting position of the leftmost selectable *
+                        | word in the window lines.                    */
+  int  rightmost_end;  /* Ending position of the rightmost selectable *
+                        | word in the window lines.                   */
+
+  long first_line; /* real line # on the first line of the window. */
+
+  int row1, row2, col; /* Only the rows are used to detect a *
+                        | bottom-of-page scrolling, col is   *
+                        | necessary but not required here.   */
 
   sigset_t mask;
 
@@ -4528,15 +4678,20 @@ disp_lines(win_t         *win,
   sigaddset(&mask, SIGALRM);
   sigprocmask(SIG_BLOCK, &mask, NULL);
 
-  scroll_symbol[0] = ' ';
-  scroll_symbol[1] = '\0';
+  left_margin_symbol[0] = ' ';
+  left_margin_symbol[1] = '\0';
 
-  lines_disp  = 1;
-  first_start = -1;
+  lines_disp     = 1;
+  first_start    = -1;
+  leftmost_start = 0;
 
-  /* Initialize the truncates lines flag. */
+  /* Initialize the truncated lines flag. */
   /* """""""""""""""""""""""""""""""""""" */
   win->has_truncated_lines = 0;
+
+  /* Initialize the necessity of displaying the horizontal scroll bar or not. */
+  /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+  win->has_hbar = 0;
 
   /* Initialize the selectable column guard to its maximum position. */
   /* for the first window line.                                      */
@@ -4546,7 +4701,7 @@ disp_lines(win_t         *win,
 
   (void)tputs(TPARM1(save_cursor), 1, outch);
 
-  i = win->start;
+  i = win->start; /* Index of the first word in the window. */
 
   /* Modify the max number of displayed lines if we do not have */
   /* enough place.                                              */
@@ -4555,9 +4710,9 @@ disp_lines(win_t         *win,
     win->max_lines = term->nlines - win->message_lines;
 
   if (last_line >= win->max_lines)
-    display_bar = 1;
+    has_vbar = 1;
   else
-    display_bar = 0;
+    has_vbar = 0;
 
   if (win->col_mode || win->line_mode)
     len = term->ncolumns - 3;
@@ -4576,16 +4731,19 @@ disp_lines(win_t         *win,
     if (win->first_column > 0)
     {
       if (langinfo->utf8)
-        strcpy(scroll_symbol, shift_left_sym);
+        strcpy(left_margin_symbol, shift_left_sym);
       else
-        strcpy(scroll_symbol, "<");
+        strcpy(left_margin_symbol, "<");
+
+      if (!toggles->no_hor_scrollbar)
+        win->has_hbar = 1;
     }
 
     if (!win->has_truncated_lines)
       win->has_truncated_lines = 1;
   }
   else
-    scroll_symbol[0] = '\0';
+    left_margin_symbol[0] = '\0';
 
   /* Center the display ? */
   /* """""""""""""""""""" */
@@ -4596,7 +4754,10 @@ disp_lines(win_t         *win,
       fputc_safe(' ', stdout);
   }
 
-  left_margin_putp(scroll_symbol, term, win);
+  left_margin_putp(left_margin_symbol, term, win);
+
+  first_line = line_nb_of_word_a[i];
+
   while (len > 1 && i <= count - 1)
   {
     /* Display one word and the space or symbol following it. */
@@ -4609,13 +4770,47 @@ disp_lines(win_t         *win,
 
       disp_word(i, search_mode, search_data, term, win, toggles, tmp_word);
 
-      /* If there are more element to be displayed after the right margin. */
-      /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+      /* Calculate the start offset of the last word of the line */
+      /* containing the cursor in column or line mode.           */
+      /* """"""""""""""""""""""""""""""""""""""""""""""""""""""" */
+      if ((win->col_mode || win->line_mode)
+          && line_nb_of_word_a[current] - first_line + 1 == lines_disp)
+      {
+        long wi = count - 1;
+
+        wi = first_word_in_line_a[lines_disp + first_line - 1];
+        while (wi < current && !word_a[wi].is_selectable)
+          wi++;
+
+        leftmost_start = word_a[wi++].start;
+
+        if (lines_disp + first_line > last_line)
+          wi = count - 1;
+        else
+          wi = first_word_in_line_a[lines_disp + first_line] - 1;
+
+        while (!word_a[wi].is_selectable)
+          wi--;
+
+        rightmost_end = word_a[wi].end;
+      }
+
+      /* If there are more element to be displayed after the right margin */
+      /* in column or line mode.                                          */
+      /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
       if ((win->col_mode || win->line_mode) && i < count - 1
           && word_a[i + 1].end >= len + win->first_column)
       {
         if (!win->has_truncated_lines)
           win->has_truncated_lines = 1;
+
+        /* Toggle the presence of the horizontal bar if allowed and */
+        /* if this line contains the cursor in column or line mode. */
+        /* """""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+        if (!toggles->no_hor_scrollbar
+            && line_nb_of_word_a[current] - first_line + 1 == lines_disp)
+          win->has_hbar = 1; /* the line containing the cursor is *
+                              | truncated in the window.          */
 
         apply_attr(term, win->shift_attr);
 
@@ -4632,28 +4827,28 @@ disp_lines(win_t         *win,
         shift_right_sym_pos_a[line_nb_of_word_a[i]] = word_a[i].end + 1
                                                       - first_start + 2;
       }
-
-      /* If we want to display the gutter. */
-      /* """"""""""""""""""""""""""""""""" */
-      else if (!word_a[i].is_last && win->col_sep
-               && (win->tab_mode || win->col_mode))
-      {
-        long pos;
-
-        /* Make sure that we are using the right gutter character even */
-        /* if the first displayed word is * not the first of its line. */
-        /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-        pos = i - first_word_in_line_a[line_nb_of_word_a[i]];
-
-        if (pos >= win->gutter_nb) /* Use the last gutter character. */
-          fputs_safe(win->gutter_a[win->gutter_nb - 1], stdout);
-        else
-          fputs_safe(win->gutter_a[pos], stdout);
-      }
       else
-        /* Else just display a space. */
-        /* """""""""""""""""""""""""" */
-        fputc_safe(' ', stdout);
+        /* If we want to display the gutter. */
+        /* """"""""""""""""""""""""""""""""" */
+        if (!word_a[i].is_last && win->col_sep
+            && (win->tab_mode || win->col_mode))
+        {
+          long pos;
+
+          /* Make sure that we are using the right gutter character even */
+          /* if the first displayed word is * not the first of its line. */
+          /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+          pos = i - first_word_in_line_a[line_nb_of_word_a[i]];
+
+          if (pos >= win->gutter_nb) /* Use the last gutter character. */
+            fputs_safe(win->gutter_a[win->gutter_nb - 1], stdout);
+          else
+            fputs_safe(win->gutter_a[pos], stdout);
+        }
+        else
+          /* Else just display a space. */
+          /* """""""""""""""""""""""""" */
+          fputc_safe(' ', stdout);
     }
 
     /* Mark the line as the current line, the line containing the cursor. */
@@ -4670,7 +4865,7 @@ disp_lines(win_t         *win,
       {
         /* If we have more than one line to display. */
         /* """"""""""""""""""""""""""""""""""""""""" */
-        if (display_bar && !toggles->no_scrollbar
+        if (has_vbar && !toggles->no_scrollbar
             && (lines_disp > 1 || i < count - 1))
         {
           /* Store the scroll bar column position. */
@@ -4731,7 +4926,7 @@ disp_lines(win_t         *win,
                              + 2)
                         == lines_disp)
             right_margin_putp(sbar_curs,
-                              "+",
+                              "#",
                               langinfo,
                               term,
                               win,
@@ -4761,7 +4956,7 @@ disp_lines(win_t         *win,
               fputc_safe(' ', stdout);
           }
 
-          left_margin_putp(scroll_symbol, term, win);
+          left_margin_putp(left_margin_symbol, term, win);
         }
 
         /* We do not increment the number of lines seen after */
@@ -4786,7 +4981,7 @@ disp_lines(win_t         *win,
       {
         /* The last line of the window has been displayed. */
         /* """"""""""""""""""""""""""""""""""""""""""""""" */
-        if (display_bar && line_nb_of_word_a[i] == last_line)
+        if (has_vbar && line_nb_of_word_a[i] == last_line)
         {
           if (!toggles->no_scrollbar)
           {
@@ -4810,7 +5005,7 @@ disp_lines(win_t         *win,
         }
         else
         {
-          if (display_bar && !toggles->no_scrollbar)
+          if (has_vbar && !toggles->no_scrollbar)
             right_margin_putp(sbar_arr_down,
                               "v",
                               langinfo,
@@ -4832,6 +5027,56 @@ disp_lines(win_t         *win,
     i++;
   }
 
+  /* Display the horizontal bar when needed. */
+  /* """"""""""""""""""""""""""""""""""""""" */
+  if (win->col_mode || win->line_mode)
+  {
+    /* Save again the cursor position before drawing the horizontal bar. */
+    /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+    get_cursor_position(&row1, &col); /* col is not needed here. */
+
+    if (win->has_hbar)
+    {
+      int pos1; /* Pos. of the cursor's start in the horizontal scroll bar. */
+      int pos2; /* Pos. of the cursor's end in the horizontal scroll bar.   */
+
+      /* Note: in the following expression, rightmost_start is always   */
+      /* greater then leftmost_start as a line containing a single word */
+      /* cannot be truncated and have an horizontal scroll bar hence    */
+      /* win->has_hbar = 0.                                             */
+      /* '''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''' */
+      pos1 = (int)(word_a[current].start - leftmost_start)
+             / (float)(rightmost_end - leftmost_start) * (term->ncolumns - 4);
+      pos2 = (int)(word_a[current].end - leftmost_start)
+             / (float)(rightmost_end - leftmost_start) * (term->ncolumns - 4);
+
+      if (pos2 > term->ncolumns - 4)
+        pos2 = term->ncolumns
+               - 4; /* just to make sure but should not happen. */
+
+      fputs_safe("\n", stdout);
+      disp_hbar(win, term, langinfo, pos1, pos2);
+
+      /* Mark the fact that an horizontal scroll bar has been displayed */
+      /* and its space allocated.                                       */
+      /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+      if (win->hbar_displayed == 0)
+        win->hbar_displayed = 1;
+    }
+    else if (win->hbar_displayed) /* The horizontal scroll bar has already *
+                                   | been displayed, keep this space empty *
+                                   | to not disturb the display.           */
+    {
+      fputs_safe("\n", stdout);
+      (void)tputs(TPARM1(clr_eol), 1, outch);
+    }
+
+    /* Save again the cursor position again (especially the row) to detect   */
+    /* an automatic scroll up when the cursor is at the bottom of the window */
+    /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+    get_cursor_position(&row2, &col);
+  }
+
   /* Update win->end, this is necessary because we only   */
   /* call build_metadata on start and on terminal resize. */
   /* """""""""""""""""""""""""""""""""""""""""""""""""""" */
@@ -4839,15 +5084,28 @@ disp_lines(win_t         *win,
     win->end = i - 1;
   else
     win->end = i;
+
   /* We restore the cursor position saved before the display of the window. */
   /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
   (void)tputs(TPARM1(restore_cursor), 1, outch);
+
+  /* Make sure the cursor is correctly moved when the horizontal scroll */
+  /* bar is displayed and the window is at the bottom of the screen.    */
+  /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+  if (win->col_mode || win->line_mode)
+  {
+    if (win->has_hbar && row1 == row2) /* Screen scrolled up. */
+    {
+      (void)tputs(TPARM1(cursor_up), 1, outch);
+      term->curs_line--;
+    }
+  }
 
   /* Re-enable the periodic timer. */
   /* """"""""""""""""""""""""""""" */
   sigprocmask(SIG_UNBLOCK, &mask, NULL);
 
-  return lines_disp;
+  return lines_disp + (win->hbar_displayed ? 1 : 0);
 }
 
 /* ======================================================= */
@@ -6104,6 +6362,7 @@ init_main_ds(attrib_t  *init_attr,
   win->first_column    = 0;
   win->real_max_width  = 0;
   win->sb_column       = -1;
+  win->hbar_displayed  = 0;
 
   win->cursor_attr               = *init_attr;
   win->cursor_marked_attr        = *init_attr;
@@ -6288,7 +6547,7 @@ lines_action(char  *ctx_name,
     /* No need to validate if values are numeric here, they have      */
     /* already been validated by the check_integer_constraint filter. */
     /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-    sscanf(values[0], "%ld", &(win->asked_max_lines));
+    sscanf(values[0], "%d", &(win->asked_max_lines));
   else
     win->asked_max_lines = 0;
 }
@@ -6519,7 +6778,15 @@ toggle_action(char  *ctx_name,
   else if (strcmp(opt_name, "blank_nonprintable") == 0)
     toggles->blank_nonprintable = 1;
   else if (strcmp(opt_name, "no_scroll_bar") == 0)
-    toggles->no_scrollbar = 1;
+  {
+    toggles->no_scrollbar     = 1;
+    toggles->no_hor_scrollbar = 1;
+  }
+  else if (strcmp(opt_name, "no_hor_scroll_bar") == 0)
+  {
+    if (!toggles->no_scrollbar)
+      toggles->no_hor_scrollbar = 1;
+  }
   else if (strcmp(opt_name, "auto_tag") == 0)
     toggles->autotag = 1;
   else if (strcmp(opt_name, "no_auto_tag") == 0)
@@ -8713,6 +8980,7 @@ main(int argc, char *argv[])
                    "[keep_spaces] "
                    "[word_separators #bytes] "
                    "[no_scroll_bar] "
+                   "[no_hor_scroll_bar] "
                    "[early_subst_all... #/regex/repl/opts] "
                    "[post_subst_all... #/regex/repl/opts] "
                    "[post_subst_included... #/regex/repl/opts] "
@@ -8885,6 +9153,9 @@ main(int argc, char *argv[])
   ctxopt_add_opt_settings(parameters,
                           "no_scroll_bar",
                           "-q -no_bar -no_scroll_bar");
+  ctxopt_add_opt_settings(parameters,
+                          "no_hor_scroll_bar",
+                          "-no_hbar -no_hor_scroll_bar");
   ctxopt_add_opt_settings(parameters, "early_subst_all", "-ES -early_subst");
   ctxopt_add_opt_settings(parameters, "post_subst_all", "-S -subst");
   ctxopt_add_opt_settings(parameters,
@@ -9054,6 +9325,11 @@ main(int argc, char *argv[])
   ctxopt_add_opt_settings(actions, "lines", lines_action, &win, (char *)0);
   ctxopt_add_opt_settings(actions,
                           "no_scroll_bar",
+                          toggle_action,
+                          &toggles,
+                          (char *)0);
+  ctxopt_add_opt_settings(actions,
+                          "no_hor_scroll_bar",
                           toggle_action,
                           &toggles,
                           (char *)0);
@@ -9468,6 +9744,8 @@ main(int argc, char *argv[])
     term.has_blink             = (str == (char *)-1 || str == NULL) ? 0 : 1;
     str                        = tigetstr("kmous");
     term.has_kmous             = (str == (char *)-1 || str == NULL) ? 0 : 1;
+    str                        = tigetstr("rep");
+    term.has_rep               = (str == (char *)-1 || str == NULL) ? 0 : 1;
   }
 
   if (!term.has_cursor_up || !term.has_cursor_down || !term.has_cursor_left
@@ -9922,11 +10200,11 @@ main(int argc, char *argv[])
   else if (win.asked_max_lines >= 0)
   {
     if (win.asked_max_lines == 0)
-      win.max_lines = term.nlines - win.message_lines;
+      win.max_lines = term.nlines - win.message_lines - 1;
     else
     {
       if (win.asked_max_lines > term.nlines - win.message_lines)
-        win.max_lines = term.nlines - win.message_lines;
+        win.max_lines = term.nlines - win.message_lines - 1;
       else
         win.max_lines = win.asked_max_lines;
     }
@@ -12541,6 +12819,11 @@ main(int argc, char *argv[])
                   tmp_word,
                   &langinfo);
 
+  /* Assert the presence of an early display of the horizontal bar. */
+  /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+  if (win.has_hbar)
+    win.hbar_displayed = 1;
+
   /* Determine the number of lines to move the cursor up if the window */
   /* display needed a terminal scrolling.                              */
   /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
@@ -12827,6 +13110,26 @@ main(int argc, char *argv[])
           pos++;
 
         win.first_column = word_a[pos].start;
+      }
+
+      /* Keep a line available for an eventual horizontal scroll bar. */
+      /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+      if (win.col_mode || win.line_mode)
+      {
+        if (win.asked_max_lines == 0
+            || win.max_lines > term.nlines - win.message_lines)
+        {
+          win.max_lines = term.nlines - win.message_lines - 1;
+          {
+            (void)tputs(TPARM3(cursor_address, win.max_lines, 0), 1, outch);
+            (void)tputs(TPARM1(clr_eol), 1, outch);
+            (void)tputs(TPARM3(cursor_address, 0, 0), 1, outch);
+          }
+        }
+        else if (win.asked_max_lines > term.nlines - win.message_lines)
+          win.max_lines = term.nlines - win.message_lines - 1;
+        else
+          win.max_lines = win.asked_max_lines;
       }
 
       disp_message(message_lines_list,
@@ -13567,9 +13870,6 @@ main(int argc, char *argv[])
               break;
           }
 
-          /* Erase or jump after the window before printing the */
-          /* selected string.                                   */
-          /* """""""""""""""""""""""""""""""""""""""""""""""""" */
           if (toggles.del_line)
           {
             for (i = 0; i < win.message_lines; i++)
@@ -15314,7 +15614,8 @@ main(int argc, char *argv[])
           /* Do not do anything if the user has above or below the window. */
           /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
           if (line_click < term.curs_line
-              || line_click >= term.curs_line + win.max_lines)
+              || line_click
+                   >= term.curs_line + win.max_lines + (win.has_hbar ? 1 : 0))
             break;
 
           /* Mouse wheel scroll down. */
@@ -15337,8 +15638,8 @@ main(int argc, char *argv[])
           if (state == 80 && old_button == 0)
             goto kpp; /* PgUp. */
 
-          /* Manage the clicks at the ends of the scroll bar. */
-          /* """""""""""""""""""""""""""""""""""""""""""""""" */
+          /* Manage the clicks at the ends of the vertical scroll bar. */
+          /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""" */
           if (button == 0 && column_click == win.sb_column + 1)
           {
             if (line_click == term.curs_line + win.max_lines - 1)
@@ -15406,105 +15707,145 @@ main(int argc, char *argv[])
               }
             }
           }
-
-          /* Manage clicks on the horizontal arrows if any. */
-          /* """""""""""""""""""""""""""""""""""""""""""""" */
-          if (win.has_truncated_lines
-              && shift_arrow_clicked(&win,
-                                     &term,
-                                     line_click,
-                                     column_click,
-                                     &clicked_line,
-                                     &clicked_arrow))
-          {
-            if (button == 0)
-              switch (clicked_arrow)
-              {
-                case 0: /* left */
-                  shift_left(&win,
-                             &term,
-                             &toggles,
-                             &search_data,
-                             &langinfo,
-                             &nl,
-                             last_line,
-                             tmp_word,
-                             clicked_line);
-                  break;
-
-                case 1: /* right */
-                  shift_right(&win,
-                              &term,
-                              &toggles,
-                              &search_data,
-                              &langinfo,
-                              &nl,
-                              last_line,
-                              tmp_word,
-                              clicked_line);
-                  break;
-              }
-            nl = disp_lines(&win,
-                            &toggles,
-                            current,
-                            count,
-                            search_mode,
-                            &search_data,
-                            &term,
-                            last_line,
-                            tmp_word,
-                            &langinfo);
-          }
           else
-          {
-            /* Get the new current word on click. */
-            /* """""""""""""""""""""""""""""""""" */
-            error       = 0;
-            new_current = get_clicked_index(&win,
-                                            &term,
-                                            line_click,
-                                            column_click,
-                                            &error);
-
-            /* Update the selection index and refresh if needed. */
-            /* """"""""""""""""""""""""""""""""""""""""""""""""" */
-            if ((toggles.taggable || toggles.pinable || new_current != current)
-                && error == 0)
+            /* Manage the clicks in the horizontal scroll bar. */
+            /* """"""""""""""""""""""""""""""""""""""""""""""" */
+            if (win.has_hbar && button == 0
+                && line_click == term.curs_line + win.max_lines)
             {
-              current = new_current;
+              long wi; /* Word index. */
+              long line = line_nb_of_word_a[current];
+              long leftmost;
+              long rightmost;
+              int  leftmost_start;
+              int  rightmost_end;
 
-              /* Manage the marking of a word.          */
-              /* (button 0 + CTRL or button 2 pressed). */
-              /* """""""""""""""""""""""""""""""""""""" */
-              if ((button == 0 && state == 16)
-                  && (toggles.taggable || toggles.pinable))
+              /* Find the first selectable word in the line */
+              /* containing the cursor.                     */
+              /* """""""""""""""""""""""""""""""""""""""""" */
+              wi = first_word_in_line_a[line];
+
+              while (!word_a[wi].is_selectable)
+                wi++;
+
+              leftmost       = wi;
+              leftmost_start = word_a[leftmost].start;
+
+              if (column_click == 1)
               {
-                if (marked == -1)
-                  goto mark_word;
-                else
-                  goto unmark_word;
+                /* First, manage the case where the user clicked at the */
+                /* beginning of the scroll bar.                         */
+                /* """""""""""""""""""""""""""""""""""""""""""""""""""" */
+                if (current > leftmost && word_a[current].start > 0)
+                  goto kl;
               }
 
-              /* Manage the tagging of a word.          */
-              /* (button 2 + CTRL or button 2 pressed). */
-              /* """""""""""""""""""""""""""""""""""""" */
-              if ((button == 2 && state == 0)
-                  && (toggles.taggable || toggles.pinable))
+              /* Else we need to calculate the rightmost selectable word */
+              /* in the line containing the cursor.                      */
+              /* """"""""""""""""""""""""""""""""""""""""""""""""""""""" */
+              else if (line == last_line)
+                wi = count - 1;
+              else
+                wi = first_word_in_line_a[line + 1] - 1;
+
+              while (!word_a[wi].is_selectable)
+                wi--;
+
+              rightmost = wi;
+
+              /* Manage the case where the users clicked at the end */
+              /* of the scroll bar.                                 */
+              /* """""""""""""""""""""""""""""""""""""""""""""""""" */
+              if (column_click == term.ncolumns - 1)
+                if (current < rightmost && current < count - 1
+                    && word_a[current + 1].start > 0)
+                  goto kr;
+
+              /* Finally manage the core where the users clicked in */
+              /* the crossbar.                                      */
+              /* """""""""""""""""""""""""""""""""""""""""""""""""" */
+              rightmost_end = word_a[rightmost].end;
+
               {
-                if (word_a[current].tag_id > 0)
-                  goto kdel;
-                else
-                  goto kins;
+                long   index;
+                int    target;
+                double ratio;
+
+                if (column_click >= 2 && column_click - 2 <= term.ncolumns - 4)
+                {
+                  ratio  = (1.0 * column_click - 2) / (term.ncolumns - 4);
+                  target = (int)((rightmost_end - leftmost_start + 1) * ratio)
+                           + leftmost_start;
+
+                  if (target > 0) /* General case. */
+                  {
+                    if (word_a[current].start <= target)
+                      index = current;
+                    else
+                      index = leftmost;
+
+                    while (index <= rightmost && word_a[index].start <= target)
+                      current = index++;
+                  }
+                  else /* Trivial case. */
+                    current = leftmost;
+
+                  set_new_first_column(&win, &term);
+
+                  nl = disp_lines(&win,
+                                  &toggles,
+                                  current,
+                                  count,
+                                  search_mode,
+                                  &search_data,
+                                  &term,
+                                  last_line,
+                                  tmp_word,
+                                  &langinfo);
+                }
               }
 
-              if ((button == 2 && state == 16)
-                  && (toggles.taggable || toggles.pinable))
-                goto adaptative_tag_to_mark; /* Like 'Z' keyboard command. */
+              break;
+            }
+            else
 
-              /* Redisplay the new window if the first button was pressed   */
-              /* otherwise reset the cursor position to its previous value. */
-              /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-              if (button == 0 || button == 2)
+              /* Manage clicks on the horizontal arrows in lines if any. */
+              /* """"""""""""""""""""""""""""""""""""""""""""""""""""""" */
+              if (win.has_truncated_lines
+                  && shift_arrow_clicked(&win,
+                                         &term,
+                                         line_click,
+                                         column_click,
+                                         &clicked_line,
+                                         &clicked_arrow))
+              {
+                if (button == 0)
+                  switch (clicked_arrow)
+                  {
+                    case 0: /* left */
+                      shift_left(&win,
+                                 &term,
+                                 &toggles,
+                                 &search_data,
+                                 &langinfo,
+                                 &nl,
+                                 last_line,
+                                 tmp_word,
+                                 clicked_line);
+                      break;
+
+                    case 1: /* right */
+                      shift_right(&win,
+                                  &term,
+                                  &toggles,
+                                  &search_data,
+                                  &langinfo,
+                                  &nl,
+                                  last_line,
+                                  tmp_word,
+                                  clicked_line);
+                      break;
+                  }
                 nl = disp_lines(&win,
                                 &toggles,
                                 current,
@@ -15515,49 +15856,112 @@ main(int argc, char *argv[])
                                 last_line,
                                 tmp_word,
                                 &langinfo);
-              else
-                current = old_current;
-            }
-
-            /* Manage double clicks if the clicked word is selectable. */
-            /* """"""""""""""""""""""""""""""""""""""""""""""""""""""" */
-            if (!disable_double_click && button == 0)
-            {
-              /* More than one clicks on the same word? */
-              /* """""""""""""""""""""""""""""""""""""" */
-              if (click_nr > 0 && old_current == current)
-              {
-                double delay;
-
-                /* Get the delay between the actual click and */
-                /* the previous one.                          */
-                /* """""""""""""""""""""""""""""""""""""""""" */
-                clock_gettime(CLOCK_MONOTONIC, &actual_click_ts);
-                delay = (1000.0 * actual_click_ts.tv_sec
-                         + 1e-6 * actual_click_ts.tv_nsec)
-                        - (1000.0 * last_click_ts.tv_sec
-                           + 1e-6 * last_click_ts.tv_nsec);
-
-                if (!error && delay > 0 && delay <= mouse.double_click_delay)
-                  goto enter; /* Press Enter. */
-                else
-                  clock_gettime(CLOCK_MONOTONIC, &last_click_ts);
               }
               else
               {
-                /* The first click on a selectable was not make yet. */
+                /* Get the new current word on click. */
+                /* """""""""""""""""""""""""""""""""" */
+                error       = 0;
+                new_current = get_clicked_index(&win,
+                                                &term,
+                                                line_click,
+                                                column_click,
+                                                &error);
+
+                /* Update the selection index and refresh if needed. */
                 /* """"""""""""""""""""""""""""""""""""""""""""""""" */
-                clock_gettime(CLOCK_MONOTONIC, &last_click_ts);
+                if ((toggles.taggable || toggles.pinable
+                     || new_current != current)
+                    && error == 0)
+                {
+                  current = new_current;
 
-                if (!error)
-                  click_nr = 1;
+                  /* Manage the marking of a word.          */
+                  /* (button 0 + CTRL or button 2 pressed). */
+                  /* """""""""""""""""""""""""""""""""""""" */
+                  if ((button == 0 && state == 16)
+                      && (toggles.taggable || toggles.pinable))
+                  {
+                    if (marked == -1)
+                      goto mark_word;
+                    else
+                      goto unmark_word;
+                  }
+
+                  /* Manage the tagging of a word.          */
+                  /* (button 2 + CTRL or button 2 pressed). */
+                  /* """""""""""""""""""""""""""""""""""""" */
+                  if ((button == 2 && state == 0)
+                      && (toggles.taggable || toggles.pinable))
+                  {
+                    if (word_a[current].tag_id > 0)
+                      goto kdel;
+                    else
+                      goto kins;
+                  }
+
+                  if ((button == 2 && state == 16)
+                      && (toggles.taggable || toggles.pinable))
+                    goto adaptative_tag_to_mark; /* Like 'Z' keyboard command. */
+
+                  /* Redisplay the new window if the first button was pressed   */
+                  /* otherwise reset the cursor position to its previous value. */
+                  /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+                  if (button == 0 || button == 2)
+                    nl = disp_lines(&win,
+                                    &toggles,
+                                    current,
+                                    count,
+                                    search_mode,
+                                    &search_data,
+                                    &term,
+                                    last_line,
+                                    tmp_word,
+                                    &langinfo);
+                  else
+                    current = old_current;
+                }
+
+                /* Manage double clicks if the clicked word is selectable. */
+                /* """"""""""""""""""""""""""""""""""""""""""""""""""""""" */
+                if (!disable_double_click && button == 0)
+                {
+                  /* More than one clicks on the same word? */
+                  /* """""""""""""""""""""""""""""""""""""" */
+                  if (click_nr > 0 && old_current == current)
+                  {
+                    double delay;
+
+                    /* Get the delay between the actual click and */
+                    /* the previous one.                          */
+                    /* """""""""""""""""""""""""""""""""""""""""" */
+                    clock_gettime(CLOCK_MONOTONIC, &actual_click_ts);
+                    delay = (1000.0 * actual_click_ts.tv_sec
+                             + 1e-6 * actual_click_ts.tv_nsec)
+                            - (1000.0 * last_click_ts.tv_sec
+                               + 1e-6 * last_click_ts.tv_nsec);
+
+                    if (!error && delay > 0
+                        && delay <= mouse.double_click_delay)
+                      goto enter; /* Press Enter. */
+                    else
+                      clock_gettime(CLOCK_MONOTONIC, &last_click_ts);
+                  }
+                  else
+                  {
+                    /* The first click on a selectable was not make yet. */
+                    /* """"""""""""""""""""""""""""""""""""""""""""""""" */
+                    clock_gettime(CLOCK_MONOTONIC, &last_click_ts);
+
+                    if (!error)
+                      click_nr = 1;
+                  }
+                }
               }
-            }
-          }
+        }
 
         ignore_mouse_event:
           break;
-        }
 
         special_cmds_when_searching:
         default:

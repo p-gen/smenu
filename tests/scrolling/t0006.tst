@@ -1,4 +1,4 @@
-\S[150]\s[10]OUT=$(LANG=C smenu -c -R 6,18,20 -- t0006.in)
-\S[150]\s[50]lljjjjjjjkkkkkkkjjjKKKJJJKJKJjjjkkkJK\r
-\S[150]\s[10]echo ":$\s[10]OUT:"
+\S[300]\s[80]OUT=$(LANG=C smenu -c -R 6,18,20 -- t0006.in)
+\S[300]\s[200]lljjjjjjjkkkkkkkjjjKKKJJJKJKJjjjkkkJK\r
+\S[300]\s[80]echo ":$\s[80]OUT:"
 exit 0

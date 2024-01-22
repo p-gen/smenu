@@ -1,5 +1,5 @@
-\S[150]\s[10]OUT=$(LANG=en_US.UTF-8 smenu -c -e 2 -I'/(1+)/(\\1)/g' -n 15 \\
+\S[300]\s[80]OUT=$(LANG=en_US.UTF-8 smenu -c -e 2 -I'/(1+)/(\\1)/g' -n 15 \\
 t0012.in)
-\S[150]\s[50]\r
-\S[150]\s[10]echo ":$\s[10]OUT:"
+\S[300]\s[200]\r
+\S[300]\s[80]echo ":$\s[80]OUT:"
 exit 0

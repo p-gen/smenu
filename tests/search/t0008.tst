@@ -1,4 +1,4 @@
-\S[150]\s[10]OUT=$(smenu t0008.in)
-\S[150]\s[50]/\b\babx\bax\rll*aba\rll"ba\r\r
-\S[150]\s[10]echo ":$\s[10]OUT:"
+\S[300]\s[80]OUT=$(smenu t0008.in)
+\S[300]\s[200]/\b\babx\bax\rll*aba\rll"ba\r\r
+\S[300]\s[80]echo ":$\s[80]OUT:"
 exit 0

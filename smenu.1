@@ -63,6 +63,7 @@ and outputs the selection to stdout.
 \fB-line_separators\fP \
 \fIbytes\fP]
   [\fB-q\fP|\fB-no_bar\fP|\fB-no_scroll_bar\fP]
+  [\fB-no_hbar\fP|\fB-no_hor_scroll_bar\fP]
   [\fB-S\fP|\fB-subst\fP... \fI/regex/repl/opts\fP]
   [\fB-I\fP|\fB-si\fP|\fB-subst_included\fP... \fI/regex/repl/opts\fP]
   [\fB-E\fP|\fB-se\fP|\fB-subst_excluded\fP... \fI/regex/repl/opts\fP]
@@ -253,25 +254,32 @@ as follows:
 .IP \(bu 2
 A click on a word selects it if it is selectable.
 .IP \(bu 2
-A click on a word while holding the CTRL key pressed marks/unmarks it
-if it is selectable.
+A click on a word while holding the CTRL key pressed when tagging/pinning
+is activated marks/unmarks this word.
 .IP \(bu 2
-A click at the ends of the scroll bar is equivalent
-to pressing the up and down arrow on the keyboard.
+A Click at the ends of the vertical scroll bar (if present) is equivalent
+to pressing the keyboard's up or down arrow.
 
-A click on another location of the scroll bar moves the cursor to another
-word depending on the location clicked.
+A click anywhere else on the vertical scroll bar moves the cursor to
+another word, depending on where you click.
+
 The new current word will be positioned at the beginning of a line
 if possible.
+
+A click at the ends of the horizontal scroll bar (if present) is
+equivalent to pressing the keyboard's left or right arrow.
+
+A click anywhere else on the horizontal scroll bar moves the cursor left
+of right on the line containing the cursor, but does not move it further
+than the first or last word on that line.
 .IP \(bu 2
-A double-click on a word selects it if it is selectable and acts as if
-the Enter key had been pressed,
-the double-click delay is configurable.
+A double-click on a word selects it, if selectable, and acts as if the
+Enter key had been pressed, the double-click delay being configurable.
 .IP \(bu 2
-A click on the left or right horizontal arrow (when visible) shifts
-the content of the window to the left or right, one word at a time.
+A click on the left or right horizontal arrow of each line (when visible)
+shifts the content of the window to the left or right, one word at a time.
 .br
-Nothing is done if the cursor is at risk to leave the window.
+Nothing happens if the cursor risks leaving the window.
 
 Note that clicking on a left-facing arrow in an empty line means that
 not all the words in that line could be displayed because of previous
@@ -637,19 +645,19 @@ usage." at the beginning of this manual.
 A small help message can be displayed when hitting the \fB?\fP key.
 This message will last for 10s or until another key or \fBESC\fP is
 pressed.
-.SS "Scroll bar"
-A scroll bar is displayed at the right of the scrolling window.
+.SS "Scroll bars"
+The vertical scroll bar is displayed at the right of the scrolling window.
 Its appearance is meant to be classical but it has some particularities:
 .IP \(bu 2
-The scroll bar is not displayed if all the input words fit on only one
-line.
+The vertical scroll bar is not displayed if all the input words fit on
+only one line.
 .IP \(bu 2
-Otherwise, the scroll bar is always displayed except when the \fB-q\fP
-option is set.
-This option completely disables the scroll bar display.
+Otherwise, the vertical scroll bar is always displayed except when
+the \fB-q\fP option is set.
+This option completely disables the scroll display of all scroll bars.
 .IP \(bu 2
-When the scrolling window has only one line, the scroll bar has only 3
-states:
+When the scrolling window has only one line, the vertical scroll bar
+has only 3 states:
 .RS 2
 .IP - 2
 \fBv\fP when on all but the last line, indicating that you can go down
@@ -677,6 +685,13 @@ l l l l .
 A \fB+\fP can also appear in the scroll bar in lieu of the vertical bar,
 giving the relative position of the cursor line in the bunch of input
 words.
+
+The horizontal scroll bar is only displayed below the window when the
+current line is truncated in line of column mode.
+
+If its appearance scrolls up the windows in the screen, the new position
+of the window will unchanged even it this scroll bar is no more displayed
+as the line containing the cursor is no more truncated.
 .SS "Terminal resizing (also see BUGS/LIMITATIONS)"
 The windows is redrawn if the terminal is resized.
 The redrawing is actually done only 1s after the end of the resizing to
@@ -730,7 +745,7 @@ allowed:
   cursor_on_tag=0/2,u     ; cursor on tag attributes
   shift=6,b               ; shift symbol attributes
   message=0/3             ; message (title) attributes
-  bar = 7/4,b             ; scroll bar attributes
+  bar = 7/4,b             ; scroll bars attributes
   search_field = 0/6      ; search field attributes
   search_text = 7,bu      ; search text attributes
   match_field = 1,b       ; matching words field attributes
@@ -1854,7 +1869,12 @@ also used.
 .IP "\fB-q\fP|\fB-no_bar\fP|\fB-no_scroll_bar\fP"
 (Allowed in all contexts.)
 
-Prevents the display of the scroll bar.
+Prevents the display of the lateral scroll bar.
+This also prevents the display of the horizontal scroll bar.
+.IP "\fB-no_hbar\fP|\fB-no_hor_scroll_bar\fP"
+(Allowed in all contexts.)
+
+Prevents the display of the horizontal scroll bar.
 .IP "\fB-S\fP|\fB-subst\fP... \
 /\fIregex\fP/\fIrepl\fP/[\fIg\fP][\fIv\fP][\fIs\fP]"
 (Allowed in all contexts.)
