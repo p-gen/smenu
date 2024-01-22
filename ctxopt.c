@@ -7,6 +7,7 @@
 /* ################################################################### */
 
 #include <errno.h>
+#include <stddef.h>
 #include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -1270,7 +1271,7 @@ get_word(char *str, char *buf, size_t len)
 
   /* Get the word. */
   /*"""""""""""""" */
-  while (*s && !isspace(*s) && s - str < len)
+  while (*s && !isspace(*s) && s - str < (ptrdiff_t)len)
     s++;
 
   strncpy(buf, str, s - str);
