@@ -4601,7 +4601,7 @@ ctxopt_add_opt_settings(settings s, ...)
     /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
     case parameters:
     {
-      char *opt_name;
+      char *opt_name = NULL;
       char *params;
 
       /* The second argument must be a string containing: */

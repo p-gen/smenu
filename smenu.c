@@ -4657,10 +4657,10 @@ disp_lines(win_t         *win,
   long len;
   long has_vbar; /* Flag to signal the presence of the vertical bar. */
   long first_start;
-  int  leftmost_start; /* Starting position of the leftmost selectable *
-                        | word in the window lines.                    */
-  int  rightmost_end;  /* Ending position of the rightmost selectable *
-                        | word in the window lines.                   */
+  int  leftmost_start = 0; /* Starting position of the leftmost selectable *
+                            | word in the window lines.                    */
+  int  rightmost_end  = 0; /* Ending position of the rightmost selectable *
+                            | word in the window lines.                   */
 
   long first_line; /* real line # on the first line of the window. */
 
@@ -4776,7 +4776,7 @@ disp_lines(win_t         *win,
       if ((win->col_mode || win->line_mode)
           && line_nb_of_word_a[current] - first_line + 1 == lines_disp)
       {
-        long wi = count - 1;
+        long wi;
 
         wi = first_word_in_line_a[lines_disp + first_line - 1];
         while (wi < current && !word_a[wi].is_selectable)
@@ -8669,7 +8669,7 @@ main(int argc, char *argv[])
   long *col_max_size = NULL; /* Array of maximum sizes (in display cells)    *
                               | of each column in column mode.               */
 
-  attrib_t **col_attrs; /* attributes for each column in column mode.        */
+  attrib_t **col_attrs = NULL; /* attributes for each column in column mode.  */
 
   long word_real_max_size = 0; /* size of the longer word after expansion.   */
   long cols_real_max_size = 0; /* Max real width of all columns used when    *
