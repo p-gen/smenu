@@ -114,7 +114,7 @@ xrealloc(void *p, size_t size)
   if (allocated == NULL && size > 0)
   {
     fprintf(stderr,
-            "Error: Insufficient memory (attempt to xrealloc %zu bytes)\n",
+            "Error: Insufficient memory (attempt to realloc %zu bytes)\n",
             size);
 
     exit(EXIT_FAILURE);
