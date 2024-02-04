@@ -3787,12 +3787,11 @@ disp_hbar(win_t *win, term_t *term, langinfo_t *langinfo, int pos1, int pos2)
     fputs_safe("\r", stdout);
     (void)tputs(TPARM2(parm_right_cursor, pos1 + 1), 1, outch);
 
-    for (i = pos1 + 2; i <= pos2 + 1; i++)
+    for (i = pos1; i <= pos2; i++)
       fputs_safe(s, stdout);
 
-    (void)tputs(TPARM2(parm_right_cursor, term->ncolumns - 3 - pos2 - 2),
-                1,
-                outch);
+    fputs_safe("\r", stdout);
+    (void)tputs(TPARM2(parm_right_cursor, term->ncolumns - 2), 1, outch);
   }
   else
   {
