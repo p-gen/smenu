@@ -822,3 +822,9 @@ get_clicked_index(win_t  *win,
 
 void
 align_word(word_t *word, alignment_t alignment, size_t prerfix, char sp);
+
+int
+isempty_non_utf8(const unsigned char * s);
+
+int
+isempty_utf8(const unsigned char * s);
