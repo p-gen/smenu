@@ -3315,11 +3315,11 @@ buffer_cmp(const void *a, const void *b)
 /* the character.                                                        */
 /* ===================================================================== */
 int
-get_bytes(FILE       *input,
-          char       *utf8_buffer,
-          ll_t       *zapped_glyphs_list,
-          langinfo_t *langinfo,
-          misc_t     *misc)
+read_bytes(FILE       *input,
+           char       *utf8_buffer,
+           ll_t       *zapped_glyphs_list,
+           langinfo_t *langinfo,
+           misc_t     *misc)
 {
   int byte;
   int last;
@@ -3498,26 +3498,26 @@ expand(char       *src,
   return len;
 }
 
-/* ===================================================================== */
-/* get_word(input): return a char pointer to the next word (as a string) */
-/* Accept: a FILE * for the input stream.                                */
-/* Return: a char *                                                      */
-/*    On Success: the return value will point to a nul-terminated        */
-/*                string.                                                */
-/*    On Failure: the return value will be set to NULL.                  */
-/* ===================================================================== */
+/* ====================================================================== */
+/* read_word(input): return a char pointer to the next word (as a string) */
+/* Accept: a FILE * for the input stream.                                 */
+/* Return: a char *                                                       */
+/*    On Success: the return value will point to a nul-terminated         */
+/*                string.                                                 */
+/*    On Failure: the return value will be set to NULL.                   */
+/* ====================================================================== */
 char *
-get_word(FILE          *input,
-         ll_t          *word_delims_list,
-         ll_t          *line_delims_list,
-         ll_t          *zapped_glyphs_list,
-         char          *utf8_buffer,
-         unsigned char *is_last,
-         toggle_t      *toggles,
-         langinfo_t    *langinfo,
-         win_t         *win,
-         limit_t       *limits,
-         misc_t        *misc)
+read_word(FILE          *input,
+          ll_t          *word_delims_list,
+          ll_t          *line_delims_list,
+          ll_t          *zapped_glyphs_list,
+          char          *utf8_buffer,
+          unsigned char *is_last,
+          toggle_t      *toggles,
+          langinfo_t    *langinfo,
+          win_t         *win,
+          limit_t       *limits,
+          misc_t        *misc)
 {
   char         *temp = NULL;
   int           byte;
@@ -3530,7 +3530,7 @@ get_word(FILE          *input,
   /* Skip leading delimiters. */
   /* """""""""""""""""""""""" */
   do
-    byte = get_bytes(input, utf8_buffer, zapped_glyphs_list, langinfo, misc);
+    byte = read_bytes(input, utf8_buffer, zapped_glyphs_list, langinfo, misc);
   while (byte != EOF
          && ll_find(word_delims_list, utf8_buffer, buffer_cmp) != NULL);
 
@@ -3672,7 +3672,7 @@ get_word(FILE          *input,
     is_special = 0;
 
   next:
-    byte = get_bytes(input, utf8_buffer, zapped_glyphs_list, langinfo, misc);
+    byte = read_bytes(input, utf8_buffer, zapped_glyphs_list, langinfo, misc);
   }
 
   /* Nul-terminate the word to make it a string. */
@@ -3688,12 +3688,12 @@ get_word(FILE          *input,
   /* """""""""""""""""""""""""""""""""""""""""""""""""""" */
   if (ll_find(line_delims_list, utf8_buffer, buffer_cmp) == NULL)
   {
-    byte = get_bytes(input, utf8_buffer, zapped_glyphs_list, langinfo, misc);
+    byte = read_bytes(input, utf8_buffer, zapped_glyphs_list, langinfo, misc);
 
     while (byte != EOF
            && ll_find(word_delims_list, utf8_buffer, buffer_cmp) != NULL
            && ll_find(line_delims_list, utf8_buffer, buffer_cmp) == NULL)
-      byte = get_bytes(input, utf8_buffer, zapped_glyphs_list, langinfo, misc);
+      byte = read_bytes(input, utf8_buffer, zapped_glyphs_list, langinfo, misc);
 
     if (byte != EOF)
     {
@@ -10914,17 +10914,17 @@ main(int argc, char *argv[])
   /* - The -R is taken into account                               */
   /* - The first part of the -C option is done                    */
   /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-  while ((word = get_word(input_file,
-                          word_delims_list,
-                          line_delims_list,
-                          zapped_glyphs_list,
-                          utf8_buffer,
-                          &is_last,
-                          &toggles,
-                          &langinfo,
-                          &win,
-                          &limits,
-                          &misc))
+  while ((word = read_word(input_file,
+                           word_delims_list,
+                           line_delims_list,
+                           zapped_glyphs_list,
+                           utf8_buffer,
+                           &is_last,
+                           &toggles,
+                           &langinfo,
+                           &win,
+                           &limits,
+                           &misc))
          != NULL)
   {
     int           selectable;

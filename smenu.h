@@ -650,27 +650,27 @@ expand(char       *src,
        misc_t     *misc);
 
 int
-get_bytes(FILE       *input,
-          char       *utf8_buffer,
-          ll_t       *ignored_glyphs_list,
-          langinfo_t *langinfo,
-          misc_t     *misc);
+read_bytes(FILE       *input,
+           char       *utf8_buffer,
+           ll_t       *ignored_glyphs_list,
+           langinfo_t *langinfo,
+           misc_t     *misc);
 
 int
 get_scancode(unsigned char *s, size_t max);
 
 char *
-get_word(FILE          *input,
-         ll_t          *word_delims_list,
-         ll_t          *line_delims_list,
-         ll_t          *ignored_glyphs_list,
-         char          *utf8_buffer,
-         unsigned char *is_last,
-         toggle_t      *toggles,
-         langinfo_t    *langinfo,
-         win_t         *win,
-         limit_t       *limits,
-         misc_t        *misc);
+read_word(FILE          *input,
+          ll_t          *word_delims_list,
+          ll_t          *line_delims_list,
+          ll_t          *ignored_glyphs_list,
+          char          *utf8_buffer,
+          unsigned char *is_last,
+          toggle_t      *toggles,
+          langinfo_t    *langinfo,
+          win_t         *win,
+          limit_t       *limits,
+          misc_t        *misc);
 
 void
 left_margin_putp(char *s, term_t *term, win_t *win);
@@ -824,7 +824,7 @@ void
 align_word(word_t *word, alignment_t alignment, size_t prerfix, char sp);
 
 int
-isempty_non_utf8(const unsigned char * s);
+isempty_non_utf8(const unsigned char *s);
 
 int
-isempty_utf8(const unsigned char * s);
+isempty_utf8(const unsigned char *s);
