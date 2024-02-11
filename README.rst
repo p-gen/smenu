@@ -27,9 +27,13 @@ execution.
 The selection window is displayed at the cursor position, and the
 previous contents of the terminal are neither modified nor lost.
 
-I've tried to make it as easy to use as possible. It supports ``UTF-8``
-encoding and should work on all terminals managed in the ``terminfo``
-database.
+I've tried to make it as easy to use as possible.
+It should work on all terminals managed in the ``terminfo`` database.
+
+The ``UTF-8`` encoding is supported, including for large characters,
+with the exception of grapheme groups for the time being.
+The encoding of ``UTF-8`` glyphs must also be in canonical form, as no
+effort will be made to put them in this form.
 
 Please refer to the included man page to find out more about this little
 program.
