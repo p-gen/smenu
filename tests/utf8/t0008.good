@@ -1,0 +1,15 @@
+$ OUT=$(smenu -c t0008.in)
+
+x é x 
+
+é x é 
+
+x é x 
+2:07 3:07 
+$ 
+
+$ echo ":$OUT:"
+
+:é:
+
+$ exit 0
