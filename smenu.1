@@ -245,6 +245,12 @@ This can block sole shifting operations.
 With many terminal emulators, it is possible to use the mouse to interact
 with the screen content.
 
+\fBWarning\fP, if groups of extended graphemes are present in the input,
+mouse-based selection is only accurate if the terminal correctly displays
+these graphemes.
+An example of a non-functional terminal is xterm, an example of a
+functional terminal is wezterm.
+
 When the mouse is supported, the cursor can turn into an arrow (but
 not always) and the mouse can then be used as a point and click device
 as follows:

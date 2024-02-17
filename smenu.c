@@ -4025,7 +4025,7 @@ get_message_lines(char *message,
 
     /* If needed, update the message maximum width. */
     /* """""""""""""""""""""""""""""""""""""""""""" */
-    n = wcswidth((w = utf8_strtowcs(str)), utf8_strlen(str));
+    n = my_wcswidth((w = utf8_strtowcs(str)), utf8_strlen(str));
     free(w);
 
     if (n > *message_max_width)
@@ -4046,7 +4046,7 @@ get_message_lines(char *message,
   {
     ll_append(message_lines_list, xstrdup(ptr));
 
-    n = wcswidth((w = utf8_strtowcs(ptr)), utf8_strlen(ptr));
+    n = my_wcswidth((w = utf8_strtowcs(ptr)), utf8_strlen(ptr));
     free(w);
 
     if (n > *message_max_width)
@@ -4134,7 +4134,7 @@ build_metadata(term_t *term, long count, win_t *win)
     /*       has already been utf8_validated/repaired.             */
     /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
     word_len   = mbstowcs(NULL, word_a[i].str, 0);
-    word_width = wcswidth((w = utf8_strtowcs(word_a[i].str)), word_len);
+    word_width = my_wcswidth((w = utf8_strtowcs(word_a[i].str)), word_len);
 
     /* Manage the case where the word is larger than the terminal width. */
     /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
@@ -4144,7 +4144,7 @@ build_metadata(term_t *term, long count, win_t *win)
       /* """"""""""""""""""""""""""""""" */
       do
       {
-        word_width = wcswidth(w, word_len--);
+        word_width = my_wcswidth(w, word_len--);
       } while (word_len > 0 && word_width >= term->ncolumns - 2);
     }
     free(w);
@@ -4718,9 +4718,9 @@ disp_message(ll_t       *message_lines_list,
 
     /* Adjust size and len if the terminal is not large enough. */
     /* """""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-    size = wcswidth(w, len);
+    size = my_wcswidth(w, len);
     while (len > 0 && size > term->ncolumns)
-      size = wcswidth(w, --len);
+      size = my_wcswidth(w, --len);
 
     free(w);
 
@@ -7052,7 +7052,7 @@ gutter_action(char  *ctx_name,
       win->gutter_a[i] = xcalloc(1, mblength + 1);
       memcpy(win->gutter_a[i], gutter + offset, mblength);
 
-      n = wcswidth((w = utf8_strtowcs(win->gutter_a[i])), 1);
+      n = my_wcswidth((w = utf8_strtowcs(win->gutter_a[i])), 1);
       free(w);
 
       if (n > 1)
@@ -7798,7 +7798,7 @@ da_options_action(char  *ctx_name,
           ctxopt_ctx_disp_usage(ctx_name, exit_after);
         }
 
-        n = wcswidth((w = utf8_strtowcs(daccess.left)), 1);
+        n = my_wcswidth((w = utf8_strtowcs(daccess.left)), 1);
         free(w);
 
         if (n > 1)
@@ -7823,7 +7823,7 @@ da_options_action(char  *ctx_name,
           ctxopt_ctx_disp_usage(ctx_name, exit_after);
         }
 
-        n = wcswidth((w = utf8_strtowcs(daccess.right)), 1);
+        n = my_wcswidth((w = utf8_strtowcs(daccess.right)), 1);
         free(w);
 
         if (n > 1)
@@ -7976,7 +7976,7 @@ da_options_action(char  *ctx_name,
           ctxopt_ctx_disp_usage(ctx_name, exit_after);
         }
 
-        n = wcswidth((w = utf8_strtowcs(daccess.num_sep)), 1);
+        n = my_wcswidth((w = utf8_strtowcs(daccess.num_sep)), 1);
         free(w);
 
         if (n > 1)
@@ -11817,7 +11817,7 @@ main(int argc, char *argv[])
       }
 
       s = (long)mbstowcs(NULL, word->str, 0);
-      s = wcswidth((tmpw = utf8_strtowcs(word->str)), s);
+      s = my_wcswidth((tmpw = utf8_strtowcs(word->str)), s);
       free(tmpw);
 
       if (s > col_max_size[col_index])
@@ -11845,7 +11845,7 @@ main(int argc, char *argv[])
       /* """"""""""""""""""""""""""""" */
       size = (long)mbstowcs(NULL, word->str, 0);
 
-      if ((size = wcswidth((tmpw = utf8_strtowcs(word->str)), size))
+      if ((size = my_wcswidth((tmpw = utf8_strtowcs(word->str)), size))
           > tab_max_size)
         tab_max_size = size;
 
@@ -12135,7 +12135,7 @@ main(int argc, char *argv[])
 
       s1         = (long)strlen(word_a[wi].str);
       word_width = mbstowcs(NULL, word_a[wi].str, 0);
-      s2         = wcswidth((w = utf8_strtowcs(word_a[wi].str)), word_width);
+      s2         = my_wcswidth((w = utf8_strtowcs(word_a[wi].str)), word_width);
       free(w);
 
       /* Use the 0x05 character as a placeholder to preserve the internal    */
@@ -12179,7 +12179,7 @@ main(int argc, char *argv[])
 
       s1         = (long)strlen(word_a[wi].str);
       word_width = mbstowcs(NULL, word_a[wi].str, 0);
-      s2         = wcswidth((w = utf8_strtowcs(word_a[wi].str)), word_width);
+      s2         = my_wcswidth((w = utf8_strtowcs(word_a[wi].str)), word_width);
       free(w);
       temp = xcalloc(1, tab_real_max_size + s1 - s2 + 1);
       memset(temp, ' ', tab_max_size + s1 - s2);
@@ -14153,7 +14153,7 @@ main(int argc, char *argv[])
                 str = ((output_t *)(node->data))->output_str;
 
                 fprintf(old_stdout, "%s", str);
-                width += wcswidth((w = utf8_strtowcs(str)), 65535);
+                width += my_wcswidth((w = utf8_strtowcs(str)), 65535);
                 free(w);
                 free(str);
                 free(node->data);
@@ -14161,7 +14161,7 @@ main(int argc, char *argv[])
                 if (win.sel_sep != NULL)
                 {
                   fprintf(old_stdout, "%s", win.sel_sep);
-                  width += wcswidth((w = utf8_strtowcs(win.sel_sep)), 65535);
+                  width += my_wcswidth((w = utf8_strtowcs(win.sel_sep)), 65535);
                   free(w);
                 }
                 else
@@ -14175,7 +14175,7 @@ main(int argc, char *argv[])
 
               str = ((output_t *)(node->data))->output_str;
               fprintf(old_stdout, "%s", str);
-              width += wcswidth((w = utf8_strtowcs(str)), 65535);
+              width += my_wcswidth((w = utf8_strtowcs(str)), 65535);
               free(w);
               free(str);
               free(node->data);
@@ -14216,7 +14216,7 @@ main(int argc, char *argv[])
                 rtrim(output_str, " \t", 0);
               }
 
-              width = wcswidth((w = utf8_strtowcs(output_str)), 65535);
+              width = my_wcswidth((w = utf8_strtowcs(output_str)), 65535);
               free(w);
 
               /* And print it. */

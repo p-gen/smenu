@@ -20,6 +20,7 @@
 #include <stdarg.h>
 #include <wctype.h>
 #include "xmalloc.h"
+#include "wchar.h"
 #include "list.h"
 #include "utf8.h"
 #include "utils.h"
@@ -466,4 +467,38 @@ hexdump(const char *buf, FILE *fp, const char *prefix, size_t size)
     memset(d, '\0', 17);
     fprintf(fp, "\n");
   }
+}
+
+/* ===================================================================== */
+/* Version of wcswidth which tries to support extended grapheme clusters */
+/* by taking into zero width characters.                                 */
+/* ===================================================================== */
+int
+my_wcswidth(const wchar_t *s, size_t n)
+{
+  int len = 0;
+  int l   = 0;
+  int m   = 0;
+
+  if (s == NULL || *s == L'\0')
+    return 0;
+
+  while (*s && m < n)
+  {
+    if ((l = wcwidth(*s)) >= 0)
+    {
+      /* Do not count zero-width-length glyphs. */
+      /* """""""""""""""""""""""""""""""""""""" */
+      if (*s != L'\x200d' && *(s + 1) != L'\x200d' && *(s + 1) != L'\xfe0f'
+          && *(s + 1) != L'\x20e3')
+        len += l;
+    }
+    else
+      return -1; /* wcwidth returned -1. */
+
+    s++;
+    m++;
+  }
+
+  return len;
 }

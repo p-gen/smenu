@@ -30,8 +30,11 @@ previous contents of the terminal are neither modified nor lost.
 I've tried to make it as easy to use as possible.
 It should work on all terminals managed in the ``terminfo`` database.
 
-The ``UTF-8`` encoding is supported, including for large characters,
-with the exception of grapheme groups for the time being.
+``UTF-8`` encoding is supported, including for double-width characters.
+Support for extended grapheme clusters is experimental but seems to work,
+with best results when appropriate terminals are used such as wezterm
+or iTerm.
+
 The encoding of ``UTF-8`` glyphs must also be in canonical form, as no
 effort will be made to put them in this form.
 
