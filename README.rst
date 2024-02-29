@@ -30,10 +30,10 @@ previous contents of the terminal are neither modified nor lost.
 I've tried to make it as easy to use as possible.
 It should work on all terminals managed in the ``terminfo`` database.
 
-``UTF-8`` encoding is supported, including for double-width characters.
-Support for extended grapheme clusters is experimental but seems to work,
-with best results when appropriate terminals are used such as wezterm
-or iTerm.
+``UTF-8`` encoding is supported.
+This support includes double-width characters and extended grapheme
+clusters. The latter is still experimental, however, and works much
+better if appropriate terminals such as WezTerm or iTerm are used.
 
 The encoding of ``UTF-8`` glyphs must also be in canonical form, as no
 effort will be made to put them in this form.
@@ -175,6 +175,12 @@ or **ctxopt** (https://github.com/p-gen/ctxopt).
 Command line arguments may also need to be rearranged in some cases
 because of this new option management system.
 Sorry for the extra work this might entail.
+
+Bugs.
+-----
+
+Right-alignment of lines written in right-to-left languages, such as Farsi
+or Hebrew, is not respected.
 
 Testing and reporting.
 ----------------------
