@@ -1,3 +1,25 @@
+* Fixes:
+  * Make sure certain variables are initialized before using them.
+  * Fixed cursor attribute on search failure.
+  * Some option names contain - instead of _.
+  * Correction of potential dereferencing of a NULL pointer.
+  * Correction of compiler warnings.
+
+* Improvements:
+  * Reworked code to go to start/end of line in col/line mode.
+  * Added a scrollbar below the window in col/line mode that displays
+    when necessary.
+  * UTF-8 space support for empty strings.
+  * Support for UTF-8 extended grapheme clusters if supported by the
+    terminal.
+
+* Miscellaneous:
+  * Changed the appearance of scrollbars to make them more discreet.
+  * Correction of typos in comments and in the manual.
+  * Code simplification and redesign.
+  * Reformatting the code to make it more readable.
+  * Made more NULL comparisons explicit.
+
 - Version 1.3.0
 * Fixes:
   * Correction of an error in the calculation of the size of the longest word.
