@@ -6558,6 +6558,7 @@ init_main_ds(attrib_t  *init_attr,
   toggles->del_line            = 0;
   toggles->enter_val_in_search = 0;
   toggles->no_scrollbar        = 0;
+  toggles->no_hor_scrollbar    = 0;
   toggles->blank_nonprintable  = 0;
   toggles->keep_spaces         = 0;
   toggles->taggable            = 0;
