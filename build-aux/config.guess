@@ -1,14 +1,14 @@
 #! /bin/sh
 # Attempt to guess a canonical system name.
-#   Copyright 1992-2021 Free Software Foundation, Inc.
+#   Copyright 1992-2023 Free Software Foundation, Inc.
 
 # shellcheck disable=SC2006,SC2268 # see below for rationale
 
-timestamp='2021-06-03'
+timestamp='2023-08-22'
 
 # This file is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by
-# the Free Software Foundation; either version 3 of the License, or
+# the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
 # This program is distributed in the hope that it will be useful, but
@@ -47,7 +47,7 @@ me=`echo "$0" | sed -e 's,.*/,,'`
 usage="\
 Usage: $0 [OPTION]
 
-Output the configuration name of the system \`$me' is run on.
+Output the configuration name of the system '$me' is run on.
 
 Options:
   -h, --help         print this help, then exit
@@ -60,13 +60,13 @@ version="\
 GNU config.guess ($timestamp)
 
 Originally written by Per Bothner.
-Copyright 1992-2021 Free Software Foundation, Inc.
+Copyright 1992-2023 Free Software Foundation, Inc.
 
 This is free software; see the source for copying conditions.  There is NO
 warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE."
 
 help="
-Try \`$me --help' for more information."
+Try '$me --help' for more information."
 
 # Parse command line
 while test $# -gt 0 ; do
@@ -102,8 +102,8 @@ GUESS=
 # temporary files to be created and, as you can see below, it is a
 # headache to deal with in a portable fashion.
 
-# Historically, `CC_FOR_BUILD' used to be named `HOST_CC'. We still
-# use `HOST_CC' if defined, but it is deprecated.
+# Historically, 'CC_FOR_BUILD' used to be named 'HOST_CC'. We still
+# use 'HOST_CC' if defined, but it is deprecated.
 
 # Portable tmp directory creation inspired by the Autoconf team.
 
@@ -155,6 +155,9 @@ Linux|GNU|GNU/*)
 
 	set_cc_for_build
 	cat <<-EOF > "$dummy.c"
+	#if defined(__ANDROID__)
+	LIBC=android
+	#else
 	#include <features.h>
 	#if defined(__UCLIBC__)
 	LIBC=uclibc
@@ -167,6 +170,7 @@ Linux|GNU|GNU/*)
 	/* First heuristic to detect musl libc.  */
 	#ifdef __DEFINED_va_list
 	LIBC=musl
+	#endif
 	#endif
 	#endif
 	EOF
@@ -187,17 +191,6 @@ Linux|GNU|GNU/*)
 	fi
 	;;
 esac
-
-case "${UNAME_MACHINE}" in
-  i?86)
-     test -z "$VENDOR" && VENDOR=pc
-     ;;
-  *)
-     test -z "$VENDOR" && VENDOR=unknown
-     ;;
-esac
-test -f /etc/SuSE-release -o -f /.buildenv && VENDOR=suse
-test -f /etc/os-release && grep -q suse /etc/os-release && VENDOR=suse
 
 # Note: order is significant - the case branches are not exclusive.
 
@@ -280,46 +273,46 @@ case $UNAME_MACHINE:$UNAME_SYSTEM:$UNAME_RELEASE:$UNAME_VERSION in
 	;;
     *:Bitrig:*:*)
 	UNAME_MACHINE_ARCH=`arch | sed 's/Bitrig.//'`
-	GUESS=$UNAME_MACHINE_ARCH-${VENDOR}-bitrig$UNAME_RELEASE
+	GUESS=$UNAME_MACHINE_ARCH-unknown-bitrig$UNAME_RELEASE
 	;;
     *:OpenBSD:*:*)
 	UNAME_MACHINE_ARCH=`arch | sed 's/OpenBSD.//'`
-	GUESS=$UNAME_MACHINE_ARCH-${VENDOR}-openbsd$UNAME_RELEASE
+	GUESS=$UNAME_MACHINE_ARCH-unknown-openbsd$UNAME_RELEASE
 	;;
     *:SecBSD:*:*)
 	UNAME_MACHINE_ARCH=`arch | sed 's/SecBSD.//'`
-	GUESS=$UNAME_MACHINE_ARCH-${VENDOR}-secbsd$UNAME_RELEASE
+	GUESS=$UNAME_MACHINE_ARCH-unknown-secbsd$UNAME_RELEASE
 	;;
     *:LibertyBSD:*:*)
 	UNAME_MACHINE_ARCH=`arch | sed 's/^.*BSD\.//'`
-	GUESS=$UNAME_MACHINE_ARCH-${VENDOR}-libertybsd$UNAME_RELEASE
+	GUESS=$UNAME_MACHINE_ARCH-unknown-libertybsd$UNAME_RELEASE
 	;;
     *:MidnightBSD:*:*)
-	GUESS=$UNAME_MACHINE-${VENDOR}-midnightbsd$UNAME_RELEASE
+	GUESS=$UNAME_MACHINE-unknown-midnightbsd$UNAME_RELEASE
 	;;
     *:ekkoBSD:*:*)
-	GUESS=$UNAME_MACHINE-${VENDOR}-ekkobsd$UNAME_RELEASE
+	GUESS=$UNAME_MACHINE-unknown-ekkobsd$UNAME_RELEASE
 	;;
     *:SolidBSD:*:*)
-	GUESS=$UNAME_MACHINE-${VENDOR}-solidbsd$UNAME_RELEASE
+	GUESS=$UNAME_MACHINE-unknown-solidbsd$UNAME_RELEASE
 	;;
     *:OS108:*:*)
-	GUESS=$UNAME_MACHINE-${VENDOR}-os108_$UNAME_RELEASE
+	GUESS=$UNAME_MACHINE-unknown-os108_$UNAME_RELEASE
 	;;
     macppc:MirBSD:*:*)
-	GUESS=powerpc-${VENDOR}-mirbsd$UNAME_RELEASE
+	GUESS=powerpc-unknown-mirbsd$UNAME_RELEASE
 	;;
     *:MirBSD:*:*)
-	GUESS=$UNAME_MACHINE-${VENDOR}-mirbsd$UNAME_RELEASE
+	GUESS=$UNAME_MACHINE-unknown-mirbsd$UNAME_RELEASE
 	;;
     *:Sortix:*:*)
-	GUESS=$UNAME_MACHINE-${VENDOR}-sortix
+	GUESS=$UNAME_MACHINE-unknown-sortix
 	;;
     *:Twizzler:*:*)
-	GUESS=$UNAME_MACHINE-${VENDOR}-twizzler
+	GUESS=$UNAME_MACHINE-unknown-twizzler
 	;;
     *:Redox:*:*)
-	GUESS=$UNAME_MACHINE-${VENDOR}-redox
+	GUESS=$UNAME_MACHINE-unknown-redox
 	;;
     mips:OSF1:*.*)
 	GUESS=mips-dec-osf1
@@ -381,13 +374,13 @@ case $UNAME_MACHINE:$UNAME_SYSTEM:$UNAME_RELEASE:$UNAME_VERSION in
 	GUESS=$UNAME_MACHINE-dec-osf$OSF_REL
 	;;
     Amiga*:UNIX_System_V:4.0:*)
-	GUESS=m68k-${VENDOR}-sysv4
+	GUESS=m68k-unknown-sysv4
 	;;
     *:[Aa]miga[Oo][Ss]:*:*)
-	GUESS=$UNAME_MACHINE-${VENDOR}-amigaos
+	GUESS=$UNAME_MACHINE-unknown-amigaos
 	;;
     *:[Mm]orph[Oo][Ss]:*:*)
-	GUESS=$UNAME_MACHINE-${VENDOR}-morphos
+	GUESS=$UNAME_MACHINE-unknown-morphos
 	;;
     *:OS/390:*:*)
 	GUESS=i370-ibm-openedition
@@ -402,7 +395,7 @@ case $UNAME_MACHINE:$UNAME_SYSTEM:$UNAME_RELEASE:$UNAME_VERSION in
 	GUESS=arm-acorn-riscix$UNAME_RELEASE
 	;;
     arm*:riscos:*:*|arm*:RISCOS:*:*)
-	GUESS=arm-${VENDOR}-riscos
+	GUESS=arm-unknown-riscos
 	;;
     SR2?01:HI-UX/MPP:*:* | SR8000:HI-UX/MPP:*:*)
 	GUESS=hppa1.1-hitachi-hiuxmpp
@@ -448,7 +441,7 @@ case $UNAME_MACHINE:$UNAME_SYSTEM:$UNAME_RELEASE:$UNAME_VERSION in
 	# This test works for both compilers.
 	if test "$CC_FOR_BUILD" != no_compiler_found; then
 	    if (echo '#ifdef __amd64'; echo IS_64BIT_ARCH; echo '#endif') | \
-		(CCOPTS="" $CC_FOR_BUILD -E - 2>/dev/null) | \
+		(CCOPTS="" $CC_FOR_BUILD -m64 -E - 2>/dev/null) | \
 		grep IS_64BIT_ARCH >/dev/null
 	    then
 		SUN_ARCH=x86_64
@@ -470,7 +463,7 @@ case $UNAME_MACHINE:$UNAME_SYSTEM:$UNAME_RELEASE:$UNAME_VERSION in
 		UNAME_RELEASE=`uname -v`
 		;;
 	esac
-	# Japanese Language versions have a version number like `4.1.3-JL'.
+	# Japanese Language versions have a version number like '4.1.3-JL'.
 	SUN_REL=`echo "$UNAME_RELEASE" | sed -e 's/-/_/'`
 	GUESS=sparc-sun-sunos$SUN_REL
 	;;
@@ -516,7 +509,7 @@ case $UNAME_MACHINE:$UNAME_SYSTEM:$UNAME_RELEASE:$UNAME_VERSION in
 	GUESS=m68k-hades-mint$UNAME_RELEASE
 	;;
     *:*MiNT:*:* | *:*mint:*:* | *:*TOS:*:*)
-	GUESS=m68k-${VENDOR}-mint$UNAME_RELEASE
+	GUESS=m68k-unknown-mint$UNAME_RELEASE
 	;;
     m68k:machten:*:*)
 	GUESS=m68k-apple-machten$UNAME_RELEASE
@@ -829,9 +822,9 @@ EOF
 	;;
     i*86:OSF1:*:*)
 	if test -x /usr/sbin/sysversion ; then
-	    GUESS=$UNAME_MACHINE-${VENDOR}-osf1mk
+	    GUESS=$UNAME_MACHINE-unknown-osf1mk
 	else
-	    GUESS=$UNAME_MACHINE-${VENDOR}-osf1
+	    GUESS=$UNAME_MACHINE-unknown-osf1
 	fi
 	;;
     parisc*:Lites*:*:*)
@@ -896,10 +889,10 @@ EOF
 	GUESS=$UNAME_MACHINE-pc-bsdi$UNAME_RELEASE
 	;;
     sparc*:BSD/OS:*:*)
-	GUESS=sparc-${VENDOR}-bsdi$UNAME_RELEASE
+	GUESS=sparc-unknown-bsdi$UNAME_RELEASE
 	;;
     *:BSD/OS:*:*)
-	GUESS=$UNAME_MACHINE-${VENDOR}-bsdi$UNAME_RELEASE
+	GUESS=$UNAME_MACHINE-unknown-bsdi$UNAME_RELEASE
 	;;
     arm:FreeBSD:*:*)
 	UNAME_PROCESSOR=`uname -p`
@@ -908,14 +901,14 @@ EOF
 	    | grep -q __ARM_PCS_VFP
 	then
 	    FREEBSD_REL=`echo "$UNAME_RELEASE" | sed -e 's/[-(].*//'`
-	    GUESS=$UNAME_PROCESSOR-${VENDOR}-freebsd$FREEBSD_REL-gnueabi
+	    GUESS=$UNAME_PROCESSOR-unknown-freebsd$FREEBSD_REL-gnueabi
 	else
 	    FREEBSD_REL=`echo "$UNAME_RELEASE" | sed -e 's/[-(].*//'`
-	    GUESS=$UNAME_PROCESSOR-${VENDOR}-freebsd$FREEBSD_REL-gnueabihf
+	    GUESS=$UNAME_PROCESSOR-unknown-freebsd$FREEBSD_REL-gnueabihf
 	fi
 	;;
     *:FreeBSD:*:*)
-	UNAME_PROCESSOR=`/usr/bin/uname -p`
+	UNAME_PROCESSOR=`uname -p`
 	case $UNAME_PROCESSOR in
 	    amd64)
 		UNAME_PROCESSOR=x86_64 ;;
@@ -923,7 +916,7 @@ EOF
 		UNAME_PROCESSOR=i586 ;;
 	esac
 	FREEBSD_REL=`echo "$UNAME_RELEASE" | sed -e 's/[-(].*//'`
-	GUESS=$UNAME_PROCESSOR-${VENDOR}-freebsd$FREEBSD_REL
+	GUESS=$UNAME_PROCESSOR-unknown-freebsd$FREEBSD_REL
 	;;
     i*:CYGWIN*:*)
 	GUESS=$UNAME_MACHINE-pc-cygwin
@@ -940,16 +933,19 @@ EOF
     i*:PW*:*)
 	GUESS=$UNAME_MACHINE-pc-pw32
 	;;
+    *:SerenityOS:*:*)
+        GUESS=$UNAME_MACHINE-pc-serenity
+        ;;
     *:Interix*:*)
 	case $UNAME_MACHINE in
 	    x86)
 		GUESS=i586-pc-interix$UNAME_RELEASE
 		;;
 	    authenticamd | genuineintel | EM64T)
-		GUESS=x86_64-${VENDOR}-interix$UNAME_RELEASE
+		GUESS=x86_64-unknown-interix$UNAME_RELEASE
 		;;
 	    IA64)
-		GUESS=ia64-${VENDOR}-interix$UNAME_RELEASE
+		GUESS=ia64-unknown-interix$UNAME_RELEASE
 		;;
 	esac ;;
     i*:UWIN*:*)
@@ -960,29 +956,55 @@ EOF
 	;;
     prep*:SunOS:5.*:*)
 	SUN_REL=`echo "$UNAME_RELEASE" | sed -e 's/[^.]*//'`
-	GUESS=powerpcle-${VENDOR}-solaris2$SUN_REL
+	GUESS=powerpcle-unknown-solaris2$SUN_REL
 	;;
     *:GNU:*:*)
 	# the GNU system
 	GNU_ARCH=`echo "$UNAME_MACHINE" | sed -e 's,[-/].*$,,'`
 	GNU_REL=`echo "$UNAME_RELEASE" | sed -e 's,/.*$,,'`
-	GUESS=$GNU_ARCH-${VENDOR}-$LIBC$GNU_REL
+	GUESS=$GNU_ARCH-unknown-$LIBC$GNU_REL
 	;;
     *:GNU/*:*:*)
 	# other systems with GNU libc and userland
 	GNU_SYS=`echo "$UNAME_SYSTEM" | sed 's,^[^/]*/,,' | tr "[:upper:]" "[:lower:]"`
 	GNU_REL=`echo "$UNAME_RELEASE" | sed -e 's/[-(].*//'`
-	GUESS=$UNAME_MACHINE-${VENDOR}-$GNU_SYS$GNU_REL-$LIBC
+	GUESS=$UNAME_MACHINE-unknown-$GNU_SYS$GNU_REL-$LIBC
+	;;
+    x86_64:[Mm]anagarm:*:*|i?86:[Mm]anagarm:*:*)
+	GUESS="$UNAME_MACHINE-pc-managarm-mlibc"
+	;;
+    *:[Mm]anagarm:*:*)
+	GUESS="$UNAME_MACHINE-unknown-managarm-mlibc"
 	;;
     *:Minix:*:*)
-	GUESS=$UNAME_MACHINE-${VENDOR}-minix
+	GUESS=$UNAME_MACHINE-unknown-minix
 	;;
     aarch64:Linux:*:*)
-	GUESS=$UNAME_MACHINE-${VENDOR}-linux-$LIBC
+	set_cc_for_build
+	CPU=$UNAME_MACHINE
+	LIBCABI=$LIBC
+	if test "$CC_FOR_BUILD" != no_compiler_found; then
+	    ABI=64
+	    sed 's/^	    //' << EOF > "$dummy.c"
+	    #ifdef __ARM_EABI__
+	    #ifdef __ARM_PCS_VFP
+	    ABI=eabihf
+	    #else
+	    ABI=eabi
+	    #endif
+	    #endif
+EOF
+	    cc_set_abi=`$CC_FOR_BUILD -E "$dummy.c" 2>/dev/null | grep '^ABI' | sed 's, ,,g'`
+	    eval "$cc_set_abi"
+	    case $ABI in
+		eabi | eabihf) CPU=armv8l; LIBCABI=$LIBC$ABI ;;
+	    esac
+	fi
+	GUESS=$CPU-unknown-linux-$LIBCABI
 	;;
     aarch64_be:Linux:*:*)
 	UNAME_MACHINE=aarch64_be
-	GUESS=$UNAME_MACHINE-${VENDOR}-linux-$LIBC
+	GUESS=$UNAME_MACHINE-unknown-linux-$LIBC
 	;;
     alpha:Linux:*:*)
 	case `sed -n '/^cpu model/s/^.*: \(.*\)/\1/p' /proc/cpuinfo 2>/dev/null` in
@@ -996,29 +1018,29 @@ EOF
 	esac
 	objdump --private-headers /bin/sh | grep -q ld.so.1
 	if test "$?" = 0 ; then LIBC=gnulibc1 ; fi
-	GUESS=$UNAME_MACHINE-${VENDOR}-linux-$LIBC
+	GUESS=$UNAME_MACHINE-unknown-linux-$LIBC
 	;;
     arc:Linux:*:* | arceb:Linux:*:* | arc32:Linux:*:* | arc64:Linux:*:*)
-	GUESS=$UNAME_MACHINE-${VENDOR}-linux-$LIBC
+	GUESS=$UNAME_MACHINE-unknown-linux-$LIBC
 	;;
     arm*:Linux:*:*)
 	set_cc_for_build
 	if echo __ARM_EABI__ | $CC_FOR_BUILD -E - 2>/dev/null \
 	    | grep -q __ARM_EABI__
 	then
-	    GUESS=$UNAME_MACHINE-${VENDOR}-linux-$LIBC
+	    GUESS=$UNAME_MACHINE-unknown-linux-$LIBC
 	else
 	    if echo __ARM_PCS_VFP | $CC_FOR_BUILD -E - 2>/dev/null \
 		| grep -q __ARM_PCS_VFP
 	    then
-		GUESS=$UNAME_MACHINE-${VENDOR}-linux-${LIBC}eabi
+		GUESS=$UNAME_MACHINE-unknown-linux-${LIBC}eabi
 	    else
-		GUESS=$UNAME_MACHINE-${VENDOR}-linux-${LIBC}eabihf
+		GUESS=$UNAME_MACHINE-unknown-linux-${LIBC}eabihf
 	    fi
 	fi
 	;;
     avr32*:Linux:*:*)
-	GUESS=$UNAME_MACHINE-${VENDOR}-linux-$LIBC
+	GUESS=$UNAME_MACHINE-unknown-linux-$LIBC
 	;;
     cris:Linux:*:*)
 	GUESS=$UNAME_MACHINE-axis-linux-$LIBC
@@ -1027,31 +1049,40 @@ EOF
 	GUESS=$UNAME_MACHINE-axis-linux-$LIBC
 	;;
     e2k:Linux:*:*)
-	GUESS=$UNAME_MACHINE-${VENDOR}-linux-$LIBC
+	GUESS=$UNAME_MACHINE-unknown-linux-$LIBC
 	;;
     frv:Linux:*:*)
-	GUESS=$UNAME_MACHINE-${VENDOR}-linux-$LIBC
+	GUESS=$UNAME_MACHINE-unknown-linux-$LIBC
 	;;
     hexagon:Linux:*:*)
-	GUESS=$UNAME_MACHINE-${VENDOR}-linux-$LIBC
+	GUESS=$UNAME_MACHINE-unknown-linux-$LIBC
 	;;
     i*86:Linux:*:*)
-	GUESS=$UNAME_MACHINE-${VENDOR}-linux-$LIBC
+	GUESS=$UNAME_MACHINE-pc-linux-$LIBC
 	;;
     ia64:Linux:*:*)
-	GUESS=$UNAME_MACHINE-${VENDOR}-linux-$LIBC
+	GUESS=$UNAME_MACHINE-unknown-linux-$LIBC
 	;;
     k1om:Linux:*:*)
-	GUESS=$UNAME_MACHINE-${VENDOR}-linux-$LIBC
+	GUESS=$UNAME_MACHINE-unknown-linux-$LIBC
 	;;
-    loongarch32:Linux:*:* | loongarch64:Linux:*:* | loongarchx32:Linux:*:*)
-	GUESS=$UNAME_MACHINE-${VENDOR}-linux-$LIBC
+    kvx:Linux:*:*)
+	GUESS=$UNAME_MACHINE-unknown-linux-$LIBC
+	;;
+    kvx:cos:*:*)
+	GUESS=$UNAME_MACHINE-unknown-cos
+	;;
+    kvx:mbr:*:*)
+	GUESS=$UNAME_MACHINE-unknown-mbr
+	;;
+    loongarch32:Linux:*:* | loongarch64:Linux:*:*)
+	GUESS=$UNAME_MACHINE-unknown-linux-$LIBC
 	;;
     m32r*:Linux:*:*)
-	GUESS=$UNAME_MACHINE-${VENDOR}-linux-$LIBC
+	GUESS=$UNAME_MACHINE-unknown-linux-$LIBC
 	;;
     m68*:Linux:*:*)
-	GUESS=$UNAME_MACHINE-${VENDOR}-linux-$LIBC
+	GUESS=$UNAME_MACHINE-unknown-linux-$LIBC
 	;;
     mips:Linux:*:* | mips64:Linux:*:*)
 	set_cc_for_build
@@ -1099,79 +1130,90 @@ EOF
 EOF
 	cc_set_vars=`$CC_FOR_BUILD -E "$dummy.c" 2>/dev/null | grep '^CPU\|^MIPS_ENDIAN\|^LIBCABI'`
 	eval "$cc_set_vars"
-	test "x$CPU" != x && { echo "$CPU${MIPS_ENDIAN}-${VENDOR}-linux-$LIBCABI"; exit; }
+	test "x$CPU" != x && { echo "$CPU${MIPS_ENDIAN}-unknown-linux-$LIBCABI"; exit; }
 	;;
     mips64el:Linux:*:*)
-	GUESS=$UNAME_MACHINE-${VENDOR}-linux-$LIBC
+	GUESS=$UNAME_MACHINE-unknown-linux-$LIBC
 	;;
     openrisc*:Linux:*:*)
-	GUESS=or1k-${VENDOR}-linux-$LIBC
+	GUESS=or1k-unknown-linux-$LIBC
 	;;
     or32:Linux:*:* | or1k*:Linux:*:*)
-	GUESS=$UNAME_MACHINE-${VENDOR}-linux-$LIBC
+	GUESS=$UNAME_MACHINE-unknown-linux-$LIBC
 	;;
     padre:Linux:*:*)
-	GUESS=sparc-${VENDOR}-linux-$LIBC
+	GUESS=sparc-unknown-linux-$LIBC
 	;;
     parisc64:Linux:*:* | hppa64:Linux:*:*)
-	GUESS=hppa64-${VENDOR}-linux-$LIBC
+	GUESS=hppa64-unknown-linux-$LIBC
 	;;
     parisc:Linux:*:* | hppa:Linux:*:*)
 	# Look for CPU level
 	case `grep '^cpu[^a-z]*:' /proc/cpuinfo 2>/dev/null | cut -d' ' -f2` in
-	  PA7*) GUESS=hppa1.1-${VENDOR}-linux-$LIBC ;;
-	  PA8*) GUESS=hppa2.0-${VENDOR}-linux-$LIBC ;;
-	  *)    GUESS=hppa-${VENDOR}-linux-$LIBC ;;
+	  PA7*) GUESS=hppa1.1-unknown-linux-$LIBC ;;
+	  PA8*) GUESS=hppa2.0-unknown-linux-$LIBC ;;
+	  *)    GUESS=hppa-unknown-linux-$LIBC ;;
 	esac
 	;;
     ppc64:Linux:*:*)
-	GUESS=powerpc64-${VENDOR}-linux-$LIBC
+	GUESS=powerpc64-unknown-linux-$LIBC
 	;;
     ppc:Linux:*:*)
-	GUESS=powerpc-${VENDOR}-linux-$LIBC
+	GUESS=powerpc-unknown-linux-$LIBC
 	;;
     ppc64le:Linux:*:*)
-	GUESS=powerpc64le-${VENDOR}-linux-$LIBC
+	GUESS=powerpc64le-unknown-linux-$LIBC
 	;;
     ppcle:Linux:*:*)
-	GUESS=powerpcle-${VENDOR}-linux-$LIBC
+	GUESS=powerpcle-unknown-linux-$LIBC
 	;;
     riscv32:Linux:*:* | riscv32be:Linux:*:* | riscv64:Linux:*:* | riscv64be:Linux:*:*)
-	GUESS=$UNAME_MACHINE-${VENDOR}-linux-$LIBC
+	GUESS=$UNAME_MACHINE-unknown-linux-$LIBC
 	;;
     s390:Linux:*:* | s390x:Linux:*:*)
 	GUESS=$UNAME_MACHINE-ibm-linux-$LIBC
 	;;
     sh64*:Linux:*:*)
-	GUESS=$UNAME_MACHINE-${VENDOR}-linux-$LIBC
+	GUESS=$UNAME_MACHINE-unknown-linux-$LIBC
 	;;
     sh*:Linux:*:*)
-	GUESS=$UNAME_MACHINE-${VENDOR}-linux-$LIBC
+	GUESS=$UNAME_MACHINE-unknown-linux-$LIBC
 	;;
     sparc:Linux:*:* | sparc64:Linux:*:*)
-	GUESS=$UNAME_MACHINE-${VENDOR}-linux-$LIBC
+	GUESS=$UNAME_MACHINE-unknown-linux-$LIBC
 	;;
     tile*:Linux:*:*)
-	GUESS=$UNAME_MACHINE-${VENDOR}-linux-$LIBC
+	GUESS=$UNAME_MACHINE-unknown-linux-$LIBC
 	;;
     vax:Linux:*:*)
 	GUESS=$UNAME_MACHINE-dec-linux-$LIBC
 	;;
     x86_64:Linux:*:*)
 	set_cc_for_build
+	CPU=$UNAME_MACHINE
 	LIBCABI=$LIBC
 	if test "$CC_FOR_BUILD" != no_compiler_found; then
-	    if (echo '#ifdef __ILP32__'; echo IS_X32; echo '#endif') | \
-		(CCOPTS="" $CC_FOR_BUILD -E - 2>/dev/null) | \
-		grep IS_X32 >/dev/null
-	    then
-		LIBCABI=${LIBC}x32
-	    fi
+	    ABI=64
+	    sed 's/^	    //' << EOF > "$dummy.c"
+	    #ifdef __i386__
+	    ABI=x86
+	    #else
+	    #ifdef __ILP32__
+	    ABI=x32
+	    #endif
+	    #endif
+EOF
+	    cc_set_abi=`$CC_FOR_BUILD -E "$dummy.c" 2>/dev/null | grep '^ABI' | sed 's, ,,g'`
+	    eval "$cc_set_abi"
+	    case $ABI in
+		x86) CPU=i686 ;;
+		x32) LIBCABI=${LIBC}x32 ;;
+	    esac
 	fi
-	GUESS=$UNAME_MACHINE-${VENDOR}-linux-$LIBCABI
+	GUESS=$CPU-pc-linux-$LIBCABI
 	;;
     xtensa*:Linux:*:*)
-	GUESS=$UNAME_MACHINE-${VENDOR}-linux-$LIBC
+	GUESS=$UNAME_MACHINE-unknown-linux-$LIBC
 	;;
     i*86:DYNIX/ptx:4*:*)
 	# ptx 4.0 does uname -s correctly, with DYNIX/ptx in there.
@@ -1188,21 +1230,21 @@ EOF
 	GUESS=$UNAME_MACHINE-pc-sysv4.2uw$UNAME_VERSION
 	;;
     i*86:OS/2:*:*)
-	# If we were able to find `uname', then EMX Unix compatibility
+	# If we were able to find 'uname', then EMX Unix compatibility
 	# is probably installed.
 	GUESS=$UNAME_MACHINE-pc-os2-emx
 	;;
     i*86:XTS-300:*:STOP)
-	GUESS=$UNAME_MACHINE-${VENDOR}-stop
+	GUESS=$UNAME_MACHINE-unknown-stop
 	;;
     i*86:atheos:*:*)
-	GUESS=$UNAME_MACHINE-${VENDOR}-atheos
+	GUESS=$UNAME_MACHINE-unknown-atheos
 	;;
     i*86:syllable:*:*)
 	GUESS=$UNAME_MACHINE-pc-syllable
 	;;
     i*86:LynxOS:2.*:* | i*86:LynxOS:3.[01]*:* | i*86:LynxOS:4.[02]*:*)
-	GUESS=i386-${VENDOR}-lynxos$UNAME_RELEASE
+	GUESS=i386-unknown-lynxos$UNAME_RELEASE
 	;;
     i*86:*DOS:*:*)
 	GUESS=$UNAME_MACHINE-pc-msdosdjgpp
@@ -1222,7 +1264,7 @@ EOF
 	    *Pentium)	     UNAME_MACHINE=i586 ;;
 	    *Pent*|*Celeron) UNAME_MACHINE=i686 ;;
 	esac
-	GUESS=$UNAME_MACHINE-${VENDOR}-sysv${UNAME_RELEASE}${UNAME_SYSTEM}${UNAME_VERSION}
+	GUESS=$UNAME_MACHINE-unknown-sysv${UNAME_RELEASE}${UNAME_SYSTEM}${UNAME_VERSION}
 	;;
     i*86:*:3.2:*)
 	if test -f /usr/options/cb.name; then
@@ -1261,7 +1303,7 @@ EOF
 	if grep Stardent /usr/include/sys/uadmin.h >/dev/null 2>&1 ; then
 	  GUESS=i860-stardent-sysv$UNAME_RELEASE    # Stardent Vistra i860-SVR4
 	else # Add other i860-SVR4 vendors below as they are discovered.
-	  GUESS=i860-${VENDOR}-sysv$UNAME_RELEASE     # Unknown i860-SVR4
+	  GUESS=i860-unknown-sysv$UNAME_RELEASE     # Unknown i860-SVR4
 	fi
 	;;
     mini*:CTIX:SYS*5:*)
@@ -1298,19 +1340,19 @@ EOF
 	/bin/uname -p 2>/dev/null | /bin/grep pteron >/dev/null \
 	    && { echo i586-ncr-sysv4.3"$OS_REL"; exit; } ;;
     m68*:LynxOS:2.*:* | m68*:LynxOS:3.0*:*)
-	GUESS=m68k-${VENDOR}-lynxos$UNAME_RELEASE
+	GUESS=m68k-unknown-lynxos$UNAME_RELEASE
 	;;
     mc68030:UNIX_System_V:4.*:*)
 	GUESS=m68k-atari-sysv4
 	;;
     TSUNAMI:LynxOS:2.*:*)
-	GUESS=sparc-${VENDOR}-lynxos$UNAME_RELEASE
+	GUESS=sparc-unknown-lynxos$UNAME_RELEASE
 	;;
     rs6000:LynxOS:2.*:*)
-	GUESS=rs6000-${VENDOR}-lynxos$UNAME_RELEASE
+	GUESS=rs6000-unknown-lynxos$UNAME_RELEASE
 	;;
     PowerPC:LynxOS:2.*:* | PowerPC:LynxOS:3.[01]*:* | PowerPC:LynxOS:4.[02]*:*)
-	GUESS=powerpc-${VENDOR}-lynxos$UNAME_RELEASE
+	GUESS=powerpc-unknown-lynxos$UNAME_RELEASE
 	;;
     SM[BE]S:UNIX_SV:*:*)
 	GUESS=mips-dde-sysv$UNAME_RELEASE
@@ -1329,7 +1371,7 @@ EOF
 		GUESS=ns32k-sni-sysv
 	fi
 	;;
-    PENTIUM:*:4.0*:*)	# Unisys `ClearPath HMP IX 4000' SVR4/MP effort
+    PENTIUM:*:4.0*:*)	# Unisys 'ClearPath HMP IX 4000' SVR4/MP effort
 			# says <Richard.M.Bartel@ccMail.Census.GOV>
 	GUESS=i586-unisys-sysv4
 	;;
@@ -1360,7 +1402,7 @@ EOF
 	if test -d /usr/nec; then
 		GUESS=mips-nec-sysv$UNAME_RELEASE
 	else
-		GUESS=mips-${VENDOR}-sysv$UNAME_RELEASE
+		GUESS=mips-unknown-sysv$UNAME_RELEASE
 	fi
 	;;
     BeBox:BeOS:*:*)	# BeOS running on hardware made by Be, PPC only.
@@ -1375,8 +1417,11 @@ EOF
     BePC:Haiku:*:*)	# Haiku running on Intel PC compatible.
 	GUESS=i586-pc-haiku
 	;;
-    x86_64:Haiku:*:*)
-	GUESS=x86_64-${VENDOR}-haiku
+    ppc:Haiku:*:*)	# Haiku running on Apple PowerPC
+	GUESS=powerpc-apple-haiku
+	;;
+    *:Haiku:*:*)	# Haiku modern gcc (not bound by BeOS compat)
+	GUESS=$UNAME_MACHINE-unknown-haiku
 	;;
     SX-4:SUPER-UX:*:*)
 	GUESS=sx4-nec-superux$UNAME_RELEASE
@@ -1489,13 +1534,13 @@ EOF
 	elif test "x${cputype-}" != x; then
 	    UNAME_MACHINE=$cputype
 	fi
-	GUESS=$UNAME_MACHINE-${VENDOR}-plan9
+	GUESS=$UNAME_MACHINE-unknown-plan9
 	;;
     *:TOPS-10:*:*)
-	GUESS=pdp10-${VENDOR}-tops10
+	GUESS=pdp10-unknown-tops10
 	;;
     *:TENEX:*:*)
-	GUESS=pdp10-${VENDOR}-tenex
+	GUESS=pdp10-unknown-tenex
 	;;
     KS10:TOPS-20:*:* | KL10:TOPS-20:*:* | TYPE4:TOPS-20:*:*)
 	GUESS=pdp10-dec-tops20
@@ -1504,17 +1549,17 @@ EOF
 	GUESS=pdp10-xkl-tops20
 	;;
     *:TOPS-20:*:*)
-	GUESS=pdp10-${VENDOR}-tops20
+	GUESS=pdp10-unknown-tops20
 	;;
     *:ITS:*:*)
-	GUESS=pdp10-${VENDOR}-its
+	GUESS=pdp10-unknown-its
 	;;
     SEI:*:*:SEIUX)
 	GUESS=mips-sei-seiux$UNAME_RELEASE
 	;;
     *:DragonFly:*:*)
 	DRAGONFLY_REL=`echo "$UNAME_RELEASE" | sed -e 's/[-(].*//'`
-	GUESS=$UNAME_MACHINE-${VENDOR}-dragonfly$DRAGONFLY_REL
+	GUESS=$UNAME_MACHINE-unknown-dragonfly$DRAGONFLY_REL
 	;;
     *:*VMS:*:*)
 	UNAME_MACHINE=`(uname -p) 2>/dev/null`
@@ -1533,17 +1578,20 @@ EOF
     i*86:rdos:*:*)
 	GUESS=$UNAME_MACHINE-pc-rdos
 	;;
+    i*86:Fiwix:*:*)
+	GUESS=$UNAME_MACHINE-pc-fiwix
+	;;
     *:AROS:*:*)
-	GUESS=$UNAME_MACHINE-${VENDOR}-aros
+	GUESS=$UNAME_MACHINE-unknown-aros
 	;;
     x86_64:VMkernel:*:*)
-	GUESS=$UNAME_MACHINE-${VENDOR}-esx
+	GUESS=$UNAME_MACHINE-unknown-esx
 	;;
     amd64:Isilon\ OneFS:*:*)
-	GUESS=x86_64-${VENDOR}-onefs
+	GUESS=x86_64-unknown-onefs
 	;;
     *:Unleashed:*:*)
-	GUESS=$UNAME_MACHINE-${VENDOR}-unleashed$UNAME_RELEASE
+	GUESS=$UNAME_MACHINE-unknown-unleashed$UNAME_RELEASE
 	;;
 esac
 

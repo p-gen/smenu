@@ -1,3 +1,4 @@
+- Version 1.4.0
 * Fixes:
   * Make sure certain variables are initialized before using them.
   * Fixed cursor attribute on search failure.
