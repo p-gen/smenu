@@ -64,6 +64,7 @@ and outputs the selection to stdout.
 \fIbytes\fP]
   [\fB-q\fP|\fB-no_bar\fP|\fB-no_scroll_bar\fP]
   [\fB-no_hbar\fP|\fB-no_hor_scroll_bar\fP]
+  [\fB-hbar\fP|\fB-hor_scroll_bar\fP]
   [\fB-S\fP|\fB-subst\fP... \fI/regex/repl/opts\fP]
   [\fB-I\fP|\fB-si\fP|\fB-subst_included\fP... \fI/regex/repl/opts\fP]
   [\fB-E\fP|\fB-se\fP|\fB-subst_excluded\fP... \fI/regex/repl/opts\fP]
@@ -1881,6 +1882,17 @@ This also prevents the display of the horizontal scroll bar.
 (Allowed in all contexts.)
 
 Prevents the display of the horizontal scroll bar.
+.IP "\fB-hbar\fP|\fB-hor_scroll_bar\fP"
+(Allowed in all contexts.)
+
+Forces the display of the horizontal scroll when at least one line will be
+truncated.
+This is the case even if the current line or lines being currently
+displayed are not truncated.
+
+When the \fB-no_hbar\fP|\fB-no_hor_scroll_bar\fP or
+\fB-q\fP|\fB-no_bar\fP|\fB-no_scroll_bar\fP are also present then this
+option is ignored.
 .IP "\fB-S\fP|\fB-subst\fP... \
 /\fIregex\fP/\fIrepl\fP/[\fIg\fP][\fIv\fP][\fIs\fP]"
 (Allowed in all contexts.)

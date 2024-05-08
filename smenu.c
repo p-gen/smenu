@@ -4885,6 +4885,8 @@ disp_lines(win_t         *win,
       if (!toggles->no_hor_scrollbar)
         win->has_hbar = 1;
     }
+    else if (toggles->hor_scrollbar)
+      win->has_hbar = 1;
 
     if (!win->has_truncated_lines)
       win->has_truncated_lines = 1;
@@ -4954,7 +4956,7 @@ disp_lines(win_t         *win,
         /* Toggle the presence of the horizontal bar if allowed and */
         /* if this line contains the cursor in column or line mode. */
         /* """""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-        if (!toggles->no_hor_scrollbar
+        if (!toggles->hor_scrollbar && !toggles->no_hor_scrollbar
             && line_nb_of_word_a[current] - first_line + 1 == lines_disp)
           win->has_hbar = 1; /* the line containing the cursor is *
                               | truncated in the window.          */
@@ -6559,6 +6561,7 @@ init_main_ds(attrib_t  *init_attr,
   toggles->enter_val_in_search = 0;
   toggles->no_scrollbar        = 0;
   toggles->no_hor_scrollbar    = 0;
+  toggles->hor_scrollbar       = 0;
   toggles->blank_nonprintable  = 0;
   toggles->keep_spaces         = 0;
   toggles->taggable            = 0;
@@ -6929,11 +6932,20 @@ toggle_action(char  *ctx_name,
   {
     toggles->no_scrollbar     = 1;
     toggles->no_hor_scrollbar = 1;
+    toggles->hor_scrollbar    = 0;
   }
   else if (strcmp(opt_name, "no_hor_scroll_bar") == 0)
   {
     if (!toggles->no_scrollbar)
+    {
       toggles->no_hor_scrollbar = 1;
+      toggles->hor_scrollbar    = 0;
+    }
+  }
+  else if (strcmp(opt_name, "hor_scroll_bar") == 0)
+  {
+    if (!toggles->no_scrollbar && !toggles->no_hor_scrollbar)
+      toggles->hor_scrollbar = 1;
   }
   else if (strcmp(opt_name, "auto_tag") == 0)
     toggles->autotag = 1;
@@ -9139,6 +9151,7 @@ main(int argc, char *argv[])
                    "[word_separators #bytes] "
                    "[no_scroll_bar] "
                    "[no_hor_scroll_bar] "
+                   "[hor_scroll_bar] "
                    "[early_subst_all... #/regex/repl/opts] "
                    "[post_subst_all... #/regex/repl/opts] "
                    "[post_subst_included... #/regex/repl/opts] "
@@ -9314,6 +9327,9 @@ main(int argc, char *argv[])
   ctxopt_add_opt_settings(parameters,
                           "no_hor_scroll_bar",
                           "-no_hbar -no_hor_scroll_bar");
+  ctxopt_add_opt_settings(parameters,
+                          "hor_scroll_bar",
+                          "-hbar -hor_scroll_bar");
   ctxopt_add_opt_settings(parameters, "early_subst_all", "-ES -early_subst");
   ctxopt_add_opt_settings(parameters, "post_subst_all", "-S -subst");
   ctxopt_add_opt_settings(parameters,
@@ -9488,6 +9504,11 @@ main(int argc, char *argv[])
                           (char *)0);
   ctxopt_add_opt_settings(actions,
                           "no_hor_scroll_bar",
+                          toggle_action,
+                          &toggles,
+                          (char *)0);
+  ctxopt_add_opt_settings(actions,
+                          "hor_scroll_bar",
                           toggle_action,
                           &toggles,
                           (char *)0);

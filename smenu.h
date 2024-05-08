@@ -190,6 +190,9 @@ struct toggle_s
   int no_scrollbar;        /* 1 to disable the scrollbar display else 0.  */
   int no_hor_scrollbar;    /* 1 to disable the horizontab scrollbar       *
                             | display else 0.                             */
+  int hor_scrollbar;       /* 1 to always enable the scrollbar display    *
+                            * when lines are truncated in line/col mode   *
+                            * else 0.                                     */
   int blank_nonprintable;  /* 1 to try to display non-blanks in           *
                             | symbolic form else 0.                       */
   int keep_spaces;         /* 1 to keep the trailing spaces in columns    *
