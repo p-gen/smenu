@@ -11502,7 +11502,7 @@ main(int argc, char *argv[])
         long *word_pos = xmalloc(sizeof(long));
         int   may_number;
 
-        if (!my_isempty(word->str))
+        if (!my_isempty((unsigned char *)word->str))
         {
           *word_pos = wi;
 
@@ -11954,7 +11954,7 @@ main(int argc, char *argv[])
         else
           len = 0;
 
-        if (!my_isempty(word_a[wi + offset].str + len))
+        if (!my_isempty((unsigned char *)(word_a[wi + offset].str + len)))
           break;
 
         /* Keep non selectable empty words to allow special effects. */
