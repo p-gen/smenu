@@ -9150,8 +9150,6 @@ main(int argc, char *argv[])
                    "[keep_spaces] "
                    "[word_separators #bytes] "
                    "[no_scroll_bar] "
-                   "[no_hor_scroll_bar] "
-                   "[hor_scroll_bar] "
                    "[early_subst_all... #/regex/repl/opts] "
                    "[post_subst_all... #/regex/repl/opts] "
                    "[post_subst_included... #/regex/repl/opts] "
@@ -9197,6 +9195,8 @@ main(int argc, char *argv[])
                      "[field_da_number] "
                      "[tag_mode>Tagging [#delim]] "
                      "[pin_mode>Tagging [#delim]] "
+                     "[no_hor_scroll_bar] "
+                     "[hor_scroll_bar] "
                      "[force_first_column #regex] "
                      "[force_last_column #regex]";
 
@@ -9208,6 +9208,8 @@ main(int argc, char *argv[])
                       "[field_da_number] "
                       "[tag_mode>Tagging [#delim]] "
                       "[pin_mode>Tagging [#delim]] "
+                      "[no_hor_scroll_bar] "
+                      "[hor_scroll_bar] "
                       "[force_first_column #regex] "
                       "[force_last_column #regex]";
 
