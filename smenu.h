@@ -245,7 +245,7 @@ struct misc_s
   search_mode_t default_search_method;
   char          invalid_char_substitute;
   char          blank_char_substitute;
-  int           ignore_quotes;
+  char          ignore_quotes;
 };
 
 /* Structure to store mouse information. */
@@ -319,6 +319,10 @@ struct word_s
   long           tag_order;     /* each time a word is tagged, this value.  *
                                  | is increased.                            */
   unsigned short tag_id;        /* tag id. 0 means no tag.                  */
+  unsigned char  is_matching;   /* word is matching a search ERE.           */
+  unsigned char  is_last;       /* 1 if the word is the last of a line.     */
+  unsigned char  is_selectable; /* word is selectable.                      */
+  unsigned char  is_numbered;   /* word has a direct access index.          */
   unsigned char  special_level; /* can vary from 0 to 9; 0 meaning normal.  */
   char          *str;           /* display string associated with this word */
   size_t         len;           /* number of bytes of str (for trimming).   */
@@ -328,10 +332,6 @@ struct word_s
   char          *bitmap;        /* used to store the position of the.       *
                                  | currently searched chars in a word. The  *
                                  | objective is to speed their display.     */
-  unsigned char  is_matching;   /* word is matching a search ERE.           */
-  unsigned char  is_last;       /* 1 if the word is the last of a line.     */
-  unsigned char  is_selectable; /* word is selectable.                      */
-  unsigned char  is_numbered;   /* word has a direct access index.          */
   attrib_t      *iattr;         /* Specific attribute set with the -Ra/-Ca  *
                                  | options.                                 */
 };

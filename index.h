@@ -59,10 +59,9 @@ insert_sorted_ptr(tst_node_t ***array,
 /* """""""""""""""""""""" */
 struct tst_node_s
 {
-  wchar_t splitchar;
-
   tst_node_t *lokid, *eqkid, *hikid;
   void       *data;
+  wchar_t splitchar;
 };
 
 /* Structure to contain data and metadata attached to a fuzzy/substring. */
