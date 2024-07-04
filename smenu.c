@@ -232,12 +232,7 @@ help(win_t *win, term_t *term, long last_line)
 
   /* Determine when to split the help line if necessary. */
   /* """"""""""""""""""""""""""""""""""""""""""""""""""" */
-  if (win->sb_column > 0)
-    max_col = term->ncolumns > win->sb_column ? win->sb_column - 1
-                                              : term->ncolumns - 1;
-
-  else
-    max_col = term->ncolumns - 1;
+  max_col = term->ncolumns - 1;
 
   /* Print the different objects forming the help line.                  */
   /* A new line is added each time the next entry does not fit in the    */
