@@ -147,7 +147,7 @@ On mine (``LANG`` and ``LC_ALL`` set to ``POSIX``) it displays:
 
 Note the presence of a scroll bar.
 
-Bash example (CRTL-R replacement)
+Bash example (CTRL-R replacement)
 ---------------------------------
 Just add the following in your ``.bashrc``
 
