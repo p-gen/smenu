@@ -42,22 +42,24 @@
 /* Typedefs. */
 /* ********* */
 
-typedef struct charsetinfo_s charsetinfo_t;
-typedef struct term_s        term_t;
-typedef struct toggle_s      toggle_t;
-typedef struct win_s         win_t;
-typedef struct word_s        word_t;
-typedef struct attrib_s      attrib_t;
-typedef struct limit_s       limit_t;
-typedef struct ticker_s      ticker_t;
-typedef struct misc_s        misc_t;
-typedef struct mouse_s       mouse_t;
-typedef struct sed_s         sed_t;
-typedef struct timeout_s     timeout_t;
-typedef struct output_s      output_t;
-typedef struct daccess_s     daccess_t;
-typedef struct search_data_s search_data_t;
-typedef struct attr_elem_s   attr_elem_t;
+typedef struct charsetinfo_s     charsetinfo_t;
+typedef struct term_s            term_t;
+typedef struct toggle_s          toggle_t;
+typedef struct win_s             win_t;
+typedef struct word_s            word_t;
+typedef struct attrib_s          attrib_t;
+typedef struct limit_s           limit_t;
+typedef struct ticker_s          ticker_t;
+typedef struct misc_s            misc_t;
+typedef struct mouse_s           mouse_t;
+typedef struct sed_s             sed_t;
+typedef struct timeout_s         timeout_t;
+typedef struct output_s          output_t;
+typedef struct daccess_s         daccess_t;
+typedef struct search_data_s     search_data_t;
+typedef struct attr_elem_s       attr_elem_t;
+typedef struct help_entry_s      help_entry_t;
+typedef struct help_attr_entry_s help_attr_entry_t;
 
 /* ****** */
 /* Enums. */
@@ -493,12 +495,43 @@ struct attr_elem_s
   ll_t     *list; /* list of RE or intervals of columns. */
 };
 
+struct help_entry_s
+{
+  char *str; /* string to be displayed for an object in the help line. */
+  int   len; /* screen space taken by of one of these objects.         */
+  char *main_attr_str; /* r=reverse, n=normal, b=bold, uu=underlined.  */
+  char *alt_attr_str;  /* r=reverse, n=normal, b=bold, uu=underlined.  */
+};
+
+struct help_attr_entry_s
+{
+  char     *str;  /* string to be displayed for an object in the help line. */
+  int       len;  /* screen space taken by of one of these objects.         */
+  attrib_t *attr; /* attribute.                                             */
+};
+
 /* *********** */
 /* Prototypes. */
 /* *********** */
 
+attrib_t *
+attr_new(void);
+
 void
-help(win_t *win, term_t *term, long last_line);
+add_help_entries(term_t       *term,
+                 darray_t     *help_items_da,
+                 help_entry_t *entries,
+                 int           entries_nb);
+
+darray_t *
+init_help(win_t    *win,
+          term_t   *term,
+          toggle_t *toggles,
+          long      last_line,
+          darray_t *help_items_da);
+
+void
+disp_help(win_t *win, term_t *term, darray_t *help_da, int first_help_line);
 
 int
 tag_comp(void const *a, void const *b);

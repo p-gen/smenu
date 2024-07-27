@@ -106,7 +106,8 @@ am__installdirs = "$(DESTDIR)$(bindir)" "$(DESTDIR)$(man1dir)"
 PROGRAMS = $(bin_PROGRAMS)
 am_smenu_OBJECTS = smenu.$(OBJEXT) list.$(OBJEXT) xmalloc.$(OBJEXT) \
 	index.$(OBJEXT) utf8.$(OBJEXT) fgetc.$(OBJEXT) utils.$(OBJEXT) \
-	usage.$(OBJEXT) ctxopt.$(OBJEXT) safe.$(OBJEXT)
+	usage.$(OBJEXT) ctxopt.$(OBJEXT) safe.$(OBJEXT) \
+	darray.$(OBJEXT)
 smenu_OBJECTS = $(am_smenu_OBJECTS)
 smenu_LDADD = $(LDADD)
 AM_V_P = $(am__v_P_@AM_V@)
@@ -124,10 +125,11 @@ am__v_at_1 =
 DEFAULT_INCLUDES = -I.@am__isrc@
 depcomp = $(SHELL) $(top_srcdir)/build-aux/depcomp
 am__maybe_remake_depfiles = depfiles
-am__depfiles_remade = ./$(DEPDIR)/ctxopt.Po ./$(DEPDIR)/fgetc.Po \
-	./$(DEPDIR)/index.Po ./$(DEPDIR)/list.Po ./$(DEPDIR)/safe.Po \
-	./$(DEPDIR)/smenu.Po ./$(DEPDIR)/usage.Po ./$(DEPDIR)/utf8.Po \
-	./$(DEPDIR)/utils.Po ./$(DEPDIR)/xmalloc.Po
+am__depfiles_remade = ./$(DEPDIR)/ctxopt.Po ./$(DEPDIR)/darray.Po \
+	./$(DEPDIR)/fgetc.Po ./$(DEPDIR)/index.Po ./$(DEPDIR)/list.Po \
+	./$(DEPDIR)/safe.Po ./$(DEPDIR)/smenu.Po ./$(DEPDIR)/usage.Po \
+	./$(DEPDIR)/utf8.Po ./$(DEPDIR)/utils.Po \
+	./$(DEPDIR)/xmalloc.Po
 am__mv = mv -f
 COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
@@ -327,7 +329,7 @@ top_srcdir = @top_srcdir@
 smenu_SOURCES = smenu.c smenu.h list.c list.h xmalloc.c xmalloc.h \
 		index.c index.h utf8.c utf8.h fgetc.c fgetc.h     \
 		utils.c utils.h usage.c usage.h ctxopt.h ctxopt.c \
-		safe.h safe.c
+		safe.h safe.c darray.h darray.c
 
 dist_man_MANS = smenu.1
 EXTRA_DIST = ChangeLog build.sh version COPYRIGHT LICENSE README.rst \
@@ -440,6 +442,7 @@ distclean-compile:
 	-rm -f *.tab.c
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ctxopt.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/darray.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/fgetc.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/index.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/list.Po@am__quote@ # am--include-marker
@@ -789,6 +792,7 @@ clean-am: clean-binPROGRAMS clean-generic mostlyclean-am
 distclean: distclean-am
 	-rm -f $(am__CONFIG_DISTCLEAN_FILES)
 		-rm -f ./$(DEPDIR)/ctxopt.Po
+	-rm -f ./$(DEPDIR)/darray.Po
 	-rm -f ./$(DEPDIR)/fgetc.Po
 	-rm -f ./$(DEPDIR)/index.Po
 	-rm -f ./$(DEPDIR)/list.Po
@@ -846,6 +850,7 @@ maintainer-clean: maintainer-clean-am
 	-rm -f $(am__CONFIG_DISTCLEAN_FILES)
 	-rm -rf $(top_srcdir)/autom4te.cache
 		-rm -f ./$(DEPDIR)/ctxopt.Po
+	-rm -f ./$(DEPDIR)/darray.Po
 	-rm -f ./$(DEPDIR)/fgetc.Po
 	-rm -f ./$(DEPDIR)/index.Po
 	-rm -f ./$(DEPDIR)/list.Po

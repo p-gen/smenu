@@ -238,7 +238,7 @@ the left (reps. right) side of the window.
 When the content of the window is shifted to the left or right using
 \fB<\fP or \fB>\fP or the mouse, the cursor always highlights the same
 word and remains visible.
-This can block sole shifting operations.
+This can prevent any further shifting operations.
 .RE
 .PP
 \fBMouse:\fP
@@ -650,8 +650,12 @@ See how to use the right mouse buttons in the "Keyboard and mouse
 usage." at the beginning of this manual.
 .SS Help
 A small help message can be displayed when hitting the \fB?\fP key.
-This message will last for 10s or until another key or \fBESC\fP is
+This message will last for 30s or until another key or \fBESC\fP is
 pressed.
+.br
+If the help content is longer than the window, it can be scrolled up or
+down using the vertical arrow keys or the vi direction keys (\fBj\fP
+and \fBk\fP).
 .SS "Scroll bars"
 The vertical scroll bar is displayed at the right of the scrolling window.
 Its appearance is meant to be classical but it has some particularities:

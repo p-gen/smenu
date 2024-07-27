@@ -41,6 +41,7 @@
 #include "ctxopt.h"
 #include "usage.h"
 #include "safe.h"
+#include "darray.h"
 #include "smenu.h"
 
 /* ***************** */
@@ -170,137 +171,350 @@ int       quiet_timeout = 0; /* 1 when we want no message to be displayed.  */
 /* Help functions. */
 /* *************** */
 
+void
+help_add_entries(term_t       *term,
+                 darray_t     *help_items_da,
+                 help_entry_t *entries,
+                 int           entries_nb)
+{
+  int                index;
+  help_attr_entry_t *attr_entry;
+
+  for (index = 0; index < entries_nb; index++)
+  {
+    attr_entry = xmalloc(sizeof(help_attr_entry_t));
+
+    attr_entry->str  = xstrdup(entries[index].str);
+    attr_entry->len  = entries[index].len;
+    attr_entry->attr = attr_new();
+
+    if (term->colors > 0)
+      parse_attr(entries[index].main_attr_str, attr_entry->attr, term->colors);
+    else
+      parse_attr(entries[index].alt_attr_str, attr_entry->attr, term->colors);
+
+    darray_add(help_items_da, attr_entry);
+  }
+}
+
+darray_t *
+init_help(win_t    *win,
+          term_t   *term,
+          toggle_t *toggles,
+          long      last_line,
+          darray_t *help_items_da)
+{
+  int index;            /* used to identify the objects long the help line. */
+  int entries_nb;       /* number of generic help entries to display.       */
+  int entries_total_nb; /* number of generic help entries to display.       */
+  int line = 0;         /* number of windows lines used by the help line.   */
+  int len  = 0;         /* length of the help line.                         */
+  int max_col;          /* when to split the help line.                     */
+  int forced_nl;
+
+  help_attr_entry_t **array;
+
+  /* array of arrays containing help items.                       */
+  /* the conent of this darray will be returned by this function. */
+  /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+  darray_t *help_lines_da;
+
+  /* array of help items, element of help_lines_da. */
+  /* """"""""""""""""""""""""""""""""""""""""""""""""""" */
+  darray_t *items_da;
+
+  entries_total_nb = darray_get_length(help_items_da);
+  if (entries_total_nb == 0)
+  {
+    char *Cleft_arrow  = concat("^", left_arrow, (char *)0);
+    char *Cright_arrow = concat("^", right_arrow, (char *)0);
+    char *ud_arrows    = concat(up_arrow, down_arrow, (char *)0);
+    char *arrows       = concat(left_arrow,
+                          up_arrow,
+                          right_arrow,
+                          down_arrow,
+                          (char *)0);
+
+    help_entry_t header_entries[] = {
+      { "Start", 5, "u", "u" },     { " ", 1, "u", "u" },
+      { "of", 2, "u", "u" },        { " ", 1, "u", "u" },
+      { "quick", 5, "u", "u" },     { " ", 1, "u", "u" },
+      { "help.", 5, "u", "u" },     { " ", 1, "u", "u" },
+      { "j", 1, "bu", "bu" },       { "/", 1, "u", "u" },
+      { "k", 1, "bu", "bu" },       { ",", 1, "u", "u" },
+      { ud_arrows, 2, "bu", "bu" }, { " ", 1, "u", "u" },
+      { "to", 2, "u", "u" },        { " ", 1, "u", "u" },
+      { "scroll", 6, "u", "u" },    { " ", 1, "u", "u" },
+      { "if", 2, "u", "u" },        { " ", 1, "u", "u" },
+      { "needed.", 7, "u", "u" },
+    };
+
+    help_entry_t generic_entries[] = {
+      { "\n", 0, "", "" },       { "Move:", 5, "5+b", "r" },
+      { "Mouse:", 6, "2", "u" }, { "B1", 2, "b", "b" },
+      { ",", 1, "", "" },        { "B3", 2, "b", "b" },
+      { ",", 1, "", "" },        { "Wheel", 5, "b", "b" },
+      { " ", 1, "", "" },        { "Keyb:", 5, "2", "u" },
+      { "hjkl", 4, "b", "b" },   { ",", 1, "", "" },
+      { arrows, 4, "b", "b" },   { ",", 1, "", "" },
+      { "PgUp", 4, "b", "b" },   { "/", 1, "", "" },
+      { "Dn", 2, "b", "b" },
+    };
+
+    help_entry_t line_move_entries[] = {
+      { ",", 1, "", "" },   { "S-HOME", 6, "b", "b" },
+      { "/", 1, "", "" },   { Cleft_arrow, 2, "b", "b" },
+      { "/", 1, "", "" },   { "H", 1, "b", "b" },
+      { ",", 1, "", "" },   { "S-END", 5, "b", "b" },
+      { "/", 1, "", "" },   { Cright_arrow, 2, "b", "b" },
+      { "/", 1, "", "" },   { "L", 1, "b", "b" },
+      { " ", 1, "", "" },   { "Shift:", 6, "5+b", "r" },
+      { "<", 1, "b", "b" }, { ",", 1, "", "" },
+      { ">", 1, "b", "b" },
+    };
+
+    help_entry_t various_entries[] = {
+      { "\n", 0, "", "" },
+      { "Abort:", 6, "5+b", "r" },
+      { "q", 1, "b", "b" },
+      { ",", 1, "", "" },
+      { "^C", 2, "b", "b" },
+      { " ", 1, "", "" },
+      { "Cancel:", 7, "5+b", "r" },
+      { "ESC", 3, "b", "b" },
+      { " ", 1, "", "" },
+      { "Search:", 7, "5+b", "r" },
+      { "Fuzzy (def):", 12, "3", "i" },
+      { "/", 1, "b", "b" },
+      { " ", 1, "", "" },
+      { "Substr:", 7, "3", "i" },
+      { "\"\'", 2, "b", "b" },
+      { " ", 1, "", "" },
+      { "Fuzzy:", 6, "3", "i" },
+      { "~*", 2, "b", "b" },
+      { " ", 1, "", "" },
+      { "Prefix:", 7, "3", "i" },
+      { "=^", 2, "b", "b" },
+      { ",", 1, "", "" },
+      { "SP", 2, "b", "b" },
+      { "/", 1, "", "" },
+      { "n", 1, "b", "b" },
+      { ",", 1, "", "" },
+      { "N", 1, "b", "b" },
+      { " ", 1, "", "" },
+      { "Select:", 7, "5+b", "r" },
+      { "CR", 2, "b", "b" },
+      { ",", 1, "", "" },
+      { "Double-B1", 9, "b", "b" },
+      { " ", 1, "", "" },
+    };
+
+    help_entry_t tag_entries[] = {
+      { "\n", 0, "", "" },       { "Mark:", 5, "5+b", "r" },
+      { "Mouse:", 6, "2", "u" }, { "^B1", 3, "b", "b" },
+      { "/", 1, "b", "b" },      { "B3", 2, "b", "b" },
+      { " ", 1, "", "" },        { "Keyb:", 5, "2", "u" },
+      { "mM", 2, "b", "b" },     { "\n", 0, "", "" },
+      { "Tag:", 4, "5+b", "r" }, { "Mouse:", 6, "2", "u" },
+      { "B3", 2, "B", "B" },     { ",", 1, "", "" },
+      { "Zone:", 5, "3", "i" },  { "/", 1, "b", "b" },
+      { "Row:", 4, "3", "i" },   { "/", 1, "b", "b" },
+      { "Col:", 4, "3", "i" },   { "^B3", 3, "B", "B" },
+      { " ", 1, "b", "b" },      { "Keyb:", 5, "2", "u" },
+      { "t", 1, "b", "b" },      { ",", 1, "", "" },
+      { "r", 1, "b", "b" },      { ",", 1, "", "" },
+      { "c", 1, "b", "b" },      { " ", 1, "", "" },
+      { "Cont:", 5, "3", "i" },  { "T", 1, "b", "b" },
+      { "...", 3, "", "" },      { "T", 1, "b", "b" },
+      { ",", 1, "", "" },        { "Zone:", 5, "3", "i" },
+      { "Z", 1, "b", "b" },      { "...", 3, "", "" },
+      { "Z", 1, "b", "b" },      { ",", 1, "", "" },
+      { "Row:", 4, "3", "i" },   { "R", 1, "b", "b" },
+      { "...", 3, "", "" },      { "R", 1, "b", "b" },
+      { ",", 1, "", "" },        { "Col:", 4, "3", "i" },
+      { "C", 1, "b", "b" },      { "...", 3, "", "" },
+      { "C", 1, "b", "b" },      { " ", 1, "", "" },
+      { "U", 1, "b", "b" },      { ",", 1, "", "" },
+      { "^T", 2, "b", "b" },     { " ", 1, "", "" },
+    };
+
+    help_entry_t trailer_entries[] = {
+      { "\n", 0, "", "" },   { "End", 3, "u", "u" },   { " ", 1, "u", "u" },
+      { "of", 2, "u", "u" }, { " ", 1, "u", "u" },     { "quick", 5, "u", "u" },
+      { " ", 1, "u", "u" },  { "help.", 5, "u", "u" },
+    };
+
+    entries_nb = sizeof(header_entries) / sizeof(help_entry_t);
+    entries_total_nb += entries_nb;
+    help_add_entries(term, help_items_da, header_entries, entries_nb);
+
+    entries_nb = sizeof(generic_entries) / sizeof(help_entry_t);
+    entries_total_nb += entries_nb;
+    help_add_entries(term, help_items_da, generic_entries, entries_nb);
+
+    if (win->line_mode || win->col_mode)
+    {
+      entries_nb = sizeof(line_move_entries) / sizeof(help_entry_t);
+      entries_total_nb += entries_nb;
+      help_add_entries(term, help_items_da, line_move_entries, entries_nb);
+    };
+
+    if (toggles->taggable || toggles->pinable)
+    {
+      entries_nb = sizeof(tag_entries) / sizeof(help_entry_t);
+      entries_total_nb += entries_nb;
+      help_add_entries(term, help_items_da, tag_entries, entries_nb);
+    };
+
+    entries_nb = sizeof(various_entries) / sizeof(help_entry_t);
+    entries_total_nb += entries_nb;
+    help_add_entries(term, help_items_da, various_entries, entries_nb);
+
+    entries_nb = sizeof(trailer_entries) / sizeof(help_entry_t);
+    entries_total_nb += entries_nb;
+    help_add_entries(term, help_items_da, trailer_entries, entries_nb);
+  }
+
+  /* Determine when to split the help line if necessary. */
+  /* """"""""""""""""""""""""""""""""""""""""""""""""""" */
+  max_col = term->ncolumns - 1;
+
+  array = (help_attr_entry_t **)darray_get_array(help_items_da);
+
+  help_lines_da = darray_new(0);
+  items_da      = darray_new(0);
+  darray_add(help_lines_da, items_da);
+
+  int first_in_line = 0;
+
+  /* Fill the darray of darrays, each line is a darray of help_attr_entry_t */
+  /* A new line is added each time the next entry does not fit in the       */
+  /* width of the window. This is done as long as there is space left in    */
+  /* the window.                                                            */
+  /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+  for (index = 0; index < entries_total_nb; index++)
+  {
+    /* Ignore item if its length cannot be fully displayed. */
+    /* '''''''''''''''''''''''''''''''''''''''''''''''''''' */
+    if (array[index]->len >= max_col)
+      continue;
+
+    /* increase the total length of displayed items in the line. */
+    /* ''''''''''''''''''''''''''''''''''''''''''''''''''''''''' */
+    len += array[index]->len;
+
+    /* Set a flag if we need to start a new line. */
+    /* '''''''''''''''''''''''''''''''''''''''''' */
+    if (strcmp(array[index]->str, "\n") == 0)
+      forced_nl = 1;
+    else
+      forced_nl = 0;
+
+    if (len >= max_col || forced_nl)
+    {
+      line++;
+      first_in_line = 1;
+
+      /* Exit early if we do not have enough space. */
+      /* '''''''''''''''''''''''''''''''''''''''''' */
+      if (line > last_line)
+        break;
+
+      len = 0;
+
+      items_da = darray_new(0);
+      darray_add(help_lines_da, items_da);
+
+      if (forced_nl)
+        continue;
+    }
+
+    /* Skip ' ' and ',' when they appear first in a line. */
+    /* '''''''''''''''''''''''''''''''''''''''''''''''''' */
+    if (first_in_line)
+      if (strcmp(array[index]->str, " ") == 0
+          || strcmp(array[index]->str, ",") == 0)
+        continue;
+
+    first_in_line = 0;
+    darray_add(items_da, array[index]);
+  }
+  return help_lines_da;
+}
+
 /* ===================== */
 /* Help message display. */
 /* ===================== */
 void
-help(win_t *win, term_t *term, long last_line)
+disp_help(win_t    *win,
+          term_t   *term,
+          darray_t *help_lines_da,
+          int       first_help_line)
 {
-  int index;      /* used to identify the objects long the help line. */
-  int line = 0;   /* number of windows lines used by the help line.   */
-  int len  = 0;   /* length of the help line.                         */
-  int max_col;    /* when to split the help line.                     */
-  int entries_nb; /* number of help entries to display.               */
-  int i;
+  int index;   /* used to identify the objects long the help line. */
+  int max_col; /* when to split the help line.                     */
+  int len;
+  int displayed_lines;
+  int total_lines;
 
-  struct entry_s
-  {
-    char *str;  /* string to be displayed for an object in the help line. */
-    int   len;  /* screen space taken by of one of these objects.         */
-    char  attr; /* r=reverse, n=normal, b=bold, uu=underlined.            */
-  };
+  darray_t *items_da;
 
-  char *arrows = concat(left_arrow,
-                        up_arrow,
-                        right_arrow,
-                        down_arrow,
-                        (char *)0);
-
-  struct entry_s entries[] = {
-    { "Move:", 5, 'r' }, { "Mouse:", 6, 'u' },  { "B1", 2, 'b' },
-    { ",", 1, 'n' },     { "B3", 2, 'b' },      { ",", 1, 'n' },
-    { "Wheel", 5, 'b' }, { " ", 1, 'n' },       { "Keyb:", 5, 'u' },
-    { "hjkl", 4, 'b' },  { ",", 1, 'n' },       { arrows, 4, 'b' },
-    { ",", 1, 'n' },     { "PgUp", 4, 'b' },    { "/", 1, 'n' },
-    { "Dn", 2, 'b' },    { "... ", 4, 'n' },    { "Abort:", 6, 'r' },
-    { "q", 1, 'b' },     { ",", 1, 'n' },       { "^C", 2, 'b' },
-    { " ", 1, 'n' },     { "Cancel:", 7, 'r' }, { "ESC", 3, 'b' },
-    { " ", 1, 'n' },     { "Find:", 5, 'r' },   { "/", 1, 'b' },
-    { "\"\'", 2, 'b' },  { "~*", 2, 'b' },      { "=^", 2, 'b' },
-    { ",", 1, 'n' },     { "SP", 2, 'b' },      { ",", 1, 'n' },
-    { "nN", 2, 'b' },    { " ", 1, 'n' },       { "Select:", 7, 'r' },
-    { "CR", 2, 'b' },    { ",", 1, 'n' },       { "Double-B1", 9, 'b' },
-    { " ", 1, 'n' },     { "Mark:", 5, 'r' },   { "mM", 2, 'b' },
-    { " ", 1, 'n' },     { "Tag:", 4, 'r' },    { "t", 1, 'b' },
-    { ",", 1, 'n' },     { "r", 1, 'b' },       { ",", 1, 'n' },
-    { "c", 1, 'b' },     { " ", 1, 'n' },       { "T", 1, 'b' },
-    { "...", 3, 'n' },   { "T", 1, 'b' },       { ",", 1, 'n' },
-    { "Z", 1, 'b' },     { "...", 3, 'n' },     { "Z", 1, 'b' },
-    { ",", 1, 'n' },     { "R", 1, 'b' },       { "...", 3, 'n' },
-    { "R", 1, 'b' },     { ",", 1, 'n' },       { "C", 1, 'b' },
-    { "...", 3, 'n' },   { "C", 1, 'b' },       { " ", 1, 'n' },
-    { "U", 1, 'b' },     { ",", 1, 'n' },       { "^T", 2, 'b' },
-    { " ", 1, 'n' },
-  };
-
-  entries_nb = sizeof(entries) / sizeof(struct entry_s);
+  /* Determine when to split the help line if necessary. */
+  /* """"""""""""""""""""""""""""""""""""""""""""""""""" */
+  max_col = term->ncolumns - 1;
 
   /* Save the position of the terminal cursor so that it can be */
   /* put back there after printing of the help line.            */
   /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
   (void)tputs(TPARM1(save_cursor), 1, outch);
 
-  /* Determine when to split the help line if necessary. */
-  /* """"""""""""""""""""""""""""""""""""""""""""""""""" */
-  max_col = term->ncolumns - 1;
+  displayed_lines = 0;
+  total_lines     = darray_get_length(help_lines_da);
 
-  /* Print the different objects forming the help line.                  */
-  /* A new line is added each time the next entry does not fit in the    */
-  /* width of the window. This is done as long as there is space left in */
-  /* the window.                                                         */
+  /* Print the different objects forming the help lines.                 */
   /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-  for (index = 0; index < entries_nb; index++)
+  for (index = first_help_line; index < total_lines; index++)
   {
-    if (entries[index].len >= max_col)
-      continue;
+    int i;
+    int item;
+    int nb_items;
 
-    len += entries[index].len;
-    if (len >= max_col)
+    if (displayed_lines == win->max_lines)
+      break;
+
+    displayed_lines++;
+
+    len = 0;
+
+    items_da = darray_get(help_lines_da, index);
+    nb_items = darray_get_length(items_da);
+
+    (void)tputs(TPARM1(exit_attribute_mode), 1, outch);
+    for (item = 0; item < nb_items; item++)
     {
-      line++;
+      help_attr_entry_t *entry;
 
-      /* Exit early if we do not have enough space. */
-      /* '''''''''''''''''''''''''''''''''''''''''' */
-      if (line > last_line || line == win->max_lines)
-        break;
+      entry = darray_get(items_da, item);
+      len += entry->len;
 
-      len -= entries[index].len;
+      (void)tputs(TPARM1(exit_attribute_mode), 1, outch);
+      apply_attr(term, *(entry->attr));
 
-      /* Fill the rest on the line with space, preserving the scroll bar. */
-      /* '''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''' */
-      for (i = len; i < max_col; i++)
-        fputc_safe(' ', stdout);
+      fputs_safe(entry->str, stdout);
+      (void)tputs(TPARM1(exit_attribute_mode), 1, outch);
+    }
 
-      len = entries[index].len;
+    /* Fill the remaining space with spaces. */
+    /* """"""""""""""""""""""""""""""""""""" */
+    for (i = len; i < max_col; i++)
+      fputc_safe(' ', stdout);
+    if (displayed_lines < win->max_lines)
       fputc_safe('\n', stdout);
-    }
-
-    (void)tputs(TPARM1(exit_attribute_mode), 1, outch);
-    switch (entries[index].attr)
-    {
-      case 'b': /* bold. */
-        if (term->has_bold)
-          (void)tputs(TPARM1(enter_bold_mode), 1, outch);
-        break;
-      case 'u': /* underline. */
-        if (term->has_underline)
-          (void)tputs(TPARM1(enter_underline_mode), 1, outch);
-        break;
-      case 'r': /* reverse. */
-        if (term->has_reverse)
-          (void)tputs(TPARM1(enter_reverse_mode), 1, outch);
-        else if (term->has_standout)
-          (void)tputs(TPARM1(enter_standout_mode), 1, outch);
-        break;
-      case 'n': /* no attributes. */
-        (void)tputs(TPARM1(exit_attribute_mode), 1, outch);
-        break;
-    }
-    fputs_safe(entries[index].str, stdout);
-    (void)tputs(TPARM1(exit_attribute_mode), 1, outch);
   }
-
-  /* Fill the remaining space with spaces. */
-  /* """"""""""""""""""""""""""""""""""""" */
-  (void)tputs(TPARM1(exit_attribute_mode), 1, outch);
-  for (i = len; i < max_col; i++)
-    fputc_safe(' ', stdout);
 
   /* Put back the cursor to its saved position. */
   /* """""""""""""""""""""""""""""""""""""""""" */
   (void)tputs(TPARM1(restore_cursor), 1, outch);
-
-  free(arrows);
 }
 
 /* *********************************** */
@@ -1533,7 +1747,7 @@ outch(char c)
 outch(int c)
 #endif
 {
-  putchar(c);
+  fputc_safe(c, stdout);
   return 1;
 }
 
@@ -8665,6 +8879,15 @@ main(int argc, char *argv[])
   /* """"""""""""""""""""" */
   struct itimerval periodic_itv; /* refresh rate for the timeout counter.    */
 
+  /* Used by the internal help system. */
+  /* """"""""""""""""""""""""""""""""" */
+  darray_t *help_items_da    = NULL;
+  darray_t *help_lines_da    = NULL;
+  int       first_help_line  = 0;
+  int       init_help_needed = 1; /* 1 if help lines need to be reevaluated. */
+
+  /* Other variables. */
+  /* """""""""""""""" */
   int    nb_rem_args = 0; /* Remaining non analyzed command line arguments.  */
   char **rem_args    = NULL; /* Remaining non analyzed command line          *
                               | arguments array.                             */
@@ -8904,6 +9127,8 @@ main(int argc, char *argv[])
   int col; /* absolute column position in terminal (1...) */
 
   int mouse_proto = -1;
+
+  help_items_da = darray_new(0);
 
   /* Initialize some internal data structures. */
   /* """"""""""""""""""""""""""""""""""""""""" */
@@ -13191,8 +13416,9 @@ main(int argc, char *argv[])
       int  line, column;
       int  original_message_lines;
 
-      got_winch_alrm = 0; /* Reset the flag signaling the need for a refresh. */
-      winch_timer    = -1; /* Disarm the timer used for this refresh.         */
+      got_winch_alrm = 0;  /* Reset the flag signaling the need for a *
+                            | a refresh.                              */
+      winch_timer    = -1; /* Disarm the timer used for this refresh. */
 
       if (message_lines_list != NULL && message_lines_list->len > 0)
         original_message_lines = message_lines_list->len + 1;
@@ -13343,6 +13569,14 @@ main(int argc, char *argv[])
       /* """""""""""""""""""""""" */
       get_cursor_position(&term.curs_line, &term.curs_column);
 
+      /* We need to trigger the rebuild of the help lines because of */
+      /* the geometry change.                                        */
+      /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+      init_help_needed = 1;
+      first_help_line  = 0;
+
+      help_mode = 0;
+
       /* Short-circuit the loop. */
       /* """"""""""""""""""""""" */
       continue;
@@ -13458,22 +13692,16 @@ main(int argc, char *argv[])
         setitimer(ITIMER_REAL, &periodic_itv, NULL);
       }
 
-      if (search_mode == NONE && help_mode && buffer[0] != '?')
-      {
-        got_help_alrm = 1;
-        continue;
-      }
-
       switch (buffer[0])
       {
         case 0x01: /* ^A */
-          if (search_mode != NONE)
+          if (!help_mode && search_mode != NONE)
             goto khome;
 
           break;
 
         case 0x1a: /* ^Z */
-          if (search_mode != NONE)
+          if (!help_mode && search_mode != NONE)
             goto kend;
 
           break;
@@ -13522,6 +13750,9 @@ main(int argc, char *argv[])
           {
             /* HOME key has been pressed. */
             /* """""""""""""""""""""""""" */
+            if (help_mode)
+              break;
+
             if (search_mode != NONE)
             {
             khome:
@@ -13573,6 +13804,9 @@ main(int argc, char *argv[])
           {
             /* END key has been pressed. */
             /* """"""""""""""""""""""""" */
+            if (help_mode)
+              break;
+
             if (search_mode != NONE)
             {
             kend:
@@ -13726,16 +13960,34 @@ main(int argc, char *argv[])
           {
             /* ESC key has been pressed. */
             /* """"""""""""""""""""""""" */
-            reset_search_buffer(&win,
-                                &search_data,
-                                &timers,
-                                &toggles,
-                                &term,
-                                &daccess,
-                                &langinfo,
-                                last_line,
-                                tmp_word,
-                                word_real_max_size);
+
+            /* Do not reset the search buffer when exiting the quick help */
+            /* using ESC.                                                 */
+            /* '''''''''''''''''''''''''''''''''''''''''''''''''''''''''' */
+            if (help_mode)
+              help_mode = 0;
+            else
+              reset_search_buffer(&win,
+                                  &search_data,
+                                  &timers,
+                                  &toggles,
+                                  &term,
+                                  &daccess,
+                                  &langinfo,
+                                  last_line,
+                                  tmp_word,
+                                  word_real_max_size);
+
+            nl = disp_lines(&win,
+                            &toggles,
+                            current,
+                            count,
+                            search_mode,
+                            &search_data,
+                            &term,
+                            last_line,
+                            tmp_word,
+                            &langinfo);
 
             /* Unmark the marked word. */
             /* """"""""""""""""""""""" */
@@ -13755,7 +14007,7 @@ main(int argc, char *argv[])
                 /* q or Q of ^C has been pressed. */
                 /* """""""""""""""""""""""""""""" */
 
-          if (search_mode != NONE && buffer[0] != 3)
+          if (!help_mode && search_mode != NONE && buffer[0] != 3)
             goto special_cmds_when_searching;
 
           {
@@ -13830,12 +14082,18 @@ main(int argc, char *argv[])
                           last_line,
                           tmp_word,
                           &langinfo);
+
+          if (help_mode)
+            disp_help(&win, &term, help_lines_da, first_help_line);
           break;
 
         case 'n':
         case ' ':
           /* n or the space bar has been pressed. */
           /* """""""""""""""""""""""""""""""""""" */
+          if (help_mode)
+            break;
+
           if (search_mode != NONE)
             goto special_cmds_when_searching;
 
@@ -13871,6 +14129,9 @@ main(int argc, char *argv[])
         case 'N':
           /* N has been pressed.*/
           /* """"""""""""""""""" */
+          if (help_mode)
+            break;
+
           if (search_mode != NONE)
             goto special_cmds_when_searching;
 
@@ -13906,6 +14167,9 @@ main(int argc, char *argv[])
         case 's':
           /* s has been pressed. */
           /* """"""""""""""""""" */
+          if (help_mode)
+            break;
+
           if (search_mode != NONE)
             goto special_cmds_when_searching;
 
@@ -13950,6 +14214,9 @@ main(int argc, char *argv[])
         case 'S':
           /* S has been pressed. */
           /* """"""""""""""""""" */
+          if (help_mode)
+            break;
+
           if (search_mode != NONE)
             goto special_cmds_when_searching;
 
@@ -14290,6 +14557,9 @@ main(int argc, char *argv[])
 
         ksol:
           /* Go to the start of the line. */
+          if (help_mode)
+            break;
+
           /* """""""""""""""""""""""""""" */
           search_mode = NONE;
 
@@ -14297,6 +14567,9 @@ main(int argc, char *argv[])
           /* """"""""""""" */
 
         case 'H':
+          if (help_mode)
+            break;
+
           if (search_mode == NONE)
           {
             if (win.col_mode || win.line_mode)
@@ -14348,12 +14621,18 @@ main(int argc, char *argv[])
         kl:
           /* Cursor Left key has been pressed. */
           /* """"""""""""""""""""""""""""""""" */
+          if (help_mode)
+            break;
+
           search_mode = NONE;
 
           /* Fall through. */
           /* """"""""""""" */
 
         case 'h':
+          if (help_mode)
+            break;
+
           if (search_mode == NONE)
             move_left(&win,
                       &term,
@@ -14371,6 +14650,9 @@ main(int argc, char *argv[])
         /* shift the window to the left if possible. */
         /* """"""""""""""""""""""""""""""""""""""""" */
         case '<':
+          if (help_mode)
+            break;
+
           if (search_mode == NONE)
             shift_left(&win,
                        &term,
@@ -14389,12 +14671,18 @@ main(int argc, char *argv[])
         keol:
           /* Go to the end of the line. */
           /* """""""""""""""""""""""""" */
+          if (help_mode)
+            break;
+
           search_mode = NONE;
 
           /* Fall through. */
           /* """"""""""""" */
 
         case 'L':
+          if (help_mode)
+            break;
+
           if (search_mode == NONE)
           {
             if (win.col_mode || win.line_mode)
@@ -14440,12 +14728,18 @@ main(int argc, char *argv[])
         kr:
           /* Right key has been pressed. */
           /* """"""""""""""""""""""""""" */
+          if (help_mode)
+            break;
+
           search_mode = NONE;
 
           /* Fall through. */
           /* """"""""""""" */
 
         case 'l':
+          if (help_mode)
+            break;
+
           if (search_mode == NONE)
             move_right(&win,
                        &term,
@@ -14463,6 +14757,9 @@ main(int argc, char *argv[])
         /* shift the window to the left if possible. */
         /* """"""""""""""""""""""""""""""""""""""""" */
         case '>':
+          if (help_mode)
+            break;
+
           if (search_mode == NONE)
             shift_right(&win,
                         &term,
@@ -14481,15 +14778,24 @@ main(int argc, char *argv[])
         case 0x0b:
           /* ^K key has been pressed. */
           /* """""""""""""""""""""""" */
+          if (help_mode)
+            break;
+
           goto kchome;
 
         case 'K':
+          if (help_mode)
+            break;
+
           if (search_mode != NONE)
             goto special_cmds_when_searching;
 
         kpp:
           /* PgUp key has been pressed. */
           /* """""""""""""""""""""""""" */
+          if (help_mode)
+            break;
+
           page = win.max_lines;
 
         ku:
@@ -14502,16 +14808,39 @@ main(int argc, char *argv[])
 
         case 'k':
           if (search_mode == NONE)
-            move_up(&win,
-                    &term,
-                    &toggles,
-                    &search_data,
-                    &langinfo,
-                    &nl,
-                    page,
-                    first_selectable,
-                    last_line,
-                    tmp_word);
+          {
+            if (help_mode)
+            {
+              int help_length = darray_get_length(help_lines_da);
+
+              if (help_length > win.max_lines && first_help_line > 0)
+              {
+                first_help_line--;
+                nl = disp_lines(&win,
+                                &toggles,
+                                current,
+                                count,
+                                search_mode,
+                                &search_data,
+                                &term,
+                                last_line,
+                                tmp_word,
+                                &langinfo);
+                disp_help(&win, &term, help_lines_da, first_help_line);
+              }
+            }
+            else
+              move_up(&win,
+                      &term,
+                      &toggles,
+                      &search_data,
+                      &langinfo,
+                      &nl,
+                      page,
+                      first_selectable,
+                      last_line,
+                      tmp_word);
+          }
           else
             goto special_cmds_when_searching;
 
@@ -14520,6 +14849,9 @@ main(int argc, char *argv[])
         kchome:
           /* Go to the first selectable word. */
           /* """""""""""""""""""""""""""""""" */
+          if (help_mode)
+            break;
+
           current = 0;
 
           search_mode = NONE;
@@ -14565,15 +14897,24 @@ main(int argc, char *argv[])
         case 0x0a:
           /* ^J key has been pressed. */
           /* """""""""""""""""""""""" */
+          if (help_mode)
+            break;
+
           goto kcend;
 
         case 'J':
+          if (help_mode)
+            break;
+
           if (search_mode != NONE)
             goto special_cmds_when_searching;
 
         knp:
           /* PgDn key has been pressed. */
           /* """""""""""""""""""""""""" */
+          if (help_mode)
+            break;
+
           page = win.max_lines;
 
         kd:
@@ -14586,16 +14927,39 @@ main(int argc, char *argv[])
 
         case 'j':
           if (search_mode == NONE)
-            move_down(&win,
-                      &term,
-                      &toggles,
-                      &search_data,
-                      &langinfo,
-                      &nl,
-                      page,
-                      last_selectable,
-                      last_line,
-                      tmp_word);
+          {
+            if (help_mode)
+            {
+              int help_length = darray_get_length(help_lines_da);
+
+              if (help_length > win.max_lines && first_help_line < help_length)
+              {
+                first_help_line++;
+                nl = disp_lines(&win,
+                                &toggles,
+                                current,
+                                count,
+                                search_mode,
+                                &search_data,
+                                &term,
+                                last_line,
+                                tmp_word,
+                                &langinfo);
+                disp_help(&win, &term, help_lines_da, first_help_line);
+              }
+            }
+            else
+              move_down(&win,
+                        &term,
+                        &toggles,
+                        &search_data,
+                        &langinfo,
+                        &nl,
+                        page,
+                        last_selectable,
+                        last_line,
+                        tmp_word);
+          }
           else
             goto special_cmds_when_searching;
 
@@ -14604,6 +14968,9 @@ main(int argc, char *argv[])
         kcend:
           /* Go to the last selectable word. */
           /* """"""""""""""""""""""""""""""" */
+          if (help_mode)
+            break;
+
           current = count - 1;
 
           search_mode = NONE;
@@ -14648,6 +15015,9 @@ main(int argc, char *argv[])
         case '/':
           /* Generic search method according the misc settings. */
           /* """""""""""""""""""""""""""""""""""""""""""""""""" */
+          if (help_mode)
+            break;
+
           if (misc.default_search_method == PREFIX)
             goto prefix_method;
           else if (misc.default_search_method == SUBSTRING)
@@ -14659,9 +15029,12 @@ main(int argc, char *argv[])
 
         case '~':
         case '*':
-        /* ~ or * key has been pressed        */
-        /* (start of a fuzzy search session). */
-        /* """""""""""""""""""""""""""""""""" */
+          /* ~ or * key has been pressed        */
+          /* (start of a fuzzy search session). */
+          /* """""""""""""""""""""""""""""""""" */
+          if (help_mode)
+            break;
+
         fuzzy_method:
 
           if (search_mode == NONE)
@@ -14708,9 +15081,12 @@ main(int argc, char *argv[])
 
         case '\'':
         case '\"':
-        /* ' or " key has been pressed            */
-        /* (start of a substring search session). */
-        /* """""""""""""""""""""""""""""""""""""" */
+          /* ' or " key has been pressed            */
+          /* (start of a substring search session). */
+          /* """""""""""""""""""""""""""""""""""""" */
+          if (help_mode)
+            break;
+
         substring_method:
 
           if (search_mode == NONE)
@@ -14757,9 +15133,12 @@ main(int argc, char *argv[])
 
         case '=':
         case '^':
-        /* ^ or = key has been pressed         */
-        /* (start of a prefix search session). */
-        /* """"""""""""""""""""""""""""""""""" */
+          /* ^ or = key has been pressed         */
+          /* (start of a prefix search session). */
+          /* """"""""""""""""""""""""""""""""""" */
+          if (help_mode)
+            break;
+
         prefix_method:
 
           if (search_mode == NONE)
@@ -14806,6 +15185,9 @@ main(int argc, char *argv[])
           break;
 
         kins:
+          if (help_mode)
+            break;
+
           /* The INS key has been pressed to tag a word if */
           /* tagging is enabled.                           */
           /* """"""""""""""""""""""""""""""""""""""""""""" */
@@ -14831,6 +15213,9 @@ main(int argc, char *argv[])
           break;
 
         kdel:
+          if (help_mode)
+            break;
+
           /* The DEL key has been pressed to untag a word if */
           /* tagging is enabled.                             */
           /* """"""""""""""""""""""""""""""""""""""""""""""" */
@@ -14858,6 +15243,9 @@ main(int argc, char *argv[])
           break;
 
         case 't':
+          if (help_mode)
+            break;
+
           /* t has been pressed to tag/untag a word if */
           /* tagging is enabled.                       */
           /* """"""""""""""""""""""""""""""""""""""""" */
@@ -14896,6 +15284,9 @@ main(int argc, char *argv[])
           break;
 
         case 'u':
+          if (help_mode)
+            break;
+
           /* u has been pressed to untag a word if */
           /* tagging is enabled.                   */
           /* """"""""""""""""""""""""""""""""""""" */
@@ -14928,6 +15319,9 @@ main(int argc, char *argv[])
         case 20:
           /* (CTRL-t) Remove all tags. */
           /* """"""""""""""""""""""""" */
+          if (help_mode)
+            break;
+
           if (search_mode == NONE)
           {
             if (toggles.taggable && (win.next_tag_id > 1 || marked >= 0))
@@ -14960,8 +15354,11 @@ main(int argc, char *argv[])
 
         tag_column:
         case 'c':
-          /* Tag/untag all the words in the current column. */
-          /* """""""""""""""""""""""""""""""""""""""""""""" */
+          if (help_mode)
+            break;
+
+          /* Tag all the words in the current column. */
+          /* """""""""""""""""""""""""""""""""""""""" */
           if (search_mode == NONE)
           {
             if (toggles.taggable || toggles.pinable)
@@ -15078,6 +15475,9 @@ main(int argc, char *argv[])
           /* Allow to tag part of a column, the first invocation marks    */
           /* the starting word and the second marks the words in between. */
           /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+          if (help_mode)
+            break;
+
           if (search_mode == NONE)
           {
             /* Mark the first word is not already marked. */
@@ -15099,8 +15499,11 @@ main(int argc, char *argv[])
 
         tag_line:
         case 'r':
-          /* Tag/untag all the words in the current line. */
-          /* """""""""""""""""""""""""""""""""""""""""""" */
+          /* Tag all the words in the current line. */
+          /* """""""""""""""""""""""""""""""""""""" */
+          if (help_mode)
+            break;
+
           if (search_mode == NONE)
           {
             if (toggles.taggable || toggles.pinable)
@@ -15203,6 +15606,9 @@ main(int argc, char *argv[])
           /* Make sure that all the words in the current line */
           /* are not tagged.                                  */
           /* """""""""""""""""""""""""""""""""""""""""""""""" */
+          if (help_mode)
+            break;
+
           if (search_mode == NONE)
           {
             if (!win.col_mode && !win.line_mode)
@@ -15224,6 +15630,9 @@ main(int argc, char *argv[])
         case 'm':
           /* Mark the current word (ESC clears the mark). */
           /* """""""""""""""""""""""""""""""""""""""""""" */
+          if (help_mode)
+            break;
+
           if (search_mode == NONE)
           {
             if (toggles.taggable)
@@ -15248,6 +15657,9 @@ main(int argc, char *argv[])
 
         unmark_word:
         case 'M':
+          if (help_mode)
+            break;
+
           /* unmark the current word (ESC clears the mark). */
           /* """""""""""""""""""""""""""""""""""""""""""""" */
           if (search_mode == NONE)
@@ -15277,6 +15689,9 @@ main(int argc, char *argv[])
           /* T has been pressed to tag all matching words resulting */
           /* from a previous search if tagging is enabled.          */
           /* """""""""""""""""""""""""""""""""""""""""""""""""""""" */
+          if (help_mode)
+            break;
+
           if (search_mode == NONE)
           {
             if (toggles.taggable)
@@ -15387,6 +15802,9 @@ main(int argc, char *argv[])
         case 'Z':
           /* Z has been pressed to tag consecutive word in a given zone . */
           /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+          if (help_mode)
+            break;
+
           if (search_mode == NONE)
           {
             if (toggles.taggable)
@@ -15437,6 +15855,9 @@ main(int argc, char *argv[])
         case 'U':
           /* U has been pressed to undo the last tagging operation. */
           /* """""""""""""""""""""""""""""""""""""""""""""""""""""" */
+          if (help_mode)
+            break;
+
           if (search_mode == NONE)
           {
             if (toggles.taggable)
@@ -15488,6 +15909,9 @@ main(int argc, char *argv[])
           /* A digit has been pressed to build a number to be used for */
           /* A direct access to a words if direct access is enabled.   */
           /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+          if (help_mode)
+            break;
+
           {
             if (search_mode == NONE && daccess.mode != DA_TYPE_NONE)
             {
@@ -15568,6 +15992,9 @@ main(int argc, char *argv[])
         case 0x7f: /* BS */
           /* backspace/CTRL-H management. */
           /* """""""""""""""""""""""""""" */
+          if (help_mode)
+            break;
+
           {
             long i;
 
@@ -15679,9 +16106,42 @@ main(int argc, char *argv[])
         case '?':
           /* Help mode. */
           /* """""""""" */
+          if (help_mode)
+          {
+            help_timer = timers.help; /* Rearm the timer; */
+            if (first_help_line > 0)
+              first_help_line = 0;
+            else
+              break;
+          }
+
           if (search_mode == NONE)
           {
-            help(&win, &term, last_line);
+            if (init_help_needed)
+            {
+              /* (Re-)Initialise the content of the internal help system. */
+              /* """""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+              if (help_lines_da != NULL)
+              {
+                int length = darray_get_length(help_lines_da);
+                int i;
+
+                for (i = 0; i < length; i++)
+                  darray_free(darray_get(help_lines_da, i), NULL);
+                darray_free(help_lines_da, NULL);
+
+                help_lines_da = darray_new(0);
+              }
+
+              help_lines_da    = init_help(&win,
+                                        &term,
+                                        &toggles,
+                                        last_line,
+                                        help_items_da);
+              init_help_needed = 0;
+            }
+
+            disp_help(&win, &term, help_lines_da, first_help_line);
             help_mode = 1;
 
             /* Arm the help timer. */
@@ -15693,278 +16153,183 @@ main(int argc, char *argv[])
           break;
 
         kmouse:
-        {
-          long          new_current;
-          unsigned int  iCb, iCx, iCy;
-          unsigned char cCb, cCx, cCy;
-          char          action;
-
-          int state;
-          int button, old_button;
-          int line_click;
-          int column_click;
-          int error;
-
-          long old_current = current;
-
-          struct timespec actual_click_ts;
-
-          switch (mouse_proto)
-          {
-            case MOUSE1006:
-              if (sscanf((char *)buffer + 3,
-                         "%u;%u;%u%c",
-                         &iCb,
-                         &iCx,
-                         &iCy,
-                         &action)
-                  != 4)
-                goto ignore_mouse_event;
-
-              state        = iCb & ~3;
-              button       = iCb & 3;
-              line_click   = iCy;
-              column_click = iCx;
-
-              /* Only consider button click (not release) events. */
-              /* """""""""""""""""""""""""""""""""""""""""""""""" */
-              if (action == 'm') /* released. */
-                goto ignore_mouse_event;
-
-              break;
-
-            case MOUSE1015:
-              if (sscanf((char *)buffer + 2,
-                         "%u;%u;%u%c",
-                         &iCb,
-                         &iCx,
-                         &iCy,
-                         &action)
-                  != 4)
-                goto ignore_mouse_event;
-
-              state        = (iCb - 32) & ~3;
-              button       = (iCb - 32) & 3;
-              line_click   = iCy;
-              column_click = iCx;
-
-              /* Only consider button click (not release) events. */
-              /* """""""""""""""""""""""""""""""""""""""""""""""" */
-              if (state == 0 && button == 3) /* released. */
-                goto ignore_mouse_event;
-
-              break;
-
-            case MOUSE1000:
-              if (sscanf((char *)buffer + 3, "%c%c%c", &cCb, &cCx, &cCy) != 3)
-                goto ignore_mouse_event;
-
-              state        = (cCb - 32) & ~3;
-              button       = (cCb - 32) & 3;
-              line_click   = cCy - 32;
-              column_click = cCx - 32;
-
-              /* Only consider button click (not release) events. */
-              /* """""""""""""""""""""""""""""""""""""""""""""""" */
-              if (button == 3) /* released. */
-                goto ignore_mouse_event;
-
-              break;
-
-            default:
-              goto ignore_mouse_event;
-          }
-
-          /* Mouse Button remapping. */
-          /* """"""""""""""""""""""" */
-          old_button = button;
-          button     = mouse.button[button] - 1;
-          long clicked_line;
-          int  clicked_arrow;
-
-          /* Only buttons 0,1 and 2 are considered for clicks. */
-          /* """"""""""""""""""""""""""""""""""""""""""""""""" */
-          if (button < 0 || button > 2)
-            goto ignore_mouse_event;
-
-          /* Do not do anything if the user has above or below the window. */
-          /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-          if (line_click < term.curs_line
-              || line_click
-                   >= term.curs_line + win.max_lines + (win.has_hbar ? 1 : 0))
+          if (help_mode)
             break;
 
-          /* Mouse wheel scroll down. */
-          /* """""""""""""""""""""""" */
-          if (state == 64 && old_button == 1)
-            goto kd; /* down arrow. */
-
-          /* Mouse wheel scroll down + CTRL. */
-          /* """"""""""""""""""""""""""""""" */
-          if (state == 80 && old_button == 1)
-            goto knp; /* PgDn. */
-
-          /* Mouse wheel scroll up. */
-          /* """""""""""""""""""""" */
-          if (state == 64 && old_button == 0)
-            goto ku; /* up arrow. */
-
-          /* Mouse wheel scroll up + CTRL. */
-          /* """"""""""""""""""""""""""""" */
-          if (state == 80 && old_button == 0)
-            goto kpp; /* PgUp. */
-
-          /* Manage the clicks at the ends of the vertical scroll bar. */
-          /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-          if (button == 0 && column_click == win.sb_column + 1)
           {
-            if (line_click == term.curs_line + win.max_lines - 1)
+            long          new_current;
+            unsigned int  iCb, iCx, iCy;
+            unsigned char cCb, cCx, cCy;
+            char          action;
+
+            int state;
+            int button, old_button;
+            int line_click;
+            int column_click;
+            int error;
+
+            long old_current = current;
+
+            struct timespec actual_click_ts;
+
+            switch (mouse_proto)
             {
-              if (state == 16)
-                goto knp; /* PgDn. */
-              if (state == 0)
-                goto kd; /* down arrow. */
+              case MOUSE1006:
+                if (sscanf((char *)buffer + 3,
+                           "%u;%u;%u%c",
+                           &iCb,
+                           &iCx,
+                           &iCy,
+                           &action)
+                    != 4)
+                  goto ignore_mouse_event;
+
+                state        = iCb & ~3;
+                button       = iCb & 3;
+                line_click   = iCy;
+                column_click = iCx;
+
+                /* Only consider button click (not release) events. */
+                /* """""""""""""""""""""""""""""""""""""""""""""""" */
+                if (action == 'm') /* released. */
+                  goto ignore_mouse_event;
+
+                break;
+
+              case MOUSE1015:
+                if (sscanf((char *)buffer + 2,
+                           "%u;%u;%u%c",
+                           &iCb,
+                           &iCx,
+                           &iCy,
+                           &action)
+                    != 4)
+                  goto ignore_mouse_event;
+
+                state        = (iCb - 32) & ~3;
+                button       = (iCb - 32) & 3;
+                line_click   = iCy;
+                column_click = iCx;
+
+                /* Only consider button click (not release) events. */
+                /* """""""""""""""""""""""""""""""""""""""""""""""" */
+                if (state == 0 && button == 3) /* released. */
+                  goto ignore_mouse_event;
+
+                break;
+
+              case MOUSE1000:
+                if (sscanf((char *)buffer + 3, "%c%c%c", &cCb, &cCx, &cCy) != 3)
+                  goto ignore_mouse_event;
+
+                state        = (cCb - 32) & ~3;
+                button       = (cCb - 32) & 3;
+                line_click   = cCy - 32;
+                column_click = cCx - 32;
+
+                /* Only consider button click (not release) events. */
+                /* """""""""""""""""""""""""""""""""""""""""""""""" */
+                if (button == 3) /* released. */
+                  goto ignore_mouse_event;
+
+                break;
+
+              default:
+                goto ignore_mouse_event;
             }
-            else if (line_click == term.curs_line)
+
+            /* Mouse Button remapping. */
+            /* """"""""""""""""""""""" */
+            old_button = button;
+            button     = mouse.button[button] - 1;
+            long clicked_line;
+            int  clicked_arrow;
+
+            /* Only buttons 0,1 and 2 are considered for clicks. */
+            /* """"""""""""""""""""""""""""""""""""""""""""""""" */
+            if (button < 0 || button > 2)
+              goto ignore_mouse_event;
+
+            /* Do not do anything if the user has above or below the window. */
+            /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+            if (line_click < term.curs_line
+                || line_click
+                     >= term.curs_line + win.max_lines + (win.has_hbar ? 1 : 0))
+              break;
+
+            /* Mouse wheel scroll down. */
+            /* """""""""""""""""""""""" */
+            if (state == 64 && old_button == 1)
+              goto kd; /* down arrow. */
+
+            /* Mouse wheel scroll down + CTRL. */
+            /* """"""""""""""""""""""""""""""" */
+            if (state == 80 && old_button == 1)
+              goto knp; /* PgDn. */
+
+            /* Mouse wheel scroll up. */
+            /* """""""""""""""""""""" */
+            if (state == 64 && old_button == 0)
+              goto ku; /* up arrow. */
+
+            /* Mouse wheel scroll up + CTRL. */
+            /* """"""""""""""""""""""""""""" */
+            if (state == 80 && old_button == 0)
+              goto kpp; /* PgUp. */
+
+            /* Manage the clicks at the ends of the vertical scroll bar. */
+            /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+            if (button == 0 && column_click == win.sb_column + 1)
             {
-              if (state == 16)
-                goto kpp; /* PgUp. */
-              if (state == 0)
-                goto ku; /* up arrow. */
-            }
-            else if (line_click > term.curs_line
-                     && line_click < term.curs_line + win.max_lines - 1)
-            {
-              float ratio; /* cursor ratio in the between the extremities *
+              if (line_click == term.curs_line + win.max_lines - 1)
+              {
+                if (state == 16)
+                  goto knp; /* PgDn. */
+                if (state == 0)
+                  goto kd; /* down arrow. */
+              }
+              else if (line_click == term.curs_line)
+              {
+                if (state == 16)
+                  goto kpp; /* PgUp. */
+                if (state == 0)
+                  goto ku; /* up arrow. */
+              }
+              else if (line_click > term.curs_line
+                       && line_click < term.curs_line + win.max_lines - 1)
+              {
+                float ratio; /* cursor ratio in the between the extremities *
                             | of the scroll bar.                          */
 
-              if (win.max_lines > 3)
-              {
-                float corr; /* scaling correction. */
-                long  line; /* new selected line.  */
-
-                corr  = (float)(win.max_lines - 2) / (win.max_lines - 3);
-                ratio = (float)(line_click - term.curs_line - 1)
-                        / (win.max_lines - 2);
-
-                /* Find the location of the new current word based on  */
-                /* the position of the cursor in the scroll bar.       */
-                /* """"""""""""""""""""""""""""""""""""""""""""""""""" */
-                line    = ratio * corr * line_nb_of_word_a[count - 1];
-                current = first_word_in_line_a[line];
-
-                /* Make sure the new current word is selectable. */
-                /* """"""""""""""""""""""""""""""""""""""""""""" */
-                if (current < first_selectable)
-                  current = first_selectable;
-
-                if (current > last_selectable)
-                  current = last_selectable;
-
-                while (!word_a[current].is_selectable)
-                  current++;
-
-                /* Display the window. */
-                /* """"""""""""""""""" */
-                last_line = build_metadata(&term, count, &win);
-
-                set_new_first_column(&win, &term);
-
-                nl = disp_lines(&win,
-                                &toggles,
-                                current,
-                                count,
-                                search_mode,
-                                &search_data,
-                                &term,
-                                last_line,
-                                tmp_word,
-                                &langinfo);
-              }
-            }
-          }
-          else
-            /* Manage the clicks in the horizontal scroll bar. */
-            /* """"""""""""""""""""""""""""""""""""""""""""""" */
-            if (win.has_hbar && button == 0
-                && line_click == term.curs_line + win.max_lines)
-            {
-              long wi; /* Word index. */
-              long line = line_nb_of_word_a[current];
-              long leftmost;
-              long rightmost;
-              int  leftmost_start;
-              int  rightmost_end;
-
-              /* Find the first selectable word in the line */
-              /* containing the cursor.                     */
-              /* """""""""""""""""""""""""""""""""""""""""" */
-              wi = first_word_in_line_a[line];
-
-              while (!word_a[wi].is_selectable)
-                wi++;
-
-              leftmost       = wi;
-              leftmost_start = word_a[leftmost].start;
-
-              if (column_click == 1)
-              {
-                /* First, manage the case where the user clicked at the */
-                /* beginning of the scroll bar.                         */
-                /* """""""""""""""""""""""""""""""""""""""""""""""""""" */
-                if (current > leftmost && word_a[current].start > 0)
-                  goto kl;
-              }
-
-              /* Else we need to calculate the rightmost selectable word */
-              /* in the line containing the cursor.                      */
-              /* """"""""""""""""""""""""""""""""""""""""""""""""""""""" */
-              else if (line == last_line)
-                wi = count - 1;
-              else
-                wi = first_word_in_line_a[line + 1] - 1;
-
-              while (!word_a[wi].is_selectable)
-                wi--;
-
-              rightmost = wi;
-
-              /* Manage the case where the users clicked at the end */
-              /* of the scroll bar.                                 */
-              /* """""""""""""""""""""""""""""""""""""""""""""""""" */
-              if (column_click == term.ncolumns - 1)
-                if (current < rightmost && current < count - 1
-                    && word_a[current + 1].start > 0)
-                  goto kr;
-
-              /* Finally manage the core where the users clicked in */
-              /* the crossbar.                                      */
-              /* """""""""""""""""""""""""""""""""""""""""""""""""" */
-              rightmost_end = word_a[rightmost].end;
-
-              {
-                long   index;
-                int    target;
-                double ratio;
-
-                if (column_click >= 2 && column_click - 2 <= term.ncolumns - 4)
+                if (win.max_lines > 3)
                 {
-                  ratio  = (1.0 * column_click - 2) / (term.ncolumns - 4);
-                  target = (int)((rightmost_end - leftmost_start + 1) * ratio)
-                           + leftmost_start;
+                  float corr; /* scaling correction. */
+                  long  line; /* new selected line.  */
 
-                  if (target > 0) /* General case. */
-                  {
-                    if (word_a[current].start <= target)
-                      index = current;
-                    else
-                      index = leftmost;
+                  corr  = (float)(win.max_lines - 2) / (win.max_lines - 3);
+                  ratio = (float)(line_click - term.curs_line - 1)
+                          / (win.max_lines - 2);
 
-                    while (index <= rightmost && word_a[index].start <= target)
-                      current = index++;
-                  }
-                  else /* Trivial case. */
-                    current = leftmost;
+                  /* Find the location of the new current word based on  */
+                  /* the position of the cursor in the scroll bar.       */
+                  /* """"""""""""""""""""""""""""""""""""""""""""""""""" */
+                  line    = ratio * corr * line_nb_of_word_a[count - 1];
+                  current = first_word_in_line_a[line];
+
+                  /* Make sure the new current word is selectable. */
+                  /* """"""""""""""""""""""""""""""""""""""""""""" */
+                  if (current < first_selectable)
+                    current = first_selectable;
+
+                  if (current > last_selectable)
+                    current = last_selectable;
+
+                  while (!word_a[current].is_selectable)
+                    current++;
+
+                  /* Display the window. */
+                  /* """"""""""""""""""" */
+                  last_line = build_metadata(&term, count, &win);
 
                   set_new_first_column(&win, &term);
 
@@ -15980,110 +16345,94 @@ main(int argc, char *argv[])
                                   &langinfo);
                 }
               }
-
-              break;
             }
             else
-
-              /* Manage clicks on the horizontal arrows in lines if any. */
-              /* """"""""""""""""""""""""""""""""""""""""""""""""""""""" */
-              if (win.has_truncated_lines
-                  && shift_arrow_clicked(&win,
-                                         &term,
-                                         line_click,
-                                         column_click,
-                                         &clicked_line,
-                                         &clicked_arrow))
+              /* Manage the clicks in the horizontal scroll bar. */
+              /* """"""""""""""""""""""""""""""""""""""""""""""" */
+              if (win.has_hbar && button == 0
+                  && line_click == term.curs_line + win.max_lines)
               {
-                if (button == 0)
-                  switch (clicked_arrow)
-                  {
-                    case 0: /* left */
-                      shift_left(&win,
-                                 &term,
-                                 &toggles,
-                                 &search_data,
-                                 &langinfo,
-                                 &nl,
-                                 last_line,
-                                 tmp_word,
-                                 clicked_line);
-                      break;
+                long wi; /* Word index. */
+                long line = line_nb_of_word_a[current];
+                long leftmost;
+                long rightmost;
+                int  leftmost_start;
+                int  rightmost_end;
 
-                    case 1: /* right */
-                      shift_right(&win,
-                                  &term,
-                                  &toggles,
-                                  &search_data,
-                                  &langinfo,
-                                  &nl,
-                                  last_line,
-                                  tmp_word,
-                                  clicked_line);
-                      break;
-                  }
-                nl = disp_lines(&win,
-                                &toggles,
-                                current,
-                                count,
-                                search_mode,
-                                &search_data,
-                                &term,
-                                last_line,
-                                tmp_word,
-                                &langinfo);
-              }
-              else
-              {
-                /* Get the new current word on click. */
-                /* """""""""""""""""""""""""""""""""" */
-                error       = 0;
-                new_current = get_clicked_index(&win,
-                                                &term,
-                                                line_click,
-                                                column_click,
-                                                &error);
+                /* Find the first selectable word in the line */
+                /* containing the cursor.                     */
+                /* """""""""""""""""""""""""""""""""""""""""" */
+                wi = first_word_in_line_a[line];
 
-                /* Update the selection index and refresh if needed. */
-                /* """"""""""""""""""""""""""""""""""""""""""""""""" */
-                if ((toggles.taggable || toggles.pinable
-                     || new_current != current)
-                    && error == 0)
+                while (!word_a[wi].is_selectable)
+                  wi++;
+
+                leftmost       = wi;
+                leftmost_start = word_a[leftmost].start;
+
+                if (column_click == 1)
                 {
-                  current = new_current;
+                  /* First, manage the case where the user clicked at the */
+                  /* beginning of the scroll bar.                         */
+                  /* """""""""""""""""""""""""""""""""""""""""""""""""""" */
+                  if (current > leftmost && word_a[current].start > 0)
+                    goto kl;
+                }
 
-                  /* Manage the marking of a word.          */
-                  /* (button 0 + CTRL or button 2 pressed). */
-                  /* """""""""""""""""""""""""""""""""""""" */
-                  if ((button == 0 && state == 16)
-                      && (toggles.taggable || toggles.pinable))
+                /* Else we need to calculate the rightmost selectable word */
+                /* in the line containing the cursor.                      */
+                /* """"""""""""""""""""""""""""""""""""""""""""""""""""""" */
+                else if (line == last_line)
+                  wi = count - 1;
+                else
+                  wi = first_word_in_line_a[line + 1] - 1;
+
+                while (!word_a[wi].is_selectable)
+                  wi--;
+
+                rightmost = wi;
+
+                /* Manage the case where the users clicked at the end */
+                /* of the scroll bar.                                 */
+                /* """""""""""""""""""""""""""""""""""""""""""""""""" */
+                if (column_click == term.ncolumns - 1)
+                  if (current < rightmost && current < count - 1
+                      && word_a[current + 1].start > 0)
+                    goto kr;
+
+                /* Finally manage the core where the users clicked in */
+                /* the crossbar.                                      */
+                /* """""""""""""""""""""""""""""""""""""""""""""""""" */
+                rightmost_end = word_a[rightmost].end;
+
+                {
+                  long   index;
+                  int    target;
+                  double ratio;
+
+                  if (column_click >= 2
+                      && column_click - 2 <= term.ncolumns - 4)
                   {
-                    if (marked == -1)
-                      goto mark_word;
-                    else
-                      goto unmark_word;
-                  }
+                    ratio  = (1.0 * column_click - 2) / (term.ncolumns - 4);
+                    target = (int)((rightmost_end - leftmost_start + 1) * ratio)
+                             + leftmost_start;
 
-                  /* Manage the tagging of a word.          */
-                  /* (button 2 + CTRL or button 2 pressed). */
-                  /* """""""""""""""""""""""""""""""""""""" */
-                  if ((button == 2 && state == 0)
-                      && (toggles.taggable || toggles.pinable))
-                  {
-                    if (word_a[current].tag_id > 0)
-                      goto kdel;
-                    else
-                      goto kins;
-                  }
+                    if (target > 0) /* General case. */
+                    {
+                      if (word_a[current].start <= target)
+                        index = current;
+                      else
+                        index = leftmost;
 
-                  if ((button == 2 && state == 16)
-                      && (toggles.taggable || toggles.pinable))
-                    goto adaptative_tag_to_mark; /* Like 'Z' keyboard command. */
+                      while (index <= rightmost
+                             && word_a[index].start <= target)
+                        current = index++;
+                    }
+                    else /* Trivial case. */
+                      current = leftmost;
 
-                  /* Redisplay the new window if the first button was pressed   */
-                  /* otherwise reset the cursor position to its previous value. */
-                  /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-                  if (button == 0 || button == 2)
+                    set_new_first_column(&win, &term);
+
                     nl = disp_lines(&win,
                                     &toggles,
                                     current,
@@ -16094,134 +16443,277 @@ main(int argc, char *argv[])
                                     last_line,
                                     tmp_word,
                                     &langinfo);
-                  else
-                    current = old_current;
-                }
-
-                /* Manage double clicks if the clicked word is selectable. */
-                /* """"""""""""""""""""""""""""""""""""""""""""""""""""""" */
-                if (!disable_double_click && button == 0)
-                {
-                  /* More than one clicks on the same word? */
-                  /* """""""""""""""""""""""""""""""""""""" */
-                  if (click_nr > 0 && old_current == current)
-                  {
-                    double delay;
-
-                    /* Get the delay between the actual click and */
-                    /* the previous one.                          */
-                    /* """""""""""""""""""""""""""""""""""""""""" */
-                    clock_gettime(CLOCK_MONOTONIC, &actual_click_ts);
-                    delay = (1000.0 * actual_click_ts.tv_sec
-                             + 1e-6 * actual_click_ts.tv_nsec)
-                            - (1000.0 * last_click_ts.tv_sec
-                               + 1e-6 * last_click_ts.tv_nsec);
-
-                    if (!error && delay > 0
-                        && delay <= mouse.double_click_delay)
-                      goto enter; /* Press Enter. */
-                    else
-                      clock_gettime(CLOCK_MONOTONIC, &last_click_ts);
-                  }
-                  else
-                  {
-                    /* The first click on a selectable was not make yet. */
-                    /* """"""""""""""""""""""""""""""""""""""""""""""""" */
-                    clock_gettime(CLOCK_MONOTONIC, &last_click_ts);
-
-                    if (!error)
-                      click_nr = 1;
                   }
                 }
+
+                break;
               }
-        }
+              else
+                /* Manage clicks on the horizontal arrows in lines if any. */
+                /* """"""""""""""""""""""""""""""""""""""""""""""""""""""" */
+                if (win.has_truncated_lines
+                    && shift_arrow_clicked(&win,
+                                           &term,
+                                           line_click,
+                                           column_click,
+                                           &clicked_line,
+                                           &clicked_arrow))
+                {
+                  if (button == 0)
+                    switch (clicked_arrow)
+                    {
+                      case 0: /* left */
+                        shift_left(&win,
+                                   &term,
+                                   &toggles,
+                                   &search_data,
+                                   &langinfo,
+                                   &nl,
+                                   last_line,
+                                   tmp_word,
+                                   clicked_line);
+                        break;
+
+                      case 1: /* right */
+                        shift_right(&win,
+                                    &term,
+                                    &toggles,
+                                    &search_data,
+                                    &langinfo,
+                                    &nl,
+                                    last_line,
+                                    tmp_word,
+                                    clicked_line);
+                        break;
+                    }
+                  nl = disp_lines(&win,
+                                  &toggles,
+                                  current,
+                                  count,
+                                  search_mode,
+                                  &search_data,
+                                  &term,
+                                  last_line,
+                                  tmp_word,
+                                  &langinfo);
+                }
+                else
+                {
+                  /* Get the new current word on click. */
+                  /* """""""""""""""""""""""""""""""""" */
+                  error       = 0;
+                  new_current = get_clicked_index(&win,
+                                                  &term,
+                                                  line_click,
+                                                  column_click,
+                                                  &error);
+
+                  /* Update the selection index and refresh if needed. */
+                  /* """"""""""""""""""""""""""""""""""""""""""""""""" */
+                  if ((toggles.taggable || toggles.pinable
+                       || new_current != current)
+                      && error == 0)
+                  {
+                    current = new_current;
+
+                    /* Manage the marking of a word.          */
+                    /* (button 0 + CTRL or button 2 pressed). */
+                    /* """""""""""""""""""""""""""""""""""""" */
+                    if ((button == 0 && state == 16)
+                        && (toggles.taggable || toggles.pinable))
+                    {
+                      if (marked == -1)
+                        goto mark_word;
+                      else
+                        goto unmark_word;
+                    }
+
+                    /* Manage the tagging of a word.          */
+                    /* (button 2 + CTRL or button 2 pressed). */
+                    /* """""""""""""""""""""""""""""""""""""" */
+                    if ((button == 2 && state == 0)
+                        && (toggles.taggable || toggles.pinable))
+                    {
+                      if (word_a[current].tag_id > 0)
+                        goto kdel;
+                      else
+                        goto kins;
+                    }
+
+                    if ((button == 2 && state == 16)
+                        && (toggles.taggable || toggles.pinable))
+                      goto adaptative_tag_to_mark; /* Like 'Z' keyboard command. */
+
+                    /* Redisplay the new window if the first button was pressed   */
+                    /* otherwise reset the cursor position to its previous value. */
+                    /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+                    if (button == 0 || button == 2)
+                      nl = disp_lines(&win,
+                                      &toggles,
+                                      current,
+                                      count,
+                                      search_mode,
+                                      &search_data,
+                                      &term,
+                                      last_line,
+                                      tmp_word,
+                                      &langinfo);
+                    else
+                      current = old_current;
+                  }
+
+                  /* Manage double clicks if the clicked word is selectable. */
+                  /* """"""""""""""""""""""""""""""""""""""""""""""""""""""" */
+                  if (!disable_double_click && button == 0)
+                  {
+                    /* More than one clicks on the same word? */
+                    /* """""""""""""""""""""""""""""""""""""" */
+                    if (click_nr > 0 && old_current == current)
+                    {
+                      double delay;
+
+                      /* Get the delay between the actual click and */
+                      /* the previous one.                          */
+                      /* """""""""""""""""""""""""""""""""""""""""" */
+                      clock_gettime(CLOCK_MONOTONIC, &actual_click_ts);
+                      delay = (1000.0 * actual_click_ts.tv_sec
+                               + 1e-6 * actual_click_ts.tv_nsec)
+                              - (1000.0 * last_click_ts.tv_sec
+                                 + 1e-6 * last_click_ts.tv_nsec);
+
+                      if (!error && delay > 0
+                          && delay <= mouse.double_click_delay)
+                        goto enter; /* Press Enter. */
+                      else
+                        clock_gettime(CLOCK_MONOTONIC, &last_click_ts);
+                    }
+                    else
+                    {
+                      /* The first click on a selectable was not make yet. */
+                      /* """"""""""""""""""""""""""""""""""""""""""""""""" */
+                      clock_gettime(CLOCK_MONOTONIC, &last_click_ts);
+
+                      if (!error)
+                        click_nr = 1;
+                    }
+                  }
+                }
+          }
 
         ignore_mouse_event:
           break;
 
         special_cmds_when_searching:
         default:
-        {
-          int        c; /* byte index in the scancode string .*/
-          sub_tst_t *sub_tst_data;
-          long       i;
+          if (help_mode)
+            break;
 
-          if (search_mode != NONE)
           {
-            long       old_len      = search_data.len;
-            long       old_utf8_len = search_data.utf8_len;
-            ll_node_t *node;
-            wchar_t   *ws;
+            int        c; /* byte index in the scancode string .*/
+            sub_tst_t *sub_tst_data;
+            long       i;
 
-            /* Copy all the bytes included in the key press to buffer. */
-            /* """"""""""""""""""""""""""""""""""""""""""""""""""""""" */
-            if (buffer[0] != 0x08 && buffer[0] != 0x7f) /* Backspace. */
+            if (search_mode != NONE)
             {
-              /* The only case where we have to manage backspace hits */
-              /* here is if the user has entered them in fuzzy search */
-              /* mode. As the search buffer has already been amended, */
-              /* we do not have to update the search buffer again.    */
-              /* '''''''''''''''''''''''''''''''''''''''''''''''''''' */
-              for (c = 0; c < sc
-                          && search_data.utf8_len
-                               < word_real_max_size - daccess.flength;
-                   c++)
-                search_data.buf[search_data.len++] = buffer[c];
+              long       old_len      = search_data.len;
+              long       old_utf8_len = search_data.utf8_len;
+              ll_node_t *node;
+              wchar_t   *ws;
 
-              /* Update the glyph array with the content of the search */
-              /* buffer.                                               */
-              /* """"""""""""""""""""""""""""""""""""""""""""""""""""" */
-              if (search_data.utf8_len < word_real_max_size - daccess.flength)
+              /* Copy all the bytes included in the key press to buffer. */
+              /* """"""""""""""""""""""""""""""""""""""""""""""""""""""" */
+              if (buffer[0] != 0x08 && buffer[0] != 0x7f) /* Backspace. */
               {
-                search_data.utf8_off_a[search_data.utf8_len] = old_len;
-                search_data.utf8_len_a[search_data.utf8_len] = search_data.len
-                                                               - old_len;
-                search_data.utf8_len++;
-              }
-            }
+                /* The only case where we have to manage backspace hits */
+                /* here is if the user has entered them in fuzzy search */
+                /* mode. As the search buffer has already been amended, */
+                /* we do not have to update the search buffer again.    */
+                /* '''''''''''''''''''''''''''''''''''''''''''''''''''' */
+                for (c = 0; c < sc
+                            && search_data.utf8_len
+                                 < word_real_max_size - daccess.flength;
+                     c++)
+                  search_data.buf[search_data.len++] = buffer[c];
 
-            /* Restart the search timer. */
-            /* """"""""""""""""""""""""" */
-            search_timer = timers.search; /* default 10 s. */
-
-            if (search_mode == PREFIX)
-            {
-              ws = utf8_strtowcs(search_data.buf);
-
-              /* Purge the matching words list. */
-              /* """""""""""""""""""""""""""""" */
-              for (i = 0; i < matches_count; i++)
-              {
-                long n = matching_words_a[i];
-
-                word_a[n].is_matching = 0;
-
-                memset(word_a[n].bitmap,
-                       '\0',
-                       (word_a[n].mb - daccess.flength) / CHAR_BIT + 1);
+                /* Update the glyph array with the content of the search */
+                /* buffer.                                               */
+                /* """"""""""""""""""""""""""""""""""""""""""""""""""""" */
+                if (search_data.utf8_len < word_real_max_size - daccess.flength)
+                {
+                  search_data.utf8_off_a[search_data.utf8_len] = old_len;
+                  search_data.utf8_len_a[search_data.utf8_len] = search_data.len
+                                                                 - old_len;
+                  search_data.utf8_len++;
+                }
               }
 
-              matches_count = 0;
+              /* Restart the search timer. */
+              /* """"""""""""""""""""""""" */
+              search_timer = timers.search; /* default 10 s. */
 
-              tst_prefix_search(tst_word, ws, tst_cb);
-
-              /* matches_count is updated by tst_cb. */
-              /* """"""""""""""""""""""""""""""""""" */
-              if (matches_count > 0)
+              if (search_mode == PREFIX)
               {
-                if (search_data.len == old_len && matches_count == 1
-                    && buffer[0] != 0x08 && buffer[0] != 0x7f)
-                  my_beep(&toggles);
+                ws = utf8_strtowcs(search_data.buf);
+
+                /* Purge the matching words list. */
+                /* """""""""""""""""""""""""""""" */
+                for (i = 0; i < matches_count; i++)
+                {
+                  long n = matching_words_a[i];
+
+                  word_a[n].is_matching = 0;
+
+                  memset(word_a[n].bitmap,
+                         '\0',
+                         (word_a[n].mb - daccess.flength) / CHAR_BIT + 1);
+                }
+
+                matches_count = 0;
+
+                tst_prefix_search(tst_word, ws, tst_cb);
+
+                /* matches_count is updated by tst_cb. */
+                /* """"""""""""""""""""""""""""""""""" */
+                if (matches_count > 0)
+                {
+                  if (search_data.len == old_len && matches_count == 1
+                      && buffer[0] != 0x08 && buffer[0] != 0x7f)
+                    my_beep(&toggles);
+                  else
+                  {
+                    /* Adjust the bitmap to the ending version. */
+                    /* """""""""""""""""""""""""""""""""""""""" */
+                    update_bitmaps(search_mode, &search_data, NO_AFFINITY);
+
+                    current = matching_words_a[0];
+
+                    if (current < win.start || current > win.end)
+                      last_line = build_metadata(&term, count, &win);
+
+                    /* Set new first column to display. */
+                    /* """""""""""""""""""""""""""""""" */
+                    set_new_first_column(&win, &term);
+
+                    nl = disp_lines(&win,
+                                    &toggles,
+                                    current,
+                                    count,
+                                    search_mode,
+                                    &search_data,
+                                    &term,
+                                    last_line,
+                                    tmp_word,
+                                    &langinfo);
+                  }
+                }
                 else
                 {
-                  /* Adjust the bitmap to the ending version. */
-                  /* """""""""""""""""""""""""""""""""""""""" */
-                  update_bitmaps(search_mode, &search_data, NO_AFFINITY);
+                  my_beep(&toggles);
 
-                  current = matching_words_a[0];
-
-                  if (current < win.start || current > win.end)
-                    last_line = build_metadata(&term, count, &win);
+                  search_data.err                  = 1;
+                  search_data.len                  = old_len;
+                  search_data.utf8_len             = old_utf8_len;
+                  search_data.buf[search_data.len] = '\0';
 
                   /* Set new first column to display. */
                   /* """""""""""""""""""""""""""""""" */
@@ -16239,226 +16731,129 @@ main(int argc, char *argv[])
                                   &langinfo);
                 }
               }
-              else
+              else if (search_mode == FUZZY)
               {
-                my_beep(&toggles);
+                /* tst_search_list: [sub_tst_t *] -> [sub_tst_t *]...     */
+                /*                    ^               ^                   */
+                /*                    |               |                   */
+                /*                  level 1         level_2               */
+                /*                                                        */
+                /* Each sub_tst_t * points to a data structure including  */
+                /* a sorted array to nodes in the words tst.              */
+                /* Each of these node starts a matching candidate.        */
+                /* """""""""""""""""""""""""""""""""""""""""""""""""""""" */
+                wchar_t *w = utf8_strtowcs(search_data.buf + old_len);
 
-                search_data.err                  = 1;
-                search_data.len                  = old_len;
-                search_data.utf8_len             = old_utf8_len;
-                search_data.buf[search_data.len] = '\0';
-
-                /* Set new first column to display. */
-                /* """""""""""""""""""""""""""""""" */
-                set_new_first_column(&win, &term);
-
-                nl = disp_lines(&win,
-                                &toggles,
-                                current,
-                                count,
-                                search_mode,
-                                &search_data,
-                                &term,
-                                last_line,
-                                tmp_word,
-                                &langinfo);
-              }
-            }
-            else if (search_mode == FUZZY)
-            {
-              /* tst_search_list: [sub_tst_t *] -> [sub_tst_t *]...     */
-              /*                    ^               ^                   */
-              /*                    |               |                   */
-              /*                  level 1         level_2               */
-              /*                                                        */
-              /* Each sub_tst_t * points to a data structure including  */
-              /* a sorted array to nodes in the words tst.              */
-              /* Each of these node starts a matching candidate.        */
-              /* """""""""""""""""""""""""""""""""""""""""""""""""""""" */
-              wchar_t *w = utf8_strtowcs(search_data.buf + old_len);
-
-              /* zero previous matching indicators. */
-              /* """""""""""""""""""""""""""""""""" */
-              for (i = 0; i < matches_count; i++)
-              {
-                long n = matching_words_a[i];
-
-                word_a[n].is_matching = 0;
-
-                memset(word_a[n].bitmap,
-                       '\0',
-                       (word_a[n].mb - daccess.flength) / CHAR_BIT + 1);
-              }
-
-              matches_count = 0;
-
-              if (buffer[0] == 0x08 || buffer[0] == 0x7f) /* Backspace */
-              {
-                node         = tst_search_list->tail;
-                sub_tst_data = (sub_tst_t *)(node->data);
-
-                sub_tst_data->count = 0;
-
-                if (tst_search_list->len > 0)
+                /* zero previous matching indicators. */
+                /* """""""""""""""""""""""""""""""""" */
+                for (i = 0; i < matches_count; i++)
                 {
-                  free(sub_tst_data->array);
-                  free(sub_tst_data);
+                  long n = matching_words_a[i];
 
-                  ll_delete(tst_search_list, tst_search_list->tail);
+                  word_a[n].is_matching = 0;
+
+                  memset(word_a[n].bitmap,
+                         '\0',
+                         (word_a[n].mb - daccess.flength) / CHAR_BIT + 1);
                 }
-              }
-              else
-              {
-                if (search_data.utf8_len == 1)
-                {
-                  /* Search all the sub-tst trees having the searched     */
-                  /* character as children, the resulting sub-tst are put */
-                  /* in the sub tst array attached to the currently       */
-                  /* searched symbol.                                     */
-                  /* """""""""""""""""""""""""""""""""""""""""""""""""""" */
-                  tst_fuzzy_traverse(tst_word, NULL, 0, w[0]);
 
+                matches_count = 0;
+
+                if (buffer[0] == 0x08 || buffer[0] == 0x7f) /* Backspace */
+                {
                   node         = tst_search_list->tail;
                   sub_tst_data = (sub_tst_t *)(node->data);
-                  if (sub_tst_data->count == 0)
+
+                  sub_tst_data->count = 0;
+
+                  if (tst_search_list->len > 0)
                   {
-                    my_beep(&toggles);
+                    free(sub_tst_data->array);
+                    free(sub_tst_data);
 
-                    search_data.len      = 0;
-                    search_data.utf8_len = 0;
-                    search_data.buf[0]   = '\0';
-
-                    break;
+                    ll_delete(tst_search_list, tst_search_list->tail);
                   }
                 }
                 else
                 {
-                  /* Prevent the list to grow larger than the maximal */
-                  /* word's length.                                   */
-                  /* """""""""""""""""""""""""""""""""""""""""""""""" */
-                  if (tst_search_list->len
-                      < word_real_max_size - daccess.flength)
+                  if (search_data.utf8_len == 1)
                   {
-                    /* use the results in the level n-1 list to build the */
-                    /* level n list.                                      */
-                    /* """""""""""""""""""""""""""""""""""""""""""""""""" */
-                    int rc;
+                    /* Search all the sub-tst trees having the searched     */
+                    /* character as children, the resulting sub-tst are put */
+                    /* in the sub tst array attached to the currently       */
+                    /* searched symbol.                                     */
+                    /* """""""""""""""""""""""""""""""""""""""""""""""""""" */
+                    tst_fuzzy_traverse(tst_word, NULL, 0, w[0]);
 
-                    sub_tst_t *tst_fuzzy_level_data;
-
-                    tst_fuzzy_level_data = sub_tst_new();
-
-                    ll_append(tst_search_list, tst_fuzzy_level_data);
-
-                    node         = tst_search_list->tail->prev;
+                    node         = tst_search_list->tail;
                     sub_tst_data = (sub_tst_t *)(node->data);
-
-                    rc = 0;
-                    for (index = 0; index < sub_tst_data->count; index++)
-                      rc += tst_fuzzy_traverse(sub_tst_data->array[index],
-                                               NULL,
-                                               1,
-                                               w[0]);
-
-                    if (rc == 0)
+                    if (sub_tst_data->count == 0)
                     {
-                      free(tst_fuzzy_level_data->array);
-                      free(tst_fuzzy_level_data);
-
-                      ll_delete(tst_search_list, tst_search_list->tail);
-
-                      search_data.err = 1;
-                      if (search_data.fuzzy_err_pos == -1)
-                        search_data.fuzzy_err_pos = search_data.utf8_len;
-
                       my_beep(&toggles);
 
-                      search_data.len                  = old_len;
-                      search_data.utf8_len             = old_utf8_len;
-                      search_data.buf[search_data.len] = '\0';
+                      search_data.len      = 0;
+                      search_data.utf8_len = 0;
+                      search_data.buf[0]   = '\0';
+
+                      break;
                     }
                   }
                   else
-                    my_beep(&toggles);
+                  {
+                    /* Prevent the list to grow larger than the maximal */
+                    /* word's length.                                   */
+                    /* """""""""""""""""""""""""""""""""""""""""""""""" */
+                    if (tst_search_list->len
+                        < word_real_max_size - daccess.flength)
+                    {
+                      /* use the results in the level n-1 list to build the */
+                      /* level n list.                                      */
+                      /* """""""""""""""""""""""""""""""""""""""""""""""""" */
+                      int rc;
+
+                      sub_tst_t *tst_fuzzy_level_data;
+
+                      tst_fuzzy_level_data = sub_tst_new();
+
+                      ll_append(tst_search_list, tst_fuzzy_level_data);
+
+                      node         = tst_search_list->tail->prev;
+                      sub_tst_data = (sub_tst_t *)(node->data);
+
+                      rc = 0;
+                      for (index = 0; index < sub_tst_data->count; index++)
+                        rc += tst_fuzzy_traverse(sub_tst_data->array[index],
+                                                 NULL,
+                                                 1,
+                                                 w[0]);
+
+                      if (rc == 0)
+                      {
+                        free(tst_fuzzy_level_data->array);
+                        free(tst_fuzzy_level_data);
+
+                        ll_delete(tst_search_list, tst_search_list->tail);
+
+                        search_data.err = 1;
+                        if (search_data.fuzzy_err_pos == -1)
+                          search_data.fuzzy_err_pos = search_data.utf8_len;
+
+                        my_beep(&toggles);
+
+                        search_data.len                  = old_len;
+                        search_data.utf8_len             = old_utf8_len;
+                        search_data.buf[search_data.len] = '\0';
+                      }
+                    }
+                    else
+                      my_beep(&toggles);
+                  }
                 }
-              }
-              free(w);
+                free(w);
 
-              /* Process this level to mark the word found as a matching */
-              /* word if any.                                            */
-              /* """"""""""""""""""""""""""""""""""""""""""""""""""""""" */
-              node         = tst_search_list->tail;
-              sub_tst_data = (sub_tst_t *)(node->data);
-
-              for (index = 0; index < sub_tst_data->count; index++)
-                tst_traverse(sub_tst_data->array[index], set_matching_flag, 0);
-
-              /* Update the bitmap and re-display the window. */
-              /* """""""""""""""""""""""""""""""""""""""""""" */
-              if (matches_count > 0)
-              {
-                if (search_data.only_starting)
-                  select_starting_matches(&win,
-                                          &term,
-                                          &search_data,
-                                          &last_line);
-                else if (search_data.only_ending)
-                  select_ending_matches(&win, &term, &search_data, &last_line);
-                else
-                  /* Adjust the bitmap to the ending version. */
-                  /* """""""""""""""""""""""""""""""""""""""" */
-                  update_bitmaps(search_mode, &search_data, NO_AFFINITY);
-
-                current = matching_words_a[0];
-
-                if (current < win.start || current > win.end)
-                  last_line = build_metadata(&term, count, &win);
-
-                /* Set new first column to display. */
-                /* """""""""""""""""""""""""""""""" */
-                set_new_first_column(&win, &term);
-
-                nl = disp_lines(&win,
-                                &toggles,
-                                current,
-                                count,
-                                search_mode,
-                                &search_data,
-                                &term,
-                                last_line,
-                                tmp_word,
-                                &langinfo);
-              }
-              else
-                my_beep(&toggles);
-            }
-            else /* SUBSTRING. */
-            {
-              wchar_t *w = utf8_strtowcs(search_data.buf);
-
-              /* Purge the matching words list. */
-              /* """""""""""""""""""""""""""""" */
-              for (i = 0; i < matches_count; i++)
-              {
-                long n = matching_words_a[i];
-
-                word_a[n].is_matching = 0;
-
-                memset(word_a[n].bitmap,
-                       '\0',
-                       (word_a[n].mb - daccess.flength) / CHAR_BIT + 1);
-              }
-
-              matches_count = 0;
-
-              if (search_data.utf8_len == 1)
-              {
-                /* Search all the sub-tst trees having the searched     */
-                /* character as children, the resulting sub-tst are put */
-                /* in the level list corresponding to the letter order. */
-                /* """""""""""""""""""""""""""""""""""""""""""""""""""" */
-                tst_substring_traverse(tst_word, NULL, 0, w[0]);
-
+                /* Process this level to mark the word found as a matching */
+                /* word if any.                                            */
+                /* """"""""""""""""""""""""""""""""""""""""""""""""""""""" */
                 node         = tst_search_list->tail;
                 sub_tst_data = (sub_tst_t *)(node->data);
 
@@ -16466,27 +16861,10 @@ main(int argc, char *argv[])
                   tst_traverse(sub_tst_data->array[index],
                                set_matching_flag,
                                0);
-              }
-              else
-              {
-                /* Search for the rest of the word in all the sub-tst */
-                /* trees previously found.                            */
-                /* """""""""""""""""""""""""""""""""""""""""""""""""" */
-                node         = tst_search_list->tail;
-                sub_tst_data = (sub_tst_t *)(node->data);
 
-                matches_count = 0;
-
-                for (index = 0; index < sub_tst_data->count; index++)
-                  tst_prefix_search(sub_tst_data->array[index], w + 1, tst_cb);
-              }
-
-              if (matches_count > 0)
-              {
-                if (search_data.len == old_len && matches_count == 1
-                    && buffer[0] != 0x08 && buffer[0] != 0x7f)
-                  my_beep(&toggles);
-                else
+                /* Update the bitmap and re-display the window. */
+                /* """""""""""""""""""""""""""""""""""""""""""" */
+                if (matches_count > 0)
                 {
                   if (search_data.only_starting)
                     select_starting_matches(&win,
@@ -16499,6 +16877,8 @@ main(int argc, char *argv[])
                                           &search_data,
                                           &last_line);
                   else
+                    /* Adjust the bitmap to the ending version. */
+                    /* """""""""""""""""""""""""""""""""""""""" */
                     update_bitmaps(search_mode, &search_data, NO_AFFINITY);
 
                   current = matching_words_a[0];
@@ -16521,34 +16901,128 @@ main(int argc, char *argv[])
                                   tmp_word,
                                   &langinfo);
                 }
+                else
+                  my_beep(&toggles);
               }
-              else
+              else /* SUBSTRING. */
               {
-                my_beep(&toggles);
+                wchar_t *w = utf8_strtowcs(search_data.buf);
 
-                search_data.err = 1;
-                search_data.len = old_len;
-                search_data.utf8_len--;
-                search_data.buf[search_data.len] = '\0';
+                /* Purge the matching words list. */
+                /* """""""""""""""""""""""""""""" */
+                for (i = 0; i < matches_count; i++)
+                {
+                  long n = matching_words_a[i];
 
-                /* Set new first column to display. */
-                /* """""""""""""""""""""""""""""""" */
-                set_new_first_column(&win, &term);
+                  word_a[n].is_matching = 0;
 
-                nl = disp_lines(&win,
-                                &toggles,
-                                current,
-                                count,
-                                search_mode,
-                                &search_data,
-                                &term,
-                                last_line,
-                                tmp_word,
-                                &langinfo);
+                  memset(word_a[n].bitmap,
+                         '\0',
+                         (word_a[n].mb - daccess.flength) / CHAR_BIT + 1);
+                }
+
+                matches_count = 0;
+
+                if (search_data.utf8_len == 1)
+                {
+                  /* Search all the sub-tst trees having the searched     */
+                  /* character as children, the resulting sub-tst are put */
+                  /* in the level list corresponding to the letter order. */
+                  /* """""""""""""""""""""""""""""""""""""""""""""""""""" */
+                  tst_substring_traverse(tst_word, NULL, 0, w[0]);
+
+                  node         = tst_search_list->tail;
+                  sub_tst_data = (sub_tst_t *)(node->data);
+
+                  for (index = 0; index < sub_tst_data->count; index++)
+                    tst_traverse(sub_tst_data->array[index],
+                                 set_matching_flag,
+                                 0);
+                }
+                else
+                {
+                  /* Search for the rest of the word in all the sub-tst */
+                  /* trees previously found.                            */
+                  /* """""""""""""""""""""""""""""""""""""""""""""""""" */
+                  node         = tst_search_list->tail;
+                  sub_tst_data = (sub_tst_t *)(node->data);
+
+                  matches_count = 0;
+
+                  for (index = 0; index < sub_tst_data->count; index++)
+                    tst_prefix_search(sub_tst_data->array[index],
+                                      w + 1,
+                                      tst_cb);
+                }
+
+                if (matches_count > 0)
+                {
+                  if (search_data.len == old_len && matches_count == 1
+                      && buffer[0] != 0x08 && buffer[0] != 0x7f)
+                    my_beep(&toggles);
+                  else
+                  {
+                    if (search_data.only_starting)
+                      select_starting_matches(&win,
+                                              &term,
+                                              &search_data,
+                                              &last_line);
+                    else if (search_data.only_ending)
+                      select_ending_matches(&win,
+                                            &term,
+                                            &search_data,
+                                            &last_line);
+                    else
+                      update_bitmaps(search_mode, &search_data, NO_AFFINITY);
+
+                    current = matching_words_a[0];
+
+                    if (current < win.start || current > win.end)
+                      last_line = build_metadata(&term, count, &win);
+
+                    /* Set new first column to display. */
+                    /* """""""""""""""""""""""""""""""" */
+                    set_new_first_column(&win, &term);
+
+                    nl = disp_lines(&win,
+                                    &toggles,
+                                    current,
+                                    count,
+                                    search_mode,
+                                    &search_data,
+                                    &term,
+                                    last_line,
+                                    tmp_word,
+                                    &langinfo);
+                  }
+                }
+                else
+                {
+                  my_beep(&toggles);
+
+                  search_data.err = 1;
+                  search_data.len = old_len;
+                  search_data.utf8_len--;
+                  search_data.buf[search_data.len] = '\0';
+
+                  /* Set new first column to display. */
+                  /* """""""""""""""""""""""""""""""" */
+                  set_new_first_column(&win, &term);
+
+                  nl = disp_lines(&win,
+                                  &toggles,
+                                  current,
+                                  count,
+                                  search_mode,
+                                  &search_data,
+                                  &term,
+                                  last_line,
+                                  tmp_word,
+                                  &langinfo);
+                }
               }
             }
           }
-        }
       }
     }
   }
