@@ -16129,8 +16129,6 @@ main(int argc, char *argv[])
                 for (i = 0; i < length; i++)
                   darray_free(darray_get(help_lines_da, i), NULL);
                 darray_free(help_lines_da, NULL);
-
-                help_lines_da = darray_new(0);
               }
 
               help_lines_da    = init_help(&win,
