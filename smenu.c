@@ -211,6 +211,7 @@ init_help(win_t    *win,
   int len  = 0;         /* length of the help line.                         */
   int max_col;          /* when to split the help line.                     */
   int forced_nl;
+  int first_in_line;
 
   help_attr_entry_t **array;
 
@@ -385,7 +386,7 @@ init_help(win_t    *win,
   items_da      = darray_new(0);
   darray_add(help_lines_da, items_da);
 
-  int first_in_line = 0;
+  first_in_line = 0;
 
   /* Fill the darray of darrays, each line is a darray of help_attr_entry_t */
   /* A new line is added each time the next entry does not fit in the       */
