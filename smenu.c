@@ -215,9 +215,9 @@ init_help(win_t    *win,
 
   help_attr_entry_t **array;
 
-  /* array of arrays containing help items.                       */
-  /* the conent of this darray will be returned by this function. */
-  /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+  /* array of arrays containing help items.                        */
+  /* the content of this darray will be returned by this function. */
+  /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
   darray_t *help_lines_da;
 
   /* array of help items, element of help_lines_da. */
