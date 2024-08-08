@@ -41,7 +41,7 @@
 #include "ctxopt.h"
 #include "usage.h"
 #include "safe.h"
-#include "darray.h"
+#include "tinybuf.h"
 #include "smenu.h"
 
 /* ***************** */
@@ -171,17 +171,45 @@ int       quiet_timeout = 0; /* 1 when we want no message to be displayed.  */
 /* Help functions. */
 /* *************** */
 
-void
-help_add_entries(term_t       *term,
-                 darray_t     *help_items_da,
-                 help_entry_t *entries,
-                 int           entries_nb)
+/* ============================================================== */
+/* Parse, create and add an help entry in a format suitable to be */
+/* displayed by disp_help into a dynamic array.                   */
+/* ============================================================== */
+int
+help_add_entries(win_t               *win,
+                 term_t              *term,
+                 toggle_t            *toggles,
+                 help_attr_entry_t ***help_items_da,
+                 help_entry_t        *entries,
+                 int                  entries_nb)
 {
-  int                index;
+  int index;
+  int nb = 0;
+
   help_attr_entry_t *attr_entry;
 
   for (index = 0; index < entries_nb; index++)
   {
+    /* Do not create a tag/pin related entry if tagging/pinning is not */
+    /* enabled.                                                        */
+    /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+    if (strchr(entries[index].flags, 't') && !toggles->taggable
+        && !toggles->pinable)
+      continue;
+
+    /* Do not create a mouse related entry if -no_mouse is activated. */
+    /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+    if (strchr(entries[index].flags, 'm') && toggles->no_mouse)
+      continue;
+
+    /* Do not create a column/row related entry if the column or line_mode */
+    /* is not activated.                                                   */
+    /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+    if (strchr(entries[index].flags, 'c') && !win->line_mode && !win->col_mode)
+      continue;
+
+    /* Allocate and initialize a new attribute. */
+    /* """""""""""""""""""""""""""""""""""""""" */
     attr_entry = xmalloc(sizeof(help_attr_entry_t));
 
     attr_entry->str  = xstrdup(entries[index].str);
@@ -193,198 +221,265 @@ help_add_entries(term_t       *term,
     else
       parse_attr(entries[index].alt_attr_str, attr_entry->attr, term->colors);
 
-    darray_add(help_items_da, attr_entry);
+    /* Add it into a dynamic array. */
+    /* """""""""""""""""""""""""""" */
+    BUF_PUSH(*help_items_da, attr_entry);
+
+    nb++;
   }
+
+  return nb;
 }
 
-darray_t *
-init_help(win_t    *win,
-          term_t   *term,
-          toggle_t *toggles,
-          long      last_line,
-          darray_t *help_items_da)
+/* ====================================================== */
+/* Create an array of lines to be displayed by disp_help. */
+/* ====================================================== */
+help_attr_entry_t ***
+init_help(win_t               *win,
+          term_t              *term,
+          toggle_t            *toggles,
+          long                 last_line,
+          help_attr_entry_t ***help_items_da)
 {
   int index;            /* used to identify the objects long the help line. */
-  int entries_nb;       /* number of generic help entries to display.       */
-  int entries_total_nb; /* number of generic help entries to display.       */
+  int entries_nb;       /* number of all potentially displayable help       *
+                         | entries.                                         */
+  int entries_total_nb; /* number of help entries to display.               */
   int line = 0;         /* number of windows lines used by the help line.   */
   int len  = 0;         /* length of the help line.                         */
   int max_col;          /* when to split the help line.                     */
   int forced_nl;
   int first_in_line;
 
-  help_attr_entry_t **array;
-
   /* array of arrays containing help items.                        */
   /* the content of this darray will be returned by this function. */
   /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-  darray_t *help_lines_da;
+  help_attr_entry_t ***help_lines_da = NULL;
 
   /* array of help items, element of help_lines_da. */
   /* """"""""""""""""""""""""""""""""""""""""""""""""""" */
-  darray_t *items_da;
+  help_attr_entry_t **items_da = NULL;
 
-  entries_total_nb = darray_get_length(help_items_da);
-  if (entries_total_nb == 0)
+  entries_nb = BUF_LEN(*help_items_da);
+
+  if (entries_nb == 0)
   {
     char *Cleft_arrow  = concat("^", left_arrow, (char *)0);
     char *Cright_arrow = concat("^", right_arrow, (char *)0);
-    char *ud_arrows    = concat(up_arrow, down_arrow, (char *)0);
+    char *du_arrows    = concat(down_arrow, up_arrow, (char *)0);
     char *arrows       = concat(left_arrow,
+                          down_arrow,
                           up_arrow,
                           right_arrow,
-                          down_arrow,
                           (char *)0);
 
     help_entry_t header_entries[] = {
-      { "Start", 5, "u", "u" },     { " ", 1, "u", "u" },
-      { "of", 2, "u", "u" },        { " ", 1, "u", "u" },
-      { "quick", 5, "u", "u" },     { " ", 1, "u", "u" },
-      { "help.", 5, "u", "u" },     { " ", 1, "u", "u" },
-      { "j", 1, "bu", "bu" },       { "/", 1, "u", "u" },
-      { "k", 1, "bu", "bu" },       { ",", 1, "u", "u" },
-      { ud_arrows, 2, "bu", "bu" }, { " ", 1, "u", "u" },
-      { "to", 2, "u", "u" },        { " ", 1, "u", "u" },
-      { "scroll", 6, "u", "u" },    { " ", 1, "u", "u" },
-      { "if", 2, "u", "u" },        { " ", 1, "u", "u" },
-      { "needed.", 7, "u", "u" },
+      { "Start", 5, "u", "u", "" },     { " ", 1, "u", "u", "" },
+      { "of", 2, "u", "u", "" },        { " ", 1, "u", "u", "" },
+      { "quick", 5, "u", "u", "" },     { " ", 1, "u", "u", "" },
+      { "help.", 5, "u", "u", "" },     { " ", 1, "u", "u", "" },
+      { "jk", 2, "bu", "bu", "" },      { "/", 1, "u", "u", "" },
+      { du_arrows, 2, "bu", "bu", "" }, { " ", 1, "u", "u", "" },
+      { "to", 2, "u", "u", "" },        { " ", 1, "u", "u", "" },
+      { "scroll.", 7, "u", "u", "" },   { " ", 1, "u", "u", "" },
+      { "\"", 1, "u", "u", "" },        { "man", 3, "bu", "bu", "" },
+      { " ", 1, "u", "u", "" },         { "smenu", 5, "bu", "bu", "" },
+      { "\"", 1, "u", "u", "" },        { " ", 1, "u", "u", "" },
+      { "for", 3, "u", "u", "" },       { " ", 1, "u", "u", "" },
+      { "more", 4, "u", "u", "" },      { " ", 1, "u", "u", "" },
+      { "help.", 5, "u", "u", "" },
     };
 
     help_entry_t generic_entries[] = {
-      { "\n", 0, "", "" },       { "Move:", 5, "5+b", "r" },
-      { "Mouse:", 6, "2", "u" }, { "B1", 2, "b", "b" },
-      { ",", 1, "", "" },        { "B3", 2, "b", "b" },
-      { ",", 1, "", "" },        { "Wheel", 5, "b", "b" },
-      { " ", 1, "", "" },        { "Keyb:", 5, "2", "u" },
-      { "hjkl", 4, "b", "b" },   { ",", 1, "", "" },
-      { arrows, 4, "b", "b" },   { ",", 1, "", "" },
-      { "PgUp", 4, "b", "b" },   { "/", 1, "", "" },
-      { "Dn", 2, "b", "b" },
-    };
-
-    help_entry_t line_move_entries[] = {
-      { ",", 1, "", "" },   { "S-HOME", 6, "b", "b" },
-      { "/", 1, "", "" },   { Cleft_arrow, 2, "b", "b" },
-      { "/", 1, "", "" },   { "H", 1, "b", "b" },
-      { ",", 1, "", "" },   { "S-END", 5, "b", "b" },
-      { "/", 1, "", "" },   { Cright_arrow, 2, "b", "b" },
-      { "/", 1, "", "" },   { "L", 1, "b", "b" },
-      { " ", 1, "", "" },   { "Shift:", 6, "5+b", "r" },
-      { "<", 1, "b", "b" }, { ",", 1, "", "" },
-      { ">", 1, "b", "b" },
-    };
-
-    help_entry_t various_entries[] = {
-      { "\n", 0, "", "" },
-      { "Abort:", 6, "5+b", "r" },
-      { "q", 1, "b", "b" },
-      { ",", 1, "", "" },
-      { "^C", 2, "b", "b" },
-      { " ", 1, "", "" },
-      { "Cancel:", 7, "5+b", "r" },
-      { "ESC", 3, "b", "b" },
-      { " ", 1, "", "" },
-      { "Search:", 7, "5+b", "r" },
-      { "Fuzzy (def):", 12, "3", "i" },
-      { "/", 1, "b", "b" },
-      { " ", 1, "", "" },
-      { "Substr:", 7, "3", "i" },
-      { "\"\'", 2, "b", "b" },
-      { " ", 1, "", "" },
-      { "Fuzzy:", 6, "3", "i" },
-      { "~*", 2, "b", "b" },
-      { " ", 1, "", "" },
-      { "Prefix:", 7, "3", "i" },
-      { "=^", 2, "b", "b" },
-      { ",", 1, "", "" },
-      { "SP", 2, "b", "b" },
-      { "/", 1, "", "" },
-      { "n", 1, "b", "b" },
-      { ",", 1, "", "" },
-      { "N", 1, "b", "b" },
-      { " ", 1, "", "" },
-      { "Select:", 7, "5+b", "r" },
-      { "CR", 2, "b", "b" },
-      { ",", 1, "", "" },
-      { "Double-B1", 9, "b", "b" },
-      { " ", 1, "", "" },
-    };
-
-    help_entry_t tag_entries[] = {
-      { "\n", 0, "", "" },       { "Mark:", 5, "5+b", "r" },
-      { "Mouse:", 6, "2", "u" }, { "^B1", 3, "b", "b" },
-      { "/", 1, "b", "b" },      { "B3", 2, "b", "b" },
-      { " ", 1, "", "" },        { "Keyb:", 5, "2", "u" },
-      { "mM", 2, "b", "b" },     { "\n", 0, "", "" },
-      { "Tag:", 4, "5+b", "r" }, { "Mouse:", 6, "2", "u" },
-      { "B3", 2, "B", "B" },     { ",", 1, "", "" },
-      { "Zone:", 5, "3", "i" },  { "/", 1, "b", "b" },
-      { "Row:", 4, "3", "i" },   { "/", 1, "b", "b" },
-      { "Col:", 4, "3", "i" },   { "^B3", 3, "B", "B" },
-      { " ", 1, "b", "b" },      { "Keyb:", 5, "2", "u" },
-      { "t", 1, "b", "b" },      { ",", 1, "", "" },
-      { "r", 1, "b", "b" },      { ",", 1, "", "" },
-      { "c", 1, "b", "b" },      { " ", 1, "", "" },
-      { "Cont:", 5, "3", "i" },  { "T", 1, "b", "b" },
-      { "...", 3, "", "" },      { "T", 1, "b", "b" },
-      { ",", 1, "", "" },        { "Zone:", 5, "3", "i" },
-      { "Z", 1, "b", "b" },      { "...", 3, "", "" },
-      { "Z", 1, "b", "b" },      { ",", 1, "", "" },
-      { "Row:", 4, "3", "i" },   { "R", 1, "b", "b" },
-      { "...", 3, "", "" },      { "R", 1, "b", "b" },
-      { ",", 1, "", "" },        { "Col:", 4, "3", "i" },
-      { "C", 1, "b", "b" },      { "...", 3, "", "" },
-      { "C", 1, "b", "b" },      { " ", 1, "", "" },
-      { "U", 1, "b", "b" },      { ",", 1, "", "" },
-      { "^T", 2, "b", "b" },     { " ", 1, "", "" },
+      { "\n", 0, "", "", "" },
+      { "Move:", 5, "5+b", "r", "" },
+      { "Mouse:", 6, "2", "u", "m" },
+      { "B1", 2, "b", "b", "m" },
+      { ",", 1, "", "", "m" },
+      { "B3", 2, "b", "b", "m" },
+      { ",", 1, "", "", "m" },
+      { "Wheel", 5, "b", "b", "m" },
+      { " ", 1, "", "", "m" },
+      { "Keyb:", 5, "2", "u", "m" },
+      { "hjkl", 4, "b", "b", "" },
+      { ",", 1, "", "", "" },
+      { arrows, 4, "b", "b", "" },
+      { ",", 1, "", "", "" },
+      { "PgUp", 4, "b", "b", "" },
+      { "/", 1, "", "", "" },
+      { "Dn", 2, "b", "b", "" },
+      { ",", 1, "", "", "c" },
+      { "S-HOME", 6, "b", "b", "c" },
+      { "/", 1, "", "", "c" },
+      { Cleft_arrow, 2, "b", "b", "c" },
+      { "/", 1, "", "", "c" },
+      { "H", 1, "b", "b", "c" },
+      { ",", 1, "", "", "c" },
+      { "S-END", 5, "b", "b", "c" },
+      { "/", 1, "", "", "c" },
+      { Cright_arrow, 2, "b", "b", "c" },
+      { "/", 1, "", "", "c" },
+      { "L", 1, "b", "b", "c" },
+      { "\n", 0, "", "", "c" },
+      { "Shift:", 6, "5+b", "r", "c" },
+      { "<", 1, "b", "b", "c" },
+      { ",", 1, "", "", "c" },
+      { ">", 1, "b", "b", "c" },
+      { "\n", 0, "", "", "" },
+      { "Abort:", 6, "5+b", "r", "" },
+      { "q", 1, "b", "b", "" },
+      { ",", 1, "", "", "" },
+      { "^C", 2, "b", "b", "" },
+      { " ", 1, "", "", "" },
+      { "Cancel:", 7, "5+b", "r", "" },
+      { "ESC", 3, "b", "b", "" },
+      { " ", 1, "", "", "" },
+      { "Select:", 7, "5+b", "r", "" },
+      { "Mouse:", 6, "2", "u", "m" },
+      { "Double-B1", 9, "b", "b", "m" },
+      { " ", 1, "", "", "m" },
+      { "Keyb:", 5, "2", "u", "m" },
+      { "CR", 2, "b", "b", "" },
+      { "\n", 0, "", "", "" },
+      { "Search:", 7, "5+b", "r", "" },
+      { "Def.", 4, "3", "i", "" },
+      { " ", 1, "", "", "" },
+      { "(fuzzy):", 8, "3", "i", "" },
+      { "/", 1, "b", "b", "" },
+      { " ", 1, "", "", "" },
+      { "Substr:", 7, "3", "i", "" },
+      { "\"", 2, "b", "b", "" },
+      { ",", 1, "", "", "" },
+      { "\'", 1, "b", "b", "" },
+      { " ", 1, "", "", "" },
+      { "Fuzzy:", 6, "3", "i", "" },
+      { "~", 1, "b", "b", "" },
+      { ",", 1, "", "", "" },
+      { "*", 1, "b", "b", "" },
+      { " ", 1, "", "", "" },
+      { "HOME", 4, "b", "b", "" },
+      { ",", 1, "", "", "" },
+      { "^A", 2, "b", "b", "" },
+      { ",", 1, "", "", "" },
+      { " ", 1, "", "", "" },
+      { "END", 3, "b", "b", "" },
+      { ",", 1, "", "", "" },
+      { "^Z", 2, "b", "b", "" },
+      { " ", 1, "", "", "" },
+      { "Prefix:", 7, "3", "i", "" },
+      { "=", 1, "b", "b", "" },
+      { ",", 1, "", "", "" },
+      { "^", 1, "b", "b", "" },
+      { " ", 1, "", "", "" },
+      { "Validate:", 9, "3", "i", "" },
+      { "CR", 2, "b", "b", "" },
+      { " ", 1, "", "", "" },
+      { "Next:", 5, "3", "i", "" },
+      { "SP", 2, "b", "b", "" },
+      { ",", 1, "", "", "" },
+      { "n", 1, "b", "b", "" },
+      { " ", 1, "", "", "" },
+      { "Prev:", 5, "3", "i", "" },
+      { "N", 1, "b", "b", "" },
+      { "\n", 0, "", "", "t" },
+      { "Mark:", 5, "5+b", "r", "t" },
+      { "Mouse:", 6, "2", "u", "tm" },
+      { "^B1", 3, "b", "b", "tm" },
+      { "/", 1, "b", "b", "tm" },
+      { "B3", 2, "b", "b", "tm" },
+      { " ", 1, "", "", "tm" },
+      { "Keyb:", 5, "2", "u", "tm" },
+      { "mM", 2, "b", "b", "t" },
+      { "\n", 0, "", "", "t" },
+      { "Tag:", 4, "5+b", "r", "t" },
+      { "Mouse:", 6, "2", "u", "tm" },
+      { "B3", 2, "B", "B", "tm" },
+      { " ", 1, "", "", "tm" },
+      { "Zone:", 5, "3", "i", "ctm" },
+      { "/", 1, "b", "b", "ctm" },
+      { "Row:", 4, "3", "i", "ctm" },
+      { "/", 1, "b", "b", "ctm" },
+      { "Col:", 4, "3", "i", "ctm" },
+      { "^B3", 3, "B", "B", "ctm" },
+      { " ", 1, "b", "b", "ct" },
+      { "Keyb:", 5, "2", "u", "tm" },
+      { "t", 1, "b", "b", "t" },
+      { ",", 1, "", "", "t" },
+      { "u", 1, "b", "b", "ct" },
+      { " ", 1, "", "", "ct" },
+      { "r", 1, "b", "b", "ct" },
+      { ",", 1, "", "", "ct" },
+      { "c", 1, "b", "b", "ct" },
+      { " ", 1, "", "", "ct" },
+      { "Cont:", 5, "3", "i", "t" },
+      { "T", 1, "b", "b", "t" },
+      { "...", 3, "", "", "t" },
+      { "T", 1, "b", "b", "t" },
+      { ",", 1, "", "", "t" },
+      { "Zone:", 5, "3", "i", "t" },
+      { "Z", 1, "b", "b", "t" },
+      { "...", 3, "", "", "t" },
+      { "Z", 1, "b", "b", "t" },
+      { ",", 1, "", "", "ct" },
+      { "Row:", 4, "3", "i", "ct" },
+      { "R", 1, "b", "b", "ct" },
+      { "...", 3, "", "", "ct" },
+      { "R", 1, "b", "b", "ct" },
+      { ",", 1, "", "", "ct" },
+      { "Col:", 4, "3", "i", "ct" },
+      { "C", 1, "b", "b", "ct" },
+      { "...", 3, "", "", "ct" },
+      { "C", 1, "b", "b", "ct" },
+      { " ", 1, "", "", "t" },
+      { "Undo:", 5, "3", "i", "t" },
+      { "U", 1, "b", "b", "t" },
+      { ",", 1, "", "", "t" },
+      { "^T", 2, "b", "b", "t" },
+      { " ", 1, "", "", "t" },
     };
 
     help_entry_t trailer_entries[] = {
-      { "\n", 0, "", "" },   { "End", 3, "u", "u" },   { " ", 1, "u", "u" },
-      { "of", 2, "u", "u" }, { " ", 1, "u", "u" },     { "quick", 5, "u", "u" },
-      { " ", 1, "u", "u" },  { "help.", 5, "u", "u" },
+      { "\n", 0, "", "", "" },  { "End", 3, "u", "u", "" },
+      { " ", 1, "u", "u", "" }, { "of", 2, "u", "u", "" },
+      { " ", 1, "u", "u", "" }, { "quick", 5, "u", "u", "" },
+      { " ", 1, "u", "u", "" }, { "help.", 5, "u", "u", "" },
     };
+
+    entries_total_nb = 0;
 
     entries_nb = sizeof(header_entries) / sizeof(help_entry_t);
-    entries_total_nb += entries_nb;
-    help_add_entries(term, help_items_da, header_entries, entries_nb);
+    entries_total_nb += help_add_entries(win,
+                                         term,
+                                         toggles,
+                                         help_items_da,
+                                         header_entries,
+                                         entries_nb);
 
     entries_nb = sizeof(generic_entries) / sizeof(help_entry_t);
-    entries_total_nb += entries_nb;
-    help_add_entries(term, help_items_da, generic_entries, entries_nb);
-
-    if (win->line_mode || win->col_mode)
-    {
-      entries_nb = sizeof(line_move_entries) / sizeof(help_entry_t);
-      entries_total_nb += entries_nb;
-      help_add_entries(term, help_items_da, line_move_entries, entries_nb);
-    };
-
-    if (toggles->taggable || toggles->pinable)
-    {
-      entries_nb = sizeof(tag_entries) / sizeof(help_entry_t);
-      entries_total_nb += entries_nb;
-      help_add_entries(term, help_items_da, tag_entries, entries_nb);
-    };
-
-    entries_nb = sizeof(various_entries) / sizeof(help_entry_t);
-    entries_total_nb += entries_nb;
-    help_add_entries(term, help_items_da, various_entries, entries_nb);
+    entries_total_nb += help_add_entries(win,
+                                         term,
+                                         toggles,
+                                         help_items_da,
+                                         generic_entries,
+                                         entries_nb);
 
     entries_nb = sizeof(trailer_entries) / sizeof(help_entry_t);
-    entries_total_nb += entries_nb;
-    help_add_entries(term, help_items_da, trailer_entries, entries_nb);
+    entries_total_nb += help_add_entries(win,
+                                         term,
+                                         toggles,
+                                         help_items_da,
+                                         trailer_entries,
+                                         entries_nb);
   }
+  else
+    entries_total_nb = entries_nb;
 
   /* Determine when to split the help line if necessary. */
   /* """"""""""""""""""""""""""""""""""""""""""""""""""" */
   max_col = term->ncolumns - 1;
 
-  array = (help_attr_entry_t **)darray_get_array(help_items_da);
-
-  help_lines_da = darray_new(0);
-  items_da      = darray_new(0);
-  darray_add(help_lines_da, items_da);
+  help_lines_da = NULL;
+  items_da      = NULL;
 
   first_in_line = 0;
 
@@ -397,16 +492,16 @@ init_help(win_t    *win,
   {
     /* Ignore item if its length cannot be fully displayed. */
     /* '''''''''''''''''''''''''''''''''''''''''''''''''''' */
-    if (array[index]->len >= max_col)
+    if ((*help_items_da)[index]->len >= max_col)
       continue;
 
     /* increase the total length of displayed items in the line. */
     /* ''''''''''''''''''''''''''''''''''''''''''''''''''''''''' */
-    len += array[index]->len;
+    len += (*help_items_da)[index]->len;
 
     /* Set a flag if we need to start a new line. */
     /* '''''''''''''''''''''''''''''''''''''''''' */
-    if (strcmp(array[index]->str, "\n") == 0)
+    if (strcmp((*help_items_da)[index]->str, "\n") == 0)
       forced_nl = 1;
     else
       forced_nl = 0;
@@ -423,9 +518,14 @@ init_help(win_t    *win,
 
       len = 0;
 
-      items_da = darray_new(0);
-      darray_add(help_lines_da, items_da);
+      /* Dynamically push the current items_da in help_lines_da */
+      /* And initialize a new items_da.                         */
+      /* '''''''''''''''''''''''''''''''''''''''''''''''''''''' */
+      BUF_PUSH(help_lines_da, items_da);
+      items_da = NULL;
 
+      /* Do not put the '\n' in the current items_da. */
+      /* '''''''''''''''''''''''''''''''''''''''''''' */
       if (forced_nl)
         continue;
     }
@@ -433,13 +533,17 @@ init_help(win_t    *win,
     /* Skip ' ' and ',' when they appear first in a line. */
     /* '''''''''''''''''''''''''''''''''''''''''''''''''' */
     if (first_in_line)
-      if (strcmp(array[index]->str, " ") == 0
-          || strcmp(array[index]->str, ",") == 0)
+      if (strcmp((*help_items_da)[index]->str, " ") == 0
+          || strcmp((*help_items_da)[index]->str, ",") == 0)
         continue;
 
     first_in_line = 0;
-    darray_add(items_da, array[index]);
+    BUF_PUSH(items_da, (*help_items_da)[index]);
   }
+
+  if (items_da != NULL)
+    BUF_PUSH(help_lines_da, items_da);
+
   return help_lines_da;
 }
 
@@ -447,10 +551,10 @@ init_help(win_t    *win,
 /* Help message display. */
 /* ===================== */
 void
-disp_help(win_t    *win,
-          term_t   *term,
-          darray_t *help_lines_da,
-          int       first_help_line)
+disp_help(win_t               *win,
+          term_t              *term,
+          help_attr_entry_t ***help_lines_da,
+          int                  fst_disp_help_line)
 {
   int index;   /* used to identify the objects long the help line. */
   int max_col; /* when to split the help line.                     */
@@ -458,7 +562,7 @@ disp_help(win_t    *win,
   int displayed_lines;
   int total_lines;
 
-  darray_t *items_da;
+  help_attr_entry_t **items_da;
 
   /* Determine when to split the help line if necessary. */
   /* """"""""""""""""""""""""""""""""""""""""""""""""""" */
@@ -470,11 +574,11 @@ disp_help(win_t    *win,
   (void)tputs(TPARM1(save_cursor), 1, outch);
 
   displayed_lines = 0;
-  total_lines     = darray_get_length(help_lines_da);
+  total_lines     = BUF_LEN(help_lines_da);
 
   /* Print the different objects forming the help lines.                 */
   /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-  for (index = first_help_line; index < total_lines; index++)
+  for (index = fst_disp_help_line; index < total_lines; index++)
   {
     int i;
     int item;
@@ -487,15 +591,15 @@ disp_help(win_t    *win,
 
     len = 0;
 
-    items_da = darray_get(help_lines_da, index);
-    nb_items = darray_get_length(items_da);
+    items_da = help_lines_da[index];
+    nb_items = BUF_LEN(items_da);
 
     (void)tputs(TPARM1(exit_attribute_mode), 1, outch);
     for (item = 0; item < nb_items; item++)
     {
       help_attr_entry_t *entry;
 
-      entry = darray_get(items_da, item);
+      entry = items_da[item];
       len += entry->len;
 
       (void)tputs(TPARM1(exit_attribute_mode), 1, outch);
@@ -8882,10 +8986,11 @@ main(int argc, char *argv[])
 
   /* Used by the internal help system. */
   /* """"""""""""""""""""""""""""""""" */
-  darray_t *help_items_da    = NULL;
-  darray_t *help_lines_da    = NULL;
-  int       first_help_line  = 0;
-  int       init_help_needed = 1; /* 1 if help lines need to be reevaluated. */
+  help_attr_entry_t  **help_items_da = NULL;
+  help_attr_entry_t ***help_lines_da = NULL;
+
+  int fst_disp_help_line = 0;
+  int init_help_needed   = 1; /* 1 if help lines need to be reevaluated. */
 
   /* Other variables. */
   /* """""""""""""""" */
@@ -9128,8 +9233,6 @@ main(int argc, char *argv[])
   int col; /* absolute column position in terminal (1...) */
 
   int mouse_proto = -1;
-
-  help_items_da = darray_new(0);
 
   /* Initialize some internal data structures. */
   /* """"""""""""""""""""""""""""""""""""""""" */
@@ -13573,8 +13676,8 @@ main(int argc, char *argv[])
       /* We need to trigger the rebuild of the help lines because of */
       /* the geometry change.                                        */
       /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-      init_help_needed = 1;
-      first_help_line  = 0;
+      init_help_needed   = 1;
+      fst_disp_help_line = 0;
 
       help_mode = 0;
 
@@ -14085,7 +14188,7 @@ main(int argc, char *argv[])
                           &langinfo);
 
           if (help_mode)
-            disp_help(&win, &term, help_lines_da, first_help_line);
+            disp_help(&win, &term, help_lines_da, fst_disp_help_line);
           break;
 
         case 'n':
@@ -14812,11 +14915,11 @@ main(int argc, char *argv[])
           {
             if (help_mode)
             {
-              int help_length = darray_get_length(help_lines_da);
+              int help_length = BUF_LEN(help_lines_da);
 
-              if (help_length > win.max_lines && first_help_line > 0)
+              if (help_length > win.max_lines && fst_disp_help_line > 0)
               {
-                first_help_line--;
+                fst_disp_help_line--;
                 nl = disp_lines(&win,
                                 &toggles,
                                 current,
@@ -14827,7 +14930,7 @@ main(int argc, char *argv[])
                                 last_line,
                                 tmp_word,
                                 &langinfo);
-                disp_help(&win, &term, help_lines_da, first_help_line);
+                disp_help(&win, &term, help_lines_da, fst_disp_help_line);
               }
             }
             else
@@ -14931,11 +15034,12 @@ main(int argc, char *argv[])
           {
             if (help_mode)
             {
-              int help_length = darray_get_length(help_lines_da);
+              int help_length = BUF_LEN(help_lines_da);
 
-              if (help_length > win.max_lines && first_help_line < help_length)
+              if (help_length > win.max_lines
+                  && fst_disp_help_line < help_length)
               {
-                first_help_line++;
+                fst_disp_help_line++;
                 nl = disp_lines(&win,
                                 &toggles,
                                 current,
@@ -14946,7 +15050,7 @@ main(int argc, char *argv[])
                                 last_line,
                                 tmp_word,
                                 &langinfo);
-                disp_help(&win, &term, help_lines_da, first_help_line);
+                disp_help(&win, &term, help_lines_da, fst_disp_help_line);
               }
             }
             else
@@ -16110,8 +16214,8 @@ main(int argc, char *argv[])
           if (help_mode)
           {
             help_timer = timers.help; /* Rearm the timer; */
-            if (first_help_line > 0)
-              first_help_line = 0;
+            if (fst_disp_help_line > 0)
+              fst_disp_help_line = 0;
             else
               break;
           }
@@ -16122,25 +16226,23 @@ main(int argc, char *argv[])
             {
               /* (Re-)Initialise the content of the internal help system. */
               /* """""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-              if (help_lines_da != NULL)
-              {
-                int length = darray_get_length(help_lines_da);
-                int i;
+              int length = BUF_LEN(help_lines_da);
+              int i;
 
-                for (i = 0; i < length; i++)
-                  darray_free(darray_get(help_lines_da, i), NULL);
-                darray_free(help_lines_da, NULL);
-              }
+              for (i = 0; i < length; i++)
+                BUF_FREE(help_lines_da[i]);
+              BUF_FREE(help_lines_da);
 
-              help_lines_da    = init_help(&win,
+              help_lines_da = init_help(&win,
                                         &term,
                                         &toggles,
                                         last_line,
-                                        help_items_da);
+                                        &help_items_da);
+
               init_help_needed = 0;
             }
 
-            disp_help(&win, &term, help_lines_da, first_help_line);
+            disp_help(&win, &term, help_lines_da, fst_disp_help_line);
             help_mode = 1;
 
             /* Arm the help timer. */

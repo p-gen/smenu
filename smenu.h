@@ -499,8 +499,12 @@ struct help_entry_s
 {
   char *str; /* string to be displayed for an object in the help line. */
   int   len; /* screen space taken by of one of these objects.         */
-  char *main_attr_str; /* r=reverse, n=normal, b=bold, uu=underlined.  */
-  char *alt_attr_str;  /* r=reverse, n=normal, b=bold, uu=underlined.  */
+  char *main_attr_str; /* Style attribute when colors are available.   */
+  char *alt_attr_str;  /* Style attribute when colors are missing.     */
+  char *flags;         /* string which can only contain occurrences of *
+                        | c: only on column/line mode,                 *
+                        | t: only in tag mode,                         *
+                        | m: -no_mouse is set.                         */
 };
 
 struct help_attr_entry_s
@@ -517,21 +521,26 @@ struct help_attr_entry_s
 attrib_t *
 attr_new(void);
 
-void
-add_help_entries(term_t       *term,
-                 darray_t     *help_items_da,
-                 help_entry_t *entries,
-                 int           entries_nb);
+int
+help_add_entries(win_t               *win,
+                 term_t              *term,
+                 toggle_t            *toggles,
+                 help_attr_entry_t ***help_items_da,
+                 help_entry_t        *entries,
+                 int                  entries_nb);
 
-darray_t *
-init_help(win_t    *win,
-          term_t   *term,
-          toggle_t *toggles,
-          long      last_line,
-          darray_t *help_items_da);
+help_attr_entry_t ***
+init_help(win_t               *win,
+          term_t              *term,
+          toggle_t            *toggles,
+          long                 last_line,
+          help_attr_entry_t ***help_items_da);
 
 void
-disp_help(win_t *win, term_t *term, darray_t *help_da, int first_help_line);
+disp_help(win_t               *win,
+          term_t              *term,
+          help_attr_entry_t ***help_da,
+          int                  first_help_line);
 
 int
 tag_comp(void const *a, void const *b);
