@@ -15,6 +15,12 @@
    Be careful not to supply modifying statements to the macro arguments.
    Something like BUF_REMOVE(buf, i--); would have unintended results.
 
+   --- Added by Pierre Gentile - p.gen.progs@gmail.com - 2024 ---
+   BUF_MALLOC and BUF_REALLOC can be #defined to specify alternative memory
+   allocation and reallocation functions.
+   When not #defined, the standard malloc and realloc functions are used.
+   --- End ---
+
    Sample usage:
 
    mytype_t* buf = NULL;
@@ -97,62 +103,110 @@
 #include <string.h> /* for memmove, memset */
 #include <stddef.h> /* for size_t */
 
-/* Query functions */
+/* Query functions. */
+/* """""""""""""""" */
 #define BUF_LEN(b) ((b) ? BUF__HDR(b)->len : 0)
 #define BUF_CAP(b) ((b) ? BUF__HDR(b)->cap : 0)
 #define BUF_END(b) ((b) + BUF_LEN(b))
 #define BUF_SIZEOF(b) ((b) ? BUF_LEN(b) * sizeof(*b) : 0)
 
-/* Modifying functions */
-#define BUF_FREE(b)       ((b) ? (free(BUF__HDR(b)), (*(void**)(&(b)) = (void*)0)) : 0)
-#define BUF_FIT(b, n)     ((size_t)(n) <= BUF_CAP(b) ? 0 : (*(void**)(&(b)) = buf__grow((b), (size_t)(n), sizeof(*(b)))))
-#define BUF_PUSH(b, val)  (BUF_FIT((b), BUF_LEN(b) + 1), (b)[BUF__HDR(b)->len++] = (val))
-#define BUF_POP(b)        (b)[--BUF__HDR(b)->len]
-#define BUF_RESIZE(b, sz) (BUF_FIT((b), (sz)), ((b) ? BUF__HDR(b)->len = (sz) : 0))
-#define BUF_CLEAR(b)      ((b) ? BUF__HDR(b)->len = 0 : 0)
-#define BUF_TRYFIT(b, n)  (BUF_FIT((b), (n)), (((b) && BUF_CAP(b) >= (size_t)(n)) || !(n)))
+/* Modifying functions. */
+/* """""""""""""""""""" */
+#define BUF_FREE(b) \
+  ((b) ? (free(BUF__HDR(b)), (*(void **)(&(b)) = (void *)0)) : 0)
 
-/* Utility functions */
-#define BUF_SHIFT(b, to, fr, n) ((b) ? memmove((b) + (to), (b) + (fr), (n) * sizeof(*(b))) : 0)
-#define BUF_REMOVE(b, idx)      (BUF_SHIFT(b, idx, (idx) + 1, --BUF__HDR(b)->len - (idx)))
-#define BUF_SWAPREMOVE(b, idx)  (BUF_SHIFT(b, idx, --BUF__HDR(b)->len, 1))
-#define BUF_MAKEGAP(b, idx, sz) (BUF_RESIZE((b), BUF_LEN(b)+(sz)), BUF_SHIFT(b, (idx)+(sz), idx, BUF_LEN(b)-(idx)-(sz)), (b)+(idx))
+#define BUF_FIT(b, n)        \
+  ((size_t)(n) <= BUF_CAP(b) \
+     ? 0                     \
+     : (*(void **)(&(b)) = buf__grow((b), (size_t)(n), sizeof(*(b)))))
+
+#define BUF_PUSH(b, val) \
+  (BUF_FIT((b), BUF_LEN(b) + 1), (b)[BUF__HDR(b)->len++] = (val))
+
+#define BUF_POP(b) (b)[--BUF__HDR(b)->len]
+
+#define BUF_RESIZE(b, sz) \
+  (BUF_FIT((b), (sz)), ((b) ? BUF__HDR(b)->len = (sz) : 0))
+
+#define BUF_CLEAR(b) ((b) ? BUF__HDR(b)->len = 0 : 0)
+
+#define BUF_TRYFIT(b, n) \
+  (BUF_FIT((b), (n)), (((b) && BUF_CAP(b) >= (size_t)(n)) || !(n)))
+
+/* Utility functions. */
+/* """""""""""""""""" */
+#define BUF_SHIFT(b, to, fr, n) \
+  ((b) ? memmove((b) + (to), (b) + (fr), (n) * sizeof(*(b))) : 0)
+
+#define BUF_REMOVE(b, idx) \
+  (BUF_SHIFT(b, idx, (idx) + 1, --BUF__HDR(b)->len - (idx)))
+
+#define BUF_SWAPREMOVE(b, idx) (BUF_SHIFT(b, idx, --BUF__HDR(b)->len, 1))
+
+#define BUF_MAKEGAP(b, idx, sz)                                \
+  (BUF_RESIZE((b), BUF_LEN(b) + (sz)),                         \
+   BUF_SHIFT(b, (idx) + (sz), idx, BUF_LEN(b) - (idx) - (sz)), \
+   (b) + (idx))
+
 #define BUF_INSERT(b, idx, val) (*BUF_MAKEGAP(b, idx, 1) = (val))
-#define BUF_ZERO(b, idx, n)     (memset((b)+(idx), 0, (n)*sizeof(*(b))))
-#define BUF_ADD(b, n)           (BUF_FIT(b, BUF_LEN(b) + (n)), (b) + (BUF__HDR(b)->len += (n)) - (n))
-#define BUF_ADDZEROED(b, n)     (BUF_FIT(b, BUF_LEN(b) + (n)), BUF_ZERO(b, BUF_LEN(b), n), (b) + (BUF__HDR(b)->len += (n)) - (n))
 
-#define BUF__HDR(b) (((struct buf__hdr *)(b))-1)
-struct buf__hdr { size_t len, cap; };
+#define BUF_ZERO(b, idx, n) (memset((b) + (idx), 0, (n) * sizeof(*(b))))
+
+#define BUF_ADD(b, n) \
+  (BUF_FIT(b, BUF_LEN(b) + (n)), (b) + (BUF__HDR(b)->len += (n)) - (n))
+
+#define BUF_ADDZEROED(b, n)      \
+  (BUF_FIT(b, BUF_LEN(b) + (n)), \
+   BUF_ZERO(b, BUF_LEN(b), n),   \
+   (b) + (BUF__HDR(b)->len += (n)) - (n))
+
+#define BUF__HDR(b) (((struct buf__hdr *)(b)) - 1)
+
+struct buf__hdr
+{
+  size_t len, cap;
+};
 
 #ifdef __GNUC__
 __attribute__((__unused__))
 #elif defined(_MSC_VER)
 #pragma warning(push)
-#pragma warning(disable:4505) //unreferenced local function has been removed
+#pragma warning(disable:4505) /* Unref. local function has been removed. */
 #endif
-static void *buf__grow(void *buf, size_t new_len, size_t elem_size)
+
+#ifndef BUF_MALLOC
+#define BUF_MALLOC malloc
+#endif
+
+#ifndef BUF_REALLOC
+#define BUF_REALLOC realloc
+#endif
+
+static void *
+buf__grow(void *buf, size_t new_len, size_t elem_size)
 {
-	struct buf__hdr *new_hdr;
-	size_t new_cap = 2 * BUF_CAP(buf), new_size;
-	if (new_cap < new_len) new_cap = new_len;
-	if (new_cap <      16) new_cap = 16;
-	new_size = sizeof(struct buf__hdr) + new_cap*elem_size;
-	if (buf)
-	{
-		new_hdr = (struct buf__hdr *)realloc(BUF__HDR(buf), new_size);
-		if (!new_hdr)
-			return buf; /* out of memory, return unchanged */
-	}
-	else
-	{
-		new_hdr = (struct buf__hdr *)malloc(new_size);
-		if (!new_hdr)
-			return (void*)0; /* out of memory */
-		new_hdr->len = 0;
-	}
-	new_hdr->cap = new_cap;
-	return new_hdr + 1;
+  struct buf__hdr *new_hdr;
+  size_t           new_cap = 2 * BUF_CAP(buf), new_size;
+  if (new_cap < new_len)
+    new_cap = new_len;
+  if (new_cap < 16)
+    new_cap = 16;
+  new_size = sizeof(struct buf__hdr) + new_cap * elem_size;
+  if (buf)
+  {
+    new_hdr = (struct buf__hdr *)BUF_REALLOC(BUF__HDR(buf), new_size);
+    if (!new_hdr)
+      return buf; /* Out of memory, return unchanged. */
+  }
+  else
+  {
+    new_hdr = (struct buf__hdr *)BUF_MALLOC(new_size);
+    if (!new_hdr)
+      return (void *)0; /* Out of memory. */
+    new_hdr->len = 0;
+  }
+  new_hdr->cap = new_cap;
+  return new_hdr + 1;
 }
 #if defined(_MSC_VER)
 #pragma warning(pop)

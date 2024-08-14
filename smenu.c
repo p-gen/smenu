@@ -41,6 +41,8 @@
 #include "ctxopt.h"
 #include "usage.h"
 #include "safe.h"
+#define BUF_MALLOC xmalloc
+#define BUF_REALLOC xrealloc
 #include "tinybuf.h"
 #include "smenu.h"
 
@@ -3140,17 +3142,18 @@ build_repl_string(char    *orig,
                   long     match,
                   int     *error)
 {
-  size_t allocated = 16;
-  size_t rsize     = 0;
-  char  *str       = xmalloc(allocated);
-  int    special   = 0;
-  long   offset    = match * subs_nb; /* offset of the 1st sub       *
-                                       | corresponding to the match. */
+  char *str;     /*string to return */
+  int   special; /* 1 if the next character is protected. */
+  long  offset;  /* offset of the 1st sub corresponding to the match. */
 
-  *error = 0;
+  str     = (char *)0;
+  special = 0;
+  *error  = 0;
+
+  offset = match * subs_nb;
 
   if (*repl == '\0')
-    str = xstrdup("");
+    BUF_FIT(str, 1);
   else
     while (!*error && *repl)
     {
@@ -3159,12 +3162,8 @@ build_repl_string(char    *orig,
         case '\\':
           if (special)
           {
-            if (allocated == rsize)
-              str = xrealloc(str, allocated += 16);
-            str[rsize] = '\\';
-            rsize++;
-            str[rsize] = '\0';
-            special    = 0;
+            BUF_PUSH(str, '\\');
+            special = 0;
           }
           else
             special = 1;
@@ -3186,13 +3185,11 @@ build_repl_string(char    *orig,
               long index = (*repl) - '0' - 1 + offset;
               long delta = subs_a[index].end - subs_a[index].start;
 
-              if (allocated <= rsize + delta)
-                str = xrealloc(str, allocated += (delta + 16));
-
-              memcpy(str + rsize, orig + subs_a[index].start, delta);
-
-              rsize += delta;
-              str[rsize] = '\0';
+              if (delta > 0)
+              {
+                char *ptr = BUF_ADD(str, delta);
+                memcpy(ptr, orig + subs_a[index].start, delta);
+              }
             }
             else
             {
@@ -3203,11 +3200,7 @@ build_repl_string(char    *orig,
           }
           else
           {
-            if (allocated == rsize)
-              str = xrealloc(str, allocated += 16);
-            str[rsize] = *repl;
-            rsize++;
-            str[rsize] = '\0';
+            BUF_PUSH(str, *repl);
           }
           break;
 
@@ -3216,24 +3209,18 @@ build_repl_string(char    *orig,
           {
             long delta = match_end - match_start;
 
-            if (allocated <= rsize + delta)
-              str = xrealloc(str, allocated += (delta + 16));
-
-            memcpy(str + rsize, orig + match_start, delta);
-
-            rsize += delta;
-            str[rsize] = '\0';
+            if (delta > 0)
+            {
+              char *ptr = BUF_ADD(str, delta);
+              memcpy(ptr, orig + match_start, delta);
+            }
 
             special = 0;
           }
           else
           {
-            if (allocated == rsize)
-              str = xrealloc(str, allocated += 16);
-            str[rsize] = *repl;
-            rsize++;
-            str[rsize] = '\0';
-            special    = 0;
+            BUF_PUSH(str, *repl);
+            special = 0;
           }
           break;
 
@@ -3242,32 +3229,27 @@ build_repl_string(char    *orig,
           {
             long delta = match_end - match_start;
 
-            if (allocated <= rsize + delta)
-              str = xrealloc(str, allocated += (delta + 16));
-
-            memcpy(str + rsize, orig + match_start, delta);
-
-            rsize += delta;
-            str[rsize] = '\0';
-            break;
+            if (delta > 0)
+            {
+              char *ptr = BUF_ADD(str, delta);
+              memcpy(ptr, orig + match_start, delta);
+            }
           }
-
-          /* No break here, '&' must be treated as a normal */
-          /* character when protected.                      */
-          /* '''''''''''''''''''''''''''''''''''''''''''''' */
-
-          /* FALLTHROUGH */
+          else
+          {
+            BUF_PUSH(str, '&');
+            special = 0;
+          }
+          break;
 
         default:
-          if (allocated == rsize)
-            str = xrealloc(str, allocated += 16);
-          str[rsize] = *repl;
-          rsize++;
-          str[rsize] = '\0';
-          special    = 0;
+          BUF_PUSH(str, *repl);
+          special = 0;
       }
       repl++;
     }
+
+  BUF_PUSH(str, '\0');
 
   if (special > 0)
     *error = 1;
@@ -3357,7 +3339,8 @@ replace(char *orig, sed_t *sed)
 
           my_strcpy(word_buffer + target_len, exp_repl);
           target_len += len;
-          free(exp_repl);
+
+          BUF_FREE(exp_repl);
 
           index += matches_a[match].end - matches_a[match].start;
 
