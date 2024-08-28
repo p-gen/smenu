@@ -502,3 +502,39 @@ my_wcswidth(const wchar_t *s, size_t n)
 
   return len;
 }
+
+/* ==================================================================== */
+/* Get the target index of the number to be inserted in a sorted array. */
+/*                                                                      */
+/* IN array : an already empty or sorted array.                         */
+/* IN value : the value to be inserted in the array.                    */
+/* IN nb    : the number of existing elements in the array.             */
+/*                                                                      */
+/* RETURN   : -1 if the value is already in the array of the future     */
+/*            index of value in the array.                              */
+/* ==================================================================== */
+long
+get_sorted_array_target_pos(long *array, long nb, long value)
+{
+  long pos  = nb;
+  long left = 0, right = nb, middle;
+
+  if (nb > 0)
+  {
+    /* Bisection search. */
+    /* """"""""""""""""" */
+    while (left < right)
+    {
+      middle = (left + right) / 2;
+      if (array[middle] == value)
+        return -1; /* Value already in array. */
+
+      if (value < array[middle])
+        right = middle;
+      else
+        left = middle + 1;
+    }
+    pos = left;
+  }
+  return pos;
+}

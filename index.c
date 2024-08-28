@@ -54,7 +54,7 @@ tst_insert(tst_node_t *p, wchar_t *w, void *data)
       p->eqkid = NULL;
     }
     else
-      p->eqkid = tst_insert(p->eqkid, ++w, data);
+      p->eqkid = tst_insert(p->eqkid, w + 1, data);
   }
   else
     p->hikid = tst_insert(p->hikid, w, data);
@@ -266,60 +266,6 @@ tst_prefix_search(tst_node_t *root, wchar_t *w, int (*callback)(void *))
   }
 
   return NULL;
-}
-
-/* ========================================================= */
-/* Insertion of an integer in a already sorted integer array */
-/* without duplications.                                     */
-/*                                                           */
-/* IN/OUT array : pointer to the array to manage.            */
-/* IN/OUT size  : allocated size of the array.               */
-/* IN/OUT nb    : number of longs in the array.              */
-/* IN value     : long value to be inserted in the array.    */
-/* ========================================================= */
-void
-insert_sorted_index(long **array_ptr, long *size, long *nb, long value)
-{
-  long pos  = *nb;
-  long left = 0, right = *nb, middle;
-
-  if (*nb > 0)
-  {
-    /* Bisection search. */
-    /* """"""""""""""""" */
-    while (left < right)
-    {
-      middle = (left + right) / 2;
-      if ((*array_ptr)[middle] == value)
-        return; /* Value already in array. */
-
-      if (value < (*array_ptr)[middle])
-        right = middle;
-      else
-        left = middle + 1;
-    }
-    pos = left;
-  }
-
-  if (*nb == *size)
-  {
-    *size += 64;
-    *array_ptr = xrealloc(*array_ptr, *size * sizeof(long));
-  }
-
-  /* Shift remaining array elements at position pos to position pos+1 */
-  /* (shift right one position).                                      */
-  /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-  if (*nb > pos)
-    memmove((*array_ptr) + pos + 1,
-            (*array_ptr) + pos,
-            sizeof(value) * (*nb - pos));
-
-  (*nb)++;
-
-  /* Set the value of the element at position pos in the passed array. */
-  /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-  (*array_ptr)[pos] = value;
 }
 
 /* ========================================================= */

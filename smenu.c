@@ -67,8 +67,8 @@ long *line_nb_of_word_a;     /* array containing the line number (from 0)  *
 long *first_word_in_line_a;  /* array containing the index of the first    *
                               | word of each lines.                        */
 long *shift_right_sym_pos_a; /* screen column number of the right          *
-                                scrolling symbol if any when in line or    *
-                                column mode.                               */
+                              | scrolling symbol if any when in line or    *
+                              | column mode.                               */
 
 int forgotten_timer = -1;
 int help_timer      = -1;
@@ -126,26 +126,18 @@ int       daccess_stack_head;
 
 /* Variables used for fuzzy and substring searching. */
 /* """"""""""""""""""""""""""""""""""""""""""""""""" */
-long matches_count; /* Number of all matching words. */
+long *matching_words_da = NULL; /* Array containing the index of all *
+                                 | matching words.                  */
 
-long *matching_words_a; /* Array containing the index of all matching *
-                         | words.                                     */
+long *best_matching_words_da = NULL; /* Array containing the index of *
+                                      | matching words containing a   *
+                                      | consecutive suite of matching *
+                                      | glyphs.                       */
 
-long matching_words_a_size; /* Allocated size for the previous array. */
-
-long best_matches_count; /* Number of matching words whose matching   *
-                          | part form a consecutive suite of matching *
-                          | glyphs.                                   */
-
-long *best_matching_words_a; /* Array containing the index of matching  *
-                              | words containing a consecutive suite of *
-                              | matching glyphs.                        */
-
-long best_matching_words_a_size; /* Allocated size for the previous array. */
-
-long *alt_matching_words_a = NULL; /* Alternate array to contain only the    *
-                                    | matching candidates having potentially *
-                                    | a starting/ending pattern.             */
+long *alt_matching_words_da = NULL; /* Alternate array to contain only *
+                                     | the matching candidates having  *
+                                     | potentially a starting/ending   *
+                                     | pattern.                        */
 
 /* Variables used in signal handlers. */
 /* """""""""""""""""""""""""""""""""" */
@@ -1424,7 +1416,7 @@ update_bitmaps(search_mode_t     mode,
   long  last = data->utf8_len - 1; /* offset of the last glyph in the    *
                                     | search buffer.                     */
 
-  best_matches_count = 0;
+  BUF_CLEAR(best_matching_words_da);
 
   if (mode == FUZZY || mode == SUBSTRING)
   {
@@ -1442,12 +1434,12 @@ update_bitmaps(search_mode_t     mode,
     else
       sb = sb_orig;
 
-    for (i = 0; i < matches_count; i++)
+    for (i = 0; i < BUF_LEN(matching_words_da); i++)
     {
       long lmg; /* position of the last matching glyph of the search buffer *
                  | in a word.                                               */
 
-      n = matching_words_a[i];
+      n = matching_words_da[i];
 
       str_orig = xstrdup(word_a[n].str + daccess.flength);
 
@@ -1638,19 +1630,7 @@ update_bitmaps(search_mode_t     mode,
         /* cursor among this category of words.                          */
         /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
         if (badness == 0)
-        {
-          if (best_matches_count == best_matching_words_a_size)
-          {
-            best_matching_words_a = xrealloc(best_matching_words_a,
-                                             (best_matching_words_a_size + 16)
-                                               * sizeof(long));
-            best_matching_words_a_size += 16;
-          }
-
-          best_matching_words_a[best_matches_count] = n;
-
-          best_matches_count++;
-        }
+          BUF_PUSH(best_matching_words_da, n);
       }
     }
 
@@ -1661,9 +1641,9 @@ update_bitmaps(search_mode_t     mode,
   }
   else if (mode == PREFIX)
   {
-    for (i = 0; i < matches_count; i++)
+    for (i = 0; i < BUF_LEN(matching_words_da); i++)
     {
-      n      = matching_words_a[i];
+      n      = matching_words_da[i];
       bm     = word_a[n].bitmap;
       bm_len = (word_a[n].mb - daccess.flength) / CHAR_BIT + 1;
 
@@ -1825,9 +1805,9 @@ clean_matches(search_data_t *search_data, long size)
 
   /* Clean the match flags and bitmaps. */
   /* """""""""""""""""""""""""""""""""" */
-  for (i = 0; i < matches_count; i++)
+  for (i = 0; i < BUF_LEN(matching_words_da); i++)
   {
-    long n = matching_words_a[i];
+    long n = matching_words_da[i];
 
     word_a[n].is_matching = 0;
 
@@ -1836,7 +1816,7 @@ clean_matches(search_data_t *search_data, long size)
            (word_a[n].mb - daccess.flength) / CHAR_BIT + 1);
   }
 
-  matches_count = 0;
+  BUF_CLEAR(matching_words_da);
 }
 
 /* *************************** */
@@ -3461,6 +3441,7 @@ set_matching_flag(void *elem)
   ll_t *list = (ll_t *)elem;
 
   ll_node_t *node = list->head;
+  long       target;
 
   while (node)
   {
@@ -3470,10 +3451,11 @@ set_matching_flag(void *elem)
     if (word_a[pos].is_selectable)
       word_a[pos].is_matching = 1;
 
-    insert_sorted_index(&matching_words_a,
-                        &matching_words_a_size,
-                        &matches_count,
-                        pos);
+    target = get_sorted_array_target_pos(matching_words_da,
+                                         BUF_LEN(matching_words_da),
+                                         pos);
+    if (target >= 0)
+      BUF_INSERT(matching_words_da, target, pos);
 
     node = node->next;
   }
@@ -3488,7 +3470,7 @@ set_matching_flag(void *elem)
 /* the words in the input flow.                                            */
 /* Each position in this list is used to:                                  */
 /* - mark the word at that position as matching,                           */
-/* - add this position in the sorted array matching_words_a.               */
+/* - add this position in the sorted array matching_words_da.              */
 /* Always succeeds and returns 1.                                          */
 /* ======================================================================= */
 int
@@ -3501,18 +3483,21 @@ tst_cb(void *elem)
   ll_t *list = (ll_t *)elem;
 
   ll_node_t *node = list->head;
+  long       target;
 
   while (node)
   {
-    size_t pos;
+    long pos;
 
     pos = *(long *)(node->data);
 
     word_a[pos].is_matching = 1;
-    insert_sorted_index(&matching_words_a,
-                        &matching_words_a_size,
-                        &matches_count,
-                        pos);
+
+    target = get_sorted_array_target_pos(matching_words_da,
+                                         BUF_LEN(matching_words_da),
+                                         pos);
+    if (target >= 0)
+      BUF_INSERT(matching_words_da, target, pos);
 
     node = node->next;
   }
@@ -4408,7 +4393,7 @@ build_metadata(term_t *term, long count, win_t *win)
   long     last = 0;
   long     word_width; /* Number of screen positions taken by the word. */
   long     tab_count;  /* Current number of words in the line, used in  *
-                         | tab_mode.                                     */
+                        | tab_mode.                                     */
   wchar_t *w;
 
   line_nb_of_word_a[0]    = 0;
@@ -5228,7 +5213,7 @@ disp_lines(win_t         *win,
         while (wi < current && !word_a[wi].is_selectable)
           wi++;
 
-        leftmost_start = word_a[wi++].start;
+        leftmost_start = word_a[wi].start;
 
         if (lines_disp + first_line > last_line)
           wi = count - 1;
@@ -5676,10 +5661,9 @@ select_ending_matches(win_t         *win,
                       search_data_t *search_data,
                       long          *last_line)
 {
-  if (matches_count > 0)
+  if (BUF_LEN(matching_words_da) > 0)
   {
     long  i;
-    long  j = 0;
     long  index;
     long  nb;
     long *tmp;
@@ -5692,12 +5676,12 @@ select_ending_matches(win_t         *win,
     /* an ending pattern, if this array becomes non   */
     /* empty then it will replace the original array. */
     /* """""""""""""""""""""""""""""""""""""""""""""" */
-    alt_matching_words_a = xrealloc(alt_matching_words_a,
-                                    matches_count * (sizeof(long)));
+    BUF_FREE(alt_matching_words_da);
+    BUF_FIT(alt_matching_words_da, BUF_LEN(matching_words_da));
 
-    for (i = 0; i < matches_count; i++)
+    for (i = 0; i < BUF_LEN(matching_words_da); i++)
     {
-      index     = matching_words_a[i];
+      index     = matching_words_da[i];
       char *str = word_a[index].str;
 
       /* count the trailing blanks non counted in the bitmap. */
@@ -5725,7 +5709,7 @@ select_ending_matches(win_t         *win,
       /* """""""""""""""""""""""""""""""""""""""""""""""""""""""" */
       if (BIT_ISSET(word_a[index].bitmap,
                     word_a[index].mb - nb - daccess.flength - 1))
-        alt_matching_words_a[j++] = index;
+        BUF_PUSH(alt_matching_words_da, index);
       else
       {
         /* Look if the end of the word potentially contain an */
@@ -5739,7 +5723,7 @@ select_ending_matches(win_t         *win,
           /* in fuzzy search mode we only look the last glyph. */
           /* """"""""""""""""""""""""""""""""""""""""""""""""" */
           if (memcmp(ptr, last_glyph, utf8_len) == 0)
-            alt_matching_words_a[j++] = index;
+            BUF_PUSH(alt_matching_words_da, index);
           else
             memset(word_a[index].bitmap,
                    '\0',
@@ -5752,7 +5736,7 @@ select_ending_matches(win_t         *win,
           for (nb = 0; nb < search_data->utf8_len - 1; nb++)
             ptr = utf8_prev(str, ptr);
           if (memcmp(ptr, search_data->buf, search_data->len) == 0)
-            alt_matching_words_a[j++] = index;
+            BUF_PUSH(alt_matching_words_da, index);
           else
             memset(word_a[index].bitmap,
                    '\0',
@@ -5763,20 +5747,17 @@ select_ending_matches(win_t         *win,
 
     /* Swap the normal and alt array. */
     /* """""""""""""""""""""""""""""" */
-    matches_count         = j;
-    matching_words_a_size = j;
+    tmp                   = matching_words_da;
+    matching_words_da     = alt_matching_words_da;
+    alt_matching_words_da = tmp;
 
-    tmp                  = matching_words_a;
-    matching_words_a     = alt_matching_words_a;
-    alt_matching_words_a = tmp;
-
-    if (j > 0)
+    if (BUF_LEN(matching_words_da) > 0)
     {
       /* Adjust the bitmap to the ending version. */
       /* """""""""""""""""""""""""""""""""""""""" */
       update_bitmaps(search_mode, search_data, END_AFFINITY);
 
-      current = matching_words_a[0];
+      current = matching_words_da[0];
 
       if (current < win->start || current > win->end)
         *last_line = build_metadata(term, count, win);
@@ -5797,10 +5778,9 @@ select_starting_matches(win_t         *win,
                         search_data_t *search_data,
                         long          *last_line)
 {
-  if (matches_count > 0)
+  if (BUF_LEN(matching_words_da) > 0)
   {
     long   i;
-    long   j = 0;
     long   index;
     size_t nb;
     long  *tmp;
@@ -5808,21 +5788,21 @@ select_starting_matches(win_t         *win,
     char  *first_glyph;
     int    utf8_len;
 
-    alt_matching_words_a = xrealloc(alt_matching_words_a,
-                                    matches_count * (sizeof(long)));
+    BUF_FREE(alt_matching_words_da);
+    BUF_FIT(alt_matching_words_da, BUF_LEN(matching_words_da));
 
     first_glyph = xmalloc(5);
 
-    for (i = 0; i < matches_count; i++)
+    for (i = 0; i < BUF_LEN(matching_words_da); i++)
     {
-      index = matching_words_a[i];
+      index = matching_words_da[i];
 
       for (nb = 0; nb < word_a[index].mb; nb++)
         if (!isblank(*(word_a[index].str + daccess.flength + nb)))
           break;
 
       if (BIT_ISSET(word_a[index].bitmap, nb))
-        alt_matching_words_a[j++] = index;
+        BUF_PUSH(alt_matching_words_da, index);
       else
       {
 
@@ -5837,7 +5817,7 @@ select_starting_matches(win_t         *win,
           /* in fuzzy search mode we only look the first glyph. */
           /* """""""""""""""""""""""""""""""""""""""""""""""""" */
           if (memcmp(search_data->buf, first_glyph, utf8_len) == 0)
-            alt_matching_words_a[j++] = index;
+            BUF_PUSH(alt_matching_words_da, index);
           else
             memset(word_a[index].bitmap,
                    '\0',
@@ -5851,7 +5831,7 @@ select_starting_matches(win_t         *win,
                      word_a[index].str + nb,
                      search_data->len - nb)
               == 0)
-            alt_matching_words_a[j++] = index;
+            BUF_PUSH(alt_matching_words_da, index);
           else
             memset(word_a[index].bitmap,
                    '\0',
@@ -5862,20 +5842,19 @@ select_starting_matches(win_t         *win,
 
     free(first_glyph);
 
-    matches_count         = j;
-    matching_words_a_size = j;
+    /* Swap the normal and alt array. */
+    /* """""""""""""""""""""""""""""" */
+    tmp                   = matching_words_da;
+    matching_words_da     = alt_matching_words_da;
+    alt_matching_words_da = tmp;
 
-    tmp                  = matching_words_a;
-    matching_words_a     = alt_matching_words_a;
-    alt_matching_words_a = tmp;
-
-    if (j > 0)
+    if (BUF_LEN(matching_words_da) > 0)
     {
-      /* Adjust the bitmap to the ending version. */
-      /* """""""""""""""""""""""""""""""""""""""" */
+      /* Adjust the bitmap to the starting version. */
+      /* """""""""""""""""""""""""""""""""""""""""" */
       update_bitmaps(search_mode, search_data, START_AFFINITY);
 
-      current = matching_words_a[0];
+      current = matching_words_da[0];
 
       if (current < win->start || current > win->end)
         *last_line = build_metadata(term, count, win);
@@ -8522,7 +8501,7 @@ reset_search_buffer(win_t         *win,
   /* """""""""""""""""""""""""""""""""""""""""""""""""" */
   search_mode = NONE;
 
-  if (matches_count > 0 || saved_search_mode != search_mode)
+  if (BUF_LEN(matching_words_da) > 0 || saved_search_mode != search_mode)
   {
     clean_matches(search_data, word_real_max_size);
 
@@ -8985,9 +8964,10 @@ main(int argc, char *argv[])
                          | window.                                           */
   ll_t *message_lines_list = NULL; /* list of the lines in the message to    *
                                     | be displayed.                          */
-  long  message_max_width  = 0; /* total width of the message (longest line). */
+  long  message_max_width  = 0; /* total width of the message                *
+                                 | (longest line).                           */
   long  message_max_len    = 0; /* max number of bytes taken by a message     *
-                                | line.                                      */
+                                 | line.                                     */
 
   char *int_string      = NULL; /* String to be output when typing ^C.       */
   int   int_as_in_shell = 1; /* CTRL-C mimics the shell behaviour.           */
@@ -9155,13 +9135,13 @@ main(int argc, char *argv[])
   unsigned char buffer[64]; /* Input buffer which will contain the scancode. */
 
   search_data_t search_data;
-  search_data.buf = NULL;   /* Search buffer                                */
-  search_data.len = 0;      /* Current position in the search buffer        */
-  search_data.utf8_len = 0; /* Current position in the search buffer in     *
-                              | UTF-8 units.                                 */
-  search_data.err      = 0; /* reset the error indicator.                   */
+  search_data.buf = NULL;   /* Search buffer                                 */
+  search_data.len = 0;      /* Current position in the search buffer         */
+  search_data.utf8_len = 0; /* Current position in the search buffer in      *
+                             | UTF-8 units.                                  */
+  search_data.err      = 0; /* reset the error indicator.                    */
   search_data.fuzzy_err_pos = -1; /* no last error position in search        *
-                                  buffer.                                    */
+                                   | buffer.                                 */
 
   long matching_word_cur_index = -1; /* cache for the next/previous moves    *
                                       | in the matching words array.         */
@@ -9239,13 +9219,8 @@ main(int argc, char *argv[])
   tst_search_list = ll_new();
   ll_append(tst_search_list, sub_tst_new());
 
-  matching_words_a_size = 64;
-  matching_words_a      = xmalloc(matching_words_a_size * sizeof(long));
-  matches_count         = 0;
-
-  best_matching_words_a_size = 16;
-  best_matching_words_a = xmalloc(best_matching_words_a_size * sizeof(long));
-  best_matches_count    = 0;
+  matching_words_da      = NULL;
+  best_matching_words_da = NULL;
 
   /* Initialize the tag hit number which will permit to sort the */
   /* pinned words when displayed.                                */
@@ -13067,6 +13042,8 @@ main(int argc, char *argv[])
 
         if (regexec(&re, word, (int)0, NULL, 0) == 0)
         {
+          long target;
+
           if (!found)
           {
             found   = 1;
@@ -13075,10 +13052,11 @@ main(int argc, char *argv[])
 
           /* Insert the index in the search array. */
           /* """"""""""""""""""""""""""""""""""""" */
-          insert_sorted_index(&matching_words_a,
-                              &matching_words_a_size,
-                              &matches_count,
-                              index);
+          target = get_sorted_array_target_pos(matching_words_da,
+                                               BUF_LEN(matching_words_da),
+                                               index);
+          if (target >= 0)
+            BUF_INSERT(matching_words_da, target, index);
         }
       }
 
@@ -13098,6 +13076,8 @@ main(int argc, char *argv[])
     list = tst_search(tst_word, w = utf8_strtowcs(pre_selection_index + 1));
     if (list != NULL)
     {
+      long target;
+
       node    = list->head;
       current = *(long *)(node->data);
 
@@ -13105,10 +13085,12 @@ main(int argc, char *argv[])
       {
         /* Insert the index in the search array. */
         /* """"""""""""""""""""""""""""""""""""" */
-        insert_sorted_index(&matching_words_a,
-                            &matching_words_a_size,
-                            &matches_count,
-                            *(long *)(node->data));
+        target = get_sorted_array_target_pos(matching_words_da,
+                                             BUF_LEN(matching_words_da),
+                                             *(long *)(node->data));
+        if (target >= 0)
+          BUF_INSERT(matching_words_da, target, *(long *)(node->data));
+
         node = node->next;
       }
     }
@@ -13164,13 +13146,13 @@ main(int argc, char *argv[])
     }
     else
     {
-      int found = 0;
+      int  found = 0;
+      long target;
 
       /* A prefix is expected. */
       /* """"""""""""""""""""" */
       for (new_current = first_selectable; new_current < count; new_current++)
       {
-
         if (strprefix(word_a[new_current].str, ptr)
             && word_a[new_current].is_selectable)
         {
@@ -13182,10 +13164,11 @@ main(int argc, char *argv[])
 
           /* Insert the index in the search array. */
           /* """"""""""""""""""""""""""""""""""""" */
-          insert_sorted_index(&matching_words_a,
-                              &matching_words_a_size,
-                              &matches_count,
-                              new_current);
+          target = get_sorted_array_target_pos(matching_words_da,
+                                               BUF_LEN(matching_words_da),
+                                               new_current);
+          if (target >= 0)
+            BUF_INSERT(matching_words_da, target, new_current);
         }
       }
 
@@ -13898,7 +13881,7 @@ main(int argc, char *argv[])
             {
             kend:
 
-              if (matches_count > 0 && search_mode != PREFIX)
+              if (BUF_LEN(matching_words_da) > 0 && search_mode != PREFIX)
               {
                 search_data.only_starting = 0;
                 search_data.only_ending   = 1;
@@ -14184,10 +14167,10 @@ main(int argc, char *argv[])
           if (search_mode != NONE)
             goto special_cmds_when_searching;
 
-          if (matches_count > 0)
+          if (BUF_LEN(matching_words_da) > 0)
           {
-            long pos = find_next_matching_word(matching_words_a,
-                                               matches_count,
+            long pos = find_next_matching_word(matching_words_da,
+                                               BUF_LEN(matching_words_da),
                                                current,
                                                &matching_word_cur_index);
             if (pos >= 0)
@@ -14222,10 +14205,10 @@ main(int argc, char *argv[])
           if (search_mode != NONE)
             goto special_cmds_when_searching;
 
-          if (matches_count > 0)
+          if (BUF_LEN(matching_words_da) > 0)
           {
-            long pos = find_prev_matching_word(matching_words_a,
-                                               matches_count,
+            long pos = find_prev_matching_word(matching_words_da,
+                                               BUF_LEN(matching_words_da),
                                                current,
                                                &matching_word_cur_index);
             if (pos >= 0)
@@ -14260,18 +14243,18 @@ main(int argc, char *argv[])
           if (search_mode != NONE)
             goto special_cmds_when_searching;
 
-          if (matches_count > 0)
+          if (BUF_LEN(matching_words_da) > 0)
           {
             long pos;
 
-            if (best_matches_count > 0)
-              pos = find_next_matching_word(best_matching_words_a,
-                                            best_matches_count,
+            if (BUF_LEN(best_matching_words_da) > 0)
+              pos = find_next_matching_word(best_matching_words_da,
+                                            BUF_LEN(best_matching_words_da),
                                             current,
                                             &matching_word_cur_index);
             else
-              pos = find_next_matching_word(matching_words_a,
-                                            matches_count,
+              pos = find_next_matching_word(matching_words_da,
+                                            BUF_LEN(matching_words_da),
                                             current,
                                             &matching_word_cur_index);
 
@@ -14307,18 +14290,18 @@ main(int argc, char *argv[])
           if (search_mode != NONE)
             goto special_cmds_when_searching;
 
-          if (matches_count > 0)
+          if (BUF_LEN(matching_words_da) > 0)
           {
             long pos;
 
-            if (best_matches_count > 0)
-              pos = find_prev_matching_word(best_matching_words_a,
-                                            best_matches_count,
+            if (BUF_LEN(best_matching_words_da) > 0)
+              pos = find_prev_matching_word(best_matching_words_da,
+                                            BUF_LEN(best_matching_words_da),
                                             current,
                                             &matching_word_cur_index);
             else
-              pos = find_prev_matching_word(matching_words_a,
-                                            matches_count,
+              pos = find_prev_matching_word(matching_words_da,
+                                            BUF_LEN(matching_words_da),
                                             current,
                                             &matching_word_cur_index);
 
@@ -15788,13 +15771,13 @@ main(int argc, char *argv[])
 
               /* Is words have been matched by a recent search, tag them. */
               /* """""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-              if (matches_count > 0 && marked == -1)
+              if (BUF_LEN(matching_words_da) > 0 && marked == -1)
               {
                 int tagged = 0;
 
-                for (i = 0; i < matches_count; i++)
+                for (i = 0; i < BUF_LEN(matching_words_da); i++)
                 {
-                  wi = matching_words_a[i];
+                  wi = matching_words_da[i];
 
                   if (word_a[wi].tag_id == 0)
                   {
@@ -16119,9 +16102,9 @@ main(int argc, char *argv[])
                   *search_data.buf = '\0';
                   search_data.len  = 0;
 
-                  for (i = 0; i < matches_count; i++)
+                  for (i = 0; i < BUF_LEN(matching_words_da); i++)
                   {
-                    long n = matching_words_a[i];
+                    long n = matching_words_da[i];
 
                     word_a[n].is_matching = 0;
 
@@ -16130,7 +16113,7 @@ main(int argc, char *argv[])
                            (word_a[n].mb - daccess.flength) / CHAR_BIT + 1);
                   }
 
-                  matches_count = 0;
+                  BUF_CLEAR(matching_words_da);
 
                   nl = disp_lines(&win,
                                   &toggles,
@@ -16214,6 +16197,7 @@ main(int argc, char *argv[])
 
               for (i = 0; i < length; i++)
                 BUF_FREE(help_lines_da[i]);
+
               BUF_FREE(help_lines_da);
 
               help_lines_da = init_help(&win,
@@ -16383,7 +16367,7 @@ main(int argc, char *argv[])
                        && line_click < term.curs_line + win.max_lines - 1)
               {
                 float ratio; /* cursor ratio in the between the extremities *
-                            | of the scroll bar.                          */
+                              | of the scroll bar.                          */
 
                 if (win.max_lines > 3)
                 {
@@ -16741,9 +16725,9 @@ main(int argc, char *argv[])
 
                 /* Purge the matching words list. */
                 /* """""""""""""""""""""""""""""" */
-                for (i = 0; i < matches_count; i++)
+                for (i = 0; i < BUF_LEN(matching_words_da); i++)
                 {
-                  long n = matching_words_a[i];
+                  long n = matching_words_da[i];
 
                   word_a[n].is_matching = 0;
 
@@ -16752,16 +16736,17 @@ main(int argc, char *argv[])
                          (word_a[n].mb - daccess.flength) / CHAR_BIT + 1);
                 }
 
-                matches_count = 0;
+                BUF_CLEAR(matching_words_da);
 
                 tst_prefix_search(tst_word, ws, tst_cb);
 
                 /* matches_count is updated by tst_cb. */
                 /* """"""""""""""""""""""""""""""""""" */
-                if (matches_count > 0)
+                if (BUF_LEN(matching_words_da) > 0)
                 {
-                  if (search_data.len == old_len && matches_count == 1
-                      && buffer[0] != 0x08 && buffer[0] != 0x7f)
+                  if (search_data.len == old_len
+                      && BUF_LEN(matching_words_da) == 1 && buffer[0] != 0x08
+                      && buffer[0] != 0x7f)
                     my_beep(&toggles);
                   else
                   {
@@ -16769,7 +16754,7 @@ main(int argc, char *argv[])
                     /* """""""""""""""""""""""""""""""""""""""" */
                     update_bitmaps(search_mode, &search_data, NO_AFFINITY);
 
-                    current = matching_words_a[0];
+                    current = matching_words_da[0];
 
                     if (current < win.start || current > win.end)
                       last_line = build_metadata(&term, count, &win);
@@ -16830,9 +16815,9 @@ main(int argc, char *argv[])
 
                 /* zero previous matching indicators. */
                 /* """""""""""""""""""""""""""""""""" */
-                for (i = 0; i < matches_count; i++)
+                for (i = 0; i < BUF_LEN(matching_words_da); i++)
                 {
-                  long n = matching_words_a[i];
+                  long n = matching_words_da[i];
 
                   word_a[n].is_matching = 0;
 
@@ -16841,7 +16826,7 @@ main(int argc, char *argv[])
                          (word_a[n].mb - daccess.flength) / CHAR_BIT + 1);
                 }
 
-                matches_count = 0;
+                BUF_CLEAR(matching_words_da);
 
                 if (buffer[0] == 0x08 || buffer[0] == 0x7f) /* Backspace */
                 {
@@ -16948,7 +16933,7 @@ main(int argc, char *argv[])
 
                 /* Update the bitmap and re-display the window. */
                 /* """""""""""""""""""""""""""""""""""""""""""" */
-                if (matches_count > 0)
+                if (BUF_LEN(matching_words_da) > 0)
                 {
                   if (search_data.only_starting)
                     select_starting_matches(&win,
@@ -16965,7 +16950,7 @@ main(int argc, char *argv[])
                     /* """""""""""""""""""""""""""""""""""""""" */
                     update_bitmaps(search_mode, &search_data, NO_AFFINITY);
 
-                  current = matching_words_a[0];
+                  current = matching_words_da[0];
 
                   if (current < win.start || current > win.end)
                     last_line = build_metadata(&term, count, &win);
@@ -16994,9 +16979,9 @@ main(int argc, char *argv[])
 
                 /* Purge the matching words list. */
                 /* """""""""""""""""""""""""""""" */
-                for (i = 0; i < matches_count; i++)
+                for (i = 0; i < BUF_LEN(matching_words_da); i++)
                 {
-                  long n = matching_words_a[i];
+                  long n = matching_words_da[i];
 
                   word_a[n].is_matching = 0;
 
@@ -17005,7 +16990,7 @@ main(int argc, char *argv[])
                          (word_a[n].mb - daccess.flength) / CHAR_BIT + 1);
                 }
 
-                matches_count = 0;
+                BUF_CLEAR(matching_words_da);
 
                 if (search_data.utf8_len == 1)
                 {
@@ -17031,7 +17016,7 @@ main(int argc, char *argv[])
                   node         = tst_search_list->tail;
                   sub_tst_data = (sub_tst_t *)(node->data);
 
-                  matches_count = 0;
+                  BUF_CLEAR(matching_words_da);
 
                   for (index = 0; index < sub_tst_data->count; index++)
                     tst_prefix_search(sub_tst_data->array[index],
@@ -17039,10 +17024,11 @@ main(int argc, char *argv[])
                                       tst_cb);
                 }
 
-                if (matches_count > 0)
+                if (BUF_LEN(matching_words_da) > 0)
                 {
-                  if (search_data.len == old_len && matches_count == 1
-                      && buffer[0] != 0x08 && buffer[0] != 0x7f)
+                  if (search_data.len == old_len
+                      && BUF_LEN(matching_words_da) == 1 && buffer[0] != 0x08
+                      && buffer[0] != 0x7f)
                     my_beep(&toggles);
                   else
                   {
@@ -17059,7 +17045,7 @@ main(int argc, char *argv[])
                     else
                       update_bitmaps(search_mode, &search_data, NO_AFFINITY);
 
-                    current = matching_words_a[0];
+                    current = matching_words_da[0];
 
                     if (current < win.start || current > win.end)
                       last_line = build_metadata(&term, count, &win);

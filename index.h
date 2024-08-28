@@ -47,9 +47,6 @@ sub_tst_t *
 sub_tst_new(void);
 
 void
-insert_sorted_index(long **array, long *size, long *filled, long value);
-
-void
 insert_sorted_ptr(tst_node_t ***array,
                   long         *size,
                   long         *filled,
@@ -61,7 +58,7 @@ struct tst_node_s
 {
   tst_node_t *lokid, *eqkid, *hikid;
   void       *data;
-  wchar_t splitchar;
+  wchar_t     splitchar;
 };
 
 /* Structure to contain data and metadata attached to a fuzzy/substring. */

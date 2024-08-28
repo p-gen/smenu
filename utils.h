@@ -86,4 +86,7 @@ hexdump(const char *buf, FILE *fp, const char *prefix, size_t size);
 int
 my_wcswidth(const wchar_t *s, size_t n);
 
+long
+get_sorted_array_target_pos(long *array, long nb, long value);
+
 #endif

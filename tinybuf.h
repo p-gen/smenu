@@ -187,10 +187,13 @@ buf__grow(void *buf, size_t new_len, size_t elem_size)
 {
   struct buf__hdr *new_hdr;
   size_t           new_cap = 2 * BUF_CAP(buf), new_size;
+
   if (new_cap < new_len)
     new_cap = new_len;
+
   if (new_cap < 16)
     new_cap = 16;
+
   new_size = sizeof(struct buf__hdr) + new_cap * elem_size;
   if (buf)
   {
@@ -208,6 +211,7 @@ buf__grow(void *buf, size_t new_len, size_t elem_size)
   new_hdr->cap = new_cap;
   return new_hdr + 1;
 }
+
 #if defined(_MSC_VER)
 #pragma warning(pop)
 #endif
