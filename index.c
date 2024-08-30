@@ -233,11 +233,11 @@ tst_search(tst_node_t *root, wchar_t *w)
   return NULL;
 }
 
-/* ================================================================= */
-/* Searches all strings beginning with the same prefix.              */
-/* the callback function will be applied to each of theses strings   */
-/* returns NULL if no string matched the prefix.                     */
-/* ================================================================= */
+/* ============================================================== */
+/* Searches all strings beginning with the same prefix.           */
+/* the callback function will be applied to each of these strings */
+/* returns NULL if no string matched the prefix.                  */
+/* ============================================================== */
 void *
 tst_prefix_search(tst_node_t *root, wchar_t *w, int (*callback)(void *))
 {

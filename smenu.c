@@ -3257,7 +3257,7 @@ replace(char *orig, sed_t *sed)
 {
   size_t match_nb   = 0; /* number of matches in the original string. */
   int    sub_nb     = 0; /* number of remembered matches in the       *
-                          | original sting.                           */
+                          | original string.                          */
   size_t target_len = 0; /* length of the resulting string.           */
   size_t subs_max   = 0;
 
