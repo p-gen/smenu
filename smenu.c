@@ -165,10 +165,18 @@ int       quiet_timeout = 0; /* 1 when we want no message to be displayed.  */
 /* Help functions. */
 /* *************** */
 
-/* ============================================================== */
-/* Parse, create and add an help entry in a format suitable to be */
-/* displayed by disp_help into a dynamic array.                   */
-/* ============================================================== */
+/* ============================================================ */
+/* Parse, create and add an help entry.                         */
+/* - attributes are preprocessed for a future quicker display.  */
+/* - special entries t,m and c allow to ignore entries when not */
+/*   in tag mode, when the mouse is not usable or when not in   */
+/*   column mode.                                               */
+/*                                                              */
+/* entries       IN  array of help data.                        */
+/* help_items_da OUT dynamic array to be updated.               */
+/*                                                              */
+/* Return the number of help entries added in help_items_da.    */
+/* ============================================================ */
 int
 help_add_entries(win_t               *win,
                  term_t              *term,
@@ -225,9 +233,17 @@ help_add_entries(win_t               *win,
   return nb;
 }
 
-/* ====================================================== */
-/* Create an array of lines to be displayed by disp_help. */
-/* ====================================================== */
+/* ======================================================== */
+/* Create an array of lines to be displayed by disp_help.   */
+/* Created lines will have a dynamic length with leading    */
+/* spaces removed.                                          */
+/*                                                          */
+/* last_line     IN  last logical line number (from 0).     */
+/* help_items_da OUT dynamic array to be updated.           */
+/*                                                          */
+/* Return the dynamic array containing help data with       */
+/*        attributes processed.                             */
+/* ======================================================== */
 help_attr_entry_t ***
 init_help(win_t               *win,
           term_t              *term,
@@ -541,9 +557,12 @@ init_help(win_t               *win,
   return help_lines_da;
 }
 
-/* ===================== */
-/* Help message display. */
-/* ===================== */
+/* ================================================= */
+/* Display the quick help content.                   */
+/*                                                   */
+/* help_lines_da      IN  array of help lines.       */
+/* fst_disp_help_line IN first help line to display. */
+/* ================================================= */
 void
 disp_help(win_t               *win,
           term_t              *term,
@@ -622,6 +641,8 @@ disp_help(win_t               *win,
 
 /* =========================================================== */
 /* Allocation and initialization of a new attribute structure. */
+/*                                                             */
+/* Return the newly created attribute.                         */
 /* =========================================================== */
 attrib_t *
 attr_new(void)
@@ -645,20 +666,20 @@ attr_new(void)
   return attr;
 }
 
-/* ================================= */
-/* Decode attributes toggles if any. */
-/* b -> bold                         */
-/* d -> dim                          */
-/* r -> reverse                      */
-/* s -> standout                     */
-/* u -> underline                    */
-/* i -> italic                       */
-/* x -> invis                        */
-/* l -> blink                        */
-/*                                   */
-/* Returns 0 if some unexpected.     */
-/* toggle is found else 0.           */
-/* ================================= */
+/* ============================================ */
+/* Decode attributes toggles if any.            */
+/* b -> bold                                    */
+/* d -> dim                                     */
+/* r -> reverse                                 */
+/* s -> standout                                */
+/* u -> underline                               */
+/* i -> italic                                  */
+/* x -> invis                                   */
+/* l -> blink                                   */
+/*                                              */
+/* Return 0 if some unexpected toggle is found, */
+/*        1 otherwise.                          */
+/* ============================================ */
 int
 decode_attr_toggles(char *s, attrib_t *attr)
 {
@@ -1221,11 +1242,13 @@ out:
   return error;
 }
 
-/* ======================================================= */
-/* Return the full path on the configuration file supposed */
-/* to be in the home directory of the user.                */
-/* NULL is returned if the built path is too large.        */
-/* ======================================================= */
+/* ====================================================================== */
+/* Returns the full path of the configuration file supposed to be in the  */
+/* user's home directory if base is NULL or in the content of the         */
+/* environment variable base.                                             */
+/*                                                                        */
+/* Returns NULL if the built path is too large or if base does not exist. */
+/* ====================================================================== */
 char *
 make_ini_path(char *name, char *base)
 {
@@ -8658,7 +8681,7 @@ get_clicked_index(win_t  *win,
 /* Get the number of the clicked shift arrow if any.                    */
 /* arrow will contain 0 if the left arrow as clicked and 1 if the right */
 /* arrow was clicked.                                                   */
-/* Returns 0 is no arrow wa clicked else 1.                             */
+/* Returns 0 is no arrow was clicked else 1.                            */
 /* ==================================================================== */
 int
 shift_arrow_clicked(win_t  *win,
