@@ -1457,7 +1457,7 @@ update_bitmaps(search_mode_t     mode,
     else
       sb = sb_orig;
 
-    for (i = 0; i < BUF_LEN(matching_words_da); i++)
+    for (i = 0; i < (long)BUF_LEN(matching_words_da); i++)
     {
       long lmg; /* position of the last matching glyph of the search buffer *
                  | in a word.                                               */
@@ -1664,7 +1664,7 @@ update_bitmaps(search_mode_t     mode,
   }
   else if (mode == PREFIX)
   {
-    for (i = 0; i < BUF_LEN(matching_words_da); i++)
+    for (i = 0; i < (long)BUF_LEN(matching_words_da); i++)
     {
       n      = matching_words_da[i];
       bm     = word_a[n].bitmap;
@@ -1828,7 +1828,7 @@ clean_matches(search_data_t *search_data, long size)
 
   /* Clean the match flags and bitmaps. */
   /* """""""""""""""""""""""""""""""""" */
-  for (i = 0; i < BUF_LEN(matching_words_da); i++)
+  for (i = 0; i < (long)BUF_LEN(matching_words_da); i++)
   {
     long n = matching_words_da[i];
 
@@ -5692,7 +5692,7 @@ select_ending_matches(win_t         *win,
     long *tmp;
     char *ptr;
     char *last_glyph;
-    int   utf8_len;
+    long  utf8_len;
 
     /* Creation of an alternate array which will      */
     /* contain only the candidates having potentially */
@@ -5702,7 +5702,7 @@ select_ending_matches(win_t         *win,
     BUF_FREE(alt_matching_words_da);
     BUF_FIT(alt_matching_words_da, BUF_LEN(matching_words_da));
 
-    for (i = 0; i < BUF_LEN(matching_words_da); i++)
+    for (i = 0; i < (long)BUF_LEN(matching_words_da); i++)
     {
       index     = matching_words_da[i];
       char *str = word_a[index].str;
@@ -5816,7 +5816,7 @@ select_starting_matches(win_t         *win,
 
     first_glyph = xmalloc(5);
 
-    for (i = 0; i < BUF_LEN(matching_words_da); i++)
+    for (i = 0; i < (long)BUF_LEN(matching_words_da); i++)
     {
       index = matching_words_da[i];
 
@@ -9232,8 +9232,17 @@ main(int argc, char *argv[])
                &timeout,
                &daccess);
 
-  /* direct access variable initialization. */
-  /* """""""""""""""""""""""""""""""""""""" */
+  /* direct access variable initialization.   */
+  /*   0   1   2   3   4   5                  */
+  /* +---+---+---+---+---+---+                */
+  /* |   |   |   |   |   |   | daccess_stack  */
+  /* +-^-+---+---+---+---+---+                */
+  /*   |                                      */
+  /*   daccess_stack_head                     */
+  /*                                          */
+  /* daccess_stack will be used as a string.  */
+  /* We must make sure its last byte is '\0'. */
+  /* """""""""""""""""""""""""""""""""""""""" */
   daccess_stack      = xcalloc(6, 1);
   daccess_stack_head = 0;
 
@@ -10643,7 +10652,7 @@ main(int argc, char *argv[])
     }
 
     timeout_seconds = xcalloc(1, 6);
-    sprintf(timeout_seconds, "%5u", timeout.initial_value / FREQ);
+    snprintf(timeout_seconds, 6, "%5u", timeout.initial_value / FREQ);
     memcpy(timeout_message + 1, timeout_seconds, 5);
 
     message_lines_list = ll_new();
@@ -11805,9 +11814,13 @@ main(int argc, char *argv[])
           && word->is_selectable != SOFT_EXCLUDE_MARK)
       {
         char *selector;
-        char *tmp      = xmalloc(strlen(word->str) + 4 + daccess.length);
+        char *tmp;
         long *word_pos = xmalloc(sizeof(long));
         int   may_number;
+        long  wlen;
+
+        wlen = strlen(word->str) + 4 + daccess.length;
+        tmp  = xmalloc(wlen);
 
         if (!my_isempty((unsigned char *)word->str))
         {
@@ -11848,13 +11861,13 @@ main(int argc, char *argv[])
                 && (daccess.offset + daccess.size + daccess.ignore)
                      <= utf8_strlen(word->str))
             {
-              unsigned selector_value;  /* numerical value of the         *
+              long  selector_value;  /* numerical value of the         *
                                          | extracted selector.            */
-              long     selector_offset; /* offset in byte to the selector *
+              long  selector_offset; /* offset in byte to the selector *
                                          | to extract.                    */
-              char    *ptr;             /* points just after the selector *
+              char *ptr;             /* points just after the selector *
                                          | to extract.                    */
-              long     plus_offset;     /* points to the first occurrence *
+              long  plus_offset;     /* points to the first occurrence *
                                          | of a number in word->str after *
                                          | the offset given.              */
 
@@ -11876,15 +11889,16 @@ main(int argc, char *argv[])
               /* read the embedded number and, if correct, format */
               /* it according to daccess.alignment.               */
               /* """""""""""""""""""""""""""""""""""""""""""""""" */
-              if (sscanf(selector, "%u", &selector_value) == 1)
+              if (sscanf(selector, "%ld", &selector_value) == 1)
               {
-                sprintf(selector, "%u", selector_value);
+                snprintf(selector, daccess.size + 1, "%ld", selector_value);
 
-                sprintf(tmp + 1,
-                        "%*u",
-                        daccess.alignment == 'l' ? -daccess.length
-                                                 : daccess.length,
-                        selector_value);
+                snprintf(tmp + 1,
+                         wlen,
+                         "%*ld",
+                         daccess.alignment == 'l' ? -daccess.length
+                                                  : daccess.length,
+                         selector_value);
 
                 /* Overwrite the end of the word to erase */
                 /* the selector.                          */
@@ -11935,11 +11949,12 @@ main(int argc, char *argv[])
             /* """"""""""""""""""""""""""""""""""""""""""""""""""""""" */
             if (!word->is_numbered && (daccess.mode & DA_TYPE_AUTO))
             {
-              sprintf(tmp + 1,
-                      "%*ld",
-                      daccess.alignment == 'l' ? -daccess.length
-                                               : daccess.length,
-                      daccess_index);
+              snprintf(tmp + 1,
+                       wlen,
+                       "%*ld",
+                       daccess.alignment == 'l' ? -daccess.length
+                                                : daccess.length,
+                       daccess_index);
 
               selector = xstrdup(tmp + 1);
               ltrim(selector, " ");
@@ -13466,6 +13481,13 @@ main(int argc, char *argv[])
       memset(daccess_stack, '\0', 6);
       daccess_stack_head = 0;
 
+      /* +---+---+---+---+---+---+               */
+      /* |   |   |   |   |   |   | daccess_stack */
+      /* +-^-+---+---+---+---+---+               */
+      /*   |                                     */
+      /*   daccess_stack_head                    */
+      /* """"""""""""""""""""""""""""""""""""""" */
+
       daccess_timer = timers.direct_access;
     }
 
@@ -13690,7 +13712,7 @@ main(int argc, char *argv[])
 
       if (!quiet_timeout && timeout.remain % FREQ == 0)
       {
-        sprintf(timeout_seconds, "%5u", timeout.remain / FREQ);
+        snprintf(timeout_seconds, 6, "%5u", timeout.remain / FREQ);
         timeout_string =
           (char *)(((ll_node_t *)(message_lines_list->tail))->data);
         memcpy(timeout_string + 1, timeout_seconds, 5);
@@ -13755,7 +13777,7 @@ main(int argc, char *argv[])
 
         if (!quiet_timeout)
         {
-          sprintf(timeout_seconds, "%5u", timeout.initial_value / FREQ);
+          snprintf(timeout_seconds, 6, "%5u", timeout.initial_value / FREQ);
           timeout_string =
             (char *)(((ll_node_t *)(message_lines_list->tail))->data);
           memcpy(timeout_string + 1, timeout_seconds, 5);
@@ -15798,7 +15820,7 @@ main(int argc, char *argv[])
               {
                 int tagged = 0;
 
-                for (i = 0; i < BUF_LEN(matching_words_da); i++)
+                for (i = 0; i < (long)BUF_LEN(matching_words_da); i++)
                 {
                   wi = matching_words_da[i];
 
@@ -16125,7 +16147,7 @@ main(int argc, char *argv[])
                   *search_data.buf = '\0';
                   search_data.len  = 0;
 
-                  for (i = 0; i < BUF_LEN(matching_words_da); i++)
+                  for (i = 0; i < (long)BUF_LEN(matching_words_da); i++)
                   {
                     long n = matching_words_da[i];
 
@@ -16748,7 +16770,7 @@ main(int argc, char *argv[])
 
                 /* Purge the matching words list. */
                 /* """""""""""""""""""""""""""""" */
-                for (i = 0; i < BUF_LEN(matching_words_da); i++)
+                for (i = 0; i < (long)BUF_LEN(matching_words_da); i++)
                 {
                   long n = matching_words_da[i];
 
@@ -16838,7 +16860,7 @@ main(int argc, char *argv[])
 
                 /* zero previous matching indicators. */
                 /* """""""""""""""""""""""""""""""""" */
-                for (i = 0; i < BUF_LEN(matching_words_da); i++)
+                for (i = 0; i < (long)BUF_LEN(matching_words_da); i++)
                 {
                   long n = matching_words_da[i];
 
@@ -17002,7 +17024,7 @@ main(int argc, char *argv[])
 
                 /* Purge the matching words list. */
                 /* """""""""""""""""""""""""""""" */
-                for (i = 0; i < BUF_LEN(matching_words_da); i++)
+                for (i = 0; i < (long)BUF_LEN(matching_words_da); i++)
                 {
                   long n = matching_words_da[i];
 
