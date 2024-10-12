@@ -110,7 +110,7 @@ tst_traverse(tst_node_t *p, int (*callback)(void *), int first_call)
 /* ======================================================================= */
 /* Traverses the word tst looking for a wchar and build a list of pointers */
 /* containing all the sub-tst potentially leading to words containing the  */
-/* next wchar os the search string.                                        */
+/* next wchar of the search string.                                        */
 /* ======================================================================= */
 int
 tst_substring_traverse(tst_node_t *p,

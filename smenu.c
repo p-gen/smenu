@@ -1449,6 +1449,9 @@ update_bitmaps(search_mode_t     mode,
 
     first_glyph = xmalloc(5);
 
+    /* In fuzzy search mode, case is not taken into account */
+    /* during the search.                                   */
+    /* """""""""""""""""""""""""""""""""""""""""""""""""""" */
     if (mode == FUZZY)
     {
       sb = xstrdup(sb_orig); /* sb initially points to sb_orig. */
@@ -1459,7 +1462,7 @@ update_bitmaps(search_mode_t     mode,
 
     for (i = 0; i < (long)BUF_LEN(matching_words_da); i++)
     {
-      long lmg; /* position of the last matching glyph of the search buffer *
+      long lmg; /* Position of the last matching glyph of the search buffer *
                  | in a word.                                               */
 
       n = matching_words_da[i];
@@ -16892,11 +16895,10 @@ main(int argc, char *argv[])
                 {
                   if (search_data.utf8_len == 1)
                   {
-                    /* Search all the sub-tst trees having the searched     */
-                    /* character as children, the resulting sub-tst are put */
-                    /* in the sub tst array attached to the currently       */
-                    /* searched symbol.                                     */
-                    /* """""""""""""""""""""""""""""""""""""""""""""""""""" */
+                    /* Search all the sub-tst trees having the first      */
+                    /* searched character as children and store them in   */
+                    /* the sub tst array attached to the searched symbol. */
+                    /* """""""""""""""""""""""""""""""""""""""""""""""""" */
                     tst_fuzzy_traverse(tst_word, NULL, 0, w[0]);
 
                     node         = tst_search_list->tail;
@@ -17039,10 +17041,10 @@ main(int argc, char *argv[])
 
                 if (search_data.utf8_len == 1)
                 {
-                  /* Search all the sub-tst trees having the searched     */
-                  /* character as children, the resulting sub-tst are put */
-                  /* in the level list corresponding to the letter order. */
-                  /* """""""""""""""""""""""""""""""""""""""""""""""""""" */
+                  /* Search all the sub-tst trees having the first      */
+                  /* searched character as children and store them in   */
+                  /* the sub tst array attached to the searched symbol. */
+                  /* """""""""""""""""""""""""""""""""""""""""""""""""" */
                   tst_substring_traverse(tst_word, NULL, 0, w[0]);
 
                   node         = tst_search_list->tail;
