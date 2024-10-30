@@ -9065,6 +9065,8 @@ main(int argc, char *argv[])
   ll_t *ar_word_regex_list = NULL;
   ll_t *ac_word_regex_list = NULL;
 
+  unsigned char al_delim = 0x05; /* Alignment delimiter.                     */
+
   alignment_t default_alignment = AL_NONE;
 
   filters_t rows_filter_type = UNKNOWN_FILTER;
@@ -12485,14 +12487,15 @@ main(int argc, char *argv[])
       s2         = my_wcswidth((w = utf8_strtowcs(word_a[wi].str)), word_width);
       free(w);
 
-      /* Use the 0x05 character as a placeholder to preserve the internal    */
-      /* spaces of the word if there are any. This value has been chosen     */
-      /* because it cannot be part of a UTF-8 sequence and is very unlikely  */
-      /* to be part of a normal word from the input stream.                  */
-      /* This placeholder will be removed during the alignment phase.        */
-      /*"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+      /* Use the al_delim (0x05) character as a placeholder to preserve  */
+      /* the internal spaces of the word if there are any.               */
+      /* This value has been chosen because it cannot be part of a UTF-8 */
+      /* sequence and is very unlikely to be part of a normal word from  */
+      /* the input stream.                                               */
+      /* This placeholder will be removed during the alignment phase.    */
+      /*"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
       temp = xcalloc(1, col_real_max_size[col_index] + s1 - s2 + 1);
-      memset(temp, 0x05, col_max_size[col_index] + s1 - s2);
+      memset(temp, al_delim, col_max_size[col_index] + s1 - s2);
       memcpy(temp, word_a[wi].str, s1);
       temp[col_real_max_size[col_index] + s1 - s2] = '\0';
       free(word_a[wi].str);
@@ -12789,7 +12792,10 @@ main(int argc, char *argv[])
                 /* column alignments have precedence.            */
                 /* ''''''''''''''''''''''''''''''''''''''''''''' */
                 if (aligned_a[col_index - (wi - j)] == 'N')
-                  align_word(&word_a[j], alignment_a[i], daccess.flength, 0x05);
+                  align_word(&word_a[j],
+                             alignment_a[i],
+                             daccess.flength,
+                             al_delim);
               }
 
               break; /* Early exit of the while loop. */
@@ -12809,7 +12815,7 @@ main(int argc, char *argv[])
 
       /* Do the alignment. */
       /* """"""""""""""""" */
-      align_word(&word_a[wi], alignment, daccess.flength, 0x05);
+      align_word(&word_a[wi], alignment, daccess.flength, al_delim);
 
       /* Adjusts things before a row change. */
       /* """"""""""""""""""""""""""""""""""" */
@@ -12828,7 +12834,7 @@ main(int argc, char *argv[])
           /* now that the row is fully processed.                     */
           /* """""""""""""""""""""""""""""""""""""""""""""""""""""""" */
           if (wi - i >= 0)
-            strrep(word_a[wi - i].str + daccess.flength, 0x05, ' ');
+            strrep(word_a[wi - i].str + daccess.flength, al_delim, ' ');
         }
 
         col_index     = 0; /* Restart the columns counter. */
