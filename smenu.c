@@ -1619,7 +1619,7 @@ update_bitmaps(search_mode_t     mode,
         }
 
         /* Compute the number of 'holes' in the bitmap to determine the  */
-        /* badness of a match. Th goal is to put the cursor on the word  */
+        /* badness of a match. The goal is to put the cursor on the word */
         /* with the smallest badness.                                    */
         /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
         utf8_index = 0;
@@ -8694,6 +8694,8 @@ shift_arrow_clicked(win_t  *win,
                     long   *clicked_line,
                     int    *arrow)
 {
+  *arrow = -1;
+
   /* Get the internal line number of the click. */
   /* """""""""""""""""""""""""""""""""""""""""" */
   *clicked_line = line_nb_of_word_a[win->start] + line_click - term->curs_line;
