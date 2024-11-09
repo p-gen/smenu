@@ -1,5 +1,41 @@
 Some internal notes.
 ====================
+Files.
+------
+
+:``smenu.c``, ``smenu.h``:
+  Main code.
+
+:``list.c``, ``list.h``:
+  Doubly linked list code.
+
+:``xmalloc.c``, ``xmalloc.h``:
+  Custom malloc, realloc,... code.
+
+:``index.c``, ``index.h``:
+  Code used to index words, the implementation uses a data structure called
+  the Ternary Search Tree (TST).
+
+:``utf8.c``, ``utf8.h``:
+  Code used to manage UTF-8 glyphs.
+
+:``fgetc.c``, ``fgetc.h``:
+  Custom ``fgetc`` code.
+
+:``utils.c``, ``utils.h``:
+  Various utility functions.
+
+:``usage.c``, ``usage.h``:
+  Code to display usage messages when necessary.
+
+:``ctxopt.h``, ``ctxopt.c``:
+  Code to manage command line options.
+
+:``safe.h``, ``safe.c``:
+  These files contain wrapper functions for some of the System APIs.
+
+:``tinybuf.h``:
+  Dynamic array code implemented as macros.
 
 Words.
 ------
