@@ -11,6 +11,7 @@
 
 #include <errno.h>
 #include <unistd.h>
+#include <fcntl.h>
 
 typedef struct interval_s interval_t;
 typedef struct range_s    range_t;
@@ -88,5 +89,8 @@ my_wcswidth(const wchar_t *s, size_t n);
 
 long
 get_sorted_array_target_pos(long *array, long nb, long value);
+
+int
+is_in_foreground_process_group(void);
 
 #endif

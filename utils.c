@@ -538,3 +538,23 @@ get_sorted_array_target_pos(long *array, long nb, long value)
   }
   return pos;
 }
+
+/* =============================================================== */
+/* Detect if the current terminal belongs to the foreground group. */
+/* returns 1 if yes else returns 0.                                */
+/* =============================================================== */
+int
+is_in_foreground_process_group(void)
+{
+  int fd, fg;
+
+  fd = open("/dev/tty", O_RDONLY);
+  if (fd < 0)
+    return 0;
+
+  fg = (tcgetpgrp(fd) == getpgid(0));
+
+  close(fd);
+
+  return fg;
+}

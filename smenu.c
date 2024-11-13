@@ -29,7 +29,6 @@
 #include <sys/time.h>
 #include <sys/param.h>
 #include <sys/stat.h>
-#include <fcntl.h>
 #include <wchar.h>
 
 #include "xmalloc.h"
@@ -127,7 +126,7 @@ int       daccess_stack_head;
 /* Variables used for fuzzy and substring searching. */
 /* """"""""""""""""""""""""""""""""""""""""""""""""" */
 long *matching_words_da = NULL; /* Array containing the index of all *
-                                 | matching words.                  */
+                                 | matching words.                   */
 
 long *best_matching_words_da = NULL; /* Array containing the index of *
                                       | matching words containing a   *
@@ -8542,26 +8541,6 @@ reset_search_buffer(win_t         *win,
                tmp_word,
                langinfo);
   }
-}
-
-/* =============================================================== */
-/* Detect if the current terminal belongs to the foreground group. */
-/* returns 1 if yes else returns 0.                                */
-/* =============================================================== */
-int
-is_in_foreground_process_group(void)
-{
-  int fd, fg;
-
-  fd = open("/dev/tty", O_RDONLY);
-  if (fd < 0)
-    return 0;
-
-  fg = (tcgetpgrp(fd) == getpgid(0));
-
-  close(fd);
-
-  return fg;
 }
 
 /* ===================================================================== */
