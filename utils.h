@@ -93,4 +93,10 @@ get_sorted_array_target_pos(long *array, long nb, long value);
 int
 is_in_foreground_process_group(void);
 
+int
+isempty_non_utf8(const unsigned char *s);
+
+int
+isempty_utf8(const unsigned char *s);
+
 #endif

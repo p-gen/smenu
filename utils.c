@@ -558,3 +558,163 @@ is_in_foreground_process_group(void)
 
   return fg;
 }
+
+/* ====================================================== */
+/* Returns 1 if a string is empty or only made of spaces. */
+/* Non UTF-8 version.                                     */
+/* ====================================================== */
+int
+isempty_non_utf8(const unsigned char *s)
+{
+  while (*s != '\0')
+  {
+    if (*s != ' ' && *s != '\t')
+      return 0;
+    s++;
+  }
+  return 1;
+}
+
+/* ====================================================== */
+/* Returns 1 if a string is empty or only made of spaces. */
+/* UTF-8 version.                                         */
+/* ====================================================== */
+int
+isempty_utf8(const unsigned char *s)
+{
+  unsigned char c, d;
+
+  while (*s != '\0')
+  {
+    if (*s == ' ' || *s == '\t') /* Normal ASCII spaces. */
+      goto next;
+
+    if (*s < 0xc2) /* Not an UTF-8 space -> return FALSE. */
+      return 0;
+
+    /* Scanning for a potential non UTF-8 spaces scanning. */
+    /* """"""""""""""""""""""""""""""""""""""""""""""""""" */
+    if ((c = *(s + 1)) != '\0')
+    {
+      if (*s == 0xc2 && (c == 0x85 || c == 0xa0))
+      {
+        s++;
+        goto next; /* Unnamed control character or NO-BREAK SPACE. */
+      }
+
+      if ((d = *(s + 2)) == '\0')
+        return 0;
+
+      if (*s == 0xe1 && c == 0x9a && d == 0x80)
+      {
+        s += 2;
+        goto next; /* OGHAM SPACE MARK. */
+      }
+
+      if (*s == 0xe1 && c == 0xa0 && d == 0x8e)
+      {
+        s += 2;
+        goto next; /* MONGOLIAN VOWEL SEPARATOR. */
+      }
+
+      if (*s == 0xe2 && c == 0x80 && d == 0x80)
+      {
+        s += 2;
+        goto next; /* EN QUAD. */
+      }
+
+      if (*s == 0xe2 && c == 0x80 && d == 0x81)
+      {
+        s += 2;
+        goto next; /* EM QUAD. */
+      }
+
+      if (*s == 0xe2 && c == 0x80 && d == 0x82)
+      {
+        s += 2;
+        goto next; /* EN SPACE. */
+      }
+      if (*s == 0xe2 && c == 0x80 && d == 0x83)
+      {
+        s += 2;
+        goto next; /* EM SPACE. */
+      }
+
+      if (*s == 0xe2 && c == 0x80 && d == 0x84)
+      {
+        s += 2;
+        goto next; /* THREE-PER-EM SPACE. */
+      }
+
+      if (*s == 0xe2 && c == 0x80 && d == 0x85)
+      {
+        s += 2;
+        goto next; /* FOUR-PER-EM SPACE. */
+      }
+
+      if (*s == 0xe2 && c == 0x80 && d == 0x86)
+      {
+        s += 2;
+        goto next; /* SIX-PER-EM SPACE. */
+      }
+      if (*s == 0xe2 && c == 0x80 && d == 0x87)
+      {
+        s += 2;
+        goto next; /* FIGURE SPACE. */
+      }
+
+      if (*s == 0xe2 && c == 0x80 && d == 0x88)
+      {
+        s += 2;
+        goto next; /* PUNCTUATION SPACE. */
+      }
+
+      if (*s == 0xe2 && c == 0x80 && d == 0x89)
+      {
+        s += 2;
+        goto next; /* THIN SPACE. */
+      }
+
+      if (*s == 0xe2 && c == 0x80 && d == 0x8a)
+      {
+        s += 2;
+        goto next; /* HAIR SPACE. */
+      }
+
+      if (*s == 0xe2 && c == 0x80 && d == 0xa8)
+      {
+        s += 2;
+        goto next; /* LINE SEPARATOR. */
+      }
+
+      if (*s == 0xe2 && c == 0x80 && d == 0xa9)
+      {
+        s += 2;
+        goto next; /* PARAGRAPH SEPARATOR. */
+      }
+
+      if (*s == 0xe2 && c == 0x80 && d == 0xaf)
+      {
+        s += 2;
+        goto next; /* NARROW NO-BREAK SPACE. */
+      }
+
+      if (*s == 0xe2 && c == 0x81 && d == 0x9f)
+      {
+        s += 2;
+        goto next; /* MEDIUM MATHEMATICAL SPACE. */
+      }
+
+      if (*s == 0xe3 && c == 0x80 && d == 0x80)
+      {
+        s += 2;
+        goto next; /* IDEOGRAPHIC SPACE. */
+      }
+
+      return 0;
+    }
+  next:
+    s++;
+  }
+  return 1;
+}
