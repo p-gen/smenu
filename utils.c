@@ -302,10 +302,10 @@ isprint8(int i)
 int
 my_wcscasecmp(const wchar_t *s1, const wchar_t *s2)
 {
-  wchar_t c1, c2;
-
   while (*s1)
   {
+    wchar_t c1, c2;
+
     c1 = towlower(*s1);
     c2 = towlower(*s2);
 
@@ -477,7 +477,6 @@ int
 my_wcswidth(const wchar_t *s, size_t n)
 {
   int len = 0;
-  int l   = 0;
   int m   = 0;
 
   if (s == NULL || *s == L'\0')
@@ -485,6 +484,8 @@ my_wcswidth(const wchar_t *s, size_t n)
 
   while (*s && m < n)
   {
+    int l;
+
     if ((l = wcwidth(*s)) >= 0)
     {
       /* Do not count zero-width-length glyphs. */

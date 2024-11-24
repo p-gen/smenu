@@ -570,7 +570,6 @@ disp_help(win_t               *win,
 {
   int index;   /* used to identify the objects long the help line. */
   int max_col; /* when to split the help line.                     */
-  int len;
   int displayed_lines;
   int total_lines;
 
@@ -595,6 +594,7 @@ disp_help(win_t               *win,
     int i;
     int item;
     int nb_items;
+    int len;
 
     if (displayed_lines == win->max_lines)
       break;
@@ -2140,8 +2140,6 @@ parse_selectors(char        *str,
   char         c;
   long         start = 1;     /* column string offset in the parsed string. */
   long         first, second; /* range starting and ending values.          */
-  int          l_open_range;  /* 1 if the range is left-open.               */
-  int          r_open_range;  /* 1 if the range is right-open.              */
   char        *ptr;           /* pointer to the remaining string to parse.  */
   interval_t  *interval;
   selector_t   type;
@@ -2265,6 +2263,8 @@ parse_selectors(char        *str,
     char  delim1, delim2 = '\0';
     char *oldptr;
     char *colon = NULL;
+    int   l_open_range; /* 1 if the range is left-open.  */
+    int   r_open_range; /* 1 if the range is right-open. */
 
     l_open_range = r_open_range = 0;
     first = second = -1;
