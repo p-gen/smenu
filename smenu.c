@@ -1947,7 +1947,8 @@ get_terminal_size(int * const r, int * const c, term_t *term)
 /* Gets the cursor position in the terminal.                   */
 /* Assume that the Escape sequence ESC [ 6 n is available.     */
 /* Retries up to 64 times in case of system call interruption. */
-/* Returns 1 on success and 0 on error.                        */
+/* Returns 1 on success and 0 on error, in this case *r and *c */
+/* will contain 0.                                             */
 /* =========================================================== */
 int
 get_cursor_position(int * const r, int * const c)
@@ -1963,6 +1964,8 @@ get_cursor_position(int * const r, int * const c)
   int got; /* Number of characters obtained. */
 
   int buf_size = sizeof(buf);
+
+  *r = *c = 0;
 
   /* Report cursor location. */
   /* """"""""""""""""""""""" */
@@ -4958,9 +4961,9 @@ disp_lines(win_t         *win,
 
   long first_line; /* real line # on the first line of the window. */
 
-  int row1, row2, col; /* Only the rows are used to detect a *
-                        | bottom-of-page scrolling, col is   *
-                        | necessary but not required here.   */
+  int row1 = 0, row2 = 0, col = 0; /* Only the rows are used to detect a *
+                                    | bottom-of-page scrolling, col is   *
+                                    | necessary but not required here.   */
 
   sigset_t mask;
 
