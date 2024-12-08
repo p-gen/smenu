@@ -4251,14 +4251,17 @@ set_win_start_end(win_t *win, long current, long last)
 /* Set win.start win.end and the starting and ending position of each word. */
 /* This function is only called initially, when resizing the terminal and   */
 /* potentially when the search function is used.                            */
+/*                                                                          */
+/* Returns the number of the last line built.                               */
 /* ======================================================================== */
 long
 build_metadata(term_t *term, long count, win_t *win)
 {
   long     i = 0;
-  long     word_len;
-  long     len  = 0;
-  long     last = 0;
+  long     word_len;   /* Apparent length of the current word on the    *
+                        | terminal.                                     */
+  long     len  = 0;   /* Current line length.                          */
+  long     last = 0;   /* Number of the last line built.                */
   long     word_width; /* Number of screen positions taken by the word. */
   long     tab_count;  /* Current number of words in the line, used in  *
                         | tab_mode.                                     */
