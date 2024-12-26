@@ -3342,7 +3342,7 @@ set_matching_flag(void *elem)
 /* Always succeeds and returns 1.                                          */
 /* ======================================================================= */
 int
-tst_cb(void *elem)
+tst_search_cb(void *elem)
 {
   /* The data attached to the string in the tst is a linked list of   */
   /* position of the string in the input flow, This list is naturally */
@@ -16617,12 +16617,11 @@ main(int argc, char *argv[])
                          (word_a[n].mb - daccess.flength) / CHAR_BIT + 1);
                 }
 
+                /* matching_words_da is updated by tst_search_cb. */
+                /* """""""""""""""""""""""""""""""""""""""""""""" */
                 BUF_CLEAR(matching_words_da);
+                tst_prefix_search(tst_word, ws, tst_search_cb);
 
-                tst_prefix_search(tst_word, ws, tst_cb);
-
-                /* matches_count is updated by tst_cb. */
-                /* """"""""""""""""""""""""""""""""""" */
                 if (BUF_LEN(matching_words_da) > 0)
                 {
                   if (search_data.len == old_len
@@ -16901,7 +16900,7 @@ main(int argc, char *argv[])
                   for (index = 0; index < sub_tst_data->count; index++)
                     tst_prefix_search(sub_tst_data->array[index],
                                       w + 1,
-                                      tst_cb);
+                                      tst_search_cb);
                 }
 
                 if (BUF_LEN(matching_words_da) > 0)
