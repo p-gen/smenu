@@ -308,7 +308,7 @@ struct term_s
   char has_invis;             /* has invis mode.                         */
   char has_blink;             /* has blink mode.                         */
   char has_kmous;             /* has mouse reporting.                    */
-  char has_rep;               /* has repeact char.                       */
+  char has_rep;               /* has repeat char.                        */
 };
 
 /* Structure describing a word. */

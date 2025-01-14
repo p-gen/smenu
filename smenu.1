@@ -468,6 +468,12 @@ This special state will persist until all the symbols following the first
 erroneous one are deleted (using backspace) or if \fBESC\fP is pressed
 to cancel the search session and clear the search buffer.
 .PP
+Note that when searching, you can use the TAB key or the CTRL-I
+key sequence to perform semi-automatic entry, as in bash or ksh.
+This function is especially useful in \fIprefix\fP or \fIsubstring\fP
+mode, while in \fIfuzzy\fP mode, the larger number of matches could make
+this function useless.
+.PP
 During a search session, the cursor changes and each character entered is
 added in (or removed from) the search buffer.
 The display is refreshed after each change in this buffer.
