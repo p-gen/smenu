@@ -13676,242 +13676,241 @@ main(int argc, char *argv[])
         /* Only available when searching.                                 */
         /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
         case 0x09: /* TAB */
+        {
+          long matching_nb; /* number of currently matching words. */
+
+          long len_mb = word_a[current].mb; /* number of glyphs in the *
+                                             | current word.           */
+
+          long shortest_mb_seq; /* shortest length (in mb) after the last *
+                                 | bit set in matching words.             */
+
+          long ref_word; /* word index with the shorted sequence of mb *
+                          | to check for.                              */
+
+          long l; /* number of bytes of the glyph following the last *
+                   | searched glyph.n the current searched word.     */
+
+          matching_nb = BUF_LEN(matching_words_da);
+
+          /* Do nothing if there is no matching words. */
+          /* """"""""""""""""""""""""""""""""""""""""" */
+          if (matching_nb > 0)
           {
-            long matching_nb; /* number of currently matching words. */
+            mb_index        = len_mb - 1;
+            shortest_mb_seq = len_mb - 1;
 
-            long len_mb = word_a[current].mb; /* number of glyphs in the *
-                                               | current word.           */
+            /* Get the position of the latest selected glyph. */
+            /* """""""""""""""""""""""""""""""""""""""""""""" */
+            while (mb_index && !BIT_ISSET(word_a[current].bitmap, mb_index))
+              mb_index--;
 
-            long shortest_mb_seq; /* shortest length (in mb) after the last *
-                                   | bit set in matching words.             */
-
-            long ref_word; /* word index with the shorted sequence of mb *
-                            | to check for.                              */
-
-            long l; /* number of bytes of the glyph following the last *
-                     | searched glyph.n the current searched word.     */
-
-            matching_nb = BUF_LEN(matching_words_da);
-
-            /* Do nothing if there is no matching words. */
-            /* """"""""""""""""""""""""""""""""""""""""" */
-            if (matching_nb > 0)
-            {
-              mb_index        = len_mb - 1;
-              shortest_mb_seq = len_mb - 1;
-
-              /* Get the position of the latest selected glyph. */
-              /* """""""""""""""""""""""""""""""""""""""""""""" */
-              while (mb_index && !BIT_ISSET(word_a[current].bitmap, mb_index))
-                mb_index--;
-
-              /* If there is only one matching word select all its *
+            /* If there is only one matching word select all its *
               /* remaining glyphs.                                 */
-              /* """"""""""""""""""""""""""""""""""""""""""""""""" */
-              if (matching_nb == 1)
-              {
-                char *ptr = word_a[current].str;
+            /* """"""""""""""""""""""""""""""""""""""""""""""""" */
+            if (matching_nb == 1)
+            {
+              char *ptr = word_a[current].str;
 
-                /* Points to the first glyph to check. */
-                /* """"""""""""""""""""""""""""""""""" */
-                for (long i = 0; i <= mb_index; i++)
+              /* Points to the first glyph to check. */
+              /* """"""""""""""""""""""""""""""""""" */
+              for (long i = 0; i <= mb_index; i++)
+                ptr = utf8_next(ptr);
+
+              /* Mark the remaining glyphs as selected and update the */
+              /* search data.                                         */
+              /* """""""""""""""""""""""""""""""""""""""""""""""""""" */
+              for (long i = mb_index + 1; i < len_mb; i++)
+              {
+                BIT_ON(word_a[current].bitmap, i);
+
+                l = utf8_get_length(*ptr);
+                memcpy(search_data.buf + search_data.len, ptr, l);
+                search_data.utf8_len_a[search_data.utf8_len] = l;
+                search_data.utf8_off_a[search_data.utf8_len] = search_data.len;
+                search_data.len += l;
+                search_data.utf8_len++;
+
+                ptr += l;
+              }
+
+              nl = disp_lines(&win,
+                              &toggles,
+                              current,
+                              count,
+                              search_mode,
+                              &search_data,
+                              &term,
+                              last_line,
+                              tmp_word,
+                              &langinfo);
+            }
+            else
+            {
+              long  len_mb;
+              long  mb_index;
+              long *work_a;
+              long *work_mb_a;
+              char *ptr;
+
+              /* Array to contain the offset (in bytes) of the last  */
+              /* significant bit in the glyph selection bitmap.      */
+              /* """"""""""""""""""""""""""""""""""""""""""""""""""" */
+              work_a = xmalloc(matching_nb * sizeof(long));
+
+              /* Array to contain the offset (in mb) of the last  */
+              /* significant bit in the glyph selection bitmap.   */
+              /* """""""""""""""""""""""""""""""""""""""""""""""" */
+              work_mb_a = xmalloc(matching_nb * sizeof(long));
+
+              /* Word index in matching_words_da which be become the      */
+              /* reference to compare with the other ones.                */
+              /* This will be the one the the shortest sequence of 0 bits */
+              /* in the selection bitmap of the word.  This will minimize */
+              /* the internal loop number in the following code.          */
+              /* """""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+              ref_word = 0;
+
+              for (long i = 0; i < matching_nb; i++)
+              {
+                len_mb = word_a[matching_words_da[i]].mb;
+
+                mb_index = len_mb - 1;
+
+                /* Determine the index of the first non selected glyph */
+                /* after the last selected one.                        */
+                /* """"""""""""""""""""""""""""""""""""""""""""""""""" */
+                while (
+                  mb_index >= 0
+                  && !BIT_ISSET(word_a[matching_words_da[i]].bitmap, mb_index))
+                  mb_index--;
+                mb_index++;
+
+                /* ptr will point to the first non selected glyph */
+                /* after the last one.                            */
+                /* """""""""""""""""""""""""""""""""""""""""""""" */
+                ptr = word_a[matching_words_da[i]].str + daccess.flength;
+
+                for (long j = 0; j < mb_index; j++)
                   ptr = utf8_next(ptr);
 
-                /* Mark the remaining glyphs as selected and update the */
-                /* search data.                                         */
-                /* """""""""""""""""""""""""""""""""""""""""""""""""""" */
-                for (long i = mb_index + 1; i < len_mb; i++)
+                /* Store the offsets in mb and bytes on the first */
+                /* glyph to consider.                             */
+                /* """""""""""""""""""""""""""""""""""""""""""""" */
+                if (ptr != NULL)
                 {
-                  BIT_ON(word_a[current].bitmap, i);
+                  work_a[i]    = ptr - word_a[matching_words_da[i]].str;
+                  work_mb_a[i] = mb_index;
+                }
+                else
+                  work_a[i] = 0;
 
-                  l = utf8_get_length(*ptr);
-                  memcpy(search_data.buf + search_data.len, ptr, l);
-                  search_data.utf8_len_a[search_data.utf8_len] = l;
-                  search_data.utf8_off_a[search_data.utf8_len] = search_data
-                                                                   .len;
-                  search_data.len += l;
-                  search_data.utf8_len++;
+                /* Update ref_word if needed. */
+                /* """""""""""""""""""""""""" */
+                if (shortest_mb_seq > len_mb - mb_index)
+                {
+                  shortest_mb_seq = len_mb - mb_index;
+                  ref_word        = i;
+                }
+              }
+
+              /* Check if we have something to do. */
+              /* """"""""""""""""""""""""""""""""" */
+              if (shortest_mb_seq > 0)
+              {
+                ptr = word_a[matching_words_da[ref_word]].str
+                      + work_a[ref_word];
+
+                while (ptr - word_a[matching_words_da[ref_word]].str
+                       < word_a[matching_words_da[ref_word]].len)
+                {
+                  char glyph[5];
+                  int  l    = utf8_get_length(*(ptr));
+                  int  stop = 0;
+
+                  memcpy(glyph, ptr, l);
+                  glyph[l] = '\0';
 
                   ptr += l;
-                }
 
-                nl = disp_lines(&win,
-                                &toggles,
-                                current,
-                                count,
-                                search_mode,
-                                &search_data,
-                                &term,
-                                last_line,
-                                tmp_word,
-                                &langinfo);
-              }
-              else
-              {
-                long  len_mb;
-                long  mb_index;
-                long *work_a;
-                long *work_mb_a;
-                char *ptr;
-
-                /* Array to contain the offset (in bytes) of the last  */
-                /* significant bit in the glyph selection bitmap.      */
-                /* """"""""""""""""""""""""""""""""""""""""""""""""""" */
-                work_a = xmalloc(matching_nb * sizeof(long));
-
-                /* Array to contain the offset (in mb) of the last  */
-                /* significant bit in the glyph selection bitmap.   */
-                /* """""""""""""""""""""""""""""""""""""""""""""""" */
-                work_mb_a = xmalloc(matching_nb * sizeof(long));
-
-                /* Word index in matching_words_da which be become the      */
-                /* reference to compare with the other ones.                */
-                /* This will be the one the the shortest sequence of 0 bits */
-                /* in the selection bitmap of the word.  This will minimize */
-                /* the internal loop number in the following code.          */
-                /* """""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-                ref_word = 0;
-
-                for (long i = 0; i < matching_nb; i++)
-                {
-                  len_mb = word_a[matching_words_da[i]].mb;
-
-                  mb_index = len_mb - 1;
-
-                  /* Determine the index of the first non selected glyph */
-                  /* after the last selected one.                        */
-                  /* """"""""""""""""""""""""""""""""""""""""""""""""""" */
-                  while (mb_index >= 0
-                         && !BIT_ISSET(word_a[matching_words_da[i]].bitmap,
-                                       mb_index))
-                    mb_index--;
-                  mb_index++;
-
-                  /* ptr will point to the first non selected glyph */
-                  /* after the last one.                            */
-                  /* """""""""""""""""""""""""""""""""""""""""""""" */
-                  ptr = word_a[matching_words_da[i]].str + daccess.flength;
-
-                  for (long j = 0; j < mb_index; j++)
-                    ptr = utf8_next(ptr);
-
-                  /* Store the offsets in mb and bytes on the first */
-                  /* glyph to consider.                             */
-                  /* """""""""""""""""""""""""""""""""""""""""""""" */
-                  if (ptr != NULL)
+                  /* Compare the right glyph of ref_word to the right */
+                  /* glyph in the other word in matching_words_da.    */
+                  /* set the stop variable if a difference was seen.  */
+                  /* """""""""""""""""""""""""""""""""""""""""""""""" */
+                  for (long i = 0; i < matching_nb; i++)
                   {
-                    work_a[i]    = ptr - word_a[matching_words_da[i]].str;
-                    work_mb_a[i] = mb_index;
-                  }
-                  else
-                    work_a[i] = 0;
-
-                  /* Update ref_word if needed. */
-                  /* """""""""""""""""""""""""" */
-                  if (shortest_mb_seq > len_mb - mb_index)
-                  {
-                    shortest_mb_seq = len_mb - mb_index;
-                    ref_word        = i;
-                  }
-                }
-
-                /* Check if we have something to do. */
-                /* """"""""""""""""""""""""""""""""" */
-                if (shortest_mb_seq > 0)
-                {
-                  ptr = word_a[matching_words_da[ref_word]].str
-                        + work_a[ref_word];
-
-                  while (ptr - word_a[matching_words_da[ref_word]].str
-                         < word_a[matching_words_da[ref_word]].len)
-                  {
-                    char glyph[5];
-                    int  l    = utf8_get_length(*(ptr));
-                    int  stop = 0;
-
-                    memcpy(glyph, ptr, l);
-                    glyph[l] = '\0';
-
-                    ptr += l;
-
-                    /* Compare the right glyph of ref_word to the right */
-                    /* glyph in the other word in matching_words_da.    */
-                    /* set the stop variable if a difference was seen.  */
-                    /* """""""""""""""""""""""""""""""""""""""""""""""" */
-                    for (long i = 0; i < matching_nb; i++)
+                    if (i != ref_word)
                     {
-                      if (i != ref_word)
+                      if (memcmp(glyph,
+                                 word_a[matching_words_da[i]].str + work_a[i],
+                                 l)
+                          != 0)
                       {
-                        if (memcmp(glyph,
-                                   word_a[matching_words_da[i]].str + work_a[i],
-                                   l)
-                            != 0)
+                        stop = 1;
+                        /* Remove the previously added values in work_a and */
+                        /* work_mb_a when un mismatch occurs.               */
+                        /* And exit the loop.                               */
+                        /* """""""""""""""""""""""""""""""""""""""""""""""" */
+                        for (long j = 0; j <= i; j++)
                         {
-                          stop = 1;
-                          /* Remove the previously added values in work_a and */
-                          /* work_mb_a when un mismatch occurs.               */
-                          /* And exit the loop.                               */
-                          /* """""""""""""""""""""""""""""""""""""""""""""""" */
-                          for (long j = 0; j <= i; j++)
-                          {
-                            work_a[j] -= l;
-                            work_mb_a[j]--;
-                          }
-                          break;
+                          work_a[j] -= l;
+                          work_mb_a[j]--;
                         }
-                        else
-                        {
-                          work_a[i] += l;
-                          work_mb_a[i]++;
-                        }
+                        break;
                       }
-                      else /* Skip the ref_word. */
+                      else
                       {
                         work_a[i] += l;
                         work_mb_a[i]++;
                       }
                     }
-
-                    if (stop)
-                      break;
-                    else
+                    else /* Skip the ref_word. */
                     {
-                      /* Update the search data. */
-                      /* """"""""""""""""""""""" */
-                      memcpy(search_data.buf + search_data.len, glyph, l);
-                      search_data.utf8_len_a[search_data.utf8_len] = l;
-                      search_data.utf8_off_a[search_data.utf8_len] = search_data
-                                                                       .len;
-                      search_data.len += l;
-                      search_data.utf8_len++;
-
-                      /* Mark the remaining glyphs as selected. */
-                      /* """""""""""""""""""""""""""""""""""""" */
-                      for (long i = 0; i < matching_nb; i++)
-                        BIT_ON(word_a[matching_words_da[i]].bitmap,
-                               work_mb_a[i] - 1);
+                      work_a[i] += l;
+                      work_mb_a[i]++;
                     }
                   }
+
+                  if (stop)
+                    break;
+                  else
+                  {
+                    /* Update the search data. */
+                    /* """"""""""""""""""""""" */
+                    memcpy(search_data.buf + search_data.len, glyph, l);
+                    search_data.utf8_len_a[search_data.utf8_len] = l;
+                    search_data.utf8_off_a[search_data.utf8_len] = search_data
+                                                                     .len;
+                    search_data.len += l;
+                    search_data.utf8_len++;
+
+                    /* Mark the remaining glyphs as selected. */
+                    /* """""""""""""""""""""""""""""""""""""" */
+                    for (long i = 0; i < matching_nb; i++)
+                      BIT_ON(word_a[matching_words_da[i]].bitmap,
+                             work_mb_a[i] - 1);
+                  }
                 }
-
-                free(work_a);
-                free(work_mb_a);
-
-                nl = disp_lines(&win,
-                                &toggles,
-                                current,
-                                count,
-                                search_mode,
-                                &search_data,
-                                &term,
-                                last_line,
-                                tmp_word,
-                                &langinfo);
               }
+
+              free(work_a);
+              free(work_mb_a);
+
+              nl = disp_lines(&win,
+                              &toggles,
+                              current,
+                              count,
+                              search_mode,
+                              &search_data,
+                              &term,
+                              last_line,
+                              tmp_word,
+                              &langinfo);
             }
           }
+        }
 
-          break;
+        break;
 
         case 0x1b: /* ESC */
 
@@ -16206,9 +16205,6 @@ main(int argc, char *argv[])
           {
             long i;
 
-            if (daccess_stack_head > 0)
-              daccess_stack[--daccess_stack_head] = '\0';
-
             if (search_mode != NONE)
             {
               if (search_data.utf8_len > 0)
@@ -16305,6 +16301,41 @@ main(int argc, char *argv[])
 
                   sub_tst_data->count = 0;
                 }
+              }
+            }
+            else
+            {
+              wchar_t *w;
+              long    *pos;
+
+              if (daccess_stack_head > 0)
+                daccess_stack[--daccess_stack_head] = '\0';
+
+              w   = utf8_strtowcs(daccess_stack);
+              pos = tst_search(tst_daccess, w);
+              free(w);
+
+              if (pos != NULL)
+              {
+                current = *pos;
+
+                if (current < win.start || current > win.end)
+                  last_line = build_metadata(&term, count, &win);
+
+                /* Set new first column to display. */
+                /* """""""""""""""""""""""""""""""" */
+                set_new_first_column(&win, &term);
+
+                nl = disp_lines(&win,
+                                &toggles,
+                                current,
+                                count,
+                                search_mode,
+                                &search_data,
+                                &term,
+                                last_line,
+                                tmp_word,
+                                &langinfo);
               }
             }
           }
