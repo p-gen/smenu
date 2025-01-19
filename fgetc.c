@@ -20,7 +20,7 @@ enum
 
 static unsigned char getc_buffer[GETC_BUFF_SIZE] = { '\0' };
 
-static long next_buffer_pos = 0; /* Next free position in the getc buffer. */
+static int next_buffer_pos = 0; /* Next free position in the getc buffer. */
 
 /* ======================================== */
 /* Gets a (possibly pushed-back) character. */

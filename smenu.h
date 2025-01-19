@@ -318,6 +318,9 @@ struct word_s
   long           start, end;    /* start/end absolute horiz. word positions *
                                  | on the screen.                           */
   size_t         mb;            /* number of UTF-8 glyphs to display.       */
+  size_t         len_mb;        /* number of UTF-8 glyphs before filling    *
+                                 * the column.                              */
+  size_t         len;           /* number of bytes in str (for trimming).   */
   long           tag_order;     /* each time a word is tagged, this value.  *
                                  | is increased.                            */
   unsigned short tag_id;        /* tag id. 0 means no tag.                  */
@@ -327,7 +330,6 @@ struct word_s
   unsigned char  is_numbered;   /* word has a direct access index.          */
   unsigned char  special_level; /* can vary from 0 to 9; 0 meaning normal.  */
   char          *str;           /* display string associated with this word */
-  size_t         len;           /* number of bytes of str (for trimming).   */
   char          *orig;          /* NULL or original string if is had been.  *
                                  | shortened for being displayed or altered *
                                  | by is expansion.                         */
@@ -469,12 +471,12 @@ struct daccess_s
 /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
 struct search_data_s
 {
-  char *buf;        /* search buffer.                            */
-  long  len;        /* current position in the search buffer.    */
-  long  utf8_len;   /* current position in the search buffer in  *
-                     | UTF-8 units.                              */
-  long *utf8_off_a; /* array of mb offsets in buf.               */
-  long *utf8_len_a; /* array of mb lengths in buf.               */
+  char *buf;    /* search buffer.                                */
+  long  len;    /* current position in the search buffer.        */
+  long  mb_len; /* current position in the search buffer in      *
+                 | UTF-8 units.                                  */
+  long *off_a;  /* array of mb offsets in buf.                   */
+  long *len_a;  /* array of mb lengths in buf.                   */
 
   int  err;           /* match error indicator.                  */
   long fuzzy_err_pos; /* last good position in search buffer.    */
