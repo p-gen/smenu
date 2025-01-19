@@ -1895,8 +1895,9 @@ setup_term(int const       fd,
   new_in_attrs->c_cflag = old_in_attrs->c_cflag;
   new_in_attrs->c_lflag = old_in_attrs->c_lflag & ~(ICANON | ECHO | ISIG);
 
-  new_in_attrs->c_cc[VMIN]  = 1; /* wait for at least 1 byte. */
-  new_in_attrs->c_cc[VTIME] = 0; /* no timeout.               */
+  new_in_attrs->c_cc[VMIN]   = 1;    /* wait for at least 1 byte. */
+  new_in_attrs->c_cc[VTIME]  = 0;    /* no timeout.               */
+  new_in_attrs->c_cc[VERASE] = 0x08; /* ^H.                       */
 
   error = tcsetattr_safe(fd, TCSANOW, new_in_attrs);
 
@@ -16196,7 +16197,6 @@ main(int argc, char *argv[])
           break;
 
         case 0x08: /* ^H */
-        case 0x7f: /* BS */
           /* backspace/CTRL-H management. */
           /* """""""""""""""""""""""""""" */
           if (help_mode)
