@@ -468,11 +468,9 @@ This special state will persist until all the symbols following the first
 erroneous one are deleted (using backspace) or if \fBESC\fP is pressed
 to cancel the search session and clear the search buffer.
 .PP
-Note that when searching, you can use the TAB key or the CTRL-I
-key sequence to perform semi-automatic entry, as in bash or ksh.
-This function is especially useful in \fIprefix\fP or \fIsubstring\fP
-mode, while in \fIfuzzy\fP mode, the larger number of matches could make
-this function useless.
+Note that, when searching in \fIprefix\fP or \fIsubstring\fP mode, you
+can use the \fBTAB\fP key or the \fBCTRL\ I\fP key sequence to try to
+auto-complete the search pattern, as in bash or ksh.
 .PP
 During a search session, the cursor changes and each character entered is
 added in (or removed from) the search buffer.
@@ -505,16 +503,15 @@ attributes configured.
 not clear the list of the matching words and the search buffer.
 .PP
 The user can then use the \fBn\fP/\fBs\fP/\fBSPACE\fP keys (forward) and
-the \fBN\fP/\fBS\fP keys (backward) to navigate in the list of matching
+the \fBN\fP/\fBS\fP keys (Backspace) to navigate in the list of matching
 words,
 
-In \fIfuzzy\fP search mode, the \fBs\fP/\fBS\fP keys attempt to move the
-cursor to the next/previous word whose matching part forms a substring
-of this word.
-If no such matches exist, \fBs\fP/\fBS\fP and \fBn\fP/\fBN\fP do the
-same things.
-To move the cursor to the next/previous fuzzy match, use the
-\fBn\fP/\fBN\fP/\fBSPACE\fP keys.
+When a \fIfuzzy\fP search has been performed, the \fBs\fP/\fBS\fP keys
+attempts to move the cursor to the next/previous word whose matching part
+forms a substring of consecutive glyphs.
+.br
+If no such matches exist, \fBs\fP/\fBS\fP and \fBn\fP/\fBN\fP are equivalent.
+.br
 \fBs\fP means next \fPs\fPubstring match in this context while \fBn\fP
 just means \fBn\fPext match.
 .PP
