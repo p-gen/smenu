@@ -16203,6 +16203,7 @@ main(int argc, char *argv[])
           break;
 
         case 0x08: /* ^H */
+        case 0x7f: /* BS */
           /* backspace/CTRL-H management. */
           /* """""""""""""""""""""""""""" */
           if (help_mode)
