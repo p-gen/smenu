@@ -13106,6 +13106,10 @@ main(int argc, char *argv[])
   /* """""""""""""""""""""""""""""""""""""""" */
   setup_term(fileno(stdin), &old_in_attrs, &new_in_attrs);
 
+  /* Make sure the input strem buffer is empty. */
+  /* """""""""""""""""""""""""""""""""""""""""" */
+  tcflush(0,TCIOFLUSH);
+
   if (!get_cursor_position(&row, &col))
   {
     fprintf(stderr,
