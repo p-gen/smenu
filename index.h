@@ -43,8 +43,14 @@ tst_fuzzy_traverse(tst_node_t *p,
                    int     first_call,
                    wchar_t w);
 
+void *
+tst_search_in_word(tst_node_t *root, wchar_t w);
+
 sub_tst_t *
 sub_tst_new(void);
+
+void
+append_tst_search_list(char *glyph, long l);
 
 void
 insert_sorted_ptr(tst_node_t ***array,

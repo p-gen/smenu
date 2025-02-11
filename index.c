@@ -25,6 +25,7 @@
 #include "list.h"
 #include "utils.h"
 #include "index.h"
+#include "xmalloc.h"
 
 /* List of words matching the current search. */
 /* """""""""""""""""""""""""""""""""""""""""" */
@@ -266,6 +267,105 @@ tst_prefix_search(tst_node_t *root, wchar_t *w, int (*callback)(void *))
   }
 
   return NULL;
+}
+
+/* =============================================================== */
+/* Follows the eqkid list fron a note in the tst until w if found. */
+/* Returns a pointer to the node if found, else returns NULL.      */
+/*                                                                 */
+/* Exemple with words "abcde", "bacdef" and "cda" in the tst_word  */
+/*         tree.                                                   */
+/*         if p points to the node (a), and w contains 'e' then    */
+/*         tst_search_in_word(p, w) will follow the starred nodes  */
+/*         until (e) and return q following the aqkid of the TST   */
+/*         from (a)                                                */
+/*                                                                 */
+/*    b                                                            */
+/*  / | \                                                          */
+/* a (a) c                                                         */
+/* |  |  |                                                         */
+/* b  c  d                                                         */
+/* |  |  |                                                         */
+/* c  d  a                                                         */
+/* |  |                                                            */
+/* d (e) <- q                                                      */
+/* |  |                                                            */
+/* e  f                                                            */
+/* =============================================================== */
+void *
+tst_search_in_word(tst_node_t *root, wchar_t w)
+{
+  tst_node_t *p  = root;
+  size_t      rc = 0;
+
+  while (p && p->splitchar != L'\0')
+  {
+    if (p->splitchar == w)
+    {
+      rc = 1;
+      break;
+    }
+    p = p->eqkid;
+  }
+
+  if (rc)
+    return p;
+  else
+    return NULL;
+}
+
+/* ===================================================================== */
+/* Helper function used only in fuzzy mode to append a glyph in the      */
+/* search_list.                                                          */
+/* Takes all the level n pointers to nodes in tst_words to determine the */
+/* level n+1 pointers by following the eqkids pointers from these nodes. */
+/* ===================================================================== */
+void
+append_tst_search_list(char *glyph, long l)
+{
+  tst_node_t *tst_node, *node;
+  sub_tst_t  *sub_tst, *new_sub_tst;
+  wchar_t     w;
+
+  sub_tst = (sub_tst_t *)(tst_search_list->tail->data);
+  mbtowc(&w, glyph, l);
+
+  /* Create a new empty sub_tst_t node. */
+  /* """""""""""""""""""""""""""""""""" */
+  new_sub_tst = sub_tst_new();
+
+  /* For each eqkids of the level n */
+  /* """""""""""""""""""""""""""""" */
+  for (long i = 0; i < sub_tst->count; i++)
+  {
+    tst_node = ((tst_node_t **)(sub_tst->array))[i];
+    if (tst_node->splitchar == L'\0')
+      continue;
+
+    /* If the search glyph esists as on of its eqkid. */
+    /* build a level n+1 sub_tst node.                */
+    /* """""""""""""""""""""""""""""""""""""""""""""" */
+    if ((node = tst_search_in_word(tst_node, w)) != NULL)
+    {
+      new_sub_tst->count++;
+      new_sub_tst->size  = new_sub_tst->count / 64 + 64;
+      new_sub_tst->array = xrealloc(new_sub_tst->array,
+                                    sizeof(tst_node_t *) * new_sub_tst->size);
+
+      new_sub_tst->array[new_sub_tst->count - 1] = node;
+    }
+  }
+
+  /* Append the new node if it was filled to tst_search_list, */
+  /* else destroy it.                                         */
+  /* """""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+  if (sub_tst->count > 0)
+    ll_append(tst_search_list, new_sub_tst);
+  else
+  {
+    free(sub_tst->array);
+    free(sub_tst);
+  }
 }
 
 /* ========================================================= */
