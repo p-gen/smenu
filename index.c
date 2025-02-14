@@ -270,10 +270,10 @@ tst_prefix_search(tst_node_t *root, wchar_t *w, int (*callback)(void *))
 }
 
 /* =============================================================== */
-/* Follows the eqkid list fron a note in the tst until w if found. */
+/* Follows the eqkid list from a note in the tst until w if found. */
 /* Returns a pointer to the node if found, else returns NULL.      */
 /*                                                                 */
-/* Exemple with words "abcde", "bacdef" and "cda" in the tst_word  */
+/* Example with words "abcde", "bacdef" and "cda" in the tst_word  */
 /*         tree.                                                   */
 /*         if p points to the node (a), and w contains 'e' then    */
 /*         tst_search_in_word(p, w) will follow the starred nodes  */
@@ -342,7 +342,7 @@ append_tst_search_list(char *glyph, long l)
     if (tst_node->splitchar == L'\0')
       continue;
 
-    /* If the search glyph esists as on of its eqkid. */
+    /* If the search glyph exists as on of its eqkid. */
     /* build a level n+1 sub_tst node.                */
     /* """""""""""""""""""""""""""""""""""""""""""""" */
     if ((node = tst_search_in_word(tst_node, w)) != NULL)
