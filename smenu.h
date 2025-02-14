@@ -321,6 +321,8 @@ struct word_s
   size_t         len_mb;        /* number of UTF-8 glyphs before filling    *
                                  * the column.                              */
   size_t         len;           /* number of bytes in str (for trimming).   */
+  int            offset;        /* may be > 0 in case of center or right    *
+                                 * alignment (# of spaces added).           */
   long           tag_order;     /* each time a word is tagged, this value.  *
                                  | is increased.                            */
   unsigned short tag_id;        /* tag id. 0 means no tag.                  */
@@ -554,7 +556,16 @@ int
 isempty(const char *s);
 
 void
+clear_bitmap(word_t *word);
+
+sub_tst_t *
+sub_tst_new(void);
+
+void
 my_beep(toggle_t *toggles);
+
+void
+align_word(word_t *word, alignment_t alignment, size_t prerfix, char sp);
 
 int
 get_cursor_position(int * const r, int * const c);
@@ -866,6 +877,3 @@ get_clicked_index(win_t  *win,
                   int     line_click,
                   int     column_click,
                   int    *error);
-
-void
-align_word(word_t *word, alignment_t alignment, size_t prerfix, char sp);
