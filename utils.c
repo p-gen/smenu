@@ -354,7 +354,10 @@ swap_string_parts(char **s, size_t first)
   size = strlen(*s);
 
   if (first > size)
+  {
+    free(tmp);
     return 0;
+  }
 
   strcpy(tmp, *s);
   strcat(tmp, *s);
