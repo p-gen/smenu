@@ -356,16 +356,7 @@ append_tst_search_list(char *glyph, long l)
     }
   }
 
-  /* Append the new node if it was filled to tst_search_list, */
-  /* else destroy it.                                         */
-  /* """""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-  if (sub_tst->count > 0)
-    ll_append(tst_search_list, new_sub_tst);
-  else
-  {
-    free(sub_tst->array);
-    free(sub_tst);
-  }
+  ll_append(tst_search_list, new_sub_tst);
 }
 
 /* ========================================================= */
