@@ -479,8 +479,8 @@ hexdump(const char *buf, FILE *fp, const char *prefix, size_t size)
 int
 my_wcswidth(const wchar_t *s, size_t n)
 {
-  int len = 0;
-  int m   = 0;
+  int    len = 0;
+  size_t m   = 0;
 
   if (s == NULL || *s == L'\0')
     return 0;
