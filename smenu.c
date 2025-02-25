@@ -13787,9 +13787,10 @@ main(int argc, char *argv[])
 
               /* Update ref_word if needed. */
               /* """""""""""""""""""""""""" */
-              if (shortest_mb_seq > len_mb + offset - mb_index)
+              if (shortest_mb_seq
+                  > len_mb + offset - mb_index - daccess.flength)
               {
-                shortest_mb_seq = len_mb + offset - mb_index;
+                shortest_mb_seq = len_mb + offset - mb_index - daccess.flength;
                 ref_word        = i;
               }
             }
