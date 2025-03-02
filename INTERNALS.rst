@@ -287,3 +287,11 @@ Substring search.
 
    cute cup at as he at us i clues
                                --
+
+Bitmap.
+~~~~~~~
+
+  In order to display and store the glyphs used to select words, each instance
+  of the word_s data structure contains a bitmap in which each bit set
+  to 1 indicates the fact that this glyph is present both in the words found
+  and in search_data.buf.
