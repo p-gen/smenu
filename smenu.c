@@ -1352,23 +1352,6 @@ clear_bitmap(word_t *word)
   memset(word->bitmap, '\0', (word->mb - daccess.flength) / CHAR_BIT + 1);
 }
 
-/* =================================================================== */
-/* Create a new element to be added to the tst_search_list used by the */
-/* search mechanism.                                                   */
-/* Return the newly created element.                                   */
-/* =================================================================== */
-sub_tst_t *
-sub_tst_new(void)
-{
-  sub_tst_t *elem = xmalloc(sizeof(sub_tst_t));
-
-  elem->size  = 64;
-  elem->count = 0;
-  elem->array = xmalloc(elem->size * sizeof(tst_node_t));
-
-  return elem;
-}
-
 /* ========================================= */
 /* Emit a small (visual) beep warn the user. */
 /* ========================================= */

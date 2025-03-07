@@ -558,9 +558,6 @@ isempty(const char *s);
 void
 clear_bitmap(word_t *word);
 
-sub_tst_t *
-sub_tst_new(void);
-
 void
 my_beep(toggle_t *toggles);
 

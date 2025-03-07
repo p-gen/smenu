@@ -108,6 +108,21 @@ tst_traverse(tst_node_t *p, int (*callback)(void *), int first_call)
   return !!rc;
 }
 
+/* ======================================================== */
+/* Allocates and returns a newly created sub_tst_t element. */
+/* ======================================================== */
+sub_tst_t *
+sub_tst_new(void)
+{
+  sub_tst_t *elem = xmalloc(sizeof(sub_tst_t));
+
+  elem->size  = 64;
+  elem->count = 0;
+  elem->array = xmalloc(elem->size * sizeof(tst_node_t));
+
+  return elem;
+}
+
 /* ======================================================================= */
 /* Traverses the word tst looking for a wchar and build a list of pointers */
 /* containing all the sub-tst potentially leading to words containing the  */
