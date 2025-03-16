@@ -1,0 +1,11 @@
+$ OUT=$(smenu -z 'c\ue2808da' t0006.in)
+
+b d 
+0:07 
+$ 
+
+$ echo ":$OUT:"
+
+:b:
+
+$ exit 0
