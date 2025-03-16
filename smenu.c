@@ -10558,6 +10558,14 @@ main(int argc, char *argv[])
     char *zg_ptr = zg;
     char *tmp;
 
+    zg_ptr = concat(zg_ptr,
+                    "\xe2\x80\x8b", /* Zero Width Space (ZWSP).      */
+                    "\xe2\x80\x8c", /* Zero Width Non-Joiner (ZWNJ). */
+                    "\xe2\x80\x8d", /* Zero Width Joiner (ZWJ).      */
+                    "\xe2\x80\x8e", /* Left-to-Right Mark (LRM).     */
+                    "\xe2\x80\x8f", /* Right-to-Left Mark (RLM).     */
+                    (char *)0);
+
     len = mblen(zg_ptr, MB_CUR_MAX);
 
     while (len != 0)
@@ -10571,6 +10579,13 @@ main(int argc, char *argv[])
       len = mblen(zg_ptr, 4);
     }
   }
+  else
+    ll_append(zapped_glyphs_list,
+              xstrdup("\xe2\x80\x8b"    /* Zero Width Space (ZWSP).      */
+                      "\xe2\x80\x8c"    /* Zero Width Non-Joiner (ZWNJ). */
+                      "\xe2\x80\x8d"    /* Zero Width Joiner (ZWJ).      */
+                      "\xe2\x80\x8e"    /* Left-to-Right Mark (LRM).     */
+                      "\xe2\x80\x8f")); /* Right-to-Left Mark (RLM).     */
 
   /* Parse the word separators string (option -W). If it is empty then  */
   /* the standard delimiters (space, tab and EOL) are used. Each of its */
