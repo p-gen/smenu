@@ -10580,12 +10580,28 @@ main(int argc, char *argv[])
     }
   }
   else
-    ll_append(zapped_glyphs_list,
-              xstrdup("\xe2\x80\x8b"    /* Zero Width Space (ZWSP).      */
-                      "\xe2\x80\x8c"    /* Zero Width Non-Joiner (ZWNJ). */
-                      "\xe2\x80\x8d"    /* Zero Width Joiner (ZWJ).      */
-                      "\xe2\x80\x8e"    /* Left-to-Right Mark (LRM).     */
-                      "\xe2\x80\x8f")); /* Right-to-Left Mark (RLM).     */
+  {
+    /* Zero Width Space (ZWSP). */
+    /* """""""""""""""""""""""" */
+    ll_append(zapped_glyphs_list, xstrdup("\xe2\x80\x8b"));
+
+    /* Zero Width Non-Joiner (ZWNJ). */
+    /* """"""""""""""""""""""""""""" */
+
+    ll_append(zapped_glyphs_list, xstrdup("\xe2\x80\x8c"));
+    /* Zero Width Joiner (ZWJ). */
+    /* """""""""""""""""""""""" */
+
+    ll_append(zapped_glyphs_list, xstrdup("\xe2\x80\x8d"));
+
+    /* Left-to-Right Mark (LRM). */
+    /* """"""""""""""""""""""""" */
+    ll_append(zapped_glyphs_list, xstrdup("\xe2\x80\x8e"));
+
+    /* Right-to-Right Mark (RRM). */
+    /* """""""""""""""""""""""""" */
+    ll_append(zapped_glyphs_list, xstrdup("\xe2\x80\x8f"));
+  }
 
   /* Parse the word separators string (option -W). If it is empty then  */
   /* the standard delimiters (space, tab and EOL) are used. Each of its */

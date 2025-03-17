@@ -1,0 +1,11 @@
+$ OUT=$(smenu -z ca t0007.in)
+
+b d 
+0:07 
+$ 
+
+$ echo ":$OUT:"
+
+:b:
+
+$ exit 0
