@@ -13692,9 +13692,6 @@ main(int argc, char *argv[])
         setitimer(ITIMER_REAL, &periodic_itv, NULL);
       }
 
-      long mb_index; /* index of the last selected glyph in the *
-                      | bitmap used to march selected glyphs.   */
-
       switch (buffer[0])
       {
         case 0x01: /* ^A */
@@ -13716,16 +13713,11 @@ main(int argc, char *argv[])
         {
           long matching_nb; /* number of currently matching words. */
 
-          long len_mb; /* number of glyphs in the current word. */
-
           long shortest_mb_seq; /* shortest length (in mb) after the last *
                                  | bit set in matching words.             */
 
           long ref_word; /* word index with the shorted sequence of mb *
                           | to check for.                              */
-
-          long l; /* number of bytes of the glyph following the last *
-                   | searched glyph.n the current searched word.     */
 
           matching_nb = BUF_LEN(matching_words_da);
 
