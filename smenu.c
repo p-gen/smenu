@@ -13918,6 +13918,8 @@ main(int argc, char *argv[])
             /* ''''''''''''''''''''''''''''''''''''''''''''''' */
             while (1)
             {
+              int n = 0;
+
               /* Fast reading until an ESC or the end of input is found. */
               /* """"""""""""""""""""""""""""""""""""""""""""""""""""""" */
               while ((c = my_fgetc(stdin)) != EOF && c != 0x1b)
@@ -13933,8 +13935,8 @@ main(int argc, char *argv[])
               /* Read the 5 next characters to look for the */
               /* ending bracket "[201~".                    */
               /* """""""""""""""""""""""""""""""""""""""""" */
-              scanf("%5c", eb);
-              if (memcmp("[201~", eb, 5) == 0)
+              n = scanf("%5c", eb);
+              if (n == 5 && memcmp("[201~", eb, 5) == 0)
                 break;
             }
           }
