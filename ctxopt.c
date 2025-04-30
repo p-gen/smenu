@@ -4654,7 +4654,15 @@ ctxopt_add_opt_settings(settings s, ...)
     case actions:
     {
       void *data;
-      void (*function)();
+      void (*function)(char *,
+                       char *,
+                       char *,
+                       int,
+                       char **,
+                       int,
+                       void **,
+                       int,
+                       void **);
       int nb_data = 0;
 
       /* The second argument must be the name of an existing option. */
@@ -4664,7 +4672,7 @@ ctxopt_add_opt_settings(settings s, ...)
       if ((opt = locate_opt(ptr)) != NULL)
       {
         typedef void
-        fn(char *, char *, char *, int, char **, int, void *, int, void **);
+        fn(char *, char *, char *, int, char **, int, void **, int, void **);
 
         /* The third argument must be the callback function. */
         /* """"""""""""""""""""""""""""""""""""""""""""""""" */
@@ -4696,7 +4704,7 @@ ctxopt_add_opt_settings(settings s, ...)
     {
       char         *value;
       constraint_t *cstr;
-      int (*function)();
+      int (*function)(int, char **, char *, char *);
 
       /* The second argument must be a string. */
       /* """"""""""""""""""""""""""""""""""""" */
@@ -4704,7 +4712,7 @@ ctxopt_add_opt_settings(settings s, ...)
 
       if ((opt = locate_opt(ptr)) != NULL)
       {
-        typedef int fn(int, char **, char *);
+        typedef int fn(int, char **, char *, char *);
 
         /* The third argument must be a function. */
         /* """""""""""""""""""""""""""""""""""""" */
@@ -4964,13 +4972,13 @@ ctxopt_add_ctx_settings(settings s, ...)
     {
       void *ptr;
       void *data;
-      int (*function)();
+      int (*function)(char *, int, char *, int, void **);
       int nb_data = 0;
 
       ptr = va_arg(args, char *);
       if ((ctx = locate_ctx(ptr)) != NULL)
       {
-        typedef int fn(char *, direction, char *, int, void **);
+        typedef int fn(char *, int, char *, int, void **);
 
         function    = va_arg(args, fn *);
         ctx->action = function;
