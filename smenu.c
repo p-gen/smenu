@@ -13807,8 +13807,8 @@ main(int argc, char *argv[])
             {
               ptr = word_a[matching_words_da[ref_word]].str + work_a[ref_word];
 
-              while (ptr - word_a[matching_words_da[ref_word]].str
-                       - word_a[matching_words_da[ref_word]].offset
+              while ((size_t)(ptr - word_a[matching_words_da[ref_word]].str
+                              - word_a[matching_words_da[ref_word]].offset)
                      < word_a[matching_words_da[ref_word]].len)
               {
                 char glyph[5];
