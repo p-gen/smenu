@@ -1,3 +1,4 @@
+'\" t
 .\" ###################################################################
 .\" Copyright 2015, Pierre Gentile (p.gen.progs@gmail.com)
 .\"
@@ -5,7 +6,7 @@
 .\" License, v. 2.0. If a copy of the MPL was not distributed with this
 .\" file, You can obtain one at https://mozilla.org/MPL/2.0/.
 .\" ###################################################################
-.TH smenu 1
+.TH SMENU 1
 .SH NAME
 smenu - filter that allows one to interactively select a word from stdin
 and outputs the selection to stdout.
@@ -198,7 +199,6 @@ A typical example is DOS or Windows files with lines ending with
 \fICRLF\fP.
 In such a case one might decide to ignore all \fICR\fP characters from
 the input.
-.PP
 .SS "Keyboard and mouse usage."
 \fBkeyboard\fP:
 .RS 2
@@ -690,7 +690,7 @@ tab(@);
 l l l l l
 l l l l l
 l l l l .
-\\@\\@^@^@\\ @Do not remove this trailing space!
+\\@\\@^@^@\\ \"Do not remove this trailing space!
 |@|@|@|@/
 /@v@/@v
 .TE
@@ -866,7 +866,7 @@ After the \fB-t\fP|\fB-tab\fP|\fB-tab_mode\fP|\fB-tabulate_mode\fP parameter.
 .IP \fBTagging\fP 2
 After the \fB-T\fP|\fB-tm\fP|\fB-tag\fP|\fB-tag_mode\fP or
 \fB-P\fP|\fB-pm\fP|\fB-pin\fP|\fB-pin_mode\fP parameter.
-.PP
+.br
 .IP \fBWARNING\fP 2
 Here is a situation that may seem confusing at first glance.
 
@@ -1351,7 +1351,6 @@ Example:
 Will display:
 \f(CB(1)\f(CR a     b \f(CB(2) c\fR
 
-.br
 \f(CRecho a b c | smenu -eb -N -D l:\\( p:i\fP
 .br
 Will display:
@@ -1380,7 +1379,6 @@ Example:
 Will display:
 \f(CB(2)\f(CR a \f(CB(1)\f(CR b \f(CB(2)\f(CR c\fR
 
-.br
 \f(CRecho 2a b c | smenu -F -D l:\\( f:y n:1 -N\fP
 .br
 Will display:
@@ -1615,7 +1613,6 @@ displayed for the first time.
 A terminal resize will not update this value.
 This choice enables a faster display.
 .RE
-.PP
 .IP "\fB-C\fP|\fB-cs\fP|\fB-cols\fP|\fB-cols_select\fP... \
 [\fIi\fP|\fII\fP|\fIe\fP|\fIE\fP|\
 \fIl\fP|\fIL\fP|\fIr\fP|\fIR\fP|\fIc\fP|\fIC\fP|\
@@ -1647,7 +1644,7 @@ as their upper case alternative may have other meanings in the future.
 In selectors, columns can be designated by their number (starting with
 1) or by regular expressions surrounded by delimiters consisting of
 any printable ASCII character, except spaces and unprotected commas;
-commas can be protected by backslashes ('\fCD\\\fP')).
+commas can be protected by backslashes ('\f(CB\\\fP').
 
 Column ranges are defined  by separating their numbers with a dash. Open
 interval to the left or right are allowed, so these interval descriptions
@@ -1758,7 +1755,7 @@ Once a column or a row has been excluded, it cannot be re-included.
 
 This option is similar to
 \fB-C\fP|\fB-cs\fP|\fB-cols\fP|\fB-cols_select\fP and
-\fB-R\fP|\fB-rs\fP|\fB-rows\fP|\fB-rows_select\fP but allows to
+\fB-R\fP|\fB-rs\fP|\fB-rows\fP|\fB-rows_select\fP but allows one to
 align all words matched by on of the regular expression defined in
 \fIregex_selectors\fP
 
@@ -1878,7 +1875,6 @@ automatically added to the list of word delimiters as if
 also used.
 
 \fI\\u\fP and \fI\\U\fP sequences can also be used here.
-.TP
 .IP "\fB-q\fP|\fB-no_bar\fP|\fB-no_scroll_bar\fP"
 (Allowed in all contexts.)
 
@@ -1983,8 +1979,8 @@ For details, please refer to the \fBregex(7)\fP manual page.
 .PP
 Additionally \fI\\u\fP and \fI\\U\fP sequences can also be used in
 the regexp.
-.PP
 .RE
+
 If a post-processing action
 (\fB-S\fP|\fB-subst\fP, \fB-I\fP|\fB-si\fP|\fB-subst_included\fP, \
 \fB-E\fP|\fB-se\fP|\fB-subst_excluded\fP) results in an empty (length = 0)
