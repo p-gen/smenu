@@ -79,7 +79,7 @@ fi
 # Launch the test
 # """""""""""""""
 clear
-PS1='$ ' $PTYLIE -i $1.tst -l $1.log -w 80 -h 24 sh
+ENV="" PS1='$ ' $PTYLIE -i $1.tst -l $1.log -w 80 -h 24 bash --posix
 $HVLT < $1.log | sed '1,/exit 0/!d' > $1.out
 rm -f $1.log $1.bad
 [ -f $LOG ] && touch $LOG
