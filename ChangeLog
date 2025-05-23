@@ -1,3 +1,30 @@
+- Version 1.5.0
+* Fixes
+  * Various modifications and corrections have been made to make the
+    substitution code more robust.
+  * Added several variable initializations that were missing.
+  * ^H and BS now work correctly in all cases.
+  * A stdin flush has been added before requesting the cursor's initial
+    position.
+  * Memory leaks have been fixed.
+  * Highlighting in search mode works correctly in all cases.
+  * Compilations problems with gcc-15 have been corrected.
+  * Compiler warnings have been fixed.
+  * The description of S-HOME/S-END in the manual has been corrected.
+
+* Improvements:
+  * The TAB key can now be used to automatically complete search patterns
+    until an ambiguity arises.
+  * A -hbar|-hor_scroll_bar option has been added to force the display of
+    the horizontal scroll bar.
+  * The quick help system has been rewritten.
+  * ZWSP, ZWNJ, ZWJ, LRM and RLM glyphs are now ignored.
+
+* Miscellaneous:
+  * The README and documentation have been improved and clarified.
+  * Some parts of the code have been removed or reorganized.
+  * New tests have been added.
+
 - Version 1.4.0
 * Fixes:
   * Make sure certain variables are initialized before using them.
