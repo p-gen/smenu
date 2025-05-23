@@ -5646,9 +5646,9 @@ printf "%s\n" "no" >&6; }
 fi
 
 
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for library containing tgetent" >&5
-printf %s "checking for library containing tgetent... " >&6; }
-if test ${ac_cv_search_tgetent+y}
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for library containing tputs" >&5
+printf %s "checking for library containing tputs... " >&6; }
+if test ${ac_cv_search_tputs+y}
 then :
   printf %s "(cached) " >&6
 else $as_nop
@@ -5659,11 +5659,11 @@ cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* Override any GCC internal prototype to avoid an error.
    Use char because int might match the return type of a GCC
    builtin and then its argument prototype would still apply.  */
-char tgetent ();
+char tputs ();
 int
 main (void)
 {
-return tgetent ();
+return tputs ();
   ;
   return 0;
 }
@@ -5678,31 +5678,35 @@ do
   fi
   if ac_fn_c_try_link "$LINENO"
 then :
-  ac_cv_search_tgetent=$ac_res
+  ac_cv_search_tputs=$ac_res
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.beam \
     conftest$ac_exeext
-  if test ${ac_cv_search_tgetent+y}
+  if test ${ac_cv_search_tputs+y}
 then :
   break
 fi
 done
-if test ${ac_cv_search_tgetent+y}
+if test ${ac_cv_search_tputs+y}
 then :
 
 else $as_nop
-  ac_cv_search_tgetent=no
+  ac_cv_search_tputs=no
 fi
 rm conftest.$ac_ext
 LIBS=$ac_func_search_save_LIBS
 fi
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_search_tgetent" >&5
-printf "%s\n" "$ac_cv_search_tgetent" >&6; }
-ac_res=$ac_cv_search_tgetent
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_search_tputs" >&5
+printf "%s\n" "$ac_cv_search_tputs" >&6; }
+ac_res=$ac_cv_search_tputs
 if test "$ac_res" != no
 then :
   test "$ac_res" = "none required" || LIBS="$ac_res $LIBS"
-  HAVE_CURSES=True
+
+else $as_nop
+
+  as_fn_error $? "unable to find the tputs() function" "$LINENO" 5
+
 fi
 
 

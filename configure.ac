@@ -19,7 +19,9 @@ AC_PROG_INSTALL
 AC_PROG_LN_S
 AC_PROG_MAKE_SET
 
-AC_SEARCH_LIBS([tgetent], [tinfo curses ncursesw ncurses], [HAVE_CURSES=True])
+AC_SEARCH_LIBS([tputs], [tinfo curses ncursesw ncurses], [], [
+  AC_MSG_ERROR([unable to find the tputs() function])
+])
 
 # clock_gettime is in librt on *-*-osf5.1 and on glibc < 2.17, so add -lrt
 AC_SEARCH_LIBS([clock_gettime], [rt], [
