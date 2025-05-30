@@ -3749,16 +3749,6 @@ read_word(FILE          *input,
   {
     size_t i = 0;
 
-    if (byte_count >= limits->word_length)
-    {
-      fprintf(stderr,
-              "The length of a word has reached the limit of "
-              "%ld characters.\n",
-              limits->word_length);
-
-      exit(EXIT_FAILURE);
-    }
-
     if (byte == '\\' && !is_special)
     {
       is_special = 1;
@@ -6728,7 +6718,7 @@ init_main_ds(attrib_t  *init_attr,
 
   /* Default limits initialization. */
   /* """""""""""""""""""""""""""""" */
-  limits->words       = 32767;
+  limits->words       = 131072;
   limits->cols        = 256;
   limits->word_length = 512;
 
@@ -11080,6 +11070,16 @@ main(int argc, char *argv[])
     if (*word == '\0')
       continue;
 
+    if (utf8_strlen(word) > limits.word_length)
+    {
+      fprintf(stderr,
+              "The length of a word exceeds the word length limit of "
+              "%ld glyphs.\n",
+              limits.word_length);
+
+      exit(EXIT_FAILURE);
+    }
+
     /* Early substitution. */
     /* """"""""""""""""""" */
     if (early_sed_list != NULL)
@@ -11351,10 +11351,10 @@ main(int argc, char *argv[])
         {
           /* Check the limits. */
           /* ''''''''''''''''' */
-          if (col_index == limits.cols)
+          if (col_index == limits.cols + 1)
           {
             fprintf(stderr,
-                    "The number of columns has reached the limit of %ld.\n",
+                    "The number of columns exceeds the %ld column limit.\n",
                     limits.cols);
 
             exit(EXIT_FAILURE);
@@ -11460,7 +11460,7 @@ main(int argc, char *argv[])
 
     /* Initialize the alignment information of each column to be 'left'. */
     /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-    col_attrs = xmalloc(cols_number * sizeof(attrib_t *));
+    col_attrs = xmalloc((cols_number + 1) * sizeof(attrib_t *));
     for (long ci = 0; ci < cols_number; ci++)
       col_attrs[ci] = NULL;
 
@@ -11495,10 +11495,10 @@ main(int argc, char *argv[])
 
     /* One more word... */
     /* """""""""""""""" */
-    if (count + 1 >= limits.words)
+    if (count + 1 > limits.words)
     {
       fprintf(stderr,
-              "The number of read words has reached the limit of %ld.\n",
+              "The number of words read exceeds the %ld word limit.\n",
               limits.words);
 
       exit(EXIT_FAILURE);
