@@ -11,16 +11,18 @@
 /* ******************************** */
 
 #include "config.h"
-#include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 #include <limits.h>
+#include <wchar.h>
 #include <string.h>
-#include <ctype.h>
 #include <stdarg.h>
+#include <ctype.h>
+#include <fcntl.h>
 #include <wctype.h>
+#include <errno.h>
 #include "xmalloc.h"
-#include "wchar.h"
 #include "list.h"
 #include "utf8.h"
 #include "utils.h"
@@ -294,28 +296,6 @@ isprint8(int i)
   unsigned char c = i & (unsigned char)0xff;
 
   return (c >= 0x20 && c < 0x7f) || (c >= (unsigned char)0xa0);
-}
-
-/* ==================================================== */
-/* Private implementation of wcscasecmp missing in c99. */
-/* ==================================================== */
-int
-my_wcscasecmp(const wchar_t *s1, const wchar_t *s2)
-{
-  while (*s1)
-  {
-    wchar_t c1, c2;
-
-    c1 = towlower(*s1);
-    c2 = towlower(*s2);
-
-    if (c1 != c2)
-      return (int)(c1 - c2);
-
-    s1++;
-    s2++;
-  }
-  return -*s2;
 }
 
 /* ================================================================ */

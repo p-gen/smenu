@@ -9,7 +9,7 @@
 #ifndef FGETC_H
 #define FGETC_H
 
-#include <errno.h>
+#include <stdio.h>
 
 int
 my_fgetc(FILE *input);

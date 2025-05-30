@@ -9,6 +9,8 @@
 #ifndef INDEX_H
 #define INDEX_H
 
+#include <wchar.h>
+
 /* *************************************** */
 /* Ternary Search Tree specific structures */
 /* *************************************** */
@@ -22,6 +24,9 @@ void tst_cleanup(tst_node_t * p);
 
 tst_node_t *
 tst_insert(tst_node_t *p, wchar_t *w, void *data);
+
+int
+my_wcscasecmp(const wchar_t *w1s, const wchar_t *w2s);
 
 void *
 tst_prefix_search(tst_node_t *root, wchar_t *w, int (*callback)(void *));

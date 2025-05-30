@@ -1,6 +1,8 @@
 #ifndef XMALLOC_H
 #define XMALLOC_H
 
+#include <stddef.h>
+
 void *
 rpl_malloc(size_t size);
 

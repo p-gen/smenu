@@ -16,12 +16,7 @@
 /* the structure members (head, tail, len, data, prev, next).            */
 /* ********************************************************************* */
 
-#include <stdio.h>
 #include <stdlib.h>
-#include <limits.h>
-#include <string.h>
-#include <errno.h>
-
 #include "xmalloc.h"
 #include "list.h"
 

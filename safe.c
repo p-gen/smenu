@@ -10,13 +10,7 @@
 /* Some wrappers to manage EINTR errors */
 /* ************************************ */
 
-#include <stdio.h>
-#include <termios.h>
-#include <unistd.h>
-#include <sys/stat.h>
-#include <fcntl.h>
 #include <errno.h>
-
 #include "safe.h"
 
 FILE *

@@ -9,6 +9,9 @@
 #ifndef SAFE_H
 #define SAFE_H
 
+#include <stdio.h>
+#include <termios.h>
+
 int
 fputs_safe(const char * restrict s, FILE * restrict stream);
 

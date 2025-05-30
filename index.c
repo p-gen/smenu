@@ -17,19 +17,38 @@
 
 #include <stdlib.h>
 #include <stdint.h>
-#include <unistd.h>
-#include <wchar.h>
+#include <wctype.h>
 #include <string.h>
 
 #include "xmalloc.h"
 #include "list.h"
-#include "utils.h"
 #include "index.h"
-#include "xmalloc.h"
 
 /* List of words matching the current search. */
 /* """""""""""""""""""""""""""""""""""""""""" */
 ll_t *tst_search_list; /* Must be initialized by ll_new() before use. */
+
+/* ==================================================== */
+/* Private implementation of wcscasecmp missing in c99. */
+/* ==================================================== */
+int
+my_wcscasecmp(const wchar_t *s1, const wchar_t *s2)
+{
+  while (*s1)
+  {
+    wchar_t c1, c2;
+
+    c1 = towlower(*s1);
+    c2 = towlower(*s2);
+
+    if (c1 != c2)
+      return (int)(c1 - c2);
+
+    s1++;
+    s2++;
+  }
+  return -*s2;
+}
 
 /* ======================================= */
 /* Ternary search tree insertion function. */

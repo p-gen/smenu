@@ -10,7 +10,7 @@
 /* Custom fgetc/ungetc implementation able to unget more than one character. */
 /* ************************************************************************* */
 
-#include <stdio.h>
+#include <errno.h>
 #include "fgetc.h"
 
 enum
