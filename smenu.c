@@ -770,7 +770,7 @@ parse_attr(char *str, attrib_t *attr, short colors)
   /* ''''''''''''''''''''''''''''''''''''''''''''''''' */
   n = sscanf(str, "%11[^,.+]%*[,.+]%8s%c", s1, s2, &c);
 
-  if (n == 0 || c != '\0')
+  if (n <= 0 || c != '\0')
     goto error;
 
   if ((pos = strchr(s1, '/')))
@@ -1166,6 +1166,9 @@ ini_parse(char     *filename,
     case 0:
       while ((section = ini_next_section(ini)))
         while ((value = ini_next_parameter(ini, &parameter)))
+          /* Invalid values are ignored so the return value */
+          /* does not need to be tested.                    */
+          /* """""""""""""""""""""""""""""""""""""""""""""" */
           ini_parse_entry(win,
                           term,
                           limits,
