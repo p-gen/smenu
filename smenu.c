@@ -32,6 +32,7 @@
 #include <wchar.h>
 
 #include "xmalloc.h"
+#include "ini.h"
 #include "list.h"
 #include "index.h"
 #include "utf8.h"
@@ -867,21 +868,20 @@ apply_attr(term_t *term, attrib_t attr)
 /* ini parsing function. */
 /* ********************* */
 
-/* ===================================================== */
-/* Callback function called when parsing each non-header */
-/* line of the ini file.                                 */
-/* Returns 0 if OK, 1 if not.                            */
-/* ===================================================== */
+/* ================================================================== */
+/* Function called when parsing each non-header line of the ini file. */
+/* Returns 0 if OK, 1 if not.                                         */
+/* ================================================================== */
 int
-ini_cb(win_t      *win,
-       term_t     *term,
-       limit_t    *limits,
-       ticker_t   *timers,
-       misc_t     *misc,
-       mouse_t    *mouse,
-       const char *section,
-       const char *name,
-       char       *value)
+ini_parse_entry(win_t      *win,
+                term_t     *term,
+                limit_t    *limits,
+                ticker_t   *timers,
+                misc_t     *misc,
+                mouse_t    *mouse,
+                const char *section,
+                const char *parameter,
+                char       *value)
 {
   int error      = 0;
   int has_colors = term->colors > 7;
@@ -901,7 +901,7 @@ ini_cb(win_t      *win,
                    /* blink     */ (signed char)-1 };
 
 #define CHECK_ATTR(x)                             \
-  else if (strcmp(name, #x) == 0)                 \
+  else if (strcmp(parameter, #x) == 0)            \
   {                                               \
     error = !parse_attr(value, &v, term->colors); \
     if (error)                                    \
@@ -936,7 +936,7 @@ ini_cb(win_t      *win,
   }
 
 #define CHECK_ATT_ATTR(x, y)                            \
-  else if (strcmp(name, #x #y) == 0)                    \
+  else if (strcmp(parameter, #x #y) == 0)               \
   {                                                     \
     error = !parse_attr(value, &v, term->colors);       \
     if (error)                                          \
@@ -974,7 +974,7 @@ ini_cb(win_t      *win,
     /* """"""""""""""""" */
     if (has_colors)
     {
-      if (strcmp(name, "method") == 0)
+      if (strcmp(parameter, "method") == 0)
       {
         if (strcmp(value, "classic") == 0)
           term->color_method = CLASSIC;
@@ -1021,7 +1021,7 @@ ini_cb(win_t      *win,
 
     /* [window] section. */
     /* """"""""""""""""" */
-    if (strcmp(name, "lines") == 0)
+    if (strcmp(parameter, "lines") == 0)
     {
       if ((error = !(sscanf(value, "%d", &v) == 1 && v >= 0)))
         goto out;
@@ -1035,21 +1035,21 @@ ini_cb(win_t      *win,
 
     /* [limits] section. */
     /* """"""""""""""""" */
-    if (strcmp(name, "word_length") == 0)
+    if (strcmp(parameter, "word_length") == 0)
     {
       if ((error = !(sscanf(value, "%ld", &v) == 1 && v > 0)))
         goto out;
       else
         limits->word_length = v;
     }
-    else if (strcmp(name, "words") == 0)
+    else if (strcmp(parameter, "words") == 0)
     {
       if ((error = !(sscanf(value, "%ld", &v) == 1 && v > 0)))
         goto out;
       else
         limits->words = v;
     }
-    else if (strcmp(name, "columns") == 0)
+    else if (strcmp(parameter, "columns") == 0)
     {
       if ((error = !(sscanf(value, "%ld", &v) == 1 && v > 0)))
         goto out;
@@ -1063,35 +1063,35 @@ ini_cb(win_t      *win,
 
     /* [timers] section. */
     /* """"""""""""""""" */
-    if (strcmp(name, "help") == 0)
+    if (strcmp(parameter, "help") == 0)
     {
       if ((error = !(sscanf(value, "%d", &v) == 1 && v > 0)))
         goto out;
       else
         timers->help = v;
     }
-    else if (strcmp(name, "forgotten") == 0)
+    else if (strcmp(parameter, "forgotten") == 0)
     {
       if ((error = !(sscanf(value, "%d", &v) == 1 && v > 0)))
         goto out;
       else
         timers->forgotten = v;
     }
-    else if (strcmp(name, "window") == 0)
+    else if (strcmp(parameter, "window") == 0)
     {
       if ((error = !(sscanf(value, "%d", &v) == 1 && v > 0)))
         goto out;
       else
         timers->winch = v;
     }
-    else if (strcmp(name, "direct_access") == 0)
+    else if (strcmp(parameter, "direct_access") == 0)
     {
       if ((error = !(sscanf(value, "%d", &v) == 1 && v > 0)))
         goto out;
       else
         timers->direct_access = v;
     }
-    else if (strcmp(name, "search") == 0)
+    else if (strcmp(parameter, "search") == 0)
     {
       if ((error = !(sscanf(value, "%d", &v) == 1 && v > 0)))
         goto out;
@@ -1105,7 +1105,7 @@ ini_cb(win_t      *win,
 
     /* [mouse] section. */
     /* """"""""""""""" */
-    if (strcmp(name, "double_click_delay") == 0)
+    if (strcmp(parameter, "double_click_delay") == 0)
     {
       if ((error = !(sscanf(value, "%d", &v) == 1 && v > 0)))
         goto out;
@@ -1117,7 +1117,7 @@ ini_cb(win_t      *win,
   {
     /* [misc] section. */
     /* """"""""""""""" */
-    if (strcmp(name, "default_search_method") == 0)
+    if (strcmp(parameter, "default_search_method") == 0)
     {
       if (misc->default_search_method == NONE)
       {
@@ -1137,40 +1137,22 @@ out:
 }
 
 /* ======================================================================== */
-/* Load an .ini format file.                                                */
-/* filename - path to a file.                                               */
-/* report   - callback can return non-zero to stop, the callback error code */
-/*            returned from this function.                                  */
+/* Parse an .ini format file and feed various data structures.              */
 /* return   - return 0 on success.                                          */
-/*                                                                          */
-/* This function is public domain. No copyright is claimed.                 */
-/* Jon Mayo April 2011.                                                     */
 /* ======================================================================== */
 int
-ini_load(const char *filename,
-         win_t      *win,
-         term_t     *term,
-         limit_t    *limits,
-         ticker_t   *timers,
-         misc_t     *misc,
-         mouse_t    *mouse,
-         int (*report)(win_t      *win,
-                       term_t     *term,
-                       limit_t    *limits,
-                       ticker_t   *timers,
-                       misc_t     *misc,
-                       mouse_t    *mouse,
-                       const char *section,
-                       const char *name,
-                       char       *value))
+ini_parse(char     *filename,
+          win_t    *win,
+          term_t   *term,
+          limit_t  *limits,
+          ticker_t *timers,
+          misc_t   *misc,
+          mouse_t  *mouse)
 {
-  char  name[64]     = "";
-  char  value[256]   = "";
-  char  section[128] = "";
-  char *s;
-  FILE *f;
-  int   cnt;
-  int   error;
+  struct ini_info *ini;
+  char            *section, *parameter;
+  char            *value;
+  unsigned         error, error_line;
 
   /* If the filename is empty we skip this phase and use the */
   /* default values.                                         */
@@ -1178,72 +1160,47 @@ ini_load(const char *filename,
   if (filename == NULL)
     return 1;
 
-  /* We do that if the file is not readable as well. */
-  /* """"""""""""""""""""""""""""""""""""""""""""""" */
-  f = fopen_safe(filename, "r");
-  if (f == NULL)
-    return 0; /* Returns success as the presence of this file *
-               | is optional.                                 */
-
-  error = 0;
-
-  /* Skip blank lines. */
-  /* """"""""""""""""" */
-  while (fscanf(f, "%*[\n]") == 1)
+  ini = ini_load(filename, &error, &error_line);
+  switch (error)
   {
-  }
+    case 0:
+      while ((section = ini_next_section(ini)))
+        while ((value = ini_next_parameter(ini, &parameter)))
+          ini_parse_entry(win,
+                          term,
+                          limits,
+                          timers,
+                          misc,
+                          mouse,
+                          section,
+                          parameter,
+                          value);
+      break;
 
-  while (!feof(f))
-  {
-    if (fscanf(f, " [%127[^];\n]]", section) == 1)
+    case 1 /* Open failure. */:
+      return 0; /* Returns success as the presence of this file *
+                 | is optional.                                 */
+    default:
     {
-      /* Do nothing. */
-      /* """"""""""" */
-    }
+      char *error_msg;
+      switch (error)
+      {
+        case 2:
+          error_msg = "An unterminated section name was found";
+          break;
+        case 3:
+          error_msg = "An entry without value found found (no =)";
+          break;
+        case 4:
+          error_msg = "An entry outside any section was found";
+          break;
+        defaul:
+          error_msg = "An unknown error was found";
+      }
 
-    if ((cnt = fscanf(f, " %63[^=;\n] = %255[^;\n]", name, value)))
-    {
-      if (cnt == 1)
-        *value = 0;
-
-      for (s = name + strlen(name) - 1; s > name && isspace(*s); s--)
-        *s = 0;
-
-      for (s = value + strlen(value) - 1; s > value && isspace(*s); s--)
-        *s = 0;
-
-      /* Callback function calling. */
-      /* """""""""""""""""""""""""" */
-      error =
-        report(win, term, limits, timers, misc, mouse, section, name, value);
-
-      if (error)
-        goto out;
-    }
-
-    if (fscanf(f, " ;%*[^\n]"))
-    {
-      /* To silence the compiler about unused results. */
-    }
-
-    /* Skip blank lines. */
-    /* """"""""""""""""" */
-    while (fscanf(f, "%*[\n]") == 1)
-    {
-      /* Do nothing. */
-      /* """"""""""" */
+      fprintf(stderr, "%s on line %u in %s\n", error_msg, error_line, filename);
     }
   }
-
-out:
-  fclose(f);
-
-  if (error)
-    fprintf(stderr,
-            "Invalid entry found: %s=%s in %s.\n",
-            name,
-            value,
-            filename);
 
   return error;
 }
@@ -9241,24 +9198,10 @@ main(int argc, char *argv[])
 
   /* Set the attributes from the configuration file if possible. */
   /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-  if (ini_load(home_ini_file,
-               &win,
-               &term,
-               &limits,
-               &timers,
-               &misc,
-               &mouse,
-               ini_cb))
+  if (ini_parse(home_ini_file, &win, &term, &limits, &timers, &misc, &mouse))
     exit(EXIT_FAILURE);
 
-  if (ini_load(local_ini_file,
-               &win,
-               &term,
-               &limits,
-               &timers,
-               &misc,
-               &mouse,
-               ini_cb))
+  if (ini_parse(local_ini_file, &win, &term, &limits, &timers, &misc, &mouse))
     exit(EXIT_FAILURE);
 
   free(home_ini_file);

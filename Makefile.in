@@ -106,7 +106,7 @@ am__installdirs = "$(DESTDIR)$(bindir)" "$(DESTDIR)$(man1dir)"
 PROGRAMS = $(bin_PROGRAMS)
 am_smenu_OBJECTS = smenu.$(OBJEXT) list.$(OBJEXT) xmalloc.$(OBJEXT) \
 	index.$(OBJEXT) utf8.$(OBJEXT) fgetc.$(OBJEXT) utils.$(OBJEXT) \
-	usage.$(OBJEXT) ctxopt.$(OBJEXT) safe.$(OBJEXT)
+	usage.$(OBJEXT) ctxopt.$(OBJEXT) ini.$(OBJEXT) safe.$(OBJEXT)
 smenu_OBJECTS = $(am_smenu_OBJECTS)
 smenu_LDADD = $(LDADD)
 AM_V_P = $(am__v_P_@AM_V@)
@@ -125,9 +125,10 @@ DEFAULT_INCLUDES = -I.@am__isrc@
 depcomp = $(SHELL) $(top_srcdir)/build-aux/depcomp
 am__maybe_remake_depfiles = depfiles
 am__depfiles_remade = ./$(DEPDIR)/ctxopt.Po ./$(DEPDIR)/fgetc.Po \
-	./$(DEPDIR)/index.Po ./$(DEPDIR)/list.Po ./$(DEPDIR)/safe.Po \
-	./$(DEPDIR)/smenu.Po ./$(DEPDIR)/usage.Po ./$(DEPDIR)/utf8.Po \
-	./$(DEPDIR)/utils.Po ./$(DEPDIR)/xmalloc.Po
+	./$(DEPDIR)/index.Po ./$(DEPDIR)/ini.Po ./$(DEPDIR)/list.Po \
+	./$(DEPDIR)/safe.Po ./$(DEPDIR)/smenu.Po ./$(DEPDIR)/usage.Po \
+	./$(DEPDIR)/utf8.Po ./$(DEPDIR)/utils.Po \
+	./$(DEPDIR)/xmalloc.Po
 am__mv = mv -f
 COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
@@ -327,7 +328,7 @@ top_srcdir = @top_srcdir@
 smenu_SOURCES = smenu.c smenu.h list.c list.h xmalloc.c xmalloc.h \
 		index.c index.h utf8.c utf8.h fgetc.c fgetc.h     \
 		utils.c utils.h usage.c usage.h ctxopt.h ctxopt.c \
-		safe.h safe.c tinybuf.h
+		ini.c ini.h safe.h safe.c tinybuf.h
 
 dist_man_MANS = smenu.1
 EXTRA_DIST = ChangeLog build.sh version COPYRIGHT LICENSE README.rst \
@@ -442,6 +443,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ctxopt.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/fgetc.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/index.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ini.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/list.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/safe.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/smenu.Po@am__quote@ # am--include-marker
@@ -791,6 +793,7 @@ distclean: distclean-am
 		-rm -f ./$(DEPDIR)/ctxopt.Po
 	-rm -f ./$(DEPDIR)/fgetc.Po
 	-rm -f ./$(DEPDIR)/index.Po
+	-rm -f ./$(DEPDIR)/ini.Po
 	-rm -f ./$(DEPDIR)/list.Po
 	-rm -f ./$(DEPDIR)/safe.Po
 	-rm -f ./$(DEPDIR)/smenu.Po
@@ -848,6 +851,7 @@ maintainer-clean: maintainer-clean-am
 		-rm -f ./$(DEPDIR)/ctxopt.Po
 	-rm -f ./$(DEPDIR)/fgetc.Po
 	-rm -f ./$(DEPDIR)/index.Po
+	-rm -f ./$(DEPDIR)/ini.Po
 	-rm -f ./$(DEPDIR)/list.Po
 	-rm -f ./$(DEPDIR)/safe.Po
 	-rm -f ./$(DEPDIR)/smenu.Po

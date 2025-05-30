@@ -593,33 +593,24 @@ int
 tst_cb_cli(void *elem);
 
 int
-ini_load(const char *filename,
-         win_t      *win,
-         term_t     *term,
-         limit_t    *limits,
-         ticker_t   *timers,
-         misc_t     *misc,
-         mouse_t    *mouse,
-         int (*report)(win_t      *win,
-                       term_t     *term,
-                       limit_t    *limits,
-                       ticker_t   *timers,
-                       misc_t     *misc,
-                       mouse_t    *mouse,
-                       const char *section,
-                       const char *name,
-                       char       *value));
+ini_parse(char     *filename,
+          win_t    *win,
+          term_t   *term,
+          limit_t  *limits,
+          ticker_t *timers,
+          misc_t   *misc,
+          mouse_t  *mouse);
 
 int
-ini_cb(win_t      *win,
-       term_t     *term,
-       limit_t    *limits,
-       ticker_t   *timers,
-       misc_t     *misc,
-       mouse_t    *mouse,
-       const char *section,
-       const char *name,
-       char       *value);
+ini_parse_entry(win_t      *win,
+                term_t     *term,
+                limit_t    *limits,
+                ticker_t   *timers,
+                misc_t     *misc,
+                mouse_t    *mouse,
+                const char *section,
+                const char *parameter,
+                char       *value);
 
 char *
 make_ini_path(char *name, char *base);
