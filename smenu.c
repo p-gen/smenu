@@ -1161,6 +1161,7 @@ ini_parse(char     *filename,
     return 1;
 
   ini = ini_load(filename, &error, &error_line);
+
   switch (error)
   {
     case 0:
@@ -1182,7 +1183,10 @@ ini_parse(char     *filename,
 
     case 1 /* Open failure. */:
       return 0; /* Returns success as the presence of this file *
-                 | is optional.                                 */
+                 | is optional.                                 *
+                 | In this case the ini_info structure has not  *
+                 | been allocated so, no need to free it with   *
+                 | ini_free.                                    */
     default:
     {
       char *error_msg;
@@ -1204,6 +1208,8 @@ ini_parse(char     *filename,
       fprintf(stderr, "%s on line %u in %s\n", error_msg, error_line, filename);
     }
   }
+
+  ini_free(ini);
 
   return error;
 }
