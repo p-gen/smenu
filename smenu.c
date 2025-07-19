@@ -4333,17 +4333,12 @@ build_metadata(term_t *term, long count, win_t *win)
     word_len   = mbstowcs(NULL, word_a[i].str, 0);
     word_width = my_wcswidth((w = utf8_strtowcs(word_a[i].str)), word_len);
 
-    /* Manage the case where the word is larger than the terminal width. */
+    /* Manage the case where the word is larger than the terminal width: */
+    /* Shorten the word until it fits.                                   */
     /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-    if (word_width >= term->ncolumns - 2)
-    {
-      /* Shorten the word until it fits. */
-      /* """"""""""""""""""""""""""""""" */
-      do
-      {
-        word_width = my_wcswidth(w, word_len--);
-      } while (word_len > 0 && word_width >= term->ncolumns - 2);
-    }
+    while (word_width >= term->ncolumns - 2 && word_len > 0)
+      word_width = my_wcswidth(w, word_len--);
+
     free(w);
 
     /* Look if there is enough remaining place on the line when not in   */
