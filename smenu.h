@@ -321,16 +321,6 @@ struct word_s
   size_t         len_mb;        /* number of UTF-8 glyphs before filling    *
                                  * the column.                              */
   size_t         len;           /* number of bytes in str (for trimming).   */
-  int            offset;        /* may be > 0 in case of center or right    *
-                                 * alignment (# of spaces added).           */
-  long           tag_order;     /* each time a word is tagged, this value.  *
-                                 | is increased.                            */
-  unsigned short tag_id;        /* tag id. 0 means no tag.                  */
-  unsigned char  is_matching;   /* word is matching a search ERE.           */
-  unsigned char  is_last;       /* 1 if the word is the last of a line.     */
-  unsigned char  is_selectable; /* word is selectable.                      */
-  unsigned char  is_numbered;   /* word has a direct access index.          */
-  unsigned char  special_level; /* can vary from 0 to 9; 0 meaning normal.  */
   char          *str;           /* display string associated with this word */
   char          *orig;          /* NULL or original string if is had been.  *
                                  | shortened for being displayed or altered *
@@ -340,6 +330,16 @@ struct word_s
                                  | objective is to speed their display.     */
   attrib_t      *iattr;         /* Specific attribute set with the -Ra/-Ca  *
                                  | options.                                 */
+  long           tag_order;     /* each time a word is tagged, this value.  *
+                                 | is increased.                            */
+  unsigned short tag_id;        /* tag id. 0 means no tag.                  */
+  unsigned char  is_matching;   /* word is matching a search ERE.           */
+  unsigned char  is_last;       /* 1 if the word is the last of a line.     */
+  unsigned char  is_selectable; /* word is selectable.                      */
+  unsigned char  is_numbered;   /* word has a direct access index.          */
+  unsigned char  special_level; /* can vary from 0 to 9; 0 meaning normal.  */
+  int            offset;        /* may be > 0 in case of center or right    *
+                                 * alignment (# of spaces added).           */
 };
 
 /* Structure describing the window in which the user  */
@@ -412,12 +412,12 @@ struct sed_s
 {
   char         *pattern;      /* pattern to be matched.                    */
   char         *substitution; /* substitution string.                      */
+  regex_t       re;           /* compiled regular expression.              */
   unsigned char visual;       /* visual flag: alterations are only visual. */
   unsigned char global;       /* global flag: alterations can occur more   *
                                | than once.                                */
   unsigned char stop;         /* stop flag:   only one alteration per word *
                                | is allowed.                               */
-  regex_t       re;           /* compiled regular expression.              */
 };
 
 /* Structure used to keep track of the different timeout values. */
@@ -444,28 +444,28 @@ struct output_s
 /* """""""""""""""""""""""""""""""""""""""""""""""""""" */
 struct daccess_s
 {
-  da_mode_t mode;       /* DA_TYPE_NONE (0), DA_TYPE_AUTO, DA_TYPE_POS.    */
   char     *left;       /* character to put before the direct access       *
                          | selector.                                       */
   char     *right;      /* character to put after the direct access        *
                          | selector.                                       */
-  char      alignment;  /* l: left; r: right.                              */
-  char      padding;    /* a: all; i: only included words are padded.      */
-  char      head;       /* What to do with chars before the embedded       *
+  char     *num_sep;    /* character to separate number and selection.     */
+  size_t    offset;     /* offset to the start of the selector.            */
+  size_t    ignore;     /* number of UTF-8 glyphs to ignore after the      *
                          | number.                                         */
+  da_mode_t mode;       /* DA_TYPE_NONE (0), DA_TYPE_AUTO, DA_TYPE_POS.    */
   int       length;     /* selector size (5 max).                          */
   int       flength;    /* 0 or length + 3 (full prefix length.            */
-  size_t    offset;     /* offset to the start of the selector.            */
-  char      missing;    /* y: number missing embedded numbers.             */
   int       plus;       /* 1 if we can look for the number to extract      *
                          | after the offset, else 0. (a '+' follows the    *
                          | offset).                                        */
   int       size;       /* size in bytes of the selector to extract.       */
-  size_t    ignore;     /* number of UTF-8 glyphs to ignore after the      *
-                         | number.                                         */
-  char      follow;     /* y: the numbering follows the last number set.   */
-  char     *num_sep;    /* character to separate number and selection.     */
   int       def_number; /* 1: the numbering is on by default 0: it is not. */
+  char      alignment;  /* l: left; r: right.                              */
+  char      padding;    /* a: all; i: only included words are padded.      */
+  char      head;       /* What to do with chars before the embedded       *
+                         | number.                                         */
+  char      missing;    /* y: number missing embedded numbers.             */
+  char      follow;     /* y: the numbering follows the last number set.   */
 };
 
 /* Structure used in search mod to store the current buffer and various   */
@@ -480,8 +480,8 @@ struct search_data_s
   long *off_a;  /* array of mb offsets in buf.                   */
   long *len_a;  /* array of mb lengths in buf.                   */
 
-  int  err;           /* match error indicator.                  */
   long fuzzy_err_pos; /* last good position in search buffer.    */
+  int  err;           /* match error indicator.                  */
 
   int only_ending;   /* only searches giving a result with the.  *
                       | pattern at the end of the word will be   *
@@ -514,8 +514,8 @@ struct help_entry_s
 struct help_attr_entry_s
 {
   char     *str;  /* string to be displayed for an object in the help line. */
-  int       len;  /* screen space taken by of one of these objects.         */
   attrib_t *attr; /* attribute.                                             */
+  int       len;  /* screen space taken by of one of these objects.         */
 };
 
 /* *********** */
