@@ -11,9 +11,7 @@
 #include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <unistd.h>
 #include <ctype.h>
-#include <sys/types.h>
 #include <regex.h>
 #include <stdarg.h>
 #include <string.h>
@@ -4751,7 +4749,7 @@ ctxopt_add_opt_settings(settings s, ...)
 
       if ((opt = locate_opt(ptr)) != NULL)
       {
-        char  *end_str;
+        char  *end_str = NULL;
         char  *opt_name;
         opt_t *opt_before;
 
@@ -4806,7 +4804,7 @@ ctxopt_add_opt_settings(settings s, ...)
 
       if ((opt = locate_opt(ptr)) != NULL)
       {
-        char  *end_str;
+        char  *end_str = NULL;
         char  *opt_name;
         opt_t *opt_before;
 

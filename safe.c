@@ -11,6 +11,8 @@
 /* ************************************ */
 
 #include <errno.h>
+#include <stdio.h>
+#include <termios.h>
 #include "safe.h"
 
 FILE *

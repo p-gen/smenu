@@ -108,7 +108,7 @@
 #define BUF_LEN(b) ((b) ? BUF__HDR(b)->len : 0)
 #define BUF_CAP(b) ((b) ? BUF__HDR(b)->cap : 0)
 #define BUF_END(b) ((b) + BUF_LEN(b))
-#define BUF_SIZEOF(b) ((b) ? BUF_LEN(b) * sizeof(*b) : 0)
+#define BUF_SIZEOF(b) ((b) ? BUF_LEN(b) * sizeof(*(b)) : 0)
 
 /* Modifying functions. */
 /* """""""""""""""""""" */

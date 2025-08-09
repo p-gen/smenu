@@ -10,6 +10,7 @@
 #define UTILS_H
 
 #include <stdio.h>
+#include <wchar.h>
 #include "list.h"
 
 typedef struct interval_s interval_t;

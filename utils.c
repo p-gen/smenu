@@ -11,20 +11,23 @@
 /* ******************************** */
 
 #include "config.h"
+#include <unistd.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <unistd.h>
+#include <stddef.h>
 #include <limits.h>
 #include <wchar.h>
+#ifdef HAVE_STRCASECMP
+#include <strings.h> /* for strcasecmp */
+#endif
 #include <string.h>
 #include <stdarg.h>
 #include <ctype.h>
 #include <fcntl.h>
-#include <wctype.h>
 #include <errno.h>
 #include "xmalloc.h"
 #include "list.h"
-#include "utf8.h"
+//#include "utf8.h"
 #include "utils.h"
 
 /* ******************* */

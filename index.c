@@ -19,6 +19,7 @@
 #include <stdint.h>
 #include <wctype.h>
 #include <string.h>
+#include <wchar.h>
 
 #include "xmalloc.h"
 #include "list.h"

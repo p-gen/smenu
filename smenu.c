@@ -6,16 +6,19 @@
 /* file, You can obtain one at https://mozilla.org/MPL/2.0/.           */
 /* ################################################################### */
 
+#define _XOPEN_SOURCE 700
+
 #include "config.h"
+#include <unistd.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <stddef.h>
 #include <limits.h>
 #include <stdarg.h>
 #include <signal.h>
 #include <ctype.h>
 #include <time.h>
 #include <string.h>
-#include <unistd.h>
 #include <locale.h>
 #include <langinfo.h>
 #if (defined(__sun) && defined(__SVR4)) || defined(_AIX)
@@ -27,8 +30,6 @@
 #include <errno.h>
 #include <sys/ioctl.h>
 #include <sys/time.h>
-#include <sys/param.h>
-#include <sys/stat.h>
 #include <wchar.h>
 
 #include "xmalloc.h"
@@ -935,39 +936,39 @@ ini_parse_entry(win_t      *win,
     }                                             \
   }
 
-#define CHECK_ATT_ATTR(x, y)                            \
-  else if (strcmp(parameter, #x #y) == 0)               \
-  {                                                     \
-    error = !parse_attr(value, &v, term->colors);       \
-    if (error)                                          \
-      goto out;                                         \
-    else                                                \
-    {                                                   \
-      if (win->x##_attr[y - 1].is_set != FORCED)        \
-      {                                                 \
-        win->x##_attr[y - 1].is_set = SET;              \
-        if (v.fg >= 0)                                  \
-          win->x##_attr[y - 1].fg = v.fg;               \
-        if (v.bg >= 0)                                  \
-          win->x##_attr[y - 1].bg = v.bg;               \
-        if (v.bold >= (signed char)0)                   \
-          win->x##_attr[y - 1].bold = v.bold;           \
-        if (v.dim >= (signed char)0)                    \
-          win->x##_attr[y - 1].dim = v.dim;             \
-        if (v.reverse >= (signed char)0)                \
-          win->x##_attr[y - 1].reverse = v.reverse;     \
-        if (v.standout >= (signed char)0)               \
-          win->x##_attr[y - 1].standout = v.standout;   \
-        if (v.underline >= (signed char)0)              \
-          win->x##_attr[y - 1].underline = v.underline; \
-        if (v.italic >= (signed char)0)                 \
-          win->x##_attr[y - 1].italic = v.italic;       \
-        if (v.invis >= (signed char)0)                  \
-          win->x##_attr[y - 1].invis = v.invis;         \
-        if (v.blink >= (signed char)0)                  \
-          win->x##_attr[y - 1].blink = v.blink;         \
-      }                                                 \
-    }                                                   \
+#define CHECK_ATT_ATTR(x, y)                              \
+  else if (strcmp(parameter, #x #y) == 0)                 \
+  {                                                       \
+    error = !parse_attr(value, &v, term->colors);         \
+    if (error)                                            \
+      goto out;                                           \
+    else                                                  \
+    {                                                     \
+      if (win->x##_attr[(y) - 1].is_set != FORCED)        \
+      {                                                   \
+        win->x##_attr[(y) - 1].is_set = SET;              \
+        if (v.fg >= 0)                                    \
+          win->x##_attr[(y) - 1].fg = v.fg;               \
+        if (v.bg >= 0)                                    \
+          win->x##_attr[(y) - 1].bg = v.bg;               \
+        if (v.bold >= (signed char)0)                     \
+          win->x##_attr[(y) - 1].bold = v.bold;           \
+        if (v.dim >= (signed char)0)                      \
+          win->x##_attr[(y) - 1].dim = v.dim;             \
+        if (v.reverse >= (signed char)0)                  \
+          win->x##_attr[(y) - 1].reverse = v.reverse;     \
+        if (v.standout >= (signed char)0)                 \
+          win->x##_attr[(y) - 1].standout = v.standout;   \
+        if (v.underline >= (signed char)0)                \
+          win->x##_attr[(y) - 1].underline = v.underline; \
+        if (v.italic >= (signed char)0)                   \
+          win->x##_attr[(y) - 1].italic = v.italic;       \
+        if (v.invis >= (signed char)0)                    \
+          win->x##_attr[(y) - 1].invis = v.invis;         \
+        if (v.blink >= (signed char)0)                    \
+          win->x##_attr[(y) - 1].blink = v.blink;         \
+      }                                                   \
+    }                                                     \
   }
 
     /* [colors] section. */

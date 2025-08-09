@@ -9,6 +9,12 @@
 #ifndef SMENU_H
 #define SMENU_H
 
+#include <stdio.h>
+#include <regex.h>
+#include <termios.h>
+#include "utf8.h"
+#include "list.h"
+
 #define CHARSCHUNK 8
 #define WORDSCHUNK 8
 #define COLSCHUNK 16
@@ -16,8 +22,6 @@
 #define TPARM1(p) tparm(p, 0, 0, 0, 0, 0, 0, 0, 0, 0)
 #define TPARM2(p, q) tparm(p, q, 0, 0, 0, 0, 0, 0, 0, 0)
 #define TPARM3(p, q, r) tparm(p, q, r, 0, 0, 0, 0, 0, 0, 0)
-
-#define _XOPEN_SOURCE 700
 
 /* Used for timers management. */
 /* """"""""""""""""""""""""""" */

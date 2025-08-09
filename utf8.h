@@ -9,7 +9,9 @@
 #ifndef UTF8_H
 #define UTF8_H
 
+#include <stddef.h>
 #include <stdint.h>
+#include <wchar.h>
 
 typedef struct langinfo_s langinfo_t;
 
