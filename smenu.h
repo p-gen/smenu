@@ -859,8 +859,6 @@ reset_search_buffer(win_t         *win,
                     long           last_line,
                     char          *tmp_word,
                     long           word_real_max_size);
-int
-is_in_foreground_process_group(void);
 #endif
 
 long

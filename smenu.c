@@ -16398,7 +16398,8 @@ main(int argc, char *argv[])
                 break;
 
               case MOUSE1000:
-                if (sscanf((char *)buffer + 3, "%c%c%c", &cCb, &cCx, &cCy) != 3)
+                if (sscanf((char *)buffer + 3, "%hhu%hhu%hhu", &cCb, &cCx, &cCy)
+                    != 3)
                   goto ignore_mouse_event;
 
                 state        = (cCb - 32) & ~3;
