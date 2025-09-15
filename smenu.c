@@ -2275,7 +2275,8 @@ parse_selectors(char        *str,
       start   = 0;
       break;
 
-    case 'a': /* Attribute. */
+    case 'a':
+    case 'A':
       type = ATTR;
       break;
 
