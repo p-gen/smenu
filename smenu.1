@@ -1650,7 +1650,7 @@ commas can be protected by backslashes ('\f(CB\\\fP').
 Column ranges are defined  by separating their numbers with a dash. Open
 interval to the left or right are allowed, so these interval descriptions
 may be preceded or followed by a dash (e.g. \f(CB5-7\fP, \f(CB-2\fP
-or \f(CB8-\fP are allowed).
+or \f(CB8-\fP) are allowed.
 
 \fBWARNING\fP: ranges of regular expressions are not yest supported.
 
@@ -1660,10 +1660,10 @@ Refer to the attribute option (\fB-a\fP|\fB-attr\fP|\fB-attributes\fP)
 for more details.
 
 Multiple selectors can be regrouped in one argument using commas to
-separate them.
+separate them (e.g. \f(CB-C A2-4:1+b,5:3+r\fP).
 
 This option also accepts multiple arguments, each of them being a
-selector.
+selector (e.g. \f(CB-C A2-4:1+b A5:3+r e3\fP).
 
 A selection by regular expressions means that a column containing a word
 matching any of these expressions will be included or excluded depending
