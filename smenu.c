@@ -1202,7 +1202,7 @@ ini_parse(char     *filename,
         case 4:
           error_msg = "An entry outside any section was found";
           break;
-        defaul:
+        default:
           error_msg = "An unknown error was found";
       }
 
