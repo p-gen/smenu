@@ -1194,7 +1194,7 @@ ini_parse(char     *filename,
       switch (error)
       {
         case 2:
-          error_msg = "An unterminated section name was found";
+          error_msg = "An unfinished section name was found";
           break;
         case 3:
           error_msg = "An entry without value found found (no =)";
