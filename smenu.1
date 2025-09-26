@@ -1017,6 +1017,47 @@ Displays a message (title) above the window.
 If the current locale is not \fBUTF-8\fP, then all \fBUTF-8\fP characters
 will be replaced by the substitution character.
 
+A multi-line message (title) can be created by inserting end of line
+characters (using \f(CB$'\\n'\fP per example).
+
+You can also use the special escape sequence \f(CB\\[...]\fP to change
+the current attribute for parts of the massage.
+For example: \f(CB\\[1+b]\fP will change the current color to red and
+enable bold mode.
+
+The content in parentheses must follow the syntax rules described in the
+configuration file documentation above, with the possibility of using
+the following additional attributes:
+
+.PD 0
+\fIS\fP: exits standalone mode entered using \fIs\fP.
+.br
+\fIU\fP: exits underline mode entered using \fIu\fP.
+.br
+\fII\fP: exits italic mode entered using \fIu\fP.
+.PD
+
+In addition, \f(CB\\[!]\fP can be used to reset all attributes.
+
+Example:
+
+The following message:
+
+.nf
+\f(CB"\\[2]<CR>\\[!] to select,"$'\\n'"\\[3,s]q\\[!]/\\[3,sb]Q\\[!] or \\
+ \\[3,sb]^C\\[S]\\[!] to quit"\fP
+.fi
+
+Will print the title:
+
+.nf
+\f(CB<CR> to select,
+q/Q or ^C to quit\fP
+.fi
+
+Where <CR> is printed in green and q,Q and ^C in yellow with the standout
+attribute.
+
 \fI\\u\fP and \fI\\U\fP sequences can be used in the message.
 
 Note that the message will be truncated if it does not fit on a terminal

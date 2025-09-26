@@ -52,6 +52,7 @@ typedef struct toggle_s          toggle_t;
 typedef struct win_s             win_t;
 typedef struct word_s            word_t;
 typedef struct attrib_s          attrib_t;
+typedef struct attrib_ex_s       attrib_ex_t;
 typedef struct limit_s           limit_t;
 typedef struct ticker_s          ticker_t;
 typedef struct misc_s            misc_t;
@@ -273,10 +274,22 @@ struct attrib_s
   signed char dim;
   signed char reverse;
   signed char standout;
+  signed char no_standout;
   signed char underline;
+  signed char no_underline;
   signed char italic;
+  signed char no_italic;
   signed char invis;
   signed char blink;
+  signed char reset;
+};
+
+/* Structure used when displaying attributes in the message lines. */
+/* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+struct attrib_ex_s
+{
+  int       start, end;
+  attrib_t *attr;
 };
 
 /* Structure containing some terminal characteristics. */
@@ -307,8 +320,11 @@ struct term_s
   char has_dim;               /* has dim mode.                           */
   char has_reverse;           /* has reverse mode.                       */
   char has_underline;         /* has underline mode.                     */
+  char has_no_underline;      /* has exit underline.                     */
   char has_standout;          /* has standout mode.                      */
+  char has_no_standout;       /* has exit standout.                      */
   char has_italic;            /* has italic mode.                        */
+  char has_no_italic;         /* has exit italic.                        */
   char has_invis;             /* has invis mode.                         */
   char has_blink;             /* has blink mode.                         */
   char has_kmous;             /* has mouse reporting.                    */

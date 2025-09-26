@@ -659,17 +659,21 @@ attr_new(void)
 
   attr = xmalloc(sizeof(attrib_t));
 
-  attr->is_set    = UNSET;
-  attr->fg        = -1;
-  attr->bg        = -1;
-  attr->bold      = (signed char)-1;
-  attr->dim       = (signed char)-1;
-  attr->reverse   = (signed char)-1;
-  attr->standout  = (signed char)-1;
-  attr->underline = (signed char)-1;
-  attr->italic    = (signed char)-1;
-  attr->invis     = (signed char)-1;
-  attr->blink     = (signed char)-1;
+  attr->is_set       = UNSET;
+  attr->fg           = -1;
+  attr->bg           = -1;
+  attr->bold         = (signed char)-1;
+  attr->dim          = (signed char)-1;
+  attr->reverse      = (signed char)-1;
+  attr->standout     = (signed char)-1;
+  attr->no_standout  = (signed char)-1;
+  attr->underline    = (signed char)-1;
+  attr->no_underline = (signed char)-1;
+  attr->italic       = (signed char)-1;
+  attr->no_italic    = (signed char)-1;
+  attr->invis        = (signed char)-1;
+  attr->blink        = (signed char)-1;
+  attr->reset        = (signed char)-1;
 
   return attr;
 }
@@ -680,10 +684,14 @@ attr_new(void)
 /* d -> dim                                     */
 /* r -> reverse                                 */
 /* s -> standout                                */
+/* S -> no standout                             */
 /* u -> underline                               */
+/* U -> no underline                            */
 /* i -> italic                                  */
-/* x -> invis                                   */
+/* I -> no italic                               */
+/* n -> invis                                   */
 /* l -> blink                                   */
+/* ! -> reset                                   */
 /*                                              */
 /* Return 0 if some unexpected toggle is found, */
 /*        1 otherwise.                          */
@@ -693,14 +701,18 @@ decode_attr_toggles(char *s, attrib_t *attr)
 {
   int rc = 1;
 
-  attr->bold      = (signed char)0;
-  attr->dim       = (signed char)0;
-  attr->reverse   = (signed char)0;
-  attr->standout  = (signed char)0;
-  attr->underline = (signed char)0;
-  attr->italic    = (signed char)0;
-  attr->invis     = (signed char)0;
-  attr->blink     = (signed char)0;
+  attr->bold         = (signed char)0;
+  attr->dim          = (signed char)0;
+  attr->reverse      = (signed char)0;
+  attr->standout     = (signed char)0;
+  attr->no_standout  = (signed char)0;
+  attr->underline    = (signed char)0;
+  attr->no_underline = (signed char)0;
+  attr->italic       = (signed char)0;
+  attr->no_italic    = (signed char)0;
+  attr->invis        = (signed char)0;
+  attr->blink        = (signed char)0;
+  attr->reset        = (signed char)0;
 
   while (*s != '\0')
   {
@@ -722,13 +734,25 @@ decode_attr_toggles(char *s, attrib_t *attr)
         attr->standout = (signed char)1;
         attr->is_set   = SET;
         break;
+      case 'S':
+        attr->no_standout = (signed char)1;
+        attr->is_set      = SET;
+        break;
       case 'u':
         attr->underline = (signed char)1;
         attr->is_set    = SET;
         break;
+      case 'U':
+        attr->no_underline = (signed char)1;
+        attr->is_set       = SET;
+        break;
       case 'i':
         attr->italic = (signed char)1;
         attr->is_set = SET;
+        break;
+      case 'I':
+        attr->no_italic = (signed char)1;
+        attr->is_set    = SET;
         break;
       case 'n':
         attr->invis  = (signed char)1;
@@ -736,6 +760,10 @@ decode_attr_toggles(char *s, attrib_t *attr)
         break;
       case 'l':
         attr->blink  = (signed char)1;
+        attr->is_set = SET;
+        break;
+      case '!':
+        attr->reset  = (signed char)1;
         attr->is_set = SET;
         break;
       default:
@@ -852,17 +880,29 @@ apply_attr(term_t *term, attrib_t attr)
   if (attr.standout > (signed char)0)
     (void)tputs(TPARM1(enter_standout_mode), 1, outch);
 
+  if (attr.no_standout > (signed char)0)
+    (void)tputs(TPARM1(exit_standout_mode), 1, outch);
+
   if (attr.underline > (signed char)0)
     (void)tputs(TPARM1(enter_underline_mode), 1, outch);
 
+  if (attr.no_underline > (signed char)0)
+    (void)tputs(TPARM1(exit_underline_mode), 1, outch);
+
   if (attr.italic > (signed char)0)
     (void)tputs(TPARM1(enter_italics_mode), 1, outch);
+
+  if (attr.no_italic > (signed char)0)
+    (void)tputs(TPARM1(exit_italics_mode), 1, outch);
 
   if (attr.invis > (signed char)0)
     (void)tputs(TPARM1(enter_secure_mode), 1, outch);
 
   if (attr.blink > (signed char)0)
     (void)tputs(TPARM1(enter_blink_mode), 1, outch);
+
+  if (attr.reset > (signed char)0)
+    (void)tputs(TPARM1(exit_attribute_mode), 1, outch);
 }
 
 /* ********************* */
@@ -890,85 +930,105 @@ ini_parse_entry(win_t      *win,
   if (strcmp(section, "colors") == 0)
   {
     attrib_t v = { UNSET,
-                   /* fg        */ -1,
-                   /* bg        */ -1,
-                   /* bold      */ (signed char)-1,
-                   /* dim       */ (signed char)-1,
-                   /* reverse   */ (signed char)-1,
-                   /* standout  */ (signed char)-1,
-                   /* underline */ (signed char)-1,
-                   /* italic    */ (signed char)-1,
-                   /* invis     */ (signed char)-1,
-                   /* blink     */ (signed char)-1 };
+                   /* fg           */ -1,
+                   /* bg           */ -1,
+                   /* bold         */ (signed char)-1,
+                   /* dim          */ (signed char)-1,
+                   /* reverse      */ (signed char)-1,
+                   /* standout     */ (signed char)-1,
+                   /* no_standout  */ (signed char)-1,
+                   /* underline    */ (signed char)-1,
+                   /* no_underline */ (signed char)-1,
+                   /* italic       */ (signed char)-1,
+                   /* no_italic    */ (signed char)-1,
+                   /* invis        */ (signed char)-1,
+                   /* blink        */ (signed char)-1,
+                   /* reset        */ (signed char)-1 };
 
-#define CHECK_ATTR(x)                             \
-  else if (strcmp(parameter, #x) == 0)            \
-  {                                               \
-    error = !parse_attr(value, &v, term->colors); \
-    if (error)                                    \
-      goto out;                                   \
-    else                                          \
-    {                                             \
-      if (win->x##_attr.is_set != FORCED)         \
-      {                                           \
-        win->x##_attr.is_set = SET;               \
-        if (v.fg >= 0)                            \
-          win->x##_attr.fg = v.fg;                \
-        if (v.bg >= 0)                            \
-          win->x##_attr.bg = v.bg;                \
-        if (v.bold >= (signed char)0)             \
-          win->x##_attr.bold = v.bold;            \
-        if (v.dim >= (signed char)0)              \
-          win->x##_attr.dim = v.dim;              \
-        if (v.reverse >= (signed char)0)          \
-          win->x##_attr.reverse = v.reverse;      \
-        if (v.standout >= (signed char)0)         \
-          win->x##_attr.standout = v.standout;    \
-        if (v.underline >= (signed char)0)        \
-          win->x##_attr.underline = v.underline;  \
-        if (v.italic >= (signed char)0)           \
-          win->x##_attr.italic = v.italic;        \
-        if (v.invis >= (signed char)0)            \
-          win->x##_attr.invis = v.invis;          \
-        if (v.blink >= (signed char)0)            \
-          win->x##_attr.blink = v.blink;          \
-      }                                           \
-    }                                             \
+#define CHECK_ATTR(x)                                  \
+  else if (strcmp(parameter, #x) == 0)                 \
+  {                                                    \
+    error = !parse_attr(value, &v, term->colors);      \
+    if (error)                                         \
+      goto out;                                        \
+    else                                               \
+    {                                                  \
+      if (win->x##_attr.is_set != FORCED)              \
+      {                                                \
+        win->x##_attr.is_set = SET;                    \
+        if (v.fg >= 0)                                 \
+          win->x##_attr.fg = v.fg;                     \
+        if (v.bg >= 0)                                 \
+          win->x##_attr.bg = v.bg;                     \
+        if (v.bold >= (signed char)0)                  \
+          win->x##_attr.bold = v.bold;                 \
+        if (v.dim >= (signed char)0)                   \
+          win->x##_attr.dim = v.dim;                   \
+        if (v.reverse >= (signed char)0)               \
+          win->x##_attr.reverse = v.reverse;           \
+        if (v.standout >= (signed char)0)              \
+          win->x##_attr.standout = v.standout;         \
+        if (v.no_standout >= (signed char)0)           \
+          win->x##_attr.no_standout = v.no_standout;   \
+        if (v.underline >= (signed char)0)             \
+          win->x##_attr.underline = v.underline;       \
+        if (v.no_underline >= (signed char)0)          \
+          win->x##_attr.no_underline = v.no_underline; \
+        if (v.italic >= (signed char)0)                \
+          win->x##_attr.italic = v.italic;             \
+        if (v.no_italic >= (signed char)0)             \
+          win->x##_attr.no_italic = v.no_italic;       \
+        if (v.invis >= (signed char)0)                 \
+          win->x##_attr.invis = v.invis;               \
+        if (v.blink >= (signed char)0)                 \
+          win->x##_attr.blink = v.blink;               \
+        if (v.reset >= (signed char)0)                 \
+          win->x##_attr.reset = v.blink;               \
+      }                                                \
+    }                                                  \
   }
 
-#define CHECK_ATT_ATTR(x, y)                              \
-  else if (strcmp(parameter, #x #y) == 0)                 \
-  {                                                       \
-    error = !parse_attr(value, &v, term->colors);         \
-    if (error)                                            \
-      goto out;                                           \
-    else                                                  \
-    {                                                     \
-      if (win->x##_attr[(y) - 1].is_set != FORCED)        \
-      {                                                   \
-        win->x##_attr[(y) - 1].is_set = SET;              \
-        if (v.fg >= 0)                                    \
-          win->x##_attr[(y) - 1].fg = v.fg;               \
-        if (v.bg >= 0)                                    \
-          win->x##_attr[(y) - 1].bg = v.bg;               \
-        if (v.bold >= (signed char)0)                     \
-          win->x##_attr[(y) - 1].bold = v.bold;           \
-        if (v.dim >= (signed char)0)                      \
-          win->x##_attr[(y) - 1].dim = v.dim;             \
-        if (v.reverse >= (signed char)0)                  \
-          win->x##_attr[(y) - 1].reverse = v.reverse;     \
-        if (v.standout >= (signed char)0)                 \
-          win->x##_attr[(y) - 1].standout = v.standout;   \
-        if (v.underline >= (signed char)0)                \
-          win->x##_attr[(y) - 1].underline = v.underline; \
-        if (v.italic >= (signed char)0)                   \
-          win->x##_attr[(y) - 1].italic = v.italic;       \
-        if (v.invis >= (signed char)0)                    \
-          win->x##_attr[(y) - 1].invis = v.invis;         \
-        if (v.blink >= (signed char)0)                    \
-          win->x##_attr[(y) - 1].blink = v.blink;         \
-      }                                                   \
-    }                                                     \
+#define CHECK_ATT_ATTR(x, y)                                    \
+  else if (strcmp(parameter, #x #y) == 0)                       \
+  {                                                             \
+    error = !parse_attr(value, &v, term->colors);               \
+    if (error)                                                  \
+      goto out;                                                 \
+    else                                                        \
+    {                                                           \
+      if (win->x##_attr[(y) - 1].is_set != FORCED)              \
+      {                                                         \
+        win->x##_attr[(y) - 1].is_set = SET;                    \
+        if (v.fg >= 0)                                          \
+          win->x##_attr[(y) - 1].fg = v.fg;                     \
+        if (v.bg >= 0)                                          \
+          win->x##_attr[(y) - 1].bg = v.bg;                     \
+        if (v.bold >= (signed char)0)                           \
+          win->x##_attr[(y) - 1].bold = v.bold;                 \
+        if (v.dim >= (signed char)0)                            \
+          win->x##_attr[(y) - 1].dim = v.dim;                   \
+        if (v.reverse >= (signed char)0)                        \
+          win->x##_attr[(y) - 1].reverse = v.reverse;           \
+        if (v.standout >= (signed char)0)                       \
+          win->x##_attr[(y) - 1].standout = v.standout;         \
+        if (v.no_standout >= (signed char)0)                    \
+          win->x##_attr[(y) - 1].no_standout = v.no_standout;   \
+        if (v.underline >= (signed char)0)                      \
+          win->x##_attr[(y) - 1].underline = v.underline;       \
+        if (v.no_underline >= (signed char)0)                   \
+          win->x##_attr[(y) - 1].no_underline = v.no_underline; \
+        if (v.italic >= (signed char)0)                         \
+          win->x##_attr[(y) - 1].italic = v.italic;             \
+        if (v.no_italic >= (signed char)0)                      \
+          win->x##_attr[(y) - 1].no_italic = v.no_italic;       \
+        if (v.invis >= (signed char)0)                          \
+          win->x##_attr[(y) - 1].invis = v.invis;               \
+        if (v.blink >= (signed char)0)                          \
+          win->x##_attr[(y) - 1].blink = v.blink;               \
+        if (v.reset >= (signed char)0)                          \
+          win->x##_attr[(y) - 1].reset = v.reset;               \
+      }                                                         \
+    }                                                           \
   }
 
     /* [colors] section. */
@@ -2125,13 +2185,21 @@ attr_elem_cmp(void const *a, void const *b)
     return 1;
   if (ai->attr->standout != bi->attr->standout)
     return 1;
+  if (ai->attr->no_standout != bi->attr->no_standout)
+    return 1;
   if (ai->attr->underline != bi->attr->underline)
     return 1;
+  if (ai->attr->no_underline != bi->attr->no_underline)
+    return 1;
   if (ai->attr->italic != bi->attr->italic)
+    return 1;
+  if (ai->attr->no_italic != bi->attr->no_italic)
     return 1;
   if (ai->attr->invis != bi->attr->invis)
     return 1;
   if (ai->attr->blink != bi->attr->blink)
+    return 1;
+  if (ai->attr->reset != bi->attr->reset)
     return 1;
 
   return 0;
@@ -4199,15 +4267,19 @@ get_message_lines(char *message,
   char    *cr_ptr;
   long     n;
   wchar_t *w = NULL;
-
-  *message_max_width = 0;
-  *message_max_len   = 0;
-  ptr                = message;
+  char    *p;
+  char     dummy[33]    = { '\0' }; /* 32 chars is large enough. */
+  int      len          = 0;
+  int      patterns_len = 0;
+  *message_max_width    = 0;
+  *message_max_len      = 0;
+  ptr                   = message;
 
   /* For each line terminated with a EOL character. */
   /* """""""""""""""""""""""""""""""""""""""""""""" */
   while (*ptr != '\0' && (cr_ptr = strchr(ptr, '\n')) != NULL)
   {
+
     if (cr_ptr > ptr)
     {
       str               = xmalloc(cr_ptr - ptr + 1);
@@ -4219,11 +4291,25 @@ get_message_lines(char *message,
 
     ll_append(message_lines_list, str);
 
+    /* Calculate the size taken by all occurrences of the \[...] */
+    /* pattern to correctly evaluate the length of each line.    */
+    /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+    p = str;
+    while ((p = strstr(p, "\\[")) != NULL)
+      if (sscanf(p, "\\[%32[^]]]%n", dummy, &len) == 1)
+      {
+        patterns_len += len;
+        p += len;
+      }
+      else
+        p++;
+
     /* If needed, update the message maximum width. */
     /* """""""""""""""""""""""""""""""""""""""""""" */
     n = my_wcswidth((w = utf8_strtowcs(str)), utf8_strlen(str));
     free(w);
 
+    n -= patterns_len;
     if (n > *message_max_width)
       *message_max_width = n;
 
@@ -4242,9 +4328,23 @@ get_message_lines(char *message,
   {
     ll_append(message_lines_list, xstrdup(ptr));
 
+    /* Calculate the size taken by all occurrences of the \[...] */
+    /* pattern to correctly evaluate the length of each line.    */
+    /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+    p = ptr;
+    while ((p = strstr(p, "\\[")) != NULL)
+      if (sscanf(p, "\\[%32[^]]]%n", dummy, &len) == 1)
+      {
+        patterns_len += len;
+        p += len;
+      }
+      else
+        p++;
+
     n = my_wcswidth((w = utf8_strtowcs(ptr)), utf8_strlen(ptr));
     free(w);
 
+    n -= patterns_len;
     if (n > *message_max_width)
       *message_max_width = n;
 
@@ -4844,6 +4944,36 @@ disp_word(long           pos,
   }
 }
 
+/* ==================================== */
+/* Display a message above the window.  */
+/* Called by the disp_message funciton. */
+/* ==================================== */
+void
+disp_message_line(win_t *win, term_t *term, char *string, attrib_ex_t *attr_a)
+{
+  char *tmp;
+
+  tmp = strdup(string);
+
+  if (BUF_LEN(attr_a) == 0)
+    printf("%s", string);
+  else
+  {
+    for (int i = 0; i < BUF_LEN(attr_a); i++)
+    {
+      int start = attr_a[i].start;
+      int len   = attr_a[i].end - attr_a[i].start + 1;
+
+      memcpy(tmp, string + start, len);
+      tmp[len] = '\0';
+      apply_attr(term, *attr_a[i].attr);
+      printf("%s", tmp);
+    }
+    apply_attr(term, win->message_attr);
+  }
+  free(tmp);
+}
+
 /* =================================== */
 /* Display a message above the window. */
 /* =================================== */
@@ -4858,7 +4988,7 @@ disp_message(ll_t       *message_lines_list,
   ll_node_t *node;
   char      *line;
   char      *buf;
-  size_t     len;
+  size_t     len, blen;
   long       size;
   long       offset;
   wchar_t   *w;
@@ -4908,7 +5038,94 @@ disp_message(ll_t       *message_lines_list,
 
     line = node->data;
     len  = utf8_strlen(line);
+    blen = strlen(line);
     w    = utf8_strtowcs(line);
+
+    char        *ptr         = line;
+    char         pattern[33] = { '\0' }; /* 32 chars is large enough. */
+    attrib_ex_t *attr_a      = NULL;
+    attrib_ex_t *attr_ex;
+    size_t       pos = 0;
+
+    /* Process attribute information in the line if any. */
+    /* """"""""""""""""""""""""""""""""""""""""""""""""" */
+    while ((ptr = strstr(ptr, "\\[")) != NULL)
+    {
+      if (sscanf(ptr, "\\[%32[^]]]%n", pattern, &pos) > 0)
+      {
+        attr_ex                     = xmalloc(sizeof(attrib_ex_t));
+        attr_ex->attr               = xmalloc(sizeof(attrib_t));
+        attr_ex->attr->is_set       = UNSET;
+        attr_ex->attr->fg           = -1;
+        attr_ex->attr->bg           = -1;
+        attr_ex->attr->bold         = (signed char)-1;
+        attr_ex->attr->dim          = (signed char)-1;
+        attr_ex->attr->reverse      = (signed char)-1;
+        attr_ex->attr->standout     = (signed char)-1;
+        attr_ex->attr->no_standout  = (signed char)-1;
+        attr_ex->attr->underline    = (signed char)-1;
+        attr_ex->attr->no_underline = (signed char)-1;
+        attr_ex->attr->italic       = (signed char)-1;
+        attr_ex->attr->no_italic    = (signed char)-1;
+        attr_ex->attr->invis        = (signed char)-1;
+        attr_ex->attr->blink        = (signed char)-1;
+        attr_ex->attr->reset        = (signed char)-1;
+
+        if (ptr > line && BUF_LEN(attr_a) == 0)
+        {
+          attrib_ex_t *first_attr_ex = xmalloc(sizeof(attrib_ex_t));
+          first_attr_ex->attr        = xmalloc(sizeof(attrib_t));
+
+          first_attr_ex->attr->is_set       = SET;
+          first_attr_ex->attr->fg           = win->message_attr.fg;
+          first_attr_ex->attr->bg           = win->message_attr.bg;
+          first_attr_ex->attr->bold         = win->message_attr.bold;
+          first_attr_ex->attr->dim          = win->message_attr.dim;
+          first_attr_ex->attr->reverse      = win->message_attr.reverse;
+          first_attr_ex->attr->standout     = win->message_attr.standout;
+          first_attr_ex->attr->no_standout  = win->message_attr.no_standout;
+          first_attr_ex->attr->underline    = win->message_attr.underline;
+          first_attr_ex->attr->no_underline = win->message_attr.no_underline;
+          first_attr_ex->attr->italic       = win->message_attr.italic;
+          first_attr_ex->attr->no_italic    = win->message_attr.no_italic;
+          first_attr_ex->attr->invis        = win->message_attr.invis;
+          first_attr_ex->attr->blink        = win->message_attr.blink;
+          first_attr_ex->attr->reset        = win->message_attr.reset;
+
+          first_attr_ex->start = 0;
+
+          BUF_PUSH(attr_a, *first_attr_ex);
+        }
+
+        parse_attr(pattern, attr_ex->attr, term->colors);
+        /* if parse_attr failed then attr->is_set remains UNSET */
+        /* else it was changed to SET, so no need to check the  */
+        /* returned value.                                      */
+        /* The starting and ending offset of each char sequence */
+        /* to be displayed using this pattern are also stored   */
+        /* to be used later.                                    */
+        /* """""""""""""""""""""""""""""""""""""""""""""""""""" */
+
+        attr_ex->start = ptr - line;
+
+        if (BUF_LEN(attr_a) > 0)
+          attr_a[BUF_LEN(attr_a) - 1].end = attr_ex->start - 1;
+
+        BUF_PUSH(attr_a, *attr_ex);
+
+        /* Remove the processed  pattern sequence. */
+        /* """"""""""""""""""""""""""""""""""""""" */
+        memmove(ptr, ptr + pos, blen - (ptr - line + pos) + 1);
+        blen -= pos;
+        len -= pos; /* Correct as patterns doesn't contain multibyte chars. */
+        ptr[blen] = '\0';
+      }
+      else
+        ptr++; /* To avoid an infinite loop. */
+    }
+
+    if (BUF_LEN(attr_a) > 0)
+      attr_a[BUF_LEN(attr_a) - 1].end = blen - 1;
 
     /* Adjust size and len if the terminal is not large enough. */
     /* """""""""""""""""""""""""""""""""""""""""""""""""""""""" */
@@ -4942,15 +5159,23 @@ disp_message(ll_t       *message_lines_list,
         fputc_safe('v', stdout);
     }
     else
-      printf("%s", buf);
+      disp_message_line(win, term, buf, attr_a);
+
+    for (size_t i = 0; i < BUF_LEN(attr_a); i++)
+      free(attr_a[i].attr);
+
+    BUF_FREE(attr_a);
 
     /* Complete the short line with spaces until it reach the */
     /* message max size.                                      */
     /* '''''''''''''''''''''''''''''''''''''''''''''''''''''' */
+    apply_attr(term, win->message_attr);
+
     for (i = size; i < message_max_width; i++)
     {
       if (i + (offset < 0 ? 0 : offset) >= term->ncolumns)
         break;
+
       fputc_safe(' ', stdout);
     }
 
@@ -6665,17 +6890,21 @@ init_main_ds(attrib_t  *init_attr,
 
   /* Initial attribute settings. */
   /* """"""""""""""""""""""""""" */
-  init_attr->is_set    = UNSET;
-  init_attr->fg        = -1;
-  init_attr->bg        = -1;
-  init_attr->bold      = (signed char)-1;
-  init_attr->dim       = (signed char)-1;
-  init_attr->reverse   = (signed char)-1;
-  init_attr->standout  = (signed char)-1;
-  init_attr->underline = (signed char)-1;
-  init_attr->italic    = (signed char)-1;
-  init_attr->invis     = (signed char)-1;
-  init_attr->blink     = (signed char)-1;
+  init_attr->is_set       = UNSET;
+  init_attr->fg           = -1;
+  init_attr->bg           = -1;
+  init_attr->bold         = (signed char)-1;
+  init_attr->dim          = (signed char)-1;
+  init_attr->reverse      = (signed char)-1;
+  init_attr->standout     = (signed char)-1;
+  init_attr->no_standout  = (signed char)-1;
+  init_attr->underline    = (signed char)-1;
+  init_attr->no_underline = (signed char)-1;
+  init_attr->italic       = (signed char)-1;
+  init_attr->no_italic    = (signed char)-1;
+  init_attr->invis        = (signed char)-1;
+  init_attr->blink        = (signed char)-1;
+  init_attr->reset        = (signed char)-1;
 
   /* Win fields initialization. */
   /* """""""""""""""""""""""""" */
@@ -7432,17 +7661,21 @@ special_level_action(char  *ctx_name,
     /* """""""""""""""""""""""""""""""""""""""""""""""""""""" */
     if (parse_attr(values[i], &attr, term->colors))
     {
-      win->special_attr[opt - '1'].is_set    = FORCED;
-      win->special_attr[opt - '1'].fg        = attr.fg;
-      win->special_attr[opt - '1'].bg        = attr.bg;
-      win->special_attr[opt - '1'].bold      = attr.bold;
-      win->special_attr[opt - '1'].dim       = attr.dim;
-      win->special_attr[opt - '1'].reverse   = attr.reverse;
-      win->special_attr[opt - '1'].standout  = attr.standout;
-      win->special_attr[opt - '1'].underline = attr.underline;
-      win->special_attr[opt - '1'].italic    = attr.italic;
-      win->special_attr[opt - '1'].invis     = attr.invis;
-      win->special_attr[opt - '1'].blink     = attr.blink;
+      win->special_attr[opt - '1'].is_set       = FORCED;
+      win->special_attr[opt - '1'].fg           = attr.fg;
+      win->special_attr[opt - '1'].bg           = attr.bg;
+      win->special_attr[opt - '1'].bold         = attr.bold;
+      win->special_attr[opt - '1'].dim          = attr.dim;
+      win->special_attr[opt - '1'].reverse      = attr.reverse;
+      win->special_attr[opt - '1'].standout     = attr.standout;
+      win->special_attr[opt - '1'].no_standout  = attr.no_standout;
+      win->special_attr[opt - '1'].underline    = attr.underline;
+      win->special_attr[opt - '1'].no_underline = attr.no_underline;
+      win->special_attr[opt - '1'].italic       = attr.italic;
+      win->special_attr[opt - '1'].no_italic    = attr.no_italic;
+      win->special_attr[opt - '1'].invis        = attr.invis;
+      win->special_attr[opt - '1'].blink        = attr.blink;
+      win->special_attr[opt - '1'].reset        = attr.reset;
     }
   }
 }
@@ -7626,17 +7859,21 @@ attributes_action(char  *ctx_name,
     /* """"""""""""""""""""""""""""""""""" */
     if (parse_attr(values[a] + offset, &attr, term->colors))
     {
-      attr_to_set->is_set    = FORCED;
-      attr_to_set->fg        = attr.fg;
-      attr_to_set->bg        = attr.bg;
-      attr_to_set->bold      = attr.bold;
-      attr_to_set->dim       = attr.dim;
-      attr_to_set->reverse   = attr.reverse;
-      attr_to_set->standout  = attr.standout;
-      attr_to_set->underline = attr.underline;
-      attr_to_set->italic    = attr.italic;
-      attr_to_set->invis     = attr.invis;
-      attr_to_set->blink     = attr.blink;
+      attr_to_set->is_set       = FORCED;
+      attr_to_set->fg           = attr.fg;
+      attr_to_set->bg           = attr.bg;
+      attr_to_set->bold         = attr.bold;
+      attr_to_set->dim          = attr.dim;
+      attr_to_set->reverse      = attr.reverse;
+      attr_to_set->standout     = attr.standout;
+      attr_to_set->no_standout  = attr.no_standout;
+      attr_to_set->underline    = attr.underline;
+      attr_to_set->no_underline = attr.no_underline;
+      attr_to_set->italic       = attr.italic;
+      attr_to_set->no_italic    = attr.no_italic;
+      attr_to_set->invis        = attr.invis;
+      attr_to_set->blink        = attr.blink;
+      attr_to_set->reset        = attr.reset;
     }
     else
     {
@@ -10000,10 +10237,16 @@ main(int argc, char *argv[])
     term.has_reverse           = (str == (char *)-1 || str == NULL) ? 0 : 1;
     str                        = tigetstr("smul");
     term.has_underline         = (str == (char *)-1 || str == NULL) ? 0 : 1;
+    str                        = tigetstr("rmul");
+    term.has_no_underline      = (str == (char *)-1 || str == NULL) ? 0 : 1;
     str                        = tigetstr("smso");
     term.has_standout          = (str == (char *)-1 || str == NULL) ? 0 : 1;
+    str                        = tigetstr("rmso");
+    term.has_no_standout       = (str == (char *)-1 || str == NULL) ? 0 : 1;
     str                        = tigetstr("sitm");
     term.has_italic            = (str == (char *)-1 || str == NULL) ? 0 : 1;
+    str                        = tigetstr("ritm");
+    term.has_no_italic         = (str == (char *)-1 || str == NULL) ? 0 : 1;
     str                        = tigetstr("invis");
     term.has_invis             = (str == (char *)-1 || str == NULL) ? 0 : 1;
     str                        = tigetstr("blink");
