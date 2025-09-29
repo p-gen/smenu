@@ -288,8 +288,9 @@ struct attrib_s
 /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
 struct attrib_ex_s
 {
-  int       start, end;
   attrib_t *attr;
+  int       start; /* Offset of the start of attr in the message line. */
+  int       end;   /* Offset of the end of attr in the message line.   */
 };
 
 /* Structure containing some terminal characteristics. */

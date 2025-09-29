@@ -4946,7 +4946,7 @@ disp_word(long           pos,
 
 /* ==================================== */
 /* Display a message above the window.  */
-/* Called by the disp_message funciton. */
+/* Called by the disp_message function. */
 /* ==================================== */
 void
 disp_message_line(win_t *win, term_t *term, char *string, attrib_ex_t *attr_a)
@@ -4959,18 +4959,31 @@ disp_message_line(win_t *win, term_t *term, char *string, attrib_ex_t *attr_a)
     printf("%s", string);
   else
   {
+    /* Some attribute specifications are present in the line; we must */
+    /* apply them.                                                    */
+    /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
     for (int i = 0; i < BUF_LEN(attr_a); i++)
     {
+      /* Offset of the start of the next attribute in the message line. */
+      /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
       int start = attr_a[i].start;
-      int len   = attr_a[i].end - attr_a[i].start + 1;
+
+      /* Length of the text using this attribute. */
+      /* """""""""""""""""""""""""""""""""""""""" */
+      int len = attr_a[i].end - attr_a[i].start + 1;
 
       memcpy(tmp, string + start, len);
       tmp[len] = '\0';
       apply_attr(term, *attr_a[i].attr);
       printf("%s", tmp);
     }
+
+    /* We need to apply the default message attribute after having */
+    /* display a line.                                             */
+    /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
     apply_attr(term, win->message_attr);
   }
+
   free(tmp);
 }
 
