@@ -4962,7 +4962,7 @@ disp_message_line(win_t *win, term_t *term, char *string, attrib_ex_t *attr_a)
     /* Some attribute specifications are present in the line; we must */
     /* apply them.                                                    */
     /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-    for (int i = 0; i < BUF_LEN(attr_a); i++)
+    for (int i = 0; i < (int)BUF_LEN(attr_a); i++)
     {
       /* Offset of the start of the next attribute in the message line. */
       /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
@@ -5064,7 +5064,7 @@ disp_message(ll_t       *message_lines_list,
     /* """"""""""""""""""""""""""""""""""""""""""""""""" */
     while ((ptr = strstr(ptr, "\\[")) != NULL)
     {
-      if (sscanf(ptr, "\\[%32[^]]]%n", pattern, &pos) > 0)
+      if (sscanf(ptr, "\\[%32[^]]]%zn", pattern, &pos) > 0)
       {
         attr_ex                     = xmalloc(sizeof(attrib_ex_t));
         attr_ex->attr               = xmalloc(sizeof(attrib_t));
@@ -16598,11 +16598,11 @@ main(int argc, char *argv[])
             unsigned char cCb, cCx, cCy;
             char          action;
 
-            int state;
-            int button, old_button;
-            int line_click;
-            int column_click;
-            int error;
+            unsigned int state;
+            unsigned int button, old_button;
+            unsigned int line_click;
+            unsigned int column_click;
+            int          error;
 
             long old_current = current;
 
@@ -16620,8 +16620,8 @@ main(int argc, char *argv[])
                     != 4)
                   goto ignore_mouse_event;
 
-                state        = iCb & ~3;
-                button       = iCb & 3;
+                state        = iCb & ~(unsigned int)3;
+                button       = iCb & (unsigned int)3;
                 line_click   = iCy;
                 column_click = iCx;
 
@@ -16642,8 +16642,8 @@ main(int argc, char *argv[])
                     != 4)
                   goto ignore_mouse_event;
 
-                state        = (iCb - 32) & ~3;
-                button       = (iCb - 32) & 3;
+                state        = (iCb - 32) & ~(unsigned int)3;
+                button       = (iCb - 32) & (unsigned int)3;
                 line_click   = iCy;
                 column_click = iCx;
 
@@ -16659,8 +16659,8 @@ main(int argc, char *argv[])
                     != 3)
                   goto ignore_mouse_event;
 
-                state        = (cCb - 32) & ~3;
-                button       = (cCb - 32) & 3;
+                state        = (cCb - 32) & ~(unsigned int)3;
+                button       = (cCb - 32) & (unsigned int)3;
                 line_click   = cCy - 32;
                 column_click = cCx - 32;
 

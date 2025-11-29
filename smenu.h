@@ -259,8 +259,8 @@ struct misc_s
 /* """"""""""""""""""""""""""""""""""""" */
 struct mouse_s
 {
-  int double_click_delay;
-  int button[3];
+  int          double_click_delay;
+  unsigned int button[3];
 };
 
 /* Structure containing the attributes components. */
