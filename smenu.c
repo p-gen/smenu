@@ -778,19 +778,19 @@ decode_attr_toggles(char *s, attrib_t *attr)
 /* =============================================================*/
 /* Parse attributes in str in the form [fg][/bg][[,.+]toggles]  */
 /* where:                                                       */
-/* fg and bg are short representing a color value               */
-/* toggles is an array of toggles (see decode_attr_toggles)     */
+/* fg and bg are int representing a color value.                */
+/* toggles is an array of toggles (see decode_attr_toggles).    */
 /* Returns 1 on success else 0.                                 */
 /* attr will be filled by the function.                         */
 /* =============================================================*/
 int
-parse_attr(char *str, attrib_t *attr, short colors)
+parse_attr(char *str, attrib_t *attr, int colors)
 {
   int   n;
   char *pos;
   char  s1[12] = { (char)0 }; /* For the colors.     */
   char  s2[9]  = { (char)0 }; /* For the attributes. */
-  short d1 = -1, d2 = -1;     /* colors. */
+  int   d1 = -1, d2 = -1;     /* colors. */
   int   rc = 1;
   char  c  = '\0';
 
@@ -807,7 +807,7 @@ parse_attr(char *str, attrib_t *attr, short colors)
     if (pos == s1) /* s1 starts with a / */
     {
       d1 = -1;
-      if (sscanf(s1 + 1, "%hd", &d2) == 0)
+      if (sscanf(s1 + 1, "%d", &d2) == 0)
       {
         d2 = -1;
         if (n == 1)
@@ -816,7 +816,7 @@ parse_attr(char *str, attrib_t *attr, short colors)
       else if (d2 < 0)
         goto error;
     }
-    else if (sscanf(s1, "%hd/%hd", &d1, &d2) < 2)
+    else if (sscanf(s1, "%d/%d", &d1, &d2) < 2)
     {
       d1 = d2 = -1;
       if (n == 1)
@@ -828,7 +828,7 @@ parse_attr(char *str, attrib_t *attr, short colors)
   else /* no / in the first string. */
   {
     d2 = -1;
-    if (sscanf(s1, "%hd", &d1) == 0)
+    if (sscanf(s1, "%d", &d1) == 0)
     {
       d1 = -1;
       if (n == 2 || decode_attr_toggles(s1, attr) == 0)
@@ -3994,8 +3994,8 @@ read_word(FILE          *input,
 /* ================================================================ */
 /* Convert the 8 first colors from setf/setaf coding to setaf/setf. */
 /* ================================================================ */
-short
-color_transcode(short color)
+int
+color_transcode(int color)
 {
   switch (color)
   {
@@ -4016,7 +4016,7 @@ color_transcode(short color)
 /* Set a foreground color according to terminal capabilities. */
 /* ========================================================== */
 void
-set_foreground_color(term_t *term, short color)
+set_foreground_color(term_t *term, int color)
 {
   if (term->color_method == CLASSIC)
   {
@@ -4039,7 +4039,7 @@ set_foreground_color(term_t *term, short color)
 /* Set a background color according to terminal capabilities. */
 /* ========================================================== */
 void
-set_background_color(term_t *term, short color)
+set_background_color(term_t *term, int color)
 {
   if (term->color_method == CLASSIC)
   {

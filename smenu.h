@@ -268,8 +268,8 @@ struct mouse_s
 struct attrib_s
 {
   attr_set_t  is_set;
-  short       fg;
-  short       bg;
+  int         fg;
+  int         bg;
   signed char bold;
   signed char dim;
   signed char reverse;
@@ -301,7 +301,7 @@ struct term_s
   int            nlines;       /* number of lines.                       */
   int            curs_column;  /* current cursor column.                 */
   int            curs_line;    /* current cursor line.                   */
-  short          colors;       /* number of available colors.            */
+  int            colors;       /* number of available colors.            */
   color_method_t color_method; /* color method (CLASSIC (0-7), ANSI).    */
 
   char has_cursor_up;         /* has cuu1 terminfo capability.           */
@@ -353,14 +353,14 @@ struct word_s
                                  | options.                                 */
   long           tag_order;     /* each time a word is tagged, this value.  *
                                  | is increased.                            */
-  unsigned short tag_id;        /* tag id. 0 means no tag.                  */
+  int            offset;        /* may be > 0 in case of center or right    *
+                                 * alignment (# of spaces added).           */
+  unsigned       tag_id;        /* tag id. 0 means no tag.                  */
   unsigned char  is_matching;   /* word is matching a search ERE.           */
   unsigned char  is_last;       /* 1 if the word is the last of a line.     */
   unsigned char  is_selectable; /* word is selectable.                      */
   unsigned char  is_numbered;   /* word has a direct access index.          */
   unsigned char  special_level; /* can vary from 0 to 9; 0 meaning normal.  */
-  int            offset;        /* may be > 0 in case of center or right    *
-                                 * alignment (# of spaces added).           */
 };
 
 /* Structure describing the window in which the user  */
@@ -385,10 +385,10 @@ struct win_s
                              | (updated by disp_message.                */
   int      max_width;       /* max usable line width or the terminal.   */
   int      offset;          /* Left margin, used in centered mode.      */
+  int      sb_column;       /* scroll bar column (-1) if no scroll bar. */
   char    *sel_sep;         /* output separator when tags are enabled.  */
   char   **gutter_a;        /* array of UTF-8 gutter glyphs.            */
   int      gutter_nb;       /* number of UTF-8 gutter glyphs.           */
-  int      sb_column;       /* scroll bar column (-1) if no scroll bar. */
   unsigned next_tag_id;     /* Next tag ID, increased on each tagging   *
                              | operation.                               */
 
@@ -636,14 +636,14 @@ ini_parse_entry(win_t      *win,
 char *
 make_ini_path(char *name, char *base);
 
-short
-color_transcode(short color);
+int
+color_transcode(int color);
 
 void
-set_foreground_color(term_t *term, short color);
+set_foreground_color(term_t *term, int color);
 
 void
-set_background_color(term_t *term, short color);
+set_background_color(term_t *term, int color);
 
 void
 set_win_start_end(win_t *win, long current, long last);
@@ -796,7 +796,7 @@ int
 decode_attr_toggles(char *s, attrib_t *attr);
 
 int
-parse_attr(char *str, attrib_t *attr, short max_color);
+parse_attr(char *str, attrib_t *attr, int max_color);
 
 void
 apply_attr(term_t *term, attrib_t attr);
