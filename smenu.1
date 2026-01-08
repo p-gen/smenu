@@ -1958,6 +1958,13 @@ Back reference example:
 will display \f(CR"[:A:] [:B:] [:C:]"\fP
 .fi
 
+Instead of /, you can use almost any character (except of \\):
+
+.nf
+\f(CBR=$(echo "[A] [B] [C]" | ./smenu -S '%([^][]+)%:\\1:%')\fP
+will display \f(CR"[:A:] [:B:] [:C:]"\fP
+.fi
+
 This option can be used more than once.
 Each substitution will be applied in sequence on each word.
 This sequence can be stopped if a \fBstop\fP flag is encountered.
