@@ -1814,24 +1814,24 @@ print_before_constraints(ll_t *list)
     {
       if (!msg)
       {
-        printf("\n  If present in the command line,");
+        fprintf(stderr, "\n  If present in the command line,");
         msg = 1; /* Display this message only once. */
       }
 
       before_node = opt->eval_before_list->head;
 
-      printf("\n  ");
+      fprintf(stderr, "\n  ");
       while (before_node != NULL)
       {
         before_opt = before_node->data;
-        printf("%s", before_opt->params);
+        fprintf(stderr, "%s", before_opt->params);
 
         before_node = before_node->next;
 
         if (before_node != NULL)
-          printf(" and\n  ");
+          fprintf(stderr, " and\n  ");
       }
-      printf(" will be evaluated after %s\n", opt->params);
+      fprintf(stderr, " will be evaluated after %s\n", opt->params);
     }
     node = node->next;
   }
@@ -1954,7 +1954,7 @@ print_options(ll_t *list,
       line = strappend(line, option, " ", (char *)0);
     else
     {
-      printf("%s\n", line);
+      fprintf(stderr, "%s\n", line);
       line[2] = '\0';
       line    = strappend(line, option, " ", (char *)0);
     }
@@ -1964,7 +1964,7 @@ print_options(ll_t *list,
     node = node->next;
   }
 
-  printf("%s\n", line);
+  fprintf(stderr, "%s\n", line);
 
   free(line);
 }
@@ -1984,29 +1984,37 @@ print_explanations(int has_early_eval,
   if (has_early_eval || has_ctx_change || has_generic_arg || has_optional
       || has_ellipsis || has_rule)
   {
-    printf("\nExplanation of the syntax used above:\n");
-    printf("Only the parameters (prefixed by -) and the arguments, if any, "
-           "must be entered.\n");
-    printf("The following is just there to explain the other symbols "
-           "displayed.\n\n");
+    fprintf(stderr, "\nExplanation of the syntax used above:\n");
+    fprintf(stderr,
+            "Only the parameters (prefixed by -) and the arguments, if any, "
+            "must be entered.\n");
+    fprintf(stderr,
+            "The following is just there to explain the other symbols "
+            "displayed.\n\n");
 
     if (has_early_eval)
-      printf("*            : the parameters defined for this option will "
-             "be evaluated first.\n");
+      fprintf(stderr,
+              "*            : the parameters defined for this option will "
+              "be evaluated first.\n");
     if (has_ctx_change)
-      printf(">            : the context after this symbol will be the new "
-             "default context.\n");
+      fprintf(stderr,
+              ">            : the context after this symbol will be the new "
+              "default context.\n");
     if (has_generic_arg)
-      printf("#tag         : argument with a hint about its meaning.\n");
+      fprintf(stderr,
+              "#tag         : argument with a hint about its meaning.\n");
     if (has_optional)
-      printf("[...]        : the object between square brackets is "
-             "optional.\n");
+      fprintf(stderr,
+              "[...]        : the object between square brackets is "
+              "optional.\n");
     if (has_ellipsis)
-      printf("...          : several occurrences of the previous object "
-             "are possible.\n");
+      fprintf(stderr,
+              "...          : several occurrences of the previous object "
+              "are possible.\n");
     if (has_rule)
-      printf("[<|=|>]number: rules constraining the number of "
-             "parameters/arguments.\n");
+      fprintf(stderr,
+              "[<|=|>]number: rules constraining the number of "
+              "parameters/arguments.\n");
   }
 }
 
@@ -2066,7 +2074,7 @@ bst_print_ctx_cb(const void *node, walk_order_e kind, int level)
     {
       list = cur_ctx->opt_list;
 
-      printf("\nAllowed options in the context %s:\n", cur_ctx->name);
+      fprintf(stderr, "\nAllowed options in the context %s:\n", cur_ctx->name);
       print_options(list,
                     &has_optional,
                     &has_ellipsis,
@@ -2867,7 +2875,8 @@ init_opts(char *spec, ctx_t *ctx)
     else
     {
       char *s = xstrndup(spec, -offset);
-      printf("%s <---\nSyntax error at or before offset %d\n", s, -offset);
+      fprintf(stderr,
+              "%s <---\nSyntax error at or before offset %d\n", s, -offset);
       free(s);
 
       exit(EXIT_FAILURE);
@@ -4291,10 +4300,10 @@ ctxopt_ctx_disp_usage(char *ctx_name, usage_behaviour action)
     fatal_internal("Unknown context %s.", ctx_name);
 
   if (cur_state->ctx_par_name == NULL)
-    printf("\nSynopsis:\n%s \\\n", cur_state->prog_name);
+    fprintf(stderr, "\nSynopsis:\n%s \\\n", cur_state->prog_name);
   else
-    printf("\nSynopsis for the context introduced by %s:\n",
-           cur_state->ctx_par_name);
+    fprintf(stderr, "\nSynopsis for the context introduced by %s:\n",
+            cur_state->ctx_par_name);
 
   list = ctx->opt_list;
   print_options(list,
@@ -4342,7 +4351,7 @@ ctxopt_disp_usage(usage_behaviour action)
 
   /* Usage for the first context. */
   /* """""""""""""""""""""""""""" */
-  printf("\nAllowed options in the base context:\n");
+  fprintf(stderr, "\nAllowed options in the base context:\n");
   list = main_ctx->opt_list;
   print_options(list,
                 &has_optional,
