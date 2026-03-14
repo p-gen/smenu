@@ -21,6 +21,8 @@
 /* Static global variables. */
 /* ************************ */
 
+static FILE *output_stream;
+
 static void *contexts_bst;
 static void *options_bst;
 
@@ -188,6 +190,12 @@ typedef struct opt_inst_s   opt_inst_t;
 typedef struct seen_opt_s   seen_opt_t;
 typedef struct req_s        req_t;
 
+static FILE *
+set_output_stream(usage_output output);
+
+static void
+dummy_action(void);
+
 static char *
 strtoken(char *s, char *token, size_t tok_len, char *pattern, int *pos);
 
@@ -285,7 +293,7 @@ static int
 init_opts(char *spec, ctx_t *ctx);
 
 static int
-ctxopt_build_cmdline_list(int nb_words, char **words);
+build_cmdline_list(int nb_words, char **words);
 
 static int
 opt_set_parms(char *opt_name, char *par_str);
@@ -299,6 +307,17 @@ evaluate_ctx_inst(ctx_inst_t *ctx_inst);
 /* ****************************** */
 /* Fatal messages implementation. */
 /* ****************************** */
+
+/* Flags structure initialized by ctxopt_init. */
+/* """"""""""""""""""""""""""""""""""""""""""" */
+struct flags_s
+{
+  int stop_if_non_option;
+  int allow_abbreviations;
+  int disp_usage;
+};
+
+static flags_t flags = { 0, 1, 0 };
 
 /* =================================================================== */
 /* Fatal error function used when a fatal condition is encountered.    */
@@ -502,15 +521,18 @@ fatal(errors e, char *errmsg)
     }
   }
 
-  /* CTXOPTUNKPAR should display the full usage to help the user follow   */
-  /* the chaining of contexts when several possible contexts have been    */
-  /* identified. Otherwise, errmsg is the empty string and the display of */
-  /* the current usage is enough.                                         */
-  /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-  if (e == CTXOPTUNKPAR && *errmsg != '\0')
-    ctxopt_disp_usage(continue_after);
-  else
-    ctxopt_ctx_disp_usage(NULL, continue_after);
+  if (flags.disp_usage)
+  {
+    /* CTXOPTUNKPAR should display the full usage to help the user follow   */
+    /* the chaining of contexts when several possible contexts have been    */
+    /* identified. Otherwise, errmsg is the empty string and the display of */
+    /* the current usage is enough.                                         */
+    /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+    if (e == CTXOPTUNKPAR && *errmsg != '\0')
+      ctxopt_disp_usage(output_stderr, continue_after);
+    else
+      ctxopt_ctx_disp_usage(output_stderr, NULL, continue_after);
+  }
 
   exit(e); /* Exit with the error id e as return code. */
 }
@@ -1082,6 +1104,32 @@ bst_walk(const void *vroot, void (*action)(const void *, walk_order_e, int))
 /* Various implementations. */
 /* ************************ */
 
+/* =================================================================== */
+/* Helper function to return a FILE * stream according to its argument */
+/* =================================================================== */
+static FILE *
+set_output_stream(usage_output output)
+{
+  if (output == output_stderr)
+    return stderr;
+  if (output == output_stdout)
+    return stdout;
+  else
+  {
+    fatal_internal("Invalid output stream.");
+    return NULL;
+  }
+}
+
+/* ======================================================== */
+/* Dummy action needed for the pseudo action usage_on_error */
+/* ======================================================== */
+static void
+dummy_action(void)
+{
+  ;
+}
+
 /* ======================== */
 /* Trim leading characters. */
 /* ======================== */
@@ -1336,17 +1384,6 @@ str2argv(char *str, char **args, int max)
 /* ********************** */
 
 static int ctxopt_initialized = 0; /* cap_init has not yet been called. */
-
-/* Flags structure initialized by ctxopt_init. */
-/* """"""""""""""""""""""""""""""""""""""""""" */
-struct flags_s
-{
-  int stop_if_non_option;
-  int allow_abbreviations;
-  int display_usage_on_error;
-};
-
-static flags_t flags = { 0, 1, 1 };
 
 /* Context structure. */
 /* """""""""""""""""" */
@@ -1814,24 +1851,24 @@ print_before_constraints(ll_t *list)
     {
       if (!msg)
       {
-        printf("\n  If present in the command line,");
+        fprintf(output_stream, "\n  If present in the command line,");
         msg = 1; /* Display this message only once. */
       }
 
       before_node = opt->eval_before_list->head;
 
-      printf("\n  ");
+      fprintf(output_stream, "\n  ");
       while (before_node != NULL)
       {
         before_opt = before_node->data;
-        printf("%s", before_opt->params);
+        fprintf(output_stream, "%s", before_opt->params);
 
         before_node = before_node->next;
 
         if (before_node != NULL)
-          printf(" and\n  ");
+          fprintf(output_stream, " and\n  ");
       }
-      printf(" will be evaluated after %s\n", opt->params);
+      fprintf(output_stream, " will be evaluated after %s\n", opt->params);
     }
     node = node->next;
   }
@@ -1954,7 +1991,7 @@ print_options(ll_t *list,
       line = strappend(line, option, " ", (char *)0);
     else
     {
-      printf("%s\n", line);
+      fprintf(output_stream, "%s\n", line);
       line[2] = '\0';
       line    = strappend(line, option, " ", (char *)0);
     }
@@ -1964,7 +2001,7 @@ print_options(ll_t *list,
     node = node->next;
   }
 
-  printf("%s\n", line);
+  fprintf(output_stream, "%s\n", line);
 
   free(line);
 }
@@ -1984,29 +2021,37 @@ print_explanations(int has_early_eval,
   if (has_early_eval || has_ctx_change || has_generic_arg || has_optional
       || has_ellipsis || has_rule)
   {
-    printf("\nExplanation of the syntax used above:\n");
-    printf("Only the parameters (prefixed by -) and the arguments, if any, "
-           "must be entered.\n");
-    printf("The following is just there to explain the other symbols "
-           "displayed.\n\n");
+    fprintf(output_stream, "\nExplanation of the syntax used above:\n");
+    fprintf(output_stream,
+            "Only the parameters (prefixed by -) and the arguments, if any, "
+            "must be entered.\n");
+    fprintf(output_stream,
+            "The following is just there to explain the other symbols "
+            "displayed.\n\n");
 
     if (has_early_eval)
-      printf("*            : the parameters defined for this option will "
-             "be evaluated first.\n");
+      fprintf(output_stream,
+              "*            : the parameters defined for this option will "
+              "be evaluated first.\n");
     if (has_ctx_change)
-      printf(">            : the context after this symbol will be the new "
-             "default context.\n");
+      fprintf(output_stream,
+              ">            : the context after this symbol will be the new "
+              "default context.\n");
     if (has_generic_arg)
-      printf("#tag         : argument with a hint about its meaning.\n");
+      fprintf(output_stream,
+              "#tag         : argument with a hint about its meaning.\n");
     if (has_optional)
-      printf("[...]        : the object between square brackets is "
-             "optional.\n");
+      fprintf(output_stream,
+              "[...]        : the object between square brackets is "
+              "optional.\n");
     if (has_ellipsis)
-      printf("...          : several occurrences of the previous object "
-             "are possible.\n");
+      fprintf(output_stream,
+              "...          : several occurrences of the previous object "
+              "are possible.\n");
     if (has_rule)
-      printf("[<|=|>]number: rules constraining the number of "
-             "parameters/arguments.\n");
+      fprintf(output_stream,
+              "[<|=|>]number: rules constraining the number of "
+              "parameters/arguments.\n");
   }
 }
 
@@ -2066,7 +2111,9 @@ bst_print_ctx_cb(const void *node, walk_order_e kind, int level)
     {
       list = cur_ctx->opt_list;
 
-      printf("\nAllowed options in the context %s:\n", cur_ctx->name);
+      fprintf(output_stream,
+              "\nAllowed options in the context %s:\n",
+              cur_ctx->name);
       print_options(list,
                     &has_optional,
                     &has_ellipsis,
@@ -2867,7 +2914,10 @@ init_opts(char *spec, ctx_t *ctx)
     else
     {
       char *s = xstrndup(spec, -offset);
-      printf("%s <---\nSyntax error at or before offset %d\n", s, -offset);
+      fprintf(stderr,
+              "%s <---\nSyntax error at or before offset %d\n",
+              s,
+              -offset);
       free(s);
 
       exit(EXIT_FAILURE);
@@ -2909,6 +2959,8 @@ ctxopt_init(char *prog_name, char *init_flags)
   for (n = 0; n < CTXOPTERRSIZ; n++)
     err_functions[n] = NULL;
 
+  output_stream = stdout;
+
   /* Parse init_flags if any. */
   /* """""""""""""""""""""""" */
   while (*init_flags && (init_flags = get_word(init_flags, flag, 32)))
@@ -2933,15 +2985,6 @@ ctxopt_init(char *prog_name, char *init_flags)
           flags.allow_abbreviations = 1;
         else if (!invalid)
           flags.allow_abbreviations = 0;
-        else
-          fatal_internal("Invalid flag value for %s: %s.", fname, vname);
-      }
-      else if (strcmp(fname, "display_usage_on_error") == 0)
-      {
-        if (eval_yes(vname, &invalid))
-          flags.display_usage_on_error = 1;
-        else if (!invalid)
-          flags.display_usage_on_error = 0;
         else
           fatal_internal("Invalid flag value for %s: %s.", fname, vname);
       }
@@ -3251,7 +3294,7 @@ new_ctx_inst(ctx_t *ctx, ctx_inst_t *prev_ctx_inst)
 /* Returns    : 1 on success, 0 if a { or } is missing.                   */
 /* ====================================================================== */
 static int
-ctxopt_build_cmdline_list(int nb_words, char **words)
+build_cmdline_list(int nb_words, char **words)
 {
   int        i;
   char      *prev_word = NULL;
@@ -3496,6 +3539,7 @@ ctxopt_analyze(int nb_words, char **words, int *nb_rem_args, char ***rem_args)
   int         expect_par_or_arg = 0;
 
   ll_node_t  *cli_node;
+  ll_node_t  *usage_on_error_node;
   bst_t      *bst_node;
   seen_opt_t *bst_seen_opt;
   char       *par_name;
@@ -3503,7 +3547,10 @@ ctxopt_analyze(int nb_words, char **words, int *nb_rem_args, char ***rem_args)
 
   ll_node_t *node;
 
-  if (!ctxopt_build_cmdline_list(nb_words, words))
+  if (!ctxopt_initialized)
+    fatal_internal("Please call ctxopt_init first.");
+
+  if (!build_cmdline_list(nb_words, words))
     fatal_internal("The command line could not be parsed: "
                    "missing '{' or '}' detected.");
 
@@ -3535,6 +3582,39 @@ ctxopt_analyze(int nb_words, char **words, int *nb_rem_args, char ***rem_args)
   cur_state->ctx_name = ctx->name;
 
   ll_append(ctx_inst_list, ctx_inst);
+
+  /* Process the -usage_on_error parameter if any. */
+  /* """"""""""""""""""""""""""""""""""""""""""""" */
+  cli_node            = cmdline_list->head;
+  par_name            = NULL;
+  usage_on_error_node = NULL;
+
+  while (cli_node != NULL)
+  {
+    if (strcmp(cli_node->data, "--") == 0)
+      break; /* No new parameter will be analyzed after this point. */
+
+    par_name = cli_node->data;
+
+    /* Replace a leading -- by a single - */
+    /* """""""""""""""""""""""""""""""""" */
+    if (strncmp(par_name, "--", 2) == 0)
+      par_name += 1; /* Ignore the first dash. */
+
+    /* Process the special option -usage_on_error if present. */
+    /* """""""""""""""""""""""""""""""""""""""""""""""""""""" */
+    if (strcmp(par_name, "-usage_on_error") == 0)
+    {
+      flags.disp_usage    = 1;
+      usage_on_error_node = cli_node;
+      break;
+    }
+
+    cli_node = cli_node->next;
+  }
+
+  if (usage_on_error_node != NULL)
+    ll_delete(cmdline_list, usage_on_error_node);
 
   /* For each node in the command line. */
   /* """""""""""""""""""""""""""""""""" */
@@ -3698,7 +3778,7 @@ ctxopt_analyze(int nb_words, char **words, int *nb_rem_args, char ***rem_args)
 
               count = strchrcount(user_string2, '\n');
 
-              if (flags.display_usage_on_error)
+              if (flags.disp_usage)
                 help_msg = ", see below";
               else
                 help_msg = "";
@@ -3993,8 +4073,14 @@ ctxopt_analyze(int nb_words, char **words, int *nb_rem_args, char ***rem_args)
                               par_name,
                               cur_state->cur_opt_par_name))
         {
-          fputs("\n", stderr);
-          ctxopt_ctx_disp_usage(cur_state->ctx_name, exit_after);
+
+          if (flags.disp_usage)
+          {
+            fputs("\n", stderr);
+            ctxopt_ctx_disp_usage(output_stderr,
+                                  cur_state->ctx_name,
+                                  exit_after);
+          }
         }
 
         cstr_node = cstr_node->next;
@@ -4093,6 +4179,9 @@ ctxopt_analyze(int nb_words, char **words, int *nb_rem_args, char ***rem_args)
 void
 ctxopt_free_memory(void)
 {
+  if (!ctxopt_initialized)
+    fatal_internal("Please call ctxopt_init first.");
+
   ll_destroy(cmdline_list, free);
   ll_destroy(ctx_inst_list, ctx_inst_free);
   bst_destroy(options_bst, opt_free);
@@ -4107,6 +4196,9 @@ ctxopt_free_memory(void)
 void
 ctxopt_evaluate(void)
 {
+  if (!ctxopt_initialized)
+    fatal_internal("Please call ctxopt_init first.");
+
   evaluate_ctx_inst(first_ctx_inst);
 }
 
@@ -4250,12 +4342,28 @@ ctxopt_new_ctx(char *name, char *opts_specs)
     cur_state->ctx_name = ctx->name;
   }
 
+  /* Creation of the pseudo option usage_on_error n this context here     */
+  /* to make sure for it to appears in the automatically genarated usage. */
+  /* '''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''' */
+  if (init_opts("[*usage_on_error]", ctx) == 0)
+    exit(EXIT_FAILURE);
+
   if (init_opts(opts_specs, ctx) == 0)
     exit(EXIT_FAILURE);
+
   if (bst_find(ctx, &contexts_bst, ctx_compare) != NULL)
     fatal_internal("The context %s already exists.", name);
   else
     bst_search(ctx, &contexts_bst, ctx_compare);
+
+  /* Associates a parameter and a dummy_action to the pseudo action */
+  /* usage_on_error. Must be done once, e.g. in the main context.   */
+  /* '''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''' */
+  if (ctx == main_ctx)
+  {
+    ctxopt_add_opt_settings(parameters, "usage_on_error", "-usage_on_error");
+    ctxopt_add_opt_settings(actions, "usage_on_error", dummy_action, NULL);
+  }
 }
 
 /* ==================================================== */
@@ -4265,10 +4373,16 @@ ctxopt_new_ctx(char *name, char *opts_specs)
 /*     possible values: continue_after, exit_after.     */
 /* ==================================================== */
 void
-ctxopt_ctx_disp_usage(char *ctx_name, usage_behaviour action)
+ctxopt_ctx_disp_usage(usage_output    output,
+                      char           *ctx_name,
+                      usage_behaviour action)
 {
   ctx_t *ctx;
   ll_t  *list;
+  FILE  *old_output_stream;
+
+  if (!ctxopt_initialized)
+    fatal_internal("Please call ctxopt_init first.");
 
   int has_optional    = 0;
   int has_ellipsis    = 0;
@@ -4277,8 +4391,8 @@ ctxopt_ctx_disp_usage(char *ctx_name, usage_behaviour action)
   int has_ctx_change  = 0;
   int has_early_eval  = 0;
 
-  if (!flags.display_usage_on_error)
-    return;
+  old_output_stream = output_stream;
+  output_stream     = set_output_stream(output);
 
   ctx = NULL;
 
@@ -4291,10 +4405,11 @@ ctxopt_ctx_disp_usage(char *ctx_name, usage_behaviour action)
     fatal_internal("Unknown context %s.", ctx_name);
 
   if (cur_state->ctx_par_name == NULL)
-    printf("\nSynopsis:\n%s \\\n", cur_state->prog_name);
+    fprintf(output_stream, "\nSynopsis:\n%s \\\n", cur_state->prog_name);
   else
-    printf("\nSynopsis for the context introduced by %s:\n",
-           cur_state->ctx_par_name);
+    fprintf(output_stream,
+            "\nSynopsis for the context introduced by %s:\n",
+            cur_state->ctx_par_name);
 
   list = ctx->opt_list;
   print_options(list,
@@ -4314,6 +4429,8 @@ ctxopt_ctx_disp_usage(char *ctx_name, usage_behaviour action)
                      has_ellipsis,
                      has_rule);
 
+  output_stream = old_output_stream;
+
   if (action == exit_after)
     exit(EXIT_FAILURE);
 }
@@ -4324,7 +4441,7 @@ ctxopt_ctx_disp_usage(char *ctx_name, usage_behaviour action)
 /*     possible values: continue_after, exit_after.    */
 /* =================================================== */
 void
-ctxopt_disp_usage(usage_behaviour action)
+ctxopt_disp_usage(usage_output output, usage_behaviour action)
 {
   ll_t *list;
   int   has_optional    = 0;
@@ -4333,16 +4450,20 @@ ctxopt_disp_usage(usage_behaviour action)
   int   has_generic_arg = 0;
   int   has_ctx_change  = 0;
   int   has_early_eval  = 0;
+  FILE *old_output_stream;
 
-  if (!flags.display_usage_on_error)
-    return;
+  if (!ctxopt_initialized)
+    fatal_internal("Please call ctxopt_init first.");
 
   if (main_ctx == NULL)
     fatal_internal("At least one context must have been created.");
 
+  old_output_stream = output_stream;
+  output_stream     = set_output_stream(output);
+
   /* Usage for the first context. */
   /* """""""""""""""""""""""""""" */
-  printf("\nAllowed options in the base context:\n");
+  fprintf(output_stream, "\nAllowed options in the base context:\n");
   list = main_ctx->opt_list;
   print_options(list,
                 &has_optional,
@@ -4369,6 +4490,8 @@ ctxopt_disp_usage(usage_behaviour action)
                      has_ellipsis,
                      has_rule);
 
+  output_stream = old_output_stream;
+
   if (action == exit_after)
     exit(EXIT_FAILURE);
 }
@@ -4390,6 +4513,9 @@ ctxopt_format_constraint(int nb_args, char **args, char *value, char *par)
   char  x[256];
   char  y;
   char *format;
+
+  if (!ctxopt_initialized)
+    fatal_internal("Please call ctxopt_init first.");
 
   if (nb_args != 1)
     fatal_internal("Format constraint, invalid number of parameters.");
@@ -4422,6 +4548,9 @@ int
 ctxopt_re_constraint(int nb_args, char **args, char *value, char *par)
 {
   regex_t re;
+
+  if (!ctxopt_initialized)
+    fatal_internal("Please call ctxopt_init first.");
 
   if (nb_args != 1)
     fatal_internal(
@@ -4461,6 +4590,9 @@ ctxopt_range_constraint(int nb_args, char **args, char *value, char *par)
   long  v;
   int   min_only = 0;
   int   max_only = 0;
+
+  if (!ctxopt_initialized)
+    fatal_internal("Please call ctxopt_init first.");
 
   if (nb_args != 2)
     fatal_internal("Range constraint, invalid number of parameters.");
@@ -4542,6 +4674,9 @@ ctxopt_add_global_settings(settings s, ...)
   va_list(args);
   va_start(args, s);
 
+  if (!ctxopt_initialized)
+    fatal_internal("Please call ctxopt_init first.");
+
   switch (s)
   {
     case error_functions:
@@ -4589,6 +4724,9 @@ ctxopt_add_opt_settings(settings s, ...)
 {
   opt_t *opt = NULL;
   void  *ptr = NULL;
+
+  if (!ctxopt_initialized)
+    fatal_internal("Please call ctxopt_init first.");
 
   va_list(args);
   va_start(args, s);
@@ -4897,6 +5035,9 @@ ctxopt_add_ctx_settings(settings s, ...)
 {
   ctx_t *ctx;
 
+  if (!ctxopt_initialized)
+    fatal_internal("Please call ctxopt_init first.");
+
   va_list(args);
   va_start(args, s);
 
@@ -4998,4 +5139,13 @@ ctxopt_add_ctx_settings(settings s, ...)
       break;
   }
   va_end(args);
+}
+
+/* ========================================================== */
+/* Returns 1 if the usage will be displayed on error, else 0. */
+/* ========================================================== */
+int
+ctxopt_usage_on_error()
+{
+  return flags.disp_usage;
 }

@@ -9,7 +9,7 @@
 #ifndef INDEX_H
 #define INDEX_H
 
-#include <wchar.h>
+#include <stddef.h> /* for wchar_t */
 
 /* *************************************** */
 /* Ternary Search Tree specific structures */

@@ -100,8 +100,8 @@
 #define TINYBUF_H
 
 #include <stdlib.h> /* for malloc, realloc */
-#include <string.h> /* for memmove, memset */
-#include <stddef.h> /* for size_t */
+
+struct buf__hdr;
 
 /* Query functions. */
 /* """""""""""""""" */

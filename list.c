@@ -16,8 +16,8 @@
 /* the structure members (head, tail, len, data, prev, next).            */
 /* ********************************************************************* */
 
-#include <stdlib.h>
-#include "xmalloc.h"
+#include <stdlib.h>  /* for free    */
+#include "xmalloc.h" /* for xmalloc */
 #include "list.h"
 
 static ll_node_t *

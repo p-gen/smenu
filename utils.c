@@ -10,24 +10,25 @@
 /* Various small utility functions. */
 /* ******************************** */
 
-#include "config.h"
-#include <unistd.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <stddef.h>
-#include <limits.h>
-#include <wchar.h>
+#include "config.h" /* for HAVE_STRCASECMP                  */
+#include <unistd.h> /* for close, getpgid, tcgetpgrp        */
+#include <stdio.h>  /* for fprintf, sprintf, FILE           */
+#include <stdlib.h> /* for free, strtol                     */
+#include <stddef.h> /* for size_t, NULL, ptrdiff_t, wchar_t */
+#include <limits.h> /* for INT_MAX, INT_MIN                 */
+#include <wchar.h>  /* for wcwidth                          */
+
 #ifdef HAVE_STRCASECMP
 #include <strings.h> /* for strcasecmp */
 #endif
-#include <string.h>
-#include <stdarg.h>
-#include <ctype.h>
-#include <fcntl.h>
-#include <errno.h>
-#include "xmalloc.h"
-#include "list.h"
-//#include "utf8.h"
+
+#include <string.h>  /* for strlen, memset, memcpy, memmove, strcat, strchr */
+#include <stdarg.h>  /* for va_arg, va_end, va_start, va_list               */
+#include <ctype.h>   /* for isprint                                         */
+#include <fcntl.h>   /* for open, O_RDONLY                                  */
+#include <errno.h>   /* for ERANGE, errno                                   */
+#include "xmalloc.h" /* for xmalloc, xcalloc, xrealloc                      */
+#include "list.h"    /* for ll_node_s, ll_delete, ll_node_t, ll_s, ll_sort  */
 #include "utils.h"
 
 /* ******************* */

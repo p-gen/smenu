@@ -14,10 +14,6 @@
 #include <stdlib.h>
 
 #include "usage.h"
-#include "ctxopt.h"
-
-static void
-common_help(void);
 
 /* ======================= */
 /* Usage display and exit. */
@@ -30,7 +26,8 @@ common_help(void)
   printf("-u|-usage\n");
   printf("  displays the synopsis of the current context.\n");
   printf("-i|-in|-inc|-incl|-include\n");
-  printf("  sets the regex input filter to match the selectable words.\n");
+  printf("  sets the regex input filter to match the selectable "
+         "words.\n");
   printf("-e|-ex|-exc|-excl|-exclude\n");
   printf("  sets the regex input filter to match the non-selectable "
          "words.\n");
@@ -109,23 +106,24 @@ common_help(void)
   printf("-br|-buttons|-button_remapping\n");
   printf("  Remaps the left and right mouse buttons, default is 1 and 3.\n");
   printf("-dc|-dcd|-double_click|-double_click_delay\n");
-  printf("  Change the mouse double-click delay which is 150 ms by default.\n");
+  printf("  Change the mouse double-click delay which is 150 ms "
+         "by default.\n");
   printf("-sb|-sbw|-show_blank_words\n");
   printf("  Make blank words visible and usable even in non column mode.\n");
+  printf("-usage_on_error\n");
+  printf("  displays a usage text in case of fatal error.\n");
 }
 
 void
 main_help(void)
 {
-  ctxopt_ctx_disp_usage("Main", continue_after);
-
   printf("\n----------------------------------------");
   printf("----------------------------------------\n");
 
   printf("\nThis is a filter that gets words from stdin or from a file and ");
   printf("outputs\n");
   printf("the selected words (or nothing) on stdout in a nice selection ");
-  printf("window\n\n");
+  printf("window?\n\n");
   printf("The selection window appears on /dev/tty ");
   printf("just below the current line\n");
   printf("(no clear screen!).\n\n");
@@ -196,8 +194,6 @@ main_help(void)
 void
 columns_help(void)
 {
-  ctxopt_ctx_disp_usage("Columns", continue_after);
-
   printf("\n----------------------------------------");
   printf("----------------------------------------\n");
 
@@ -236,8 +232,6 @@ columns_help(void)
 void
 lines_help(void)
 {
-  ctxopt_ctx_disp_usage("Lines", continue_after);
-
   printf("\n----------------------------------------");
   printf("----------------------------------------\n");
 
@@ -268,8 +262,6 @@ lines_help(void)
 void
 tabulations_help(void)
 {
-  ctxopt_ctx_disp_usage("Tabulations", continue_after);
-
   printf("\n----------------------------------------");
   printf("----------------------------------------\n");
 
@@ -304,8 +296,6 @@ tabulations_help(void)
 void
 tagging_help(void)
 {
-  ctxopt_ctx_disp_usage("Tagging", continue_after);
-
   printf("\n----------------------------------------");
   printf("----------------------------------------\n");
 

@@ -12,9 +12,14 @@ smenu - filter that allows one to interactively select a word from stdin
 and outputs the selection to stdout.
 .SH SYNOPSIS
 .nf
+  smenu [options] [[--] file]
+
+  The available options are as follows:
+
   [\fB*-h\fP|\fB-help\fP]
   [\fB*-H\fP|\fB-long_help\fP]
   [\fB*-?\fP|\fB-u\fP|\fB-usage\fP]
+  [\fB-usage_on_error\fP]
   [\fB*-V\fP|\fB-version\fP]
   [\fB-n\fP|\fB-lines\fP|\fB-height\fP [\fIheight\fP]]
   [\fB-i\fP|\fB-in\fP|\fB-inc\fP|\fB-incl\fP|\fB-include\fP... \fIregex\fP]
@@ -925,7 +930,7 @@ CTXOPT_DEBUG: Argument: 1.
 .PP
 The \fB-h\fP|\fB-help\fP and \fB-?\fP|\fB-u\fP|\fB-usage\fP options now
 display the help and synopsis of the available options in the current
-context.
+context on stdout.
 .IP Example: 2
 \f(CBsmenu -col -u\fP will only show the usage in the \fBColumns\fP
 context
@@ -954,15 +959,20 @@ The description of each command line parameter is as follows:
 .IP "\fB-h\fP|\fB-help\fP"
 (Allowed in all contexts.)
 
-Display a context specific help messages and exits.
+Display a context specific help messages on stdout and exits.
 .IP "\fB-H\fP|\fB-long_help\fP"
 (Allowed in the "Main" context.)
 
-Display a long (non context specific) help messages and exits.
+Display a long (non context specific) help messages on stdout and exits.
 .IP "\fB-?\fP|\fB-u\fP|\fB-usage\fP"
 (Allowed in all contexts.)
 
-Displays a short help message and exits.
+Displays a short help message on stdout and exits.
+.IP "\fB-usage_on_error\fP"
+(Allowed in all contexts.)
+
+Automatically displays a short contextual help message on stderr
+after errors.
 .IP "\fB-V\fP|\fB-version\fP"
 (Allowed in the "Main" context.)
 

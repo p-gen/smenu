@@ -14,7 +14,6 @@
 #include <stdlib.h>
 #include <stddef.h>
 #include <limits.h>
-#include <stdarg.h>
 #include <signal.h>
 #include <ctype.h>
 #include <time.h>
@@ -30,7 +29,6 @@
 #include <errno.h>
 #include <sys/ioctl.h>
 #include <sys/time.h>
-#include <wchar.h>
 
 #include "xmalloc.h"
 #include "ini.h"
@@ -161,6 +159,28 @@ char     *timeout_word;      /* printed word when the timeout type is WORD. */
 char     *timeout_seconds;   /* string containing the number of remaining   *
                               | seconds.                                    */
 int       quiet_timeout = 0; /* 1 when we want no message to be displayed.  */
+
+/* *********************** */
+/* Fatal errors functions. */
+/* *********************** */
+
+void
+fatal(void)
+{
+  if (ctxopt_usage_on_error())
+    ctxopt_disp_usage(output_stderr, exit_after);
+  else
+    exit(EXIT_FAILURE);
+}
+
+void
+fatal_ctx(char *ctx_name)
+{
+  if (ctxopt_usage_on_error())
+    ctxopt_ctx_disp_usage(output_stderr, ctx_name, exit_after);
+  else
+    exit(EXIT_FAILURE);
+}
 
 /* *************** */
 /* Help functions. */
@@ -7083,7 +7103,7 @@ long_help_action(char  *ctx_name,
                  int    nb_ctx_data,
                  void **ctx_data)
 {
-  ctxopt_disp_usage(continue_after);
+  ctxopt_disp_usage(output_stdout, continue_after);
 
   printf("\nRead the manual for more information.\n");
 
@@ -7101,7 +7121,7 @@ usage_action(char  *ctx_name,
              int    nb_ctx_data,
              void **ctx_data)
 {
-  ctxopt_ctx_disp_usage(ctx_name, exit_after);
+  ctxopt_ctx_disp_usage(output_stdout, ctx_name, exit_after);
 }
 
 void
@@ -7494,7 +7514,7 @@ gutter_action(char  *ctx_name,
       if (n > 1)
       {
         fprintf(stderr, "%s: A multi columns gutter is not allowed.\n", param);
-        ctxopt_ctx_disp_usage(ctx_name, exit_after);
+        fatal_ctx(ctx_name);
       }
       offset += mblength;
     }
@@ -7850,7 +7870,7 @@ attributes_action(char  *ctx_name,
           fprintf(stderr, "%s: ", param);
           fputs_safe(attr_infos[i].msg, stderr);
           fputs_safe("\n", stderr);
-          ctxopt_ctx_disp_usage(ctx_name, exit_after);
+          fatal_ctx(ctx_name);
         }
 
         attr_to_set         = attr_infos[i].attr;
@@ -7864,7 +7884,7 @@ attributes_action(char  *ctx_name,
     if (attr_infos[i].flag == NULL)
     {
       fprintf(stderr, "%s: Bad attribute prefix in %s\n", param, values[a]);
-      ctxopt_ctx_disp_usage(ctx_name, exit_after);
+      fatal_ctx(ctx_name);
     }
 
     /* Attributes must respect the format: */
@@ -7891,7 +7911,7 @@ attributes_action(char  *ctx_name,
     else
     {
       fprintf(stderr, "%s: Bad attribute settings %s\n", param, values[a]);
-      ctxopt_ctx_disp_usage(ctx_name, exit_after);
+      fatal_ctx(ctx_name);
     }
   }
 }
@@ -8036,7 +8056,7 @@ timeout_action(char  *ctx_name,
     else
     {
       fprintf(stderr, "%s: Missing timeout selected word or delay.\n", param);
-      ctxopt_ctx_disp_usage(ctx_name, exit_after);
+      fatal_ctx(ctx_name);
     }
   }
 
@@ -8048,7 +8068,7 @@ timeout_action(char  *ctx_name,
   else
   {
     fprintf(stderr, "%s: Invalid timeout delay.\n", param);
-    ctxopt_ctx_disp_usage(ctx_name, exit_after);
+    fatal_ctx(ctx_name);
   }
 }
 
@@ -8123,7 +8143,7 @@ search_method_action(char  *ctx_name,
   else
   {
     fprintf(stderr, "%s: Bad search method: %s\n", param, values[0]);
-    ctxopt_ctx_disp_usage(ctx_name, exit_after);
+    fatal_ctx(ctx_name);
   }
 }
 
@@ -8239,7 +8259,7 @@ da_options_action(char  *ctx_name,
         if (utf8_strlen(daccess.left) != 1)
         {
           fprintf(stderr, "%s: Too many characters after l:\n", param);
-          ctxopt_ctx_disp_usage(ctx_name, exit_after);
+          fatal_ctx(ctx_name);
         }
 
         n = my_wcswidth((w = utf8_strtowcs(daccess.left)), 1);
@@ -8251,7 +8271,7 @@ da_options_action(char  *ctx_name,
                   "%s: A multi columns character is not allowed "
                   "after l:\n",
                   param);
-          ctxopt_ctx_disp_usage(ctx_name, exit_after);
+          fatal_ctx(ctx_name);
         }
         break;
 
@@ -8264,7 +8284,7 @@ da_options_action(char  *ctx_name,
         if (utf8_strlen(daccess.right) != 1)
         {
           fprintf(stderr, "%s: Too many characters after r:\n", param);
-          ctxopt_ctx_disp_usage(ctx_name, exit_after);
+          fatal_ctx(ctx_name);
         }
 
         n = my_wcswidth((w = utf8_strtowcs(daccess.right)), 1);
@@ -8276,7 +8296,7 @@ da_options_action(char  *ctx_name,
                   "%s: A multi columns character is not allowed "
                   "after r:\n",
                   param);
-          ctxopt_ctx_disp_usage(ctx_name, exit_after);
+          fatal_ctx(ctx_name);
         }
         break;
 
@@ -8288,10 +8308,10 @@ da_options_action(char  *ctx_name,
         else
         {
           fprintf(stderr,
-                  "%s: The value after a: must be "
+                  "%s: The value after : must be "
                   "l(eft) or r(ight)\n",
                   param);
-          ctxopt_ctx_disp_usage(ctx_name, exit_after);
+          fatal_ctx(ctx_name);
         }
         break;
 
@@ -8303,7 +8323,7 @@ da_options_action(char  *ctx_name,
         else
         {
           fprintf(stderr, "%s: Bad value after p:\n", param);
-          ctxopt_ctx_disp_usage(ctx_name, exit_after);
+          fatal_ctx(ctx_name);
         }
         break;
 
@@ -8311,17 +8331,17 @@ da_options_action(char  *ctx_name,
         if (sscanf(value + 2, "%d%n", &daccess.length, &pos) != 1)
         {
           fprintf(stderr, "%s: Bad value after w:\n", param);
-          ctxopt_ctx_disp_usage(ctx_name, exit_after);
+          fatal_ctx(ctx_name);
         }
         if (value[pos + 2] != '\0')
         {
           fprintf(stderr, "%s: Bad value after w:\n", param);
-          ctxopt_ctx_disp_usage(ctx_name, exit_after);
+          fatal_ctx(ctx_name);
         }
         if (daccess.length <= 0 || daccess.length > 5)
         {
           fprintf(stderr, "%s: w sub-option must be between 1 and 5\n", param);
-          ctxopt_ctx_disp_usage(ctx_name, exit_after);
+          fatal_ctx(ctx_name);
         }
         break;
 
@@ -8335,19 +8355,19 @@ da_options_action(char  *ctx_name,
             if (value[pos + 3] != '\0')
             {
               fprintf(stderr, "%s: Bad value after o:\n", param);
-              ctxopt_ctx_disp_usage(ctx_name, exit_after);
+              fatal_ctx(ctx_name);
             }
           }
           else if (value[pos + 2] != '\0')
           {
             fprintf(stderr, "%s: Bad value after o:\n", param);
-            ctxopt_ctx_disp_usage(ctx_name, exit_after);
+            fatal_ctx(ctx_name);
           }
         }
         else
         {
           fprintf(stderr, "%s: Bad value after o:\n", param);
-          ctxopt_ctx_disp_usage(ctx_name, exit_after);
+          fatal_ctx(ctx_name);
         }
 
         break;
@@ -8356,17 +8376,17 @@ da_options_action(char  *ctx_name,
         if (sscanf(value + 2, "%d%n", &daccess.size, &pos) != 1)
         {
           fprintf(stderr, "%s: Bad value after n:\n", param);
-          ctxopt_ctx_disp_usage(ctx_name, exit_after);
+          fatal_ctx(ctx_name);
         }
         if (value[pos + 2] != '\0')
         {
           fprintf(stderr, "%s: Bad value after n:\n", param);
-          ctxopt_ctx_disp_usage(ctx_name, exit_after);
+          fatal_ctx(ctx_name);
         }
         if (daccess.size <= 0 || daccess.size > 5)
         {
           fprintf(stderr, "n sub-option must have a value between 1 and 5.\n");
-          ctxopt_ctx_disp_usage(ctx_name, exit_after);
+          fatal_ctx(ctx_name);
         }
         break;
 
@@ -8375,12 +8395,12 @@ da_options_action(char  *ctx_name,
         if (sscanf(value + 2, "%zu%n", &daccess.ignore, &pos) != 1)
         {
           fprintf(stderr, "%s: Bad value after i:\n", param);
-          ctxopt_ctx_disp_usage(ctx_name, exit_after);
+          fatal_ctx(ctx_name);
         }
         if (value[pos + 2] != '\0')
         {
           fprintf(stderr, "%s: Bad value after i:\n", param);
-          ctxopt_ctx_disp_usage(ctx_name, exit_after);
+          fatal_ctx(ctx_name);
         }
         break;
 
@@ -8392,7 +8412,7 @@ da_options_action(char  *ctx_name,
         else
         {
           fprintf(stderr, "%s: Bad value after f:\n", param);
-          ctxopt_ctx_disp_usage(ctx_name, exit_after);
+          fatal_ctx(ctx_name);
         }
         break;
 
@@ -8404,7 +8424,7 @@ da_options_action(char  *ctx_name,
         else
         {
           fprintf(stderr, "%s: Bad value after m:\n", param);
-          ctxopt_ctx_disp_usage(ctx_name, exit_after);
+          fatal_ctx(ctx_name);
         }
         break;
 
@@ -8417,7 +8437,7 @@ da_options_action(char  *ctx_name,
         if (utf8_strlen(daccess.num_sep) != 1)
         {
           fprintf(stderr, "%s: Too many characters after d:\n", param);
-          ctxopt_ctx_disp_usage(ctx_name, exit_after);
+          fatal_ctx(ctx_name);
         }
 
         n = my_wcswidth((w = utf8_strtowcs(daccess.num_sep)), 1);
@@ -8429,7 +8449,7 @@ da_options_action(char  *ctx_name,
                   "%s: A multi columns separator is not allowed "
                   "after d:\n",
                   param);
-          ctxopt_ctx_disp_usage(ctx_name, exit_after);
+          fatal_ctx(ctx_name);
         }
         break;
 
@@ -8445,7 +8465,7 @@ da_options_action(char  *ctx_name,
         else
         {
           fprintf(stderr, "%s: Invalid first index after s:\n", param);
-          ctxopt_ctx_disp_usage(ctx_name, exit_after);
+          fatal_ctx(ctx_name);
         }
       }
       break;
@@ -8460,14 +8480,14 @@ da_options_action(char  *ctx_name,
         else
         {
           fprintf(stderr, "%s: Bad value after :h\n", param);
-          ctxopt_ctx_disp_usage(ctx_name, exit_after);
+          fatal_ctx(ctx_name);
         }
         break;
 
       default:
       {
         fprintf(stderr, "%s: Bad sub-command: %s\n", param, value);
-        ctxopt_ctx_disp_usage(ctx_name, exit_after);
+        fatal_ctx(ctx_name);
       }
     }
 
@@ -8523,7 +8543,7 @@ forgotten_action(char  *ctx_name,
       || *endptr != '\0')
   {
     fprintf(stderr, "%s: Invalid timeout delay.\n", values[0]);
-    ctxopt_ctx_disp_usage(ctx_name, exit_after);
+    fatal_ctx(ctx_name);
   }
   else if (val == 0)
     timers->forgotten = -1; /* Explicitly disable the timers. */
@@ -8553,7 +8573,7 @@ button_action(char  *ctx_name,
   if (nb_values != 2)
   {
     fprintf(stderr, "Remapping of buttons 1 and 3 expected.\n");
-    ctxopt_ctx_disp_usage(ctx_name, exit_after);
+    fatal_ctx(ctx_name);
   }
 
   int const index[2] = { 0, 2 };
@@ -8572,7 +8592,7 @@ button_action(char  *ctx_name,
     if (errno == ERANGE || endptr == p || *endptr != '\0' || val < 1 || val > 3)
     {
       fprintf(stderr, "%s: Invalid button number.\n", values[0]);
-      ctxopt_ctx_disp_usage(ctx_name, exit_after);
+      fatal_ctx(ctx_name);
     }
     mouse->button[(int)val - 1] = ind + 1;
   }
@@ -9457,8 +9477,7 @@ main(int argc, char *argv[])
   /* """""""""""""""""""""""""""""""""""""""""" */
   ctxopt_init(argv[0],
               "stop_if_non_option=No "
-              "allow_abbreviations=No "
-              "display_usage_on_error=Yes ");
+              "allow_abbreviations=No");
 
   common_options = "[*help] "
                    "[*usage] "
@@ -10173,8 +10192,7 @@ main(int argc, char *argv[])
       fprintf(stderr,
               "The file \"%s\" does not exist or cannot be read.\n",
               rem_args[0]);
-      ctxopt_ctx_disp_usage(NULL, exit_after);
-      exit(EXIT_FAILURE); /* Avoid a compiler warning. */
+      fatal();
     }
   }
   else if (nb_rem_args == 0)
@@ -10187,9 +10205,7 @@ main(int argc, char *argv[])
     for (int i = 2; i < nb_rem_args; i++)
       fprintf(stderr, ", %s", rem_args[i]);
     fprintf(stderr, ".\n");
-
-    ctxopt_ctx_disp_usage(NULL, exit_after);
-    exit(EXIT_FAILURE); /* Avoid a compiler warning. */
+    fatal();
   }
 
   /* Free the memory used internally by ctxopt. */

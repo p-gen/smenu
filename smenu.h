@@ -9,11 +9,12 @@
 #ifndef SMENU_H
 #define SMENU_H
 
-#include <stdio.h>
-#include <regex.h>
-#include <termios.h>
-#include "utf8.h"
-#include "list.h"
+#include <limits.h> /* for CHAR_BIT     */
+#include <regex.h>  /* for regex_t      */
+#include <stdio.h>  /* for size_t, FILE */
+#include <term.h>   /* for tparm        */
+#include "list.h"   /* for ll_t         */
+#include "utf8.h"   /* for langinfo_t   */
 
 #define CHARSCHUNK 8
 #define WORDSCHUNK 8
@@ -180,6 +181,8 @@ enum
 /* Structs */
 /* ******* */
 
+struct termios;
+
 /* Used to store the different allowed charsets data. */
 /* """""""""""""""""""""""""""""""""""""""""""""""""" */
 struct charsetinfo_s
@@ -336,31 +339,31 @@ struct term_s
 /* """""""""""""""""""""""""""" */
 struct word_s
 {
-  long           start, end;    /* start/end absolute horiz. word positions *
-                                 | on the screen.                           */
-  size_t         mb;            /* number of UTF-8 glyphs to display.       */
-  size_t         len_mb;        /* number of UTF-8 glyphs before filling    *
-                                 * the column.                              */
-  size_t         len;           /* number of bytes in str (for trimming).   */
-  char          *str;           /* display string associated with this word */
-  char          *orig;          /* NULL or original string if is had been.  *
-                                 | shortened for being displayed or altered *
-                                 | by is expansion.                         */
-  char          *bitmap;        /* used to store the position of the.       *
-                                 | currently searched chars in a word. The  *
-                                 | objective is to speed their display.     */
-  attrib_t      *iattr;         /* Specific attribute set with the -Ra/-Ca  *
-                                 | options.                                 */
-  long           tag_order;     /* each time a word is tagged, this value.  *
-                                 | is increased.                            */
-  int            offset;        /* may be > 0 in case of center or right    *
-                                 * alignment (# of spaces added).           */
-  unsigned       tag_id;        /* tag id. 0 means no tag.                  */
-  unsigned char  is_matching;   /* word is matching a search ERE.           */
-  unsigned char  is_last;       /* 1 if the word is the last of a line.     */
-  unsigned char  is_selectable; /* word is selectable.                      */
-  unsigned char  is_numbered;   /* word has a direct access index.          */
-  unsigned char  special_level; /* can vary from 0 to 9; 0 meaning normal.  */
+  long          start, end;    /* start/end absolute horiz. word positions *
+                                | on the screen.                           */
+  size_t        mb;            /* number of UTF-8 glyphs to display.       */
+  size_t        len_mb;        /* number of UTF-8 glyphs before filling    *
+                                * the column.                              */
+  size_t        len;           /* number of bytes in str (for trimming).   */
+  char         *str;           /* display string associated with this word */
+  char         *orig;          /* NULL or original string if is had been.  *
+                                | shortened for being displayed or altered *
+                                | by is expansion.                         */
+  char         *bitmap;        /* used to store the position of the.       *
+                                | currently searched chars in a word. The  *
+                                | objective is to speed their display.     */
+  attrib_t     *iattr;         /* Specific attribute set with the -Ra/-Ca  *
+                                | options.                                 */
+  long          tag_order;     /* each time a word is tagged, this value.  *
+                                | is increased.                            */
+  int           offset;        /* may be > 0 in case of center or right    *
+                                * alignment (# of spaces added).           */
+  unsigned      tag_id;        /* tag id. 0 means no tag.                  */
+  unsigned char is_matching;   /* word is matching a search ERE.           */
+  unsigned char is_last;       /* 1 if the word is the last of a line.     */
+  unsigned char is_selectable; /* word is selectable.                      */
+  unsigned char is_numbered;   /* word has a direct access index.          */
+  unsigned char special_level; /* can vary from 0 to 9; 0 meaning normal.  */
 };
 
 /* Structure describing the window in which the user  */

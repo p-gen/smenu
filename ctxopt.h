@@ -53,6 +53,12 @@ typedef enum
   exit_after
 } usage_behaviour;
 
+typedef enum
+{
+  output_stdout,
+  output_stderr
+} usage_output;
+
 typedef struct state_s
 {
   char *prog_name;          /* base name of the program name.        */
@@ -87,10 +93,12 @@ void
 ctxopt_new_ctx(char *name, char *opts_specs);
 
 void
-ctxopt_ctx_disp_usage(char *ctx_name, usage_behaviour action);
+ctxopt_ctx_disp_usage(usage_output    output,
+                      char           *ctx_name,
+                      usage_behaviour action);
 
 void
-ctxopt_disp_usage(usage_behaviour action);
+ctxopt_disp_usage(usage_output output, usage_behaviour action);
 
 void
 ctxopt_add_global_settings(settings s, ...);
@@ -112,5 +120,8 @@ ctxopt_range_constraint(int nb_args, char **args, char *value, char *par);
 
 void
 ctxopt_free_memory(void);
+
+int
+ctxopt_usage_on_error(void);
 
 #endif

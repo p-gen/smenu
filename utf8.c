@@ -10,13 +10,12 @@
 /* Various UTF-8 manipulation functions. */
 /* ************************************* */
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <stdint.h>
-#include <string.h>
-#include <ctype.h>
-#include <wchar.h>
-#include "xmalloc.h"
+#include <ctype.h>   /* for isxdigit, tolower       */
+#include <stdint.h>  /* for uint32_t                */
+#include <stdio.h>   /* for sscanf                  */
+#include <stdlib.h>  /* for mbtowc                  */
+#include <string.h>  /* for memmove, strlen, strstr */
+#include "xmalloc.h" /* for xmalloc                 */
 #include "utf8.h"
 
 /* =========================================================== */
