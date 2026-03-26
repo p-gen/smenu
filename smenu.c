@@ -5151,7 +5151,6 @@ disp_message(ll_t       *message_lines_list,
         memmove(ptr, ptr + pos, blen - (ptr - line + pos) + 1);
         blen -= pos;
         len -= pos; /* Correct as patterns doesn't contain multibyte chars. */
-        ptr[blen] = '\0';
       }
       else
         ptr++; /* To avoid an infinite loop. */
