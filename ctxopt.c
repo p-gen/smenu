@@ -315,9 +315,10 @@ struct flags_s
   int stop_if_non_option;
   int allow_abbreviations;
   int disp_usage;
+  int error_messages;
 };
 
-static flags_t flags = { 0, 1, 0 };
+static flags_t flags = { 0, 1, 0, 1 };
 
 /* =================================================================== */
 /* Fatal error function used when a fatal condition is encountered.    */
@@ -338,7 +339,7 @@ fatal_internal(const char *format, ...)
   fprintf(stderr, "\n");
   va_end(args);
 
-  exit(EXIT_FAILURE);
+  exit(1);
 }
 
 /* ====================================================================== */
@@ -368,156 +369,156 @@ fatal_internal(const char *format, ...)
 static void
 fatal(errors e, char *errmsg)
 {
-  if (err_functions[e] != NULL)
-    err_functions[e](e, cur_state);
-  else
+  if (flags.error_messages)
   {
-    switch (e)
+    if (err_functions[e] != NULL)
+      err_functions[e](e, cur_state);
+    else
     {
-      case CTXOPTNOERR:
-        break;
+      switch (e)
+      {
+        case CTXOPTNOERR:
+          break;
 
-      case CTXOPTMISPAR:
-        if (cur_state->ctx_par_name != NULL)
+        case CTXOPTMISPAR:
+          if (cur_state->ctx_par_name != NULL)
+            fprintf(stderr,
+                    "the mandatory parameter(s) %s are missing in the context "
+                    "introduced by %s.\n",
+                    errmsg,
+                    cur_state->ctx_par_name);
+          else
+            fprintf(stderr,
+                    "The mandatory parameter(s) %s are missing "
+                    "in the main context.\n",
+                    errmsg);
+
+          free(errmsg);
+          break;
+
+        case CTXOPTREQPAR:
           fprintf(stderr,
-                  "the mandatory parameter(s) %s are missing in the context "
-                  "introduced by %s.\n",
                   errmsg,
-                  cur_state->ctx_par_name);
-        else
+                  cur_state->req_opt_par_needed,
+                  cur_state->req_opt_par);
+          break;
+
+        case CTXOPTUNXARG:
+          if (cur_state->cur_opt_par_name != NULL)
+            fprintf(stderr,
+                    "The parameter %s takes no arguments "
+                    "or has too many arguments.\n",
+                    cur_state->cur_opt_par_name);
+          break;
+
+        case CTXOPTMISARG:
+          if (cur_state->pre_opt_par_name != NULL)
+            fprintf(stderr,
+                    "%s requires argument(s).\n",
+                    cur_state->pre_opt_par_name);
+          else
+            fprintf(stderr,
+                    "%s requires argument(s).\n",
+                    cur_state->cur_opt_par_name);
+          break;
+
+        case CTXOPTDUPOPT:
+          if (cur_state->pre_opt_par_name != NULL)
+            fprintf(stderr,
+                    "The parameter %s can only appear once in the context "
+                    "introduced by %s.\n",
+                    cur_state->cur_opt_params,
+                    cur_state->ctx_par_name);
+          else
+            fprintf(stderr,
+                    "The parameter %s can only appear once "
+                    "in the main context.\n",
+                    cur_state->cur_opt_params);
+          break;
+
+        case CTXOPTUNKPAR:
           fprintf(stderr,
-                  "The mandatory parameter(s) %s are missing "
-                  "in the main context.\n",
+                  "Unknown parameter %s.\n%s",
+                  cur_state->cur_opt_par_name,
                   errmsg);
+          break;
 
-        free(errmsg);
-        break;
-
-      case CTXOPTREQPAR:
-        fprintf(stderr,
-                errmsg,
-                cur_state->req_opt_par_needed,
-                cur_state->req_opt_par);
-        break;
-
-      case CTXOPTUNXARG:
-        if (cur_state->cur_opt_par_name != NULL)
+        case CTXOPTINCOPT:
           fprintf(stderr,
-                  "The parameter %s takes no arguments "
-                  "or has too many arguments.\n",
-                  cur_state->cur_opt_par_name);
-        break;
+                  "The parameter %s is incompatible with %s.\n",
+                  cur_state->cur_opt_par_name,
+                  errmsg);
+          break;
 
-      case CTXOPTMISARG:
-        if (cur_state->pre_opt_par_name != NULL)
+        case CTXOPTCTEOPT:
+          if (cur_state->ctx_par_name)
+            fprintf(stderr,
+                    "The parameter %s must appear exactly %d times "
+                    "in the context introduced by %s.\n",
+                    cur_state->cur_opt_params,
+                    cur_state->opts_count,
+                    cur_state->ctx_par_name);
+          else
+            fprintf(stderr,
+                    "The parameter %s must appear exactly %d times "
+                    "in the main context.\n",
+                    cur_state->cur_opt_params,
+                    cur_state->opts_count);
+          break;
+
+        case CTXOPTCTLOPT:
+          if (cur_state->ctx_par_name)
+            fprintf(stderr,
+                    "The parameter %s must appear less than %d times "
+                    "in the context introduced by %s.\n",
+                    cur_state->cur_opt_params,
+                    cur_state->opts_count,
+                    cur_state->ctx_par_name);
+          else
+            fprintf(stderr,
+                    "The parameter %s must appear less than %d times "
+                    "in the main context.\n",
+                    cur_state->cur_opt_params,
+                    cur_state->opts_count);
+          break;
+
+        case CTXOPTCTGOPT:
+          if (cur_state->ctx_par_name)
+            fprintf(stderr,
+                    "The parameter %s must appear more than %d times "
+                    "in the context introduced by %s.\n",
+                    cur_state->cur_opt_params,
+                    cur_state->opts_count,
+                    cur_state->ctx_par_name);
+          else
+            fprintf(stderr,
+                    "The parameter %s must appear more than %d times "
+                    "in the main context.\n",
+                    cur_state->cur_opt_params,
+                    cur_state->opts_count);
+          break;
+
+        case CTXOPTCTEARG:
           fprintf(stderr,
-                  "%s requires argument(s).\n",
-                  cur_state->pre_opt_par_name);
-        else
+                  "The parameter %s must have exactly %d arguments.\n",
+                  cur_state->cur_opt_par_name,
+                  cur_state->opt_args_count);
+          break;
+
+        case CTXOPTCTLARG:
           fprintf(stderr,
-                  "%s requires argument(s).\n",
-                  cur_state->cur_opt_par_name);
-        break;
+                  "The parameter %s must have less than %d arguments.\n",
+                  cur_state->cur_opt_par_name,
+                  cur_state->opt_args_count);
+          break;
 
-      case CTXOPTDUPOPT:
-        if (cur_state->pre_opt_par_name != NULL)
+        case CTXOPTCTGARG:
           fprintf(stderr,
-                  "The parameter %s can only appear once in the context "
-                  "introduced by %s.\n",
-                  cur_state->cur_opt_params,
-                  cur_state->ctx_par_name);
-        else
-          fprintf(stderr,
-                  "The parameter %s can only appear once "
-                  "in the main context.\n",
-                  cur_state->cur_opt_params);
-        break;
-
-      case CTXOPTUNKPAR:
-        fprintf(stderr,
-                "Unknown parameter %s.\n%s",
-                cur_state->cur_opt_par_name,
-                errmsg);
-        break;
-
-      case CTXOPTINCOPT:
-        fprintf(stderr,
-                "The parameter %s is incompatible with %s.\n",
-                cur_state->cur_opt_par_name,
-                errmsg);
-        break;
-
-      case CTXOPTCTEOPT:
-        if (cur_state->ctx_par_name)
-          fprintf(stderr,
-                  "The parameter %s must appear exactly %d times "
-                  "in the context introduced by %s.\n",
-                  cur_state->cur_opt_params,
-                  cur_state->opts_count,
-                  cur_state->ctx_par_name);
-        else
-          fprintf(stderr,
-                  "The parameter %s must appear exactly %d times "
-                  "in the main context.\n",
-                  cur_state->cur_opt_params,
-                  cur_state->opts_count);
-        break;
-
-      case CTXOPTCTLOPT:
-        if (cur_state->ctx_par_name)
-          fprintf(stderr,
-                  "The parameter %s must appear less than %d times "
-                  "in the context introduced by %s.\n",
-                  cur_state->cur_opt_params,
-                  cur_state->opts_count,
-                  cur_state->ctx_par_name);
-        else
-          fprintf(stderr,
-                  "The parameter %s must appear less than %d times "
-                  "in the main context.\n",
-                  cur_state->cur_opt_params,
-                  cur_state->opts_count);
-        break;
-
-      case CTXOPTCTGOPT:
-        if (cur_state->ctx_par_name)
-          fprintf(stderr,
-                  "The parameter %s must appear more than %d times "
-                  "in the context introduced by %s.\n",
-                  cur_state->cur_opt_params,
-                  cur_state->opts_count,
-                  cur_state->ctx_par_name);
-        else
-          fprintf(stderr,
-                  "The parameter %s must appear more than %d times "
-                  "in the main context.\n",
-                  cur_state->cur_opt_params,
-                  cur_state->opts_count);
-        break;
-
-      case CTXOPTCTEARG:
-        fprintf(stderr,
-                "The parameter %s must have exactly %d arguments.\n",
-                cur_state->cur_opt_par_name,
-                cur_state->opt_args_count);
-        break;
-
-      case CTXOPTCTLARG:
-        fprintf(stderr,
-                "The parameter %s must have less than %d arguments.\n",
-                cur_state->cur_opt_par_name,
-                cur_state->opt_args_count);
-        break;
-
-      case CTXOPTCTGARG:
-        fprintf(stderr,
-                "The parameter %s must have more than %d arguments.\n",
-                cur_state->cur_opt_par_name,
-                cur_state->opt_args_count);
-        break;
-
-      case CTXOPTERRSIZ:
-        break;
+                  "The parameter %s must have more than %d arguments.\n",
+                  cur_state->cur_opt_par_name,
+                  cur_state->opt_args_count);
+          break;
+      }
     }
   }
 
@@ -2920,7 +2921,7 @@ init_opts(char *spec, ctx_t *ctx)
               -offset);
       free(s);
 
-      exit(EXIT_FAILURE);
+      return 0;
     }
   }
 
@@ -2955,8 +2956,8 @@ ctxopt_init(char *prog_name, char *init_flags)
 
   /* Initialize custom error function pointers to NULL. */
   /* """""""""""""""""""""""""""""""""""""""""""""""""" */
-  err_functions = xmalloc(CTXOPTERRSIZ * sizeof(void *));
-  for (n = 0; n < CTXOPTERRSIZ; n++)
+  err_functions = xmalloc((CTXOPTERRNB + 1) * sizeof(void *));
+  for (n = 0; n < (CTXOPTERRNB + 1); n++)
     err_functions[n] = NULL;
 
   output_stream = stdout;
@@ -3540,6 +3541,7 @@ ctxopt_analyze(int nb_words, char **words, int *nb_rem_args, char ***rem_args)
 
   ll_node_t  *cli_node;
   ll_node_t  *usage_on_error_node;
+  ll_node_t  *no_message_on_error_node;
   bst_t      *bst_node;
   seen_opt_t *bst_seen_opt;
   char       *par_name;
@@ -3583,11 +3585,12 @@ ctxopt_analyze(int nb_words, char **words, int *nb_rem_args, char ***rem_args)
 
   ll_append(ctx_inst_list, ctx_inst);
 
-  /* Process the -usage_on_error parameter if any. */
-  /* """"""""""""""""""""""""""""""""""""""""""""" */
-  cli_node            = cmdline_list->head;
-  par_name            = NULL;
-  usage_on_error_node = NULL;
+  /* Process the -usage_on_error and -no_message_on_error parameters if any. */
+  /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+  cli_node                 = cmdline_list->head;
+  par_name                 = NULL;
+  usage_on_error_node      = NULL;
+  no_message_on_error_node = NULL;
 
   while (cli_node != NULL)
   {
@@ -3607,7 +3610,14 @@ ctxopt_analyze(int nb_words, char **words, int *nb_rem_args, char ***rem_args)
     {
       flags.disp_usage    = 1;
       usage_on_error_node = cli_node;
-      break;
+    }
+
+    /* Process the special option -no_message_on_error if present. */
+    /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+    if (strcmp(par_name, "-no_message_on_error") == 0)
+    {
+      flags.error_messages = 0;
+      usage_on_error_node  = cli_node;
     }
 
     cli_node = cli_node->next;
@@ -3615,6 +3625,9 @@ ctxopt_analyze(int nb_words, char **words, int *nb_rem_args, char ***rem_args)
 
   if (usage_on_error_node != NULL)
     ll_delete(cmdline_list, usage_on_error_node);
+
+  if (no_message_on_error_node != NULL)
+    ll_delete(cmdline_list, no_message_on_error_node);
 
   /* For each node in the command line. */
   /* """""""""""""""""""""""""""""""""" */
@@ -4343,13 +4356,19 @@ ctxopt_new_ctx(char *name, char *opts_specs)
   }
 
   /* Creation of the pseudo option usage_on_error n this context here     */
-  /* to make sure for it to appears in the automatically genarated usage. */
+  /* to make sure for it to appears in the automatically generated usage. */
   /* '''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''' */
   if (init_opts("[*usage_on_error]", ctx) == 0)
-    exit(EXIT_FAILURE);
+    exit(1);
+
+  /* Creation of the pseudo option no_message_on_error n this context here */
+  /* to make sure for it to appears in the automatically generated usage.  */
+  /* ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''' */
+  if (init_opts("[*no_message_on_error]", ctx) == 0)
+    exit(1);
 
   if (init_opts(opts_specs, ctx) == 0)
-    exit(EXIT_FAILURE);
+    exit(1);
 
   if (bst_find(ctx, &contexts_bst, ctx_compare) != NULL)
     fatal_internal("The context %s already exists.", name);
@@ -4363,6 +4382,11 @@ ctxopt_new_ctx(char *name, char *opts_specs)
   {
     ctxopt_add_opt_settings(parameters, "usage_on_error", "-usage_on_error");
     ctxopt_add_opt_settings(actions, "usage_on_error", dummy_action, NULL);
+
+    ctxopt_add_opt_settings(parameters,
+                            "no_message_on_error",
+                            "-no_message_on_error");
+    ctxopt_add_opt_settings(actions, "no_message_on_error", dummy_action, NULL);
   }
 }
 
@@ -4432,7 +4456,7 @@ ctxopt_ctx_disp_usage(usage_output    output,
   output_stream = old_output_stream;
 
   if (action == exit_after)
-    exit(EXIT_FAILURE);
+    exit(1);
 }
 
 /* =================================================== */
@@ -4493,7 +4517,7 @@ ctxopt_disp_usage(usage_output output, usage_behaviour action)
   output_stream = old_output_stream;
 
   if (action == exit_after)
-    exit(EXIT_FAILURE);
+    exit(1);
 }
 
 /* ************************************ */

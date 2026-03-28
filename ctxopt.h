@@ -30,8 +30,8 @@ typedef enum
 
 typedef enum
 {
-  CTXOPTNOERR = 0,
-  CTXOPTMISPAR,
+  CTXOPTNOERR  = 0,
+  CTXOPTMISPAR = 2, /* 1 is reserved for internal fatal errors. */
   CTXOPTREQPAR,
   CTXOPTMISARG,
   CTXOPTDUPOPT,
@@ -44,7 +44,7 @@ typedef enum
   CTXOPTCTLARG,
   CTXOPTCTGARG,
   CTXOPTUNXARG,
-  CTXOPTERRSIZ
+  CTXOPTERRNB
 } errors;
 
 typedef enum

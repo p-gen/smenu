@@ -112,6 +112,8 @@ common_help(void)
   printf("  Make blank words visible and usable even in non column mode.\n");
   printf("-usage_on_error\n");
   printf("  displays a usage text in case of fatal error.\n");
+  printf("-no_message_on_error\n");
+  printf("  prevents the display of a message in case of a fatal error.\n");
 }
 
 void

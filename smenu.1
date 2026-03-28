@@ -19,7 +19,8 @@ and outputs the selection to stdout.
   [\fB*-h\fP|\fB-help\fP]
   [\fB*-H\fP|\fB-long_help\fP]
   [\fB*-?\fP|\fB-u\fP|\fB-usage\fP]
-  [\fB-usage_on_error\fP]
+  [\fB*-usage_on_error\fP]
+  [\fB-no_message_on_error\fP]
   [\fB*-V\fP|\fB-version\fP]
   [\fB-n\fP|\fB-lines\fP|\fB-height\fP [\fIheight\fP]]
   [\fB-i\fP|\fB-in\fP|\fB-inc\fP|\fB-incl\fP|\fB-include\fP... \fIregex\fP]
@@ -973,6 +974,55 @@ Displays a short help message on stdout and exits.
 
 Automatically displays a short contextual help message on stderr
 after errors.
+.IP "\fB-no_message_on_error\fP"
+(Allowed in all contexts.)
+
+Prevents the display of a message in case of a fatal error.
+
+When set the return code is the only way to identify the error:
+.TS
+tab(@);
+l lw55.
+\fB2\fP@T{
+A required option is missing in this context.
+T}
+\fB3\fP@T{
+At least one option, required by another option, is missing.
+T}
+\fB4\fP@T{
+A mandatory argument is missing.
+T}
+\fB5\fP@T{
+An option can only appear once in this context.
+T}
+\fB6\fP@T{
+A parameter doesn\(aqt correspond to any option.
+T}
+\fB7\fP@T{
+An option in incompatible with another option in this context.
+T}
+\fB8\fP@T{
+Bad number of occurrences of an option in this context.
+T}
+\fB9\fP@T{
+Too many occurrences of an option in this context.
+T}
+\fB10\fP@T{
+Not enough occurrences of an option in this context.
+T}
+\fB11\fP@T{
+Bad number of arguments for this option.
+T}
+\fB12\fP@T{
+Too many arguments for this option.
+T}
+\fB13\fP@T{
+Not enough arguments for this option.
+T}
+\fB14\fP@T{
+This option doesn\(aqt take any argument.
+T}
+.TE
 .IP "\fB-V\fP|\fB-version\fP"
 (Allowed in the "Main" context.)
 
