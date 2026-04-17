@@ -518,6 +518,9 @@ fatal(errors e, char *errmsg)
                   cur_state->cur_opt_par_name,
                   cur_state->opt_args_count);
           break;
+
+        case CTXOPTERRNB: /* To silent warnings. */
+          break;
       }
     }
   }
