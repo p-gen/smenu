@@ -195,44 +195,46 @@ struct charsetinfo_s
 /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
 struct toggle_s
 {
-  int del_line;            /* 1 if the clean option is set (-d) else 0.   */
-  int enter_val_in_search; /* 1 if ENTER validates in search mode else 0. */
-  int no_scrollbar;        /* 1 to disable the scrollbar display else 0.  */
-  int no_hor_scrollbar;    /* 1 to disable the horizontab scrollbar       *
-                            | display else 0.                             */
-  int hor_scrollbar;       /* 1 to always enable the scrollbar display    *
-                            * when lines are truncated in line/col mode   *
-                            * else 0.                                     */
-  int blank_nonprintable;  /* 1 to try to display non-blanks in           *
-                            | symbolic form else 0.                       */
-  int keep_spaces;         /* 1 to keep the trailing spaces in columns    *
-                            | and tabulate mode.                          */
-  int taggable;            /* 1 if tagging is enabled.                    */
-  int pinable;             /* 1 if pinning is selected.                   */
-  int autotag;             /* 1 if tagging is selected and pinning is     *
-                            | not and we do no want an automatic tagging  *
-                            | when the users presses <ENTER>.             */
-  int noautotag;           /* 1 if the word under the cursor must not be  *
-                            | autotagged when no other word are tagged.   */
-  int visual_bell;         /* 1 to flash the window, 0 to make a sound.   */
-  int incremental_search;  /* 1 makes the searching process incremental.  *
-                            | 0 keeps it forgetful.                       */
-  int no_mouse;            /* 1 to disable the possibly auto-detected     *
-                            | mouse, 0 to let smenu auto-detect it.       */
-  int show_blank_words;    /* 1 if blank words are allowed then they will *
-                            | be filled by an underscore, 0 to leave them *
-                            | blank.                                      */
-  int cols_first;          /* 1 if column alignment has priority over     *
-                            | row alignment else 0.                       */
-  int rows_first;          /* 1 if row alignment has priority over        *
-                            | column alignment else 0.                    */
+  char del_line;            /* 1 if the clean option is set (-d) else 0.    */
+  char enter_val_in_search; /* 1 if ENTER validates in search mode else 0.  */
+  char no_scrollbar;        /* 1 to disable the scrollbar display else 0.   */
+  char no_hor_scrollbar;    /* 1 to disable the horizontab scrollbar        *
+                             | display else 0.                              */
+  char hor_scrollbar;       /* 1 to always enable the scrollbar display     *
+                             * when lines are truncated in line/col mode    *
+                             * else 0.                                      */
+  char blank_nonprintable;  /* 1 to try to display non-blanks in            *
+                             | symbolic form else 0.                        */
+  char keep_spaces;         /* 1 to keep the trailing spaces in columns     *
+                             | and tabulate mode.                           */
+  char taggable;            /* 1 if tagging is enabled.                     */
+  char pinable;             /* 1 if pinning is selected.                    */
+  char autotag;             /* 1 if tagging is selected and pinning is      *
+                             | not and we do no want an automatic tagging   *
+                             | when the users presses <ENTER>.              */
+  char noautotag;           /* 1 if the word under the cursor must not be   *
+                             | autotagged when no other word are tagged.    */
+  char visual_bell;         /* 1 to flash the window, 0 to make a sound.    */
+  char incremental_search;  /* 1 makes the searching process incremental.   *
+                             | 0 keeps it forgetful.                        */
+  char no_mouse;            /* 1 to disable the possibly auto-detected      *
+                             | mouse, 0 to let smenu auto-detect it.        */
+  char show_blank_words;    /* 1 if blank words are allowed then they will  *
+                             | be filled by an underscore, 0 to leave them  *
+                             | blank.                                       */
+  char number_blank_words;  /* 1 if blank words can be numbered/unnumbered, *
+                             | 0 if not.                                    */
+  char cols_first;          /* 1 if column alignment has priority over      *
+                             | row alignment else 0.                        */
+  char rows_first;          /* 1 if row alignment has priority over         *
+                             | column alignment else 0.                     */
 };
 
 /* Structure to store the default or imposed smenu limits. */
 /* """"""""""""""""""""""""""""""""""""""""""""""""""""""" */
 struct limit_s
 {
-  long word_length; /* maximum number of bytes in a word. */
+  size_t word_length; /* maximum number of bytes in a word. */
   long words;       /* maximum number of words.           */
   long cols;        /* maximum number of columns.         */
 };
@@ -341,8 +343,8 @@ struct word_s
 {
   long          start, end;    /* start/end absolute horiz. word positions *
                                 | on the screen.                           */
-  size_t        mb;            /* number of UTF-8 glyphs to display.       */
-  size_t        len_mb;        /* number of UTF-8 glyphs before filling    *
+  size_t        mb;            /* number of UTF-8 characters to display.       */
+  size_t        len_mb;        /* number of UTF-8 characters before filling    *
                                 * the column.                              */
   size_t        len;           /* number of bytes in str (for trimming).   */
   char         *str;           /* display string associated with this word */
@@ -364,6 +366,7 @@ struct word_s
   unsigned char is_selectable; /* word is selectable.                      */
   unsigned char is_numbered;   /* word has a direct access index.          */
   unsigned char special_level; /* can vary from 0 to 9; 0 meaning normal.  */
+  char all_spaces;    /* the word ocntains only spaces.           */
 };
 
 /* Structure describing the window in which the user  */
@@ -390,8 +393,8 @@ struct win_s
   int      offset;          /* Left margin, used in centered mode.      */
   int      sb_column;       /* scroll bar column (-1) if no scroll bar. */
   char    *sel_sep;         /* output separator when tags are enabled.  */
-  char   **gutter_a;        /* array of UTF-8 gutter glyphs.            */
-  int      gutter_nb;       /* number of UTF-8 gutter glyphs.           */
+  char   **gutter_a;        /* array of UTF-8 gutter characters.            */
+  int      gutter_nb;       /* number of UTF-8 gutter characters.           */
   unsigned next_tag_id;     /* Next tag ID, increased on each tagging   *
                              | operation.                               */
 
@@ -474,7 +477,7 @@ struct daccess_s
                          | selector.                                       */
   char     *num_sep;    /* character to separate number and selection.     */
   size_t    offset;     /* offset to the start of the selector.            */
-  size_t    ignore;     /* number of UTF-8 glyphs to ignore after the      *
+  size_t    ignore;     /* number of UTF-8 characters to ignore after the      *
                          | number.                                         */
   da_mode_t mode;       /* DA_TYPE_NONE (0), DA_TYPE_AUTO, DA_TYPE_POS.    */
   int       length;     /* selector size (5 max).                          */
@@ -592,7 +595,7 @@ int
 get_cursor_position(int * const r, int * const c);
 
 void
-get_terminal_size(int * const r, int * const c, term_t *term);
+get_terminal_size(int * const r, int * const c);
 
 int
 #ifdef __sun
@@ -652,7 +655,7 @@ void
 set_win_start_end(win_t *win, long current, long last);
 
 long
-build_metadata(term_t *term, long count, win_t *win);
+build_metadata(term_t *term, long count, win_t *win, langinfo_t *langinfo);
 
 long
 disp_lines(win_t         *win,
@@ -663,14 +666,16 @@ disp_lines(win_t         *win,
            search_data_t *search_data,
            term_t        *term,
            long           last_line,
-           char          *tmp_word,
-           langinfo_t    *langinfo);
+           langinfo_t    *langinfo,
+           misc_t        *misc,
+           unsigned char  filler);
 
 void
-get_message_lines(char *message,
-                  ll_t *message_lines_list,
-                  long *message_max_width,
-                  long *message_max_len);
+get_message_lines(char       *message,
+                  ll_t       *message_lines_list,
+                  long       *message_max_width,
+                  long       *message_max_len,
+                  langinfo_t *langinfo);
 
 void
 disp_message(ll_t       *message_lines_list,
@@ -686,6 +691,7 @@ check_integer_constraint(int nb_args, char **args, char *value, char *par);
 void
 update_bitmaps(search_mode_t     search_mode,
                search_data_t    *search_data,
+               langinfo_t       *langinfo,
                bitmap_affinity_t affinity);
 
 long
@@ -698,10 +704,19 @@ void
 clean_matches(search_data_t *search_data, long size);
 
 void
-disp_cursor_word(long pos, win_t *win, term_t *term, int err);
+disp_matching_word_cursor(long        pos,
+                          win_t      *win,
+                          term_t     *term,
+                          langinfo_t *langinfo,
+                          int         err);
 
 void
-disp_matching_word(long pos, win_t *win, term_t *term, int is_cursor, int err);
+disp_matching_word(long        pos,
+                   win_t      *win,
+                   term_t     *term,
+                   langinfo_t *langinfo,
+                   int         is_cursor,
+                   int         err);
 
 void
 disp_word(long           pos,
@@ -710,11 +725,14 @@ disp_word(long           pos,
           term_t        *term,
           win_t         *win,
           toggle_t      *toggles,
-          char          *tmp_word);
+          langinfo_t    *langinfo,
+          misc_t        *misc,
+          unsigned char  filler);
 
 size_t
 expand(char       *src,
        char       *dest,
+       char       *all_spaces, /* Not a string. */
        langinfo_t *langinfo,
        toggle_t   *toggles,
        misc_t     *misc);
@@ -722,24 +740,23 @@ expand(char       *src,
 int
 read_bytes(FILE       *input,
            char       *utf8_buffer,
-           ll_t       *ignored_glyphs_list,
+           ll_t       *ignored_characters_list,
            langinfo_t *langinfo,
            misc_t     *misc);
 
 int
-get_scancode(unsigned char *s, size_t max);
+get_scancode(unsigned char *s, size_t max, int is_utf8);
 
 char *
 read_word(FILE          *input,
           ll_t          *word_delims_list,
           ll_t          *line_delims_list,
-          ll_t          *ignored_glyphs_list,
+          ll_t          *ignored_characters_list,
           char          *utf8_buffer,
           unsigned char *is_last,
           toggle_t      *toggles,
           langinfo_t    *langinfo,
           win_t         *win,
-          limit_t       *limits,
           misc_t        *misc);
 
 void
@@ -781,7 +798,7 @@ parse_selectors(char        *str,
                 ll_t       **at_regex_list,
                 alignment_t *al_default,
                 win_t       *win,
-                misc_t      *misc,
+                langinfo_t  *langinfo,
                 term_t      *term);
 
 void
@@ -791,7 +808,7 @@ parse_al_selectors(char        *str,
                    ll_t       **ar_regex_list,
                    ll_t       **ac_regex_list,
                    alignment_t *default_alignment,
-                   misc_t      *misc);
+                   langinfo_t  *langinfo);
 int
 replace(char *orig, sed_t *sed);
 
@@ -813,9 +830,10 @@ move_left(win_t         *win,
           toggle_t      *toggles,
           search_data_t *search_data,
           langinfo_t    *langinfo,
+          misc_t        *misc,
+          unsigned char  filler,
           long          *nl,
-          long           last_line,
-          char          *tmp_word);
+          long           last_line);
 
 void
 move_right(win_t         *win,
@@ -823,9 +841,10 @@ move_right(win_t         *win,
            toggle_t      *toggles,
            search_data_t *search_data,
            langinfo_t    *langinfo,
+           misc_t        *misc,
+           unsigned char  filler,
            long          *nl,
-           long           last_line,
-           char          *tmp_word);
+           long           last_line);
 
 int
 find_best_word_upwards(long last_word, long s, long e);
@@ -839,11 +858,12 @@ move_up(win_t         *win,
         toggle_t      *toggles,
         search_data_t *search_data,
         langinfo_t    *langinfo,
+        misc_t        *misc,
+        unsigned char  filler,
         long          *nl,
         long           page,
         long           first_selectable,
-        long           last_line,
-        char          *tmp_word);
+        long           last_line);
 
 void
 move_down(win_t         *win,
@@ -851,11 +871,12 @@ move_down(win_t         *win,
           toggle_t      *toggles,
           search_data_t *search_data,
           langinfo_t    *langinfo,
+          misc_t        *misc,
+          unsigned char  filler,
           long          *nl,
           long           page,
           long           last_selectable,
-          long           last_line,
-          char          *tmp_word);
+          long           last_line);
 
 void
 init_main_ds(attrib_t  *init_attr,
@@ -874,10 +895,10 @@ reset_search_buffer(win_t         *win,
                     ticker_t      *timers,
                     toggle_t      *toggles,
                     term_t        *term,
-                    daccess_t     *daccess,
                     langinfo_t    *langinfo,
+                    misc_t        *misc,
+                    unsigned char  filler,
                     long           last_line,
-                    char          *tmp_word,
                     long           word_real_max_size);
 #endif
 

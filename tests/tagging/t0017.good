@@ -1,4 +1,4 @@
-$ OUT=$(smenu -P -c t0017.in)
+$ OUT=$(smenu -P -c t0017.in)||exit 1
 
 1  2  3  4  5   ┐
 16:20 

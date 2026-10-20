@@ -1,4 +1,4 @@
-$ OUT=$(smenu t0001.in)
+$ OUT=$(smenu t0001.in)||exit 1
 
 abc ab ab abcabc bca ba bac 
 0:0723 1:0723 2:07 4:23 5:23 7:23 8:23 10:23 11:23 

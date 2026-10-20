@@ -1,4 +1,4 @@
-$ OUT=$(smenu -n 10 -l t0002.in)
+$ OUT=$(smenu -n 10 -l t0002.in)||exit 1
 
 1 2 3 4 5 
 

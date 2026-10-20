@@ -1,4 +1,4 @@
-$ OUT=$(smenu -n 20 -T, t0017.in)
+$ OUT=$(smenu -n 20 -T, t0017.in)||exit 1
 
 abccb aaacc cbaba acbaa baabc cabac ccaac abaca cabac acbac bacbc cacbb acaca 
 30:0407 31:040723 32:040723 33:040723 34:040723 48:04 49:0423 50:0423 51:0423 52:0423 

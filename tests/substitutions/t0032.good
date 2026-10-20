@@ -1,4 +1,4 @@
-$ OUT=$(smenu -ES/a/b/ -i b -1 c -- t0032.in)
+$ OUT=$(smenu -ES/a/b/ -i b -1 c -- t0032.in)||exit 1
 
 b bb bb bb cb bc 
 8:07 9:07 11:1f 12:1f 14:1f 15:1f 

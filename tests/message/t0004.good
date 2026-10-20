@@ -1,6 +1,6 @@
 $ OUT=$(smenu -M -m 'xx
 
-> yyyy' t0004.in)
+> yyyy' t0004.in)||exit 1
 
                                     xx  
 36:01 37:01 38:01 39:01 

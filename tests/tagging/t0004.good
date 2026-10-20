@@ -1,4 +1,4 @@
-$ OUT=$(smenu -P " " t0004.in)
+$ OUT=$(smenu -P " " t0004.in)||exit 1
 
 a b c d e f g h u j k l 
 0:07 

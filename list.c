@@ -38,7 +38,7 @@ ll_quicksort(ll_node_t *l,
 ll_t *
 ll_new(void)
 {
-  ll_t *ret = xmalloc(sizeof(ll_t));
+  ll_t *ret = xmalloc(sizeof(*ret));
   ll_init(ret);
 
   return ret;
@@ -68,10 +68,10 @@ ll_new_node(void)
 /* Appends a new node filled with its data at the end of the linked list. */
 /* The user is responsible for the memory management of the data.         */
 /*                                                                        */
-/* Note: list is assumed to be initialized by ll_new().                   */
+/* Note: list is assumed to be initialized by ll_new() or ll_init().      */
 /* ====================================================================== */
 void
-ll_append(ll_t * const list, void * const data)
+ll_append(ll_t *list, void *data)
 {
   ll_node_t *node;
 
@@ -93,42 +93,26 @@ ll_append(ll_t * const list, void * const data)
   ++list->len; /* One more node in the list. */
 }
 
-/* ================================== */
-/* Removes a node from a linked list. */
-/* ================================== */
+/* ==================================================================== */
+/* Removes a node from a linked list but data in the node is not freed. */
+/* node must be NULL or belong to list. Membership is not checked so    */
+/* that deletion remains O(1). Returns zero if list or node is NULL.    */
+/* ==================================================================== */
 int
-ll_delete(ll_t * const list, ll_node_t *node)
+ll_delete(ll_t *list, ll_node_t *node)
 {
-  if (list->head == list->tail)
-  {
-    /* We delete the last remaining element from the list. */
-    /* """"""""""""""""""""""""""""""""""""""""""""""""""" */
-    if (list->head == NULL)
-      return 0;
+  if (list == NULL || node == NULL)
+    return 0;
 
-    list->head = list->tail = NULL;
-  }
-  else if (node->prev == NULL)
-  {
-    /* We delete the first element from the list. */
-    /* """""""""""""""""""""""""""""""""""""""""" */
-    list->head       = node->next;
-    list->head->prev = NULL;
-  }
-  else if (node->next == NULL)
-  {
-    /* We delete the last element from the list. */
-    /* """"""""""""""""""""""""""""""""""""""""" */
-    list->tail       = node->prev;
-    list->tail->next = NULL;
-  }
-  else
-  {
-    /* We delete an element from the list. */
-    /* """"""""""""""""""""""""""""""""""" */
-    node->next->prev = node->prev;
+  if (node->prev != NULL)
     node->prev->next = node->next;
-  }
+  else
+    list->head = node->next;
+
+  if (node->next != NULL)
+    node->next->prev = node->prev;
+  else
+    list->tail = node->prev;
 
   free(node);
 
@@ -140,7 +124,7 @@ ll_delete(ll_t * const list, ll_node_t *node)
 /* ====================================================== */
 /* Partition code for the quicksort function.             */
 /* Based on code found here:                              */
-/* http://www.geeksforgeeks.org/quicksort-for-linked-list */
+/* https://www.geeksforgeeks.org/quicksort-for-linked-list */
 /* ====================================================== */
 static ll_node_t *
 ll_partition(ll_node_t *l,
@@ -151,10 +135,10 @@ ll_partition(ll_node_t *l,
   /* Considers last element as pivot, places the pivot element at its       */
   /* correct position in sorted array, and places all smaller (smaller than */
   /* pivot) to left of pivot and all greater elements to right of pivot.    */
-  /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+  /* """""""""""""""""""""""""""""""""""""""""""""""""""" */
 
   /* Set pivot as h element. */
-  /* """"""""""""""""""""""" */
+  /* """"""""""""""""""""""""" */
   void *x = h->data;
 
   ll_node_t *i = l->prev;
@@ -162,16 +146,16 @@ ll_partition(ll_node_t *l,
 
   for (j = l; j != h; j = j->next)
   {
-    if (comp(j->data, x) < 1)
+    if (comp(j->data, x) <= 0)
     {
       i = (i == NULL) ? l : i->next;
 
-      swap(&(i->data), &(j->data));
+      swap(&i->data, &j->data);
     }
   }
 
   i = (i == NULL) ? l : i->next;
-  swap(&(i->data), &(h->data));
+  swap(&i->data, &h->data);
 
   return i;
 }
@@ -179,7 +163,7 @@ ll_partition(ll_node_t *l,
 /* ======================================================== */
 /* A recursive implementation of quicksort for linked list. */
 /* Based on code found here:                                */
-/* http://www.geeksforgeeks.org/quicksort-for-linked-list   */
+/* https://www.geeksforgeeks.org/quicksort-for-linked-list   */
 /* ======================================================== */
 static void
 ll_quicksort(ll_node_t *l,
@@ -204,7 +188,7 @@ ll_sort(ll_t *list,
         void (*swap)(void **, void **))
 {
   /* Call the recursive ll_quicksort function. */
-  /* """"""""""""""""""""""""""""""""""""""""" */
+  /* """"""""""""""""""""""""""""""""""""" */
   ll_quicksort(list->head, list->tail, comp, swap);
 }
 
@@ -214,48 +198,49 @@ ll_sort(ll_t *list,
 /* A comparison function must be provided to compare a and b (strcmp like).  */
 /* ==========================================================================*/
 ll_node_t *
-ll_find(ll_t * const list,
-        void * const data,
-        int (*cmpfunc)(const void *, const void *))
+ll_find(ll_t *list, void *data, int (*cmpfunc)(void const *, void const *))
 {
   ll_node_t *node;
 
-  if (NULL == (node = list->head))
-    return NULL;
-
-  do
-  {
-    if (0 == cmpfunc(node->data, data))
+  for (node = list->head; node != NULL; node = node->next)
+    if (cmpfunc(node->data, data) == 0)
       return node;
-  } while (NULL != (node = node->next));
 
   return NULL;
 }
 
 /* =============================================== */
 /* Free all the elements of a list (make it empty) */
+/* data are only freed by clean when not NULL.     */
 /* NULL or a custom function may be used to free   */
 /* the sub components of the elements.             */
 /* =============================================== */
 void
-ll_free(ll_t * const list, void (*clean)(void *))
+ll_free(ll_t *list, void (*clean)(void *))
 {
-  if (list != NULL)
+  ll_node_t *node;
+
+  if (list == NULL)
+    return;
+
+  node = list->head;
+
+  while (node != NULL)
   {
-    ll_node_t *node = list->head;
+    ll_node_t *next = node->next;
 
-    while (node)
-    {
-      /* Apply a custom cleaner if not NULL. */
-      /* """"""""""""""""""""""""""""""""""" */
-      if (clean)
-        clean(node->data);
+    /* Apply a custom cleaner if not NULL. */
+    /* """"""""""""""""""""""""""""""""""" */
+    if (clean != NULL)
+      clean(node->data);
 
-      ll_delete(list, node);
-
-      node = list->head;
-    }
+    free(node);
+    node = next;
   }
+
+  list->head = NULL;
+  list->tail = NULL;
+  list->len  = 0;
 }
 
 /* ==================================== */

@@ -1,4 +1,4 @@
-\S[300]\s[80]OUT=$(smenu t0002.in)
-\S[300]\s[200]'à\t\r\r
+\S[300]\s[80]OUT=$(smenu t0002.in)||exit 1
+\S[300]\s[300]'à\t\r\r
 \S[300]\s[80]echo ":$\s[80]OUT:"
 exit 0

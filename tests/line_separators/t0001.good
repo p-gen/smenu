@@ -1,4 +1,4 @@
-$ OUT=$(smenu -c -L\\ue2ac87 t0001.in)
+$ OUT=$(smenu -c -L\\ue2ac87 t0001.in)||exit 1
 
 def  ▲
 5:20 

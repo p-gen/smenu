@@ -3,7 +3,7 @@
 
 m4_define(my_version, [m4_esyscmd([tr -d '\n' < version])])
 
-AC_PREREQ([2.71])
+AC_PREREQ([2.73])
 AC_INIT([smenu],[my_version],[p.gen.progs@gmail.com])
 AC_CONFIG_SRCDIR([smenu.c])
 AC_CONFIG_HEADERS([config.h])

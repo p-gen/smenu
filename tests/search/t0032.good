@@ -1,4 +1,4 @@
-$ OUT=$(smenu -c -Cc -- t0032.in)
+$ OUT=$(smenu -c -Cc -- t0032.in)||exit 1
 
   abca    
 2:23 3:23 4:23 

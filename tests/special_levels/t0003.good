@@ -1,4 +1,4 @@
-$ OUT=$(smenu -1 1 -level2 2 -c t0003.in)
+$ OUT=$(smenu -1 1 -level2 2 -c t0003.in)||exit 1
 
 1  2  3  4  5   ┐
 0:1f 1:1f 3:20 4:20 16:20 

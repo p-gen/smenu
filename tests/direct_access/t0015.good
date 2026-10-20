@@ -1,4 +1,4 @@
-$ OUT=$(smenu -l -F -D o:3 n:3 i:1 h:c -- t0015.in)
+$ OUT=$(smenu -l -F -D o:3 n:3 i:1 h:c -- t0015.in)||exit 1
 
  100) def 
 0:01 1:01 2:01 3:01 4:01 6:07 7:07 8:07 

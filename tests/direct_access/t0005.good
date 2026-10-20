@@ -1,4 +1,4 @@
-$ OUT=$(smenu -k -U "b|d" -N "a|b" -c t0005.in)
+$ OUT=$(smenu -k -U "b|d" -N "a|b" -c t0005.in)||exit 1
 
   1) a      b   2) c      d 
 0:01 1:01 2:01 3:01 5:07 14:01 15:01 16:01 17:01 

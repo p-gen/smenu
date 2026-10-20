@@ -1,4 +1,4 @@
-$ OUT=$(smenu -zap '×\uc2bf«»' t0004.in)
+$ OUT=$(smenu -zap '×\uc2bf«»' t0004.in)||exit 1
 
 a±bc a x 
 7:07 

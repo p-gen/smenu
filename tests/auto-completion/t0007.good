@@ -1,4 +1,4 @@
-$ OUT=$(smenu -c -- t0007.in)
+$ OUT=$(smenu -c -- t0007.in)||exit 1
 
 abce 
 0:0723 1:0723 2:0723 3:07 

@@ -1,4 +1,4 @@
-$ OUT=$(smenu -c t0005.in)
+$ OUT=$(smenu -c t0005.in)||exit 1
 
 01 item 1     ┐
 4:23 5:23 6:23 7:23 14:20 

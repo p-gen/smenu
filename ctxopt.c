@@ -2476,9 +2476,9 @@ check_for_requirement_issues(ctx_inst_t *ctx_inst)
         req_opt          = req_node->data;
         tmp_seen_opt.opt = req_opt;
         needed_params    = strappend(needed_params,
-                                  req_opt->params,
-                                  "\n  ",
-                                  (char *)0);
+                                     req_opt->params,
+                                     "\n  ",
+                                     (char *)0);
 
         bst_node = bst_find(&tmp_seen_opt,
                             &(ctx_inst->seen_opt_bst),
@@ -3536,8 +3536,8 @@ ctxopt_analyze(int nb_words, char **words, int *nb_rem_args, char ***rem_args)
   ctx_t      *ctx;
   opt_t      *opt = NULL;
   par_t      *par;
-  ctx_inst_t *ctx_inst;
-  opt_inst_t *opt_inst;
+  ctx_inst_t *ctx_inst          = NULL;
+  opt_inst_t *opt_inst          = NULL;
   int         expect_par        = 0;
   int         expect_arg        = 0;
   int         expect_par_or_arg = 0;
@@ -4698,7 +4698,7 @@ ctxopt_range_constraint(int nb_args, char **args, char *value, char *par)
 void
 ctxopt_add_global_settings(settings s, ...)
 {
-  va_list(args);
+  va_list args;
   va_start(args, s);
 
   if (!ctxopt_initialized)
@@ -4755,7 +4755,7 @@ ctxopt_add_opt_settings(settings s, ...)
   if (!ctxopt_initialized)
     fatal_internal("Please call ctxopt_init first.");
 
-  va_list(args);
+  va_list args;
   va_start(args, s);
 
   switch (s)
@@ -4765,7 +4765,7 @@ ctxopt_add_opt_settings(settings s, ...)
     case parameters:
     {
       char *opt_name = NULL;
-      char *params;
+      char *params   = NULL;
 
       /* The second argument must be a string containing: */
       /* - The name of an existing option.                */
@@ -5065,7 +5065,7 @@ ctxopt_add_ctx_settings(settings s, ...)
   if (!ctxopt_initialized)
     fatal_internal("Please call ctxopt_init first.");
 
-  va_list(args);
+  va_list args;
   va_start(args, s);
 
   switch (s)
@@ -5172,7 +5172,7 @@ ctxopt_add_ctx_settings(settings s, ...)
 /* Returns 1 if the usage will be displayed on error, else 0. */
 /* ========================================================== */
 int
-ctxopt_usage_on_error()
+ctxopt_usage_on_error(void)
 {
   return flags.disp_usage;
 }

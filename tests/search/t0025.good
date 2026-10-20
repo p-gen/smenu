@@ -1,4 +1,4 @@
-$ OUT=$(smenu -n 18 t0025.in)
+$ OUT=$(smenu -n 18 t0025.in)||exit 1
 
 c b  bcac cabab  baac c aaa ab  a ab    bcaa   a  bb b b ba  c aa   cb 
 

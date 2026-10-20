@@ -40,8 +40,8 @@ common_help(void)
   printf("-1|-l1|-level1,-2|-l2|-level2,...,-9|-l9|-level9\n");
   printf("  gives specific colors to up to 9 classes of "
          "selectable words.\n");
-  printf("-z|-zap|-zap_glyphs bytes\n");
-  printf("  defines a set of glyphs that should be ignored in the input "
+  printf("-z|-zap|-zap_characters bytes\n");
+  printf("  defines a set of characters that should be ignored in the input "
          "stream.\n");
   printf("-n|-lines|-height\n");
   printf("  sets the maximum number of lines in the selection window.\n");
@@ -110,6 +110,8 @@ common_help(void)
          "by default.\n");
   printf("-sb|-sbw|-show_blank_words\n");
   printf("  Make blank words visible and usable even in non column mode.\n");
+  printf("-nb|-nbw|-number_blank_words\n");
+  printf("  Number blank words when direct access is in use.\n");
   printf("-usage_on_error\n");
   printf("  displays a usage text in case of fatal error.\n");
   printf("-no_message_on_error\n");

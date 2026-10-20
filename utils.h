@@ -9,7 +9,6 @@
 #ifndef UTILS_H
 #define UTILS_H
 
-#include <stddef.h> /* for wchar_t      */
 #include <stdio.h>  /* for size_t, FILE */
 #include "list.h"   /* for ll_t         */
 
@@ -57,14 +56,14 @@ rtrim(char *str, const char *trim, size_t min_len);
 int
 my_strcasecmp(const char *str1, const char *str2);
 
+void
+strtolower(char *d, char *s);
+
 char *
 my_strcpy(char *dst, char *src);
 
 int
 isprint7(int i);
-
-int
-isprint8(int i);
 
 int
 is_integer(const char * const s);
@@ -81,9 +80,6 @@ strprint(char const *s);
 void
 hexdump(const char *buf, FILE *fp, const char *prefix, size_t size);
 
-int
-my_wcswidth(const wchar_t *s, size_t n);
-
 long
 get_sorted_array_target_pos(long *array, long nb, long value);
 
@@ -95,5 +91,8 @@ isempty_non_utf8(const unsigned char *s);
 
 int
 isempty_utf8(const unsigned char *s);
+
+void
+sanitize(char *s, char substitute);
 
 #endif

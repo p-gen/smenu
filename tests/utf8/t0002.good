@@ -1,12 +1,12 @@
-$ OUT=$(LANG=en_US.UTF-8 smenu -n 7 -c t0002.in)
+$ OUT=$(LC_ALL=en_US.UTF-8 smenu -n 7 -c t0002.in)||exit 1
 
-*.     *\n*     *4*   *45*   *456* *.*4* 
+*.*    *\n*     *4*   *45*   *456* *.*4* 
 
 *E*    *E1*     *E12* *E123* 
 
 *EF*   *E1F*    
 
-*.E*   *.aE*    
+*.E*   *.E*     
 
 *︙ø𐅉* *øéêabø* 
 

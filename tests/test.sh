@@ -38,22 +38,9 @@ PTYLIE=${PTYLIE_PATH:+${PTYLIE_PATH}/}ptylie
 HVLT=${HLVT_PATH:+${HLVT_PATH}/}hlvt
 BL=$(uname -s).bl
 
-# Force a clean locale environment
-# """"""""""""""""""""""""""""""""
-export LANG=en_US.UTF-8
-export LC_CTYPE=
-export LC_NUMERIC=
-export LC_TIME=
-export LC_COLLATE=
-export LC_MONETARY=
-export LC_MESSAGES=
-export LC_PAPER=
-export LC_NAME=
-export LC_ADDRESS=
-export LC_TELEPHONE=
-export LC_MEASUREMENT=
-export LC_IDENTIFICATION=
-export LC_ALL=
+# Force an UTF-8 character set.
+# """""""""""""""""""""""""""""
+#LC_ALL="en_US.UTF-8"
 
 # Check for the presence of required programs
 # """""""""""""""""""""""""""""""""""""""""""

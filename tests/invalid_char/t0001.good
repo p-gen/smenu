@@ -1,11 +1,11 @@
-$ OUT=$(LC_ALL=C smenu -. ! t0001.in)
+$ OUT=$(LC_ALL=C smenu -. ! t0001.in)||exit 1
 
-a!b!c 
-0:07 1:07 2:07 3:07 4:07 
+a!!b!!c 
+0:07 1:07 2:07 3:07 4:07 5:07 6:07 
 $ 
 
 $ echo ":$OUT:"
 
-:a!b!c:
+:a!!b!!c:
 
 $ exit 0

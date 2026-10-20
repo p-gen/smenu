@@ -1,4 +1,4 @@
-$ OUT=$(smenu -X cur 5 -- t0001.in)
+$ OUT=$(smenu -X cur 5 -- t0001.in)||exit 1
 
 a b c 
 2:07 

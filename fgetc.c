@@ -10,7 +10,6 @@
 /* Custom fgetc/ungetc implementation able to unget more than one character. */
 /* ************************************************************************* */
 
-#include <errno.h>
 #include <stdio.h>
 #include "fgetc.h"
 
@@ -31,21 +30,8 @@ my_fgetc(FILE *input)
 {
   if (next_buffer_pos > 0)
     return getc_buffer[--next_buffer_pos];
-  else
-  {
-    int c;
 
-    errno = 0;
-    c     = fgetc(input);
-
-    while (c == EOF && errno == EAGAIN)
-    {
-      errno = 0;
-      c     = fgetc(input);
-    }
-
-    return c;
-  }
+  return fgetc(input);
 }
 
 /* =============================== */
@@ -54,17 +40,18 @@ my_fgetc(FILE *input)
 int
 my_ungetc(int c, FILE *input)
 {
-  int rc;
+  if (c == EOF || next_buffer_pos >= GETC_BUFF_SIZE)
+    return EOF;
 
-  if (next_buffer_pos >= GETC_BUFF_SIZE)
-    rc = EOF;
-  else
+  if (feof(input))
   {
-    rc = getc_buffer[next_buffer_pos++] = (unsigned char)c;
+    /* Clear EOF without clearing the error indicator. */
+    /* """"""""""""""""""""""""""""""""""""""""""""""" */
+    if (ungetc(c, input) == EOF)
+      return EOF;
 
-    if (feof(input))
-      clearerr(input); /* No more EOF. */
+    (void)fgetc(input);
   }
 
-  return rc;
+  return getc_buffer[next_buffer_pos++] = (unsigned char)c;
 }

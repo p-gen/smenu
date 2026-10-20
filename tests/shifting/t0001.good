@@ -1,4 +1,4 @@
-$ OUT=$(LANG=en_US.UTF-8 smenu -n 4 -l t0001.in)
+$ OUT=$(LANG=en_US.UTF-8 smenu -n 4 -l t0001.in)||exit 1
 
 ◀hagen pinchas raymond hartwell stavros simon brit jamal weylin garth▶         ┐
 0:20 69:20 79:20 

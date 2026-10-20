@@ -1,4 +1,4 @@
-$ OUT=$(smenu -c -A 'X|Y' t0002.in)
+$ OUT=$(smenu -c -A 'X|Y' t0002.in)||exit 1
 
 X a b c d 
 

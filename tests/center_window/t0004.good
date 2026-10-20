@@ -1,4 +1,4 @@
-$ OUT=$(smenu -N. -n 10 -c -M t0004.in)
+$ OUT=$(smenu -N. -n 10 -c -M t0004.in)||exit 1
 
                                      1) 1  
 35:01 36:01 37:01 38:01 

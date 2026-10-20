@@ -1,4 +1,4 @@
-$ OUT=$(smenu -s/bb t0005.in)
+$ OUT=$(smenu -s/bb t0005.in)||exit 1
 
 aab abb aa ab ba bb aba bab aaa 
 4:07 5:07 6:07 

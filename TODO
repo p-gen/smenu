@@ -1,2 +1,10 @@
 # To be done before the next version: 
 [ ] Find and kill any remaining bugs.
+[x] Restrict supporeted character set to UTF-8 for multibyte encoding and
+    C/POSIX and iso-8856-* for single-byte encoding.
+[x] Update Autoconf to 2.73
+[x] Optimize structures.
+[x] Get rid of char_t
+[x] Rework, robustify and rewrite parts of all .c and .h files.
+[x] Implement our own mechanism to get the screen width of unicode and graphemes glyphs.
+[x] Impove safe.c and use more _safe versions of some functions.

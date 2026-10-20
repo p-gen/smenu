@@ -1,4 +1,4 @@
-$ OUT=$(smenu -c -L, -z '\u0a\u0d ' t0005.in)
+$ OUT=$(smenu -c -L, -z '\u0a\u0d ' t0005.in)||exit 1
 
 abcde 
 

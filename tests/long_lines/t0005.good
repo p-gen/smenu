@@ -1,4 +1,4 @@
-$ OUT=$(LANG=en_US.UTF-8 smenu -c -n 4 t0005.in)
+$ OUT=$(LANG=en_US.UTF-8 smenu -c -n 4 t0005.in)||exit 1
 
 ◀69  70  71  72  73  74  75  76  77  78  79  80  81 ▶ ▲
 0:20 52:20 54:20 

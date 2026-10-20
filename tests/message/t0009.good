@@ -2,7 +2,7 @@ $ OUT=$(smenu -a m:7/5 -M \
 
 > -m '=\uefbcb4\[0]\uefbca5\uefbcb3\[!]\[7/5]\uefbcb4=
 
-> =test=' t0009.in)
+> =test=' t0009.in)||exit 1
 
                                  =ＴＥＳＴ=
 33:252d 34:252d 35:1e252d 36:1e252d 37:252d 38:252d 

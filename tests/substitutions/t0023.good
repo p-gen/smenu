@@ -1,11 +1,6 @@
-$ OUT=$(smenu -S/a// -c t0023.in)
+$ OUT=$(smenu -S/a// -c t0023.in)||exit 1
 
-$ 
+Substitutions leading to empty words are not allowed in column mode.
 
-$ 
+exit
 
-$ echo ":$OUT:"
-
-::
-
-$ exit 0

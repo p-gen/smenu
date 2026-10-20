@@ -1,4 +1,4 @@
-$ OUT=$(smenu '-S/a/X/ig' -c t0028.in)
+$ OUT=$(smenu '-S/a/X/ig' -c t0028.in)||exit 1
 
 Xbc XBC XXb XXX 
 0:07 1:07 2:07 

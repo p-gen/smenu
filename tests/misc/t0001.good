@@ -1,4 +1,4 @@
-$ OUT=$(smenu -! "Interrupted by CTRL-C" t0001.in)
+$ OUT=$(smenu -! "Interrupted by CTRL-C" t0001.in)||exit 1
 
 a b c 
 2:07 

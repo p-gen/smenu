@@ -10,21 +10,59 @@
 #define SAFE_H
 
 #include <stdio.h>
+#include <sys/types.h>
+#include <fcntl.h>
+#include <termios.h>
 
-struct termios;
+/* Retry only failures caused by EINTR.                             */
+/* Preserve successful results and all other errors unchanged.      */
+/* No argument validation or full-transfer loops are performed.     */
+/* Repeated interruptions can cause indefinite retries.             */
+/* Do not use these wrappers when interruption should end the wait. */
+/* errno is meaningful on failure; it is not reset on success.      */
+/* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
 
+/* ================================ */
+/* Read up to count bytes into buf. */
+/* ================================ */
+ssize_t
+read_safe(int fd, void *buf, size_t count);
+
+/* ================================= */
+/* Write up to count bytes from buf. */
+/* ================================= */
+ssize_t
+write_safe(int fd, const void *buf, size_t count);
+
+/* ================================================================== */
+/* Open pathname using flags and possibly the explicit creation mode. */
+/* ================================================================== */
 int
-fputs_safe(const char * restrict s, FILE * restrict stream);
+open_safe_impl(const char *pathname, int flags, mode_t mode);
 
-int
-fputc_safe(int c, FILE *stream);
+#define SAFE_OPEN_2(pathname, flags) \
+  open_safe_impl((pathname), (flags), (mode_t)0)
 
-int
-tcsetattr_safe(int                   fildes,
-               int                   optional_actions,
-               const struct termios *termios_p);
+#define SAFE_OPEN_3(pathname, flags, mode) \
+  open_safe_impl((pathname), (flags), (mode))
 
+#define SAFE_OPEN_SELECT(a, b, c, selected, ...) selected
+
+#define open_safe(...) \
+  SAFE_OPEN_SELECT(__VA_ARGS__, SAFE_OPEN_3, SAFE_OPEN_2, \
+                   unused)(__VA_ARGS__)
+
+/* ================================================= */
+/* Open pathname using the fopen() mode string mode. */
+/* ================================================= */
 FILE *
-fopen_safe(const char * restrict stream, const char * restrict mode);
+fopen_safe(const char *restrict pathname, const char *restrict mode);
 
-#endif
+/* ==================================================== */
+/* Apply attributes to the terminal associated with fd. */
+/* ==================================================== */
+int
+tcsetattr_safe(int fd, int actions,
+               const struct termios *attributes);
+
+#endif /* SAFE_H */

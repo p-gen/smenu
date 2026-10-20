@@ -1,4 +1,4 @@
-$ OUT=$(smenu -c -P " " t0011.in)
+$ OUT=$(smenu -c -P " " t0011.in)||exit 1
 
 a b c d 
 

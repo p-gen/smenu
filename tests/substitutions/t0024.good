@@ -1,4 +1,4 @@
-$ OUT=$(smenu '-S/a/ /' t0024.in)
+$ OUT=$(smenu '-S/a/ /' t0024.in)||exit 1
 
  bc b c bc  
 4:07 5:07 6:07 

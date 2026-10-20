@@ -1,4 +1,4 @@
-$ OUT=$(smenu -T -c -s 50 -n 15 -e 2 t0021.in)
+$ OUT=$(smenu -T -c -s 50 -n 15 -e 2 t0021.in)||exit 1
 
 1  2   3  4  5  6  7  
 3:24 4:24 5:24 

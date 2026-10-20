@@ -1,4 +1,4 @@
-$ OUT=$(smenu -m xx -n 10 -M t0001.in)
+$ OUT=$(smenu -m xx -n 10 -M t0001.in)||exit 1
 
                                      xx
 37:01 38:01 

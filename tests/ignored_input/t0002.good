@@ -1,4 +1,4 @@
-$ OUT=$(smenu -c -z '1\u0d' t0002.in)
+$ OUT=$(smenu -c -z '1\u0d' t0002.in)||exit 1
 
 0   ┐
 4:20 

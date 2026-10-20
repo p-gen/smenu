@@ -1,4 +1,4 @@
-$ OUT=$(smenu -T " " t0001.in)
+$ OUT=$(smenu -T " " t0001.in)||exit 1
 
 a b c d e f g h u j k l 
 2:04 6:04 8:07 10:04 14:04 

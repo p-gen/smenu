@@ -1,4 +1,4 @@
-$ OUT=$(smenu -k -F -D n:2 n:1 d:: i:2  d:'\u7e' i:1 -- t0008.in)
+$ OUT=$(smenu -k -F -D n:2 n:1 d:: i:2  d:'\u7e' i:1 -- t0008.in)||exit 1
 
  2) a  1) b 
 0:01 1:01 2:01 6:01 7:01 8:01 10:07 

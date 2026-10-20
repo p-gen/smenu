@@ -89,6 +89,7 @@ POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
 bin_PROGRAMS = smenu$(EXEEXT)
+EXTRA_PROGRAMS = index_demo$(EXEEXT)
 subdir = .
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/configure.ac
@@ -104,6 +105,10 @@ CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
 am__installdirs = "$(DESTDIR)$(bindir)" "$(DESTDIR)$(man1dir)"
 PROGRAMS = $(bin_PROGRAMS)
+am_index_demo_OBJECTS = index_demo.$(OBJEXT) index.$(OBJEXT) \
+	utf8.$(OBJEXT) list.$(OBJEXT) xmalloc.$(OBJEXT)
+index_demo_OBJECTS = $(am_index_demo_OBJECTS)
+index_demo_LDADD = $(LDADD)
 am_smenu_OBJECTS = smenu.$(OBJEXT) list.$(OBJEXT) xmalloc.$(OBJEXT) \
 	index.$(OBJEXT) utf8.$(OBJEXT) fgetc.$(OBJEXT) utils.$(OBJEXT) \
 	usage.$(OBJEXT) ctxopt.$(OBJEXT) ini.$(OBJEXT) safe.$(OBJEXT)
@@ -125,10 +130,10 @@ DEFAULT_INCLUDES = -I.@am__isrc@
 depcomp = $(SHELL) $(top_srcdir)/build-aux/depcomp
 am__maybe_remake_depfiles = depfiles
 am__depfiles_remade = ./$(DEPDIR)/ctxopt.Po ./$(DEPDIR)/fgetc.Po \
-	./$(DEPDIR)/index.Po ./$(DEPDIR)/ini.Po ./$(DEPDIR)/list.Po \
-	./$(DEPDIR)/safe.Po ./$(DEPDIR)/smenu.Po ./$(DEPDIR)/usage.Po \
-	./$(DEPDIR)/utf8.Po ./$(DEPDIR)/utils.Po \
-	./$(DEPDIR)/xmalloc.Po
+	./$(DEPDIR)/index.Po ./$(DEPDIR)/index_demo.Po \
+	./$(DEPDIR)/ini.Po ./$(DEPDIR)/list.Po ./$(DEPDIR)/safe.Po \
+	./$(DEPDIR)/smenu.Po ./$(DEPDIR)/usage.Po ./$(DEPDIR)/utf8.Po \
+	./$(DEPDIR)/utils.Po ./$(DEPDIR)/xmalloc.Po
 am__mv = mv -f
 COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
@@ -142,8 +147,8 @@ AM_V_CCLD = $(am__v_CCLD_@AM_V@)
 am__v_CCLD_ = $(am__v_CCLD_@AM_DEFAULT_V@)
 am__v_CCLD_0 = @echo "  CCLD    " $@;
 am__v_CCLD_1 = 
-SOURCES = $(smenu_SOURCES)
-DIST_SOURCES = $(smenu_SOURCES)
+SOURCES = $(index_demo_SOURCES) $(smenu_SOURCES)
+DIST_SOURCES = $(index_demo_SOURCES) $(smenu_SOURCES)
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
     n|no|NO) false;; \
@@ -328,11 +333,14 @@ top_srcdir = @top_srcdir@
 smenu_SOURCES = smenu.c smenu.h list.c list.h xmalloc.c xmalloc.h \
 		index.c index.h utf8.c utf8.h fgetc.c fgetc.h     \
 		utils.c utils.h usage.c usage.h ctxopt.h ctxopt.c \
-		ini.c ini.h safe.h safe.c tinybuf.h
+		ini.c ini.h safe.h safe.c buf.h iso8859_tables.h
 
 dist_man_MANS = smenu.1
 EXTRA_DIST = ChangeLog build.sh version COPYRIGHT LICENSE README.rst \
 		examples build-aux tests FAQ
+
+index_demo_SOURCES = index_demo.c index.c index.h utf8.c utf8.h list.c list.h \
+                     xmalloc.c xmalloc.h
 
 all: config.h
 	$(MAKE) $(AM_MAKEFLAGS) all-am
@@ -430,6 +438,10 @@ uninstall-binPROGRAMS:
 clean-binPROGRAMS:
 	-test -z "$(bin_PROGRAMS)" || rm -f $(bin_PROGRAMS)
 
+index_demo$(EXEEXT): $(index_demo_OBJECTS) $(index_demo_DEPENDENCIES) $(EXTRA_index_demo_DEPENDENCIES) 
+	@rm -f index_demo$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(index_demo_OBJECTS) $(index_demo_LDADD) $(LIBS)
+
 smenu$(EXEEXT): $(smenu_OBJECTS) $(smenu_DEPENDENCIES) $(EXTRA_smenu_DEPENDENCIES) 
 	@rm -f smenu$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(smenu_OBJECTS) $(smenu_LDADD) $(LIBS)
@@ -443,6 +455,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ctxopt.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/fgetc.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/index.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/index_demo.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ini.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/list.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/safe.Po@am__quote@ # am--include-marker
@@ -793,6 +806,7 @@ distclean: distclean-am
 		-rm -f ./$(DEPDIR)/ctxopt.Po
 	-rm -f ./$(DEPDIR)/fgetc.Po
 	-rm -f ./$(DEPDIR)/index.Po
+	-rm -f ./$(DEPDIR)/index_demo.Po
 	-rm -f ./$(DEPDIR)/ini.Po
 	-rm -f ./$(DEPDIR)/list.Po
 	-rm -f ./$(DEPDIR)/safe.Po
@@ -851,6 +865,7 @@ maintainer-clean: maintainer-clean-am
 		-rm -f ./$(DEPDIR)/ctxopt.Po
 	-rm -f ./$(DEPDIR)/fgetc.Po
 	-rm -f ./$(DEPDIR)/index.Po
+	-rm -f ./$(DEPDIR)/index_demo.Po
 	-rm -f ./$(DEPDIR)/ini.Po
 	-rm -f ./$(DEPDIR)/list.Po
 	-rm -f ./$(DEPDIR)/safe.Po

@@ -1,4 +1,4 @@
-$ OUT=$(smenu -c t0008.in)
+$ OUT=$(smenu -c t0008.in)||exit 1
 
 x é x 
 

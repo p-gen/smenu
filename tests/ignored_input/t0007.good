@@ -1,4 +1,4 @@
-$ OUT=$(smenu -z ca t0007.in)
+$ OUT=$(smenu -z ca t0007.in)||exit 1
 
 b d 
 0:07 

@@ -1,4 +1,4 @@
-$ OUT=$(LANG=C smenu -c -Re1,22 -e '[0-9]' t0010.in)
+$ OUT=$(LC_ALL=C smenu -c -Re1,22 -e '[0-9]' t0010.in)||exit 1
 
 17 a a a a a a a a  ^
 0:24 1:24 20:20 

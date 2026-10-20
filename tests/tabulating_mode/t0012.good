@@ -1,4 +1,4 @@
-$ OUT=$(smenu -tab 5 t0012.in)
+$ OUT=$(smenu -tab 5 t0012.in)||exit 1
 
 1  2  3  4  5   ┐
 16:20 

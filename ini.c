@@ -1,13 +1,15 @@
-/* ini.c : header file for INI file parser  */
-/* Jon Mayo - PUBLIC DOMAIN - July 13, 2007 */
-/* initial: 2007-07-13                      */
-/* Modified: Pierre Gentile - 2016          */
+/* ini.c : implementation of the INI file parser */
+/* Jon Mayo - PUBLIC DOMAIN - July 13, 2007      */
+/* initial: 2007-07-13                           */
+/* Modified: Pierre Gentile - 2016               */
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <ctype.h>
 #include <string.h>
+
 #include "xmalloc.h"
+#include "safe.h"
 #include "utils.h"
 #include "ini.h"
 
@@ -28,50 +30,62 @@ struct section
 struct ini_info
 {
   struct section *head;
-  /* the rest is used for parsing */
+
+  /* Sequential-access state. */
+  /* """""""""""""""""""""""" */
   char             *filename;
   unsigned          line;
   struct section   *curr_sect;
   struct parameter *curr_param;
 };
 
+/* ========================================================== */
+/* Release the complete INI data structure. NULL is accepted. */
+/* ========================================================== */
 void
 ini_free(struct ini_info *ii)
 {
   struct section   *curr_sect, *next_sect;
   struct parameter *curr, *next;
-  if (ii)
+
+  if (!ii)
+    return;
+
+  for (curr_sect = ii->head; curr_sect; curr_sect = next_sect)
   {
-    for (curr_sect = ii->head; curr_sect; curr_sect = next_sect)
+    for (curr = curr_sect->head; curr; curr = next)
     {
-      for (curr = curr_sect->head; curr; curr = next)
-      {
-        next = curr->next;
-        free(curr->name);
-        free(curr->value);
-        free(curr);
-      }
-      next_sect = curr_sect->next;
-      free(curr_sect->name);
-      free(curr_sect);
+      next = curr->next;
+      free(curr->name);
+      free(curr->value);
+      free(curr);
     }
 
-    free(ii->filename);
-    free(ii);
+    next_sect = curr_sect->next;
+    free(curr_sect->name);
+    free(curr_sect);
   }
+
+  free(ii->filename);
+  free(ii);
 }
 
-/* ================================================================== */
-/* loads an INI file, parses it and sticks it in the data structure.  */
-/* return a pointer on a struct ini_info or NULL in case of failure.  */
-/* On failure set error with a coded value and error_line with the    */
-/* line number where the error has been detected                      */
-/* the error codes are: 0: no error                                   */
-/*                      1: the ini file could not have been opened.   */
-/*                      2: an unterminated section name was found.    */
-/*                      3: an entry without value found found (no =). */
-/*                      4: an entry outside any section was found.    */
-/* ================================================================== */
+/* ================================================================ */
+/* Load and parse an INI file. Return NULL on failure.              */
+/* error and error_line may be NULL.                                */
+/*                                                                  */
+/* Error codes:                                                     */
+/*   0: no error.                                                   */
+/*   1: invalid filename or file could not be opened.               */
+/*   2: unterminated section name.                                  */
+/*   3: parameter without an '=' sign.                              */
+/*   4: parameter outside any section.                              */
+/*   5: line exceeds 511 bytes, excluding the final LF.             */
+/*   6: file read failure.                                          */
+/*                                                                  */
+/* Empty section names, parameter names and values remain accepted. */
+/* Allocation failure follows the policy of xmalloc and xstrdup.    */
+/* ================================================================ */
 struct ini_info *
 ini_load(char *filename, unsigned *error, unsigned *error_line)
 {
@@ -79,265 +93,309 @@ ini_load(char *filename, unsigned *error, unsigned *error_line)
   struct ini_info  *ret;
   struct section   *curr_sect, **prev_sect;
   struct parameter *curr, **prev;
-  unsigned          line;
+  unsigned          line, code;
   FILE             *f;
 
-  *error      = 0; /* No error so far. */
-  *error_line = 0;
+  if (error)
+    *error = 0;
 
-  f = fopen(filename, "r");
-  if (!f)
+  if (error_line)
+    *error_line = 0;
+
+  if (!filename)
   {
-    *error = 1; /* Open failure. */
+    if (error)
+      *error = 1;
+
     return NULL;
   }
 
-  /* Create a new ini_info */
-  ret             = xmalloc(sizeof *ret);
+  f = fopen_safe(filename, "r");
+  if (!f)
+  {
+    if (error)
+      *error = 1;
+
+    return NULL;
+  }
+
+  /* Initialize every field before any possible cleanup. */
+  /* """"""""""""""""""""""""""""""""""""""""""""""""""" */
+  ret             = xmalloc(sizeof(*ret));
+  ret->head       = NULL;
   ret->filename   = xstrdup(filename);
   ret->line       = 0;
-  ret->curr_sect  = 0;
-  ret->curr_param = 0;
+  ret->curr_sect  = NULL;
+  ret->curr_param = NULL;
 
   prev_sect = &ret->head;
-  curr      = 0;
-  prev      = 0;
+  prev      = NULL;
   line      = 0;
-  while (fgets(buf, sizeof buf, f))
+  code      = 0;
+
+  while (fgets(buf, sizeof(buf), f))
   {
     line++;
-    s = buf;
-    while (isspace(*s))
-      s++; /* Ignore leading whitespaces. */
 
-    if (*s == ';' || *s == '#' || *s == 0)
-    { /* Comment or blank line. */
+    /* A full buffer without LF may be an overlong line. */
+    /* Accept exactly 511 bytes followed by LF or EOF.   */
+    /* """"""""""""""""""""""""""""""""""""""""""""""""" */
+    if (!strchr(buf, '\n') && strlen(buf) == sizeof(buf) - 1)
+    {
+      int ch;
+
+      ch = fgetc(f);
+      if (ch == EOF)
+      {
+        if (ferror(f))
+        {
+          code = 6;
+          break;
+        }
+      }
+      else if (ch != '\n')
+      {
+        code = 5;
+        break;
+      }
     }
-    else if (*s == '[')
-    { /* New section. */
+
+    s = buf;
+    while (isspace((unsigned char)*s))
+      s++;
+
+    if (*s == ';' || *s == '#' || *s == '\0')
+    {
+      /* Comment or blank line. */
+      /* """""""""""""""""""""" */
+      continue;
+    }
+
+    if (*s == '[')
+    {
       char *tmp;
 
-      /* Parse the section. */
-      s   = buf + 1;
+      /* Advance from the actual '[' after leading whitespace. */
+      /* """"""""""""""""""""""""""""""""""""""""""""""""""""" */
+      s++;
       tmp = strchr(s, ']');
-      if (tmp)
-        *tmp = 0;
-      else
-      { /* Error: unterminated section names. */
-        *error      = 2;
-        *error_line = line;
-        ini_free(ret);
-        ret = 0; /* failure */
+      if (!tmp)
+      {
+        code = 2;
         break;
       }
+      *tmp = '\0';
 
-      /* Create section. */
-      curr_sect       = xmalloc(sizeof *curr_sect);
-      curr_sect->next = 0;
-      curr_sect->head = 0;
+      /* Create and append the section. */
+      /* """""""""""""""""""""""""""""" */
+      curr_sect       = xmalloc(sizeof(*curr_sect));
       curr_sect->name = xstrdup(s);
+      curr_sect->head = NULL;
+      curr_sect->next = NULL;
 
-      /* Append it to the end. */
       *prev_sect = curr_sect;
       prev_sect  = &curr_sect->next;
-
-      prev = &curr_sect->head;
+      prev       = &curr_sect->head;
     }
     else if (prev)
-    { /* Parameter inside section. */
+    {
       char *value, *tmp;
 
-      /* Trim trailing comment. */
+      /* Preserve the original semicolon-comment syntax. */
+      /* """"""""""""""""""""""""""""""""""""""""""""""" */
       tmp = strchr(s, ';');
       if (tmp)
-      {
-        *tmp = 0;
-      }
+        *tmp = '\0';
 
-      /* Trim trailing whitespaces. */
+      /* Trim trailing whitespace from the complete entry. */
+      /* """"""""""""""""""""""""""""""""""""""""""""""""" */
       tmp = s + strlen(s);
-      while (tmp != s)
+      while (tmp != s && isspace((unsigned char)tmp[-1]))
+        *--tmp = '\0';
+
+      /* Split the parameter name and value at the first '='. */
+      /* """""""""""""""""""""""""""""""""""""""""""""""""""" */
+      value = strchr(s, '=');
+      if (!value)
       {
-        tmp--;
-        if (!isspace(*tmp))
-          break;
-        *tmp = 0;
-      }
-
-      /* Look for '=' sign to mark the start of the value. */
-      value = s;
-      while (*value && *value != '=')
-        value++;
-      if (*value)
-      {
-        /* Build the value string. */
-        *value = 0; /* Chop parameter string - now s is parameter. */
-        value++;
-        while (isspace(*value))
-          value++; /* Ignore leading whitespaces. */
-
-        /* Build the parameter string. */
-        /* Trim trailing whitespaces. */
-        tmp = s + strlen(s);
-        while (tmp != s)
-        {
-          tmp--;
-          if (!isspace(*tmp))
-            break;
-          *tmp = 0;
-        }
-
-        /* Create parameter. */
-        curr        = xmalloc(sizeof *curr);
-        curr->name  = xstrdup(s);
-        curr->value = xstrdup(value);
-        curr->next  = 0;
-        /* Append it to the end. */
-        *prev = curr;
-        prev  = &curr->next;
-      }
-      else
-      { /* Error: no value found. */
-        *error      = 3;
-        *error_line = line;
-        ini_free(ret);
-        ret = 0; /* failure */
+        code = 3;
         break;
       }
+
+      *value++ = '\0';
+
+      while (isspace((unsigned char)*value))
+        value++;
+
+      /* Trim trailing whitespace from the parameter name. */
+      /* """"""""""""""""""""""""""""""""""""""""""""""""" */
+      tmp = s + strlen(s);
+      while (tmp != s && isspace((unsigned char)tmp[-1]))
+        *--tmp = '\0';
+
+      /* Create and append the parameter. */
+      /* """""""""""""""""""""""""""""""" */
+      curr        = xmalloc(sizeof(*curr));
+      curr->name  = xstrdup(s);
+      curr->value = xstrdup(value);
+      curr->next  = NULL;
+
+      *prev = curr;
+      prev  = &curr->next;
     }
     else
-    { /* Error: parameters outside section. */
-      *error      = 4;
-      *error_line = line;
-      /* it's important to always keep the structure in a consistent *
-       | state so that we can use the standard free utility.         */
-      ini_free(ret);
-      ret = 0; /* failure */
+    {
+      code = 4;
       break;
     }
   }
 
+  /* Do not return a partially parsed file after a read failure. */
+  /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+  if (!code && ferror(f))
+  {
+    code = 6;
+    line++;
+  }
+
   fclose(f);
+
+  if (code)
+  {
+    if (error)
+      *error = code;
+
+    if (error_line)
+      *error_line = line;
+
+    ini_free(ret);
+
+    return NULL;
+  }
+
+  ret->line = line;
+
   return ret;
 }
 
-/* Sequential i/o.                           */
-/* Return section name, NULL on end of file. */
+/* ============================================================ */
+/* Return the next section name, or NULL at the end.            */
+/* A call after reaching the end restarts at the first section, */
+/* preserving the original behavior.                            */
+/* ============================================================ */
 char *
 ini_next_section(struct ini_info *ii)
 {
-  ii->curr_param = 0; /* Always reset the parameter. */
+  if (!ii)
+    return NULL;
+
+  ii->curr_param = NULL;
 
   if (ii->curr_sect)
-  {
     ii->curr_sect = ii->curr_sect->next;
-  }
   else
-  {
     ii->curr_sect = ii->head;
-  }
 
   if (ii->curr_sect)
-  {
     return ii->curr_sect->name;
-  }
-  else
-  {
-    return NULL; /* End. */
-  }
+
+  return NULL;
 }
 
-/* Sequential i/o.                                    */
-/* Return value of parameter. NULL on end of section. */
+/* =================================================================== */
+/* Return the next parameter value, or NULL at the end of the section. */
+/* If parameter is non-NULL, store the parameter name there.           */
+/* No selected section returns NULL without dereferencing it.          */
+/* A call after reaching the end restarts at the first parameter,      */
+/* preserving the original behavior.                                   */
+/* =================================================================== */
 char *
 ini_next_parameter(struct ini_info *ii, char **parameter)
 {
-  /* go to next parameter, or the first if set to 0 */
+  if (parameter)
+    *parameter = NULL;
+
+  if (!ii || !ii->curr_sect)
+    return NULL;
+
   if (ii->curr_param)
-  {
     ii->curr_param = ii->curr_param->next;
-  }
   else
-  {
     ii->curr_param = ii->curr_sect->head;
-  }
 
   if (ii->curr_param)
   {
     if (parameter)
       *parameter = ii->curr_param->name;
+
     return ii->curr_param->value;
   }
-  else
-  {
-    return NULL; /* end */
-  }
+
+  return NULL;
 }
 
-/* Rewind the pointers so the ini_next_xxx functions can start from the top. */
+/* =============================================================== */
+/* Reset sequential access so iteration starts from the beginning. */
+/* =============================================================== */
 void
 ini_rewind(struct ini_info *ii)
 {
   if (ii)
   {
-    ii->curr_param = 0;
-    ii->curr_sect  = 0;
+    ii->curr_param = NULL;
+    ii->curr_sect  = NULL;
   }
 }
 
-/* Random access function.       */
-/* Return value for a parameter. */
+/* ================================================================= */
+/* Return a parameter value using case-insensitive name comparisons. */
+/* Return NULL for invalid arguments or when no match exists.        */
+/* Returned strings remain owned by the INI data structure.          */
+/* ================================================================= */
 char *
 ini_get(struct ini_info *ii, char *section, char *parameter)
 {
   struct section   *curr_sect;
   struct parameter *curr_param;
 
+  if (!ii || !section || !parameter)
+    return NULL;
+
   for (curr_sect = ii->head; curr_sect; curr_sect = curr_sect->next)
   {
     if (my_strcasecmp(curr_sect->name, section) == 0)
-    {
       break;
-    }
   }
+
   if (!curr_sect)
     return NULL;
+
   for (curr_param = curr_sect->head; curr_param; curr_param = curr_param->next)
   {
     if (my_strcasecmp(curr_param->name, parameter) == 0)
-    {
       return curr_param->value;
-    }
   }
+
   return NULL;
 }
 
 #if 0
-/** Test Code **/
-static void ini_dump(struct ini_info *ii) {
-   char *section, *parameter, *value;
-  while((section=ini_next_section(ii))) {
+/* ==================================== */
+/* Display all sections and parameters. */
+/* ==================================== */
+static void
+ini_dump(struct ini_info *ii)
+{
+  char *section, *parameter, *value;
+
+  ini_rewind(ii);
+
+  while ((section = ini_next_section(ii)) != NULL)
+  {
     printf("[%s]\n", section);
-    while((value=ini_next_parameter(ii, &parameter))) {
-      printf("%s=%s; buh\n", parameter, value);
-    }
+
+    while ((value = ini_next_parameter(ii, &parameter)) != NULL)
+      printf("%s=%s\n", parameter, value);
   }
 }
-
-int main(int argc, char **argv) {
-  struct ini_info *ii;
-  unsigned error, error_line;
-
-  ii=ini_load("zomg.ini", &error, &error_line);
-  if(!ii) {
-    return EXIT_FAILURE;
-  }
-  ini_dump(ii);
-  printf("DB=\"%s\"\n", ini_get(ii, "Server", "DBfile"));
-  ini_free(ii);
-  return 1;
-}
-
-/* vim: ts=4 sts=0 noet sw=4
-*/
 #endif

@@ -1,4 +1,4 @@
-$ OUT=$(LANG=en_US.UTF-8 smenu -M -m «←→»  t0003.in)
+$ OUT=$(LC_ALL=en_US.UTF-8 smenu -M -m «←→»  t0003.in)||exit 1
 
                                     «←→»
 36:01 37:01 38:01 39:01 

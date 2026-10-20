@@ -1,4 +1,4 @@
-$ OUT=$(smenu -T -a t:3,b -- t0006.in)
+$ OUT=$(smenu -T -a t:3,b -- t0006.in)||exit 1
 
 a b c aa bb cc aba 
 2:0407 6:0121 7:0121 

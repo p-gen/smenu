@@ -17,12 +17,12 @@ typedef struct ll_s      ll_t;
 /* ******************************* */
 
 /* Linked list node structure */
-/* """""""""""""""""""""""""" */
+/* """"""""""""""""""""""" */
 struct ll_node_s
 {
-  void             *data;
-  struct ll_node_s *next;
-  struct ll_node_s *prev;
+  void      *data;
+  ll_node_t *next;
+  ll_node_t *prev;
 };
 
 /* Linked List structure */
@@ -44,21 +44,24 @@ ll_node_t *
 ll_new_node(void);
 
 void
-ll_append(ll_t * const list, void * const data);
+ll_append(ll_t *list, void *data);
 
 void
 ll_sort(ll_t *list,
         int (*comp)(void const *, void const *),
         void (*swap)(void **, void **));
 
+/* node must be NULL or belong to list. */
 int
-ll_delete(ll_t * const list, ll_node_t *node);
+ll_delete(ll_t *list, ll_node_t *node);
 
 ll_node_t *
-ll_find(ll_t * const, void * const, int (*)(void const *, void const *));
+ll_find(ll_t *list,
+        void *data,
+        int (*cmpfunc)(void const *, void const *));
 
 void
-ll_free(ll_t * const list, void (*clean)(void *));
+ll_free(ll_t *list, void (*clean)(void *));
 
 void
 ll_destroy(ll_t *list, void (*clean)(void *));

@@ -1,4 +1,4 @@
-$ OUT=$(smenu t0003.in)
+$ OUT=$(smenu t0003.in)||exit 1
 
 é€ µàé€àç 
 0:0723 1:07 5:23 

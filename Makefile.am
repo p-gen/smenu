@@ -2,10 +2,15 @@ bin_PROGRAMS = smenu
 smenu_SOURCES = smenu.c smenu.h list.c list.h xmalloc.c xmalloc.h \
 		index.c index.h utf8.c utf8.h fgetc.c fgetc.h     \
 		utils.c utils.h usage.c usage.h ctxopt.h ctxopt.c \
-		ini.c ini.h safe.h safe.c tinybuf.h
+		ini.c ini.h safe.h safe.c buf.h iso8859_tables.h
+
 dist_man_MANS = smenu.1
 EXTRA_DIST =	ChangeLog build.sh version COPYRIGHT LICENSE README.rst \
 		examples build-aux tests FAQ
+
+EXTRA_PROGRAMS = index_demo
+index_demo_SOURCES = index_demo.c index.c index.h utf8.c utf8.h list.c list.h \
+                     xmalloc.c xmalloc.h
 
 dist-hook:
 	@chmod u+rw $(distdir)/tests;              \

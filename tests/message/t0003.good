@@ -1,4 +1,4 @@
-$ OUT=$(smenu -M -l -m test t0003.in)
+$ OUT=$(smenu -M -l -m test t0003.in)||exit 1
 
                                     test
 36:01 37:01 38:01 39:01 

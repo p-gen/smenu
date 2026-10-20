@@ -14,9 +14,9 @@
 #include <unistd.h> /* for close, getpgid, tcgetpgrp        */
 #include <stdio.h>  /* for fprintf, sprintf, FILE           */
 #include <stdlib.h> /* for free, strtol                     */
-#include <stddef.h> /* for size_t, NULL, ptrdiff_t, wchar_t */
+#include <stddef.h> /* for size_t, NULL, ptrdiff_t          */
 #include <limits.h> /* for INT_MAX, INT_MIN                 */
-#include <wchar.h>  /* for wcwidth                          */
+#include <safe.h>   /* for INT_MAX, INT_MIN                 */
 
 #ifdef HAVE_STRCASECMP
 #include <strings.h> /* for strcasecmp */
@@ -145,7 +145,7 @@ optimize_an_interval_list(ll_t *list)
 /* ***************** */
 
 /* ========================================================================= */
-/* Allocates memory and safely concatenate strings. Stolen from a public     */
+/* Allocates memory and safely concatenate strings. Inspired by a public     */
 /* domain implementation which can be found here:                            */
 /* http://openwall.info/wiki/people/solar/software/public-domain-source-code */
 /* ========================================================================= */
@@ -154,42 +154,52 @@ concat(const char *s1, ...)
 {
   va_list     args;
   const char *s;
-  char       *p, *result;
-  size_t      l, m, n;
+  char       *p;
+  char       *result;
+  size_t      len;
+  size_t      total;
+  size_t      first_len;
 
-  m = n = strlen(s1);
-  va_start(args, s1);
-  while ((s = va_arg(args, char *)))
-  {
-    l = strlen(s);
-    if ((m += l) < l)
-      break;
-  }
-  va_end(args);
-  if (s || m >= INT_MAX)
+  first_len = strlen(s1);
+  total     = first_len + 1;
+
+  if (total == 0)
     return NULL;
 
-  result = (char *)xmalloc(m + 1);
-
-  memcpy(p = result, s1, n);
-  p += n;
   va_start(args, s1);
-  while ((s = va_arg(args, char *)))
+
+  while ((s = va_arg(args, const char *)) != NULL)
   {
-    l = strlen(s);
-    if ((n += l) < l || n > m)
-      break;
-    memcpy(p, s, l);
-    p += l;
-  }
-  va_end(args);
-  if (s || m != n || p != result + n)
-  {
-    free(result);
-    return NULL;
+    len = strlen(s);
+
+    if ((total += len) < len)
+    {
+      va_end(args);
+      return NULL;
+    }
   }
 
-  *p = 0;
+  va_end(args);
+
+  result = xmalloc(total);
+  p      = result;
+
+  memcpy(p, s1, first_len);
+  p += first_len;
+
+  va_start(args, s1);
+
+  while ((s = va_arg(args, const char *)) != NULL)
+  {
+    len = strlen(s);
+    memcpy(p, s, len);
+    p += len;
+  }
+
+  va_end(args);
+
+  *p = '\0';
+
   return result;
 }
 
@@ -268,6 +278,23 @@ my_strcasecmp(const char *str1, const char *str2)
 #endif
 }
 
+/* ===================================================================== */
+/* Construct a lowercase version of an ASCII string.                     */
+/*                                                                       */
+/* d: destination character string (must be pre-allocated and freed when */
+/*    no more useful).                                                   */
+/* s: original character string.                                         */
+/* ===================================================================== */
+void
+strtolower(char *d, char *s)
+{
+  char *p;
+  char *q = d;
+
+  for (p = s; *p; ++p)
+    *q++ = tolower(*p);
+}
+
 /* ============================================= */
 /* memmove based strcpy (tolerates overlapping). */
 /* ============================================= */
@@ -291,17 +318,6 @@ isprint7(int i)
   return i >= 0x20 && i <= 0x7e;
 }
 
-/* ================================ */
-/* 8 bits aware version of isprint. */
-/* ================================ */
-int
-isprint8(int i)
-{
-  unsigned char c = i & (unsigned char)0xff;
-
-  return (c >= 0x20 && c < 0x7f) || (c >= (unsigned char)0xa0);
-}
-
 /* ================================================================ */
 /* Returns 1 if s can be converted into an int otherwise returns 0. */
 /* ================================================================ */
@@ -319,6 +335,22 @@ is_integer(const char * const s)
   return 0;
 }
 
+/* ======================================== */
+/* Helper function for swap_string_parts(). */
+/* ======================================== */
+static void
+reverse(char *s, size_t n)
+{
+  char *e = s + n - 1;
+
+  while (s < e)
+  {
+    char c = *s;
+    *s++   = *e;
+    *e--   = c;
+  }
+}
+
 /* ===================================================== */
 /* Exchanges the start and end part of a string.         */
 /* The first part goes from char 0 to size-1.            */
@@ -328,26 +360,23 @@ is_integer(const char * const s)
 int
 swap_string_parts(char **s, size_t first)
 {
-  char  *tmp;
   size_t size;
 
   if (*s == NULL || **s == '\0')
     return 0;
 
-  tmp  = xmalloc(strlen(*s) * 2 + 1);
   size = strlen(*s);
 
   if (first > size)
-  {
-    free(tmp);
     return 0;
-  }
 
-  strcpy(tmp, *s);
-  strcat(tmp, *s);
-  strncpy(*s, tmp + first, size);
+  if (first == 0 || first == size)
+    return 1;
 
-  free(tmp);
+  reverse(*s, first);
+  reverse(*s + first, size - first);
+  reverse(*s, size);
+
   return 1;
 }
 
@@ -383,7 +412,7 @@ strprint(char const *s)
       *(p++) = *s++;
     else
     {
-      sprintf(p, "\\x%02X", (unsigned char)*s++);
+      sprintf(p, "\\x%02x", (unsigned char)*s++);
       p += 4;
     }
   }
@@ -456,41 +485,6 @@ hexdump(const char *buf, FILE *fp, const char *prefix, size_t size)
   }
 }
 
-/* ===================================================================== */
-/* Version of wcswidth which tries to support extended grapheme clusters */
-/* by taking into zero width characters.                                 */
-/* ===================================================================== */
-int
-my_wcswidth(const wchar_t *s, size_t n)
-{
-  int    len = 0;
-  size_t m   = 0;
-
-  if (s == NULL || *s == L'\0')
-    return 0;
-
-  while (*s && m < n)
-  {
-    int l;
-
-    if ((l = wcwidth(*s)) >= 0)
-    {
-      /* Do not count zero-width-length glyphs. */
-      /* """""""""""""""""""""""""""""""""""""" */
-      if (*s != L'\x200d' && *(s + 1) != L'\x200d' && *(s + 1) != L'\xfe0f'
-          && *(s + 1) != L'\x20e3')
-        len += l;
-    }
-    else
-      return -1; /* wcwidth returned -1. */
-
-    s++;
-    m++;
-  }
-
-  return len;
-}
-
 /* ==================================================================== */
 /* Get the target index of the number to be inserted in a sorted array. */
 /*                                                                      */
@@ -504,27 +498,25 @@ my_wcswidth(const wchar_t *s, size_t n)
 long
 get_sorted_array_target_pos(long *array, long nb, long value)
 {
-  long pos  = nb;
-  long left = 0, right = nb, middle;
+  long left  = 0;
+  long right = nb;
 
-  if (nb > 0)
+  /* Bisection search. */
+  /* """"""""""""""""" */
+  while (left < right)
   {
-    /* Bisection search. */
-    /* """"""""""""""""" */
-    while (left < right)
-    {
-      middle = (left + right) / 2;
-      if (array[middle] == value)
-        return -1; /* Value already in array. */
+    long middle = left + ((right - left) >> 1);
+    long midval = array[middle];
 
-      if (value < array[middle])
-        right = middle;
-      else
-        left = middle + 1;
-    }
-    pos = left;
+    if (value < midval)
+      right = middle;
+    else if (value > midval)
+      left = middle + 1;
+    else
+      return -1;
   }
-  return pos;
+
+  return left;
 }
 
 /* =============================================================== */
@@ -536,7 +528,7 @@ is_in_foreground_process_group(void)
 {
   int fd, fg;
 
-  fd = open("/dev/tty", O_RDONLY);
+  fd = open_safe("/dev/tty", O_RDONLY);
   if (fd < 0)
     return 0;
 
@@ -563,146 +555,124 @@ isempty_non_utf8(const unsigned char *s)
   return 1;
 }
 
-/* ====================================================== */
-/* Returns 1 if a string is empty or only made of spaces. */
-/* UTF-8 version.                                         */
-/* ====================================================== */
+/* ======================================================= */
+/* Returns 1 if the string is empty or contains only       */
+/* characters having the Unicode White_Space property.     */
+/*                                                         */
+/* The input must be a valid, NUL-terminated UTF-8 string. */
+/* ======================================================= */
 int
 isempty_utf8(const unsigned char *s)
 {
-  unsigned char c, d;
-
   while (*s != '\0')
   {
-    if (*s == ' ' || *s == '\t') /* Normal ASCII spaces. */
-      goto next;
-
-    if (*s < 0xc2) /* Not an UTF-8 space -> return FALSE. */
-      return 0;
-
-    /* Scanning for a potential non UTF-8 spaces scanning. */
-    /* """"""""""""""""""""""""""""""""""""""""""""""""""" */
-    if ((c = *(s + 1)) != '\0')
+    /* U+0009..U+000d: TAB, LF, VT, FF and CR */
+    /* U+0020:         SPACE                  */
+    /* """""""""""""""""""""""""""""""""""""" */
+    if (*s == 0x20 || (unsigned int)(*s - 0x09) <= 0x04)
     {
-      if (*s == 0xc2 && (c == 0x85 || c == 0xa0))
-      {
-        s++;
-        goto next; /* Unnamed control character or NO-BREAK SPACE. */
-      }
-
-      if ((d = *(s + 2)) == '\0')
-        return 0;
-
-      if (*s == 0xe1 && c == 0x9a && d == 0x80)
-      {
-        s += 2;
-        goto next; /* OGHAM SPACE MARK. */
-      }
-
-      if (*s == 0xe1 && c == 0xa0 && d == 0x8e)
-      {
-        s += 2;
-        goto next; /* MONGOLIAN VOWEL SEPARATOR. */
-      }
-
-      if (*s == 0xe2 && c == 0x80 && d == 0x80)
-      {
-        s += 2;
-        goto next; /* EN QUAD. */
-      }
-
-      if (*s == 0xe2 && c == 0x80 && d == 0x81)
-      {
-        s += 2;
-        goto next; /* EM QUAD. */
-      }
-
-      if (*s == 0xe2 && c == 0x80 && d == 0x82)
-      {
-        s += 2;
-        goto next; /* EN SPACE. */
-      }
-      if (*s == 0xe2 && c == 0x80 && d == 0x83)
-      {
-        s += 2;
-        goto next; /* EM SPACE. */
-      }
-
-      if (*s == 0xe2 && c == 0x80 && d == 0x84)
-      {
-        s += 2;
-        goto next; /* THREE-PER-EM SPACE. */
-      }
-
-      if (*s == 0xe2 && c == 0x80 && d == 0x85)
-      {
-        s += 2;
-        goto next; /* FOUR-PER-EM SPACE. */
-      }
-
-      if (*s == 0xe2 && c == 0x80 && d == 0x86)
-      {
-        s += 2;
-        goto next; /* SIX-PER-EM SPACE. */
-      }
-      if (*s == 0xe2 && c == 0x80 && d == 0x87)
-      {
-        s += 2;
-        goto next; /* FIGURE SPACE. */
-      }
-
-      if (*s == 0xe2 && c == 0x80 && d == 0x88)
-      {
-        s += 2;
-        goto next; /* PUNCTUATION SPACE. */
-      }
-
-      if (*s == 0xe2 && c == 0x80 && d == 0x89)
-      {
-        s += 2;
-        goto next; /* THIN SPACE. */
-      }
-
-      if (*s == 0xe2 && c == 0x80 && d == 0x8a)
-      {
-        s += 2;
-        goto next; /* HAIR SPACE. */
-      }
-
-      if (*s == 0xe2 && c == 0x80 && d == 0xa8)
-      {
-        s += 2;
-        goto next; /* LINE SEPARATOR. */
-      }
-
-      if (*s == 0xe2 && c == 0x80 && d == 0xa9)
-      {
-        s += 2;
-        goto next; /* PARAGRAPH SEPARATOR. */
-      }
-
-      if (*s == 0xe2 && c == 0x80 && d == 0xaf)
-      {
-        s += 2;
-        goto next; /* NARROW NO-BREAK SPACE. */
-      }
-
-      if (*s == 0xe2 && c == 0x81 && d == 0x9f)
-      {
-        s += 2;
-        goto next; /* MEDIUM MATHEMATICAL SPACE. */
-      }
-
-      if (*s == 0xe3 && c == 0x80 && d == 0x80)
-      {
-        s += 2;
-        goto next; /* IDEOGRAPHIC SPACE. */
-      }
-
-      return 0;
+      s++;
+      continue;
     }
-  next:
-    s++;
+
+    switch (*s)
+    {
+      /* c2 85: U+0085 NEXT LINE      */
+      /* c2 a0: U+00A0 NO-BREAK SPACE */
+      /* """""""""""""""""""""""""""" */
+      case 0xc2:
+        if (s[1] == 0x85 || s[1] == 0xa0)
+        {
+          s += 2;
+          continue;
+        }
+        break;
+
+      /* e1 9a 80: U+1680 OGHAM SPACE MARK */
+      /* """"""""""""""""""""""""""""""""" */
+      case 0xe1:
+        if (s[1] == 0x9a && s[2] == 0x80)
+        {
+          s += 3;
+          continue;
+        }
+        break;
+
+      case 0xe2:
+        if (s[1] == 0x80)
+        {
+          /* e2 80 80..8a: U+2000..U+200a */
+          /* e2 80 a8:     U+2028         */
+          /* e2 80 a9:     U+2029         */
+          /* e2 80 af:     U+202f         */
+          /* """""""""""""""""""""""""""" */
+          if ((unsigned int)(s[2] - 0x80) <= 0x0a || s[2] == 0xa8
+              || s[2] == 0xa9 || s[2] == 0xaf)
+          {
+            s += 3;
+            continue;
+          }
+        }
+        else if (s[1] == 0x81 && s[2] == 0x9f)
+        {
+          /* e2 81 9f: U+205f MEDIUM MATHEMATICAL SPACE */
+          /* """""""""""""""""""""""""""""""""""""""""" */
+          s += 3;
+          continue;
+        }
+        break;
+
+      /* e3 80 80: U+3000 IDEOGRAPHIC SPACE */
+      /* """""""""""""""""""""""""""""""""" */
+      case 0xe3:
+        if (s[1] == 0x80 && s[2] == 0x80)
+        {
+          s += 3;
+          continue;
+        }
+        break;
+    }
+
+    return 0;
   }
+
   return 1;
 }
+
+#if 0
+/* ================================================================= */
+/* Replaces any multibyte or invalid character in the current locale */
+/* in s by a substitution character in-place.                        */
+/* s will be modified but its address in memory will not change.     */
+/* ================================================================= */
+void
+sanitize(char *s, char substitute)
+{
+  char  *p = s;
+  size_t len;
+
+  len = strlen(s);
+  while (*p)
+  {
+    int n;
+
+    n = mblen(p, MB_CUR_MAX);
+
+    /* In case of error, substitute just one byte. */
+    /* """"""""""""""""""""""""""""""""""""""""""" */
+    if (n < 0)
+    {
+      *p = substitute;
+      len -= 1;
+    }
+    else if (n > 1)
+    {
+      *p = substitute;
+      memmove(p + 1, p + n, len - (p - s) - n + 1);
+      len -= (n - 1);
+    }
+
+    p++;
+  }
+}
+#endif

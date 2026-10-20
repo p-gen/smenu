@@ -42,7 +42,7 @@
 #include "safe.h"
 #define BUF_MALLOC xmalloc
 #define BUF_REALLOC xrealloc
-#include "tinybuf.h"
+#include "buf.h"
 #include "smenu.h"
 
 /* ***************** */
@@ -68,6 +68,7 @@ long *first_word_in_line_a;  /* array containing the index of the first    *
 long *shift_right_sym_pos_a; /* screen column number of the right          *
                               | scrolling symbol if any when in line or    *
                               | column mode.                               */
+int   iso_charset = 0;
 
 int forgotten_timer = -1;
 int help_timer      = -1;
@@ -84,8 +85,19 @@ int marked = -1; /* Index of the marked word or -1. */
 
 char *word_buffer;
 
+char *tmp_full_word; /* Temporary variable able to contain the beginning of *
+                      | the word to be displayed.                           */
+
+char *tmp_base_word; /* Temporary variable able to contain the part of the *
+                      | word to be displayed without its potential direct  *
+                      | access number.                                     */
+
+/* Useful unction pointers. */
+/* """""""""""""""""""""""" */
 int (*my_isprint)(int);
 int (*my_isempty)(const unsigned char *);
+size_t (*my_strlen)(const char *);
+void (*stol)(char *, char *);
 
 /* UTF-8 useful symbols. */
 /* """"""""""""""""""""" */
@@ -131,7 +143,7 @@ long *matching_words_da = NULL; /* Array containing the index of all *
 long *best_matching_words_da = NULL; /* Array containing the index of *
                                       | matching words containing a   *
                                       | consecutive suite of matching *
-                                      | glyphs.                       */
+                                      | characters.                   */
 
 long *alt_matching_words_da = NULL; /* Alternate array to contain only *
                                      | the matching candidates having  *
@@ -164,7 +176,7 @@ int       quiet_timeout = 0; /* 1 when we want no message to be displayed.  */
 /* Fatal errors functions. */
 /* *********************** */
 
-void
+static void
 fatal(void)
 {
   if (ctxopt_usage_on_error())
@@ -173,7 +185,7 @@ fatal(void)
     exit(EXIT_FAILURE);
 }
 
-void
+static void
 fatal_ctx(char *ctx_name)
 {
   if (ctxopt_usage_on_error())
@@ -299,10 +311,10 @@ init_help(win_t               *win,
     char *Cright_arrow = concat("^", right_arrow, (char *)0);
     char *du_arrows    = concat(down_arrow, up_arrow, (char *)0);
     char *arrows       = concat(left_arrow,
-                          down_arrow,
-                          up_arrow,
-                          right_arrow,
-                          (char *)0);
+                                down_arrow,
+                                up_arrow,
+                                right_arrow,
+                                (char *)0);
 
     help_entry_t header_entries[] = {
       { "Start", 5, "u", "u", "" },     { " ", 1, "u", "u", "" },
@@ -616,8 +628,8 @@ disp_help(win_t               *win,
   displayed_lines = 0;
   total_lines     = BUF_LEN(help_lines_da);
 
-  /* Print the different objects forming the help lines.                 */
-  /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+  /* Print the different objects forming the help lines. */
+  /* """"""""""""""""""""""""""""""""""""""""""""""""""" */
   for (index = fst_disp_help_line; index < total_lines; index++)
   {
     int i;
@@ -646,16 +658,16 @@ disp_help(win_t               *win,
       (void)tputs(TPARM1(exit_attribute_mode), 1, outch);
       apply_attr(term, *(entry->attr));
 
-      fputs_safe(entry->str, stdout);
+      fputs(entry->str, stdout);
       (void)tputs(TPARM1(exit_attribute_mode), 1, outch);
     }
 
     /* Fill the remaining space with spaces. */
     /* """"""""""""""""""""""""""""""""""""" */
     for (i = len; i < max_col; i++)
-      fputc_safe(' ', stdout);
+      fputc(' ', stdout);
     if (displayed_lines < win->max_lines)
-      fputc_safe('\n', stdout);
+      fputc('\n', stdout);
   }
 
   /* Put back the cursor to its saved position. */
@@ -1408,7 +1420,7 @@ my_beep(toggle_t *toggles)
   struct timespec ts, rem;
 
   if (!toggles->visual_bell)
-    fputc_safe('\a', stdout);
+    fputc('\a', stdout);
   else
   {
     int rc;
@@ -1536,19 +1548,21 @@ check_integer_constraint(int nb_args, char **args, char *value, char *par)
 
 /* ======================================================================= */
 /* Update the bitmap associated with a word. The bits set to 1 in this     */
-/* bitmap indicate the positions of the UFT-8 glyphs of the search buffer  */
-/* in the word.                                                            */
+/* bitmap indicate the positions of the UFT-8 characters of the search     */
+/* buffer in the word.                                                     */
 /*                                                                         */
 /* The disp_word function will use it to display these special characters. */
 /*                                                                         */
 /* mode     is the search method.                                          */
 /* data     contains information about the search buffer.                  */
+/* langinfo is used to check for UTF-8 compatibility.                      */
 /* affinity determines if we must only consider matches that occur at      */
 /*          the start, the end or if we just don't care.                   */
 /* ======================================================================= */
 void
 update_bitmaps(search_mode_t     mode,
                search_data_t    *data,
+               langinfo_t       *langinfo,
                bitmap_affinity_t affinity)
 {
   long i, j, n; /* work variables.                                       */
@@ -1556,7 +1570,7 @@ update_bitmaps(search_mode_t     mode,
   long bm_len; /* number of chars taken by the bit mask.                 */
 
   char *start; /* pointer on the position of the matching position       *
-                | of the last search buffer glyph in the word.           */
+                | of the last search buffer character in the word.       */
 
   char *bm; /* the word's current bitmap.                                */
 
@@ -1566,10 +1580,10 @@ update_bitmaps(search_mode_t     mode,
   char *sb_orig = data->buf; /* sb: search buffer.                       */
 
   long *o    = data->off_a;      /* array of the offsets of the search   *
-                                  | buffer glyphs.                       */
+                                  | buffer characters.                   */
   long *l    = data->len_a;      /* array of the lengths in bytes of     *
-                                  | the search buffer glyphs.            */
-  long  last = data->mb_len - 1; /* offset of the last glyph in the      *
+                                  | the search buffer characters.        */
+  long  last = data->mb_len - 1; /* offset of the last character in the  *
                                   | search buffer.                       */
 
   BUF_CLEAR(best_matching_words_da);
@@ -1577,10 +1591,10 @@ update_bitmaps(search_mode_t     mode,
   if (mode == FUZZY || mode == SUBSTRING)
   {
     char *sb;
-    char *first_glyph;
+    char *first_character;
     long  badness = 0; /* number of 0s between two 1s. */
 
-    first_glyph = xmalloc(5);
+    first_character = xmalloc(5);
 
     /* In fuzzy search mode, case is not taken into account */
     /* during the search.                                   */
@@ -1588,25 +1602,25 @@ update_bitmaps(search_mode_t     mode,
     if (mode == FUZZY)
     {
       sb = xstrdup(sb_orig); /* sb initially points to sb_orig. */
-      utf8_strtolower(sb, sb_orig);
+      stol(sb, sb_orig);
     }
     else
       sb = sb_orig;
 
     for (i = 0; i < (long)BUF_LEN(matching_words_da); i++)
     {
-      long lmg; /* Position of the last matching glyph of the search buffer *
-                 | in a word.                                               */
+      long lmg; /* Position of the last matching character of the search *
+                 | buffer in a word.                                     */
 
       n = matching_words_da[i];
 
       str_orig = xstrdup(word_a[n].str + daccess.flength + word_a[n].offset);
 
-      /* We need to remove the trailing spaces to use the     */
+      /* We need to remove added trailing spaces to use the   */
       /* following algorithm.                                 */
       /* .len holds the original length in bytes of the word. */
       /* """""""""""""""""""""""""""""""""""""""""""""""""""" */
-      rtrim(str_orig, " \t", 0);
+      rtrim(str_orig, " \t", word_a[n].len);
 
       bm_len = (word_a[n].mb - daccess.flength) / CHAR_BIT + 1;
       bm     = word_a[n].bitmap;
@@ -1617,7 +1631,7 @@ update_bitmaps(search_mode_t     mode,
       if (mode == FUZZY)
       {
         str = xstrdup(str_orig);
-        utf8_strtolower(str, str_orig);
+        stol(str, str_orig);
       }
       else
         str = str_orig;
@@ -1625,52 +1639,63 @@ update_bitmaps(search_mode_t     mode,
       start = str;
       lmg   = 0;
 
-      /* Start points to the first UTF-8 glyph of the word. */
-      /* """""""""""""""""""""""""""""""""""""""""""""""""" */
-      while ((size_t)(start - str) < word_a[n].len - daccess.flength)
+      /* Start points to the first UTF-8 character of the word. */
+      /* """""""""""""""""""""""""""""""""""""""""""""""""""""" */
+      while (start != NULL
+             && (size_t)(start - str) < word_a[n].len - daccess.flength)
       {
         /* Reset the bitmap. */
         /* """"""""""""""""" */
         memset(bm, '\0', bm_len);
 
-        /* Compare the glyph pointed to by start to the last glyph of */
-        /* the search buffer, the aim is to point to the first        */
-        /* occurrence of the last glyph of it.                        */
-        /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+        /* Compare the character pointed to by start to the last character */
+        /* of the search buffer, the aim is to point to the first          */
+        /* occurrence of the last character of it.                         */
+        /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
         if (memcmp(start, sb + o[last], l[last]) == 0)
         {
-          char *p; /* Pointer to the beginning of an UTF-8 glyph in *
-                    | the potential lowercase version of the word.  */
+          char *p; /* Pointer to the beginning of an UTF-8 character in *
+                    | the potential lowercase version of the word.      */
 
-          long sg; /* Index going from lmg backward to 0 of the tested *
-                    | glyphs of the search buffer (searched glyph).    */
+          long sg; /* Index going from lmg backward to 0 of the tested      *
+                    | characters of the search buffer (searched character). */
 
           if (last == 0)
           {
-            /* There is only one glyph in the search buffer, we can */
-            /* stop here.                                           */
-            /* """""""""""""""""""""""""""""""""""""""""""""""""""" */
+            /* There is only one character in the search buffer, we can */
+            /* stop here.                                               */
+            /* """""""""""""""""""""""""""""""""""""""""""""""""""""""" */
             BIT_ON(bm, lmg + word_a[n].offset);
             if (affinity != END_AFFINITY)
               break;
           }
 
-          /* If the search buffer contains more than one glyph, we need  */
-          /* to search the first combination which match the buffer in   */
-          /* the word.                                                   */
-          /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+          /* If the search buffer contains more than one character, we need */
+          /* to search the first combination which match the buffer in the  */
+          /* word.                                                          */
+          /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
           p = start;
-          j = last; /* j counts the number of glyphs in the search buffer *
-                     | not found in the word.                             */
+          j = last; /* j counts the number of characters in the search buffer *
+                     | not found in the word.                                 */
 
-          /* Proceed backwards from the position of last glyph of the      */
-          /* search to check if all the previous glyphs can be fond before */
-          /* in the word. If not try to find the next position of this     */
-          /* last glyph in the word.                                       */
-          /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+          /* Proceed backwards from the position of last character of the */
+          /* search to check if all the previous characters can be fond   */
+          /* before in the word. If not try to find the next position of  */
+          /* this last character in the word.                             */
+          /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
           sg = lmg;
-          while (j > 0 && (p = utf8_prev(str, p)) != NULL)
+          while (j > 0)
           {
+            if (langinfo->utf8)
+            {
+              if ((p = utf8_prev(str, p)) == NULL)
+                break;
+            }
+            else if (p == str)
+              break;
+            else
+              p--;
+
             if (memcmp(p, sb + o[j - 1], l[j - 1]) == 0)
             {
               BIT_ON(bm, sg - 1 + word_a[n].offset);
@@ -1682,8 +1707,8 @@ update_bitmaps(search_mode_t     mode,
             sg--;
           }
 
-          /* All the glyphs have been found. */
-          /* """"""""""""""""""""""""""""""" */
+          /* All the characters have been found. */
+          /* """"""""""""""""""""""""""""""""""" */
           if (j == 0)
           {
             BIT_ON(bm, lmg + word_a[n].offset);
@@ -1693,7 +1718,12 @@ update_bitmaps(search_mode_t     mode,
         }
 
         lmg++;
-        start = utf8_next(start);
+        if (langinfo->utf8)
+          start = utf8_next(start);
+        else if (*(start + 1) != '\0')
+          start++;
+        else
+          start = NULL;
       }
 
       if (mode == FUZZY)
@@ -1702,11 +1732,11 @@ update_bitmaps(search_mode_t     mode,
 
         free(str);
 
-        /* We know that the first non blank glyph is part of the pattern, */
-        /* so highlight it if it is not and suppresses the highlighting   */
-        /* of the next occurrence that must be here because this word has */
-        /* already been filtered by select_starting_pattern().            */
-        /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+        /* We know that the first non blank character is part of the pattern, */
+        /* so highlight it if it is not and suppresses the highlighting of    */
+        /* the next occurrence that must be here because this word has        */
+        /* already been filtered by select_starting_pattern().                */
+        /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
         if (affinity == START_AFFINITY)
         {
           size_t i;
@@ -1719,10 +1749,14 @@ update_bitmaps(search_mode_t     mode,
                   *(word_a[n].str + daccess.flength + word_a[n].offset + i)))
               break;
 
-          first_glyph = utf8_strprefix(first_glyph,
-                                       word_a[n].str + i,
-                                       1,
-                                       &mb_len);
+          if (langinfo->utf8)
+            utf8_strhead(first_character, word_a[n].str + i, 1, &mb_len);
+          else
+          {
+            first_character[0] = *(word_a[n].str + i);
+            first_character[1] = '\0';
+            mb_len             = 1;
+          }
 
           if (!BIT_ISSET(word_a[n].bitmap, i + word_a[n].offset))
           {
@@ -1732,9 +1766,20 @@ update_bitmaps(search_mode_t     mode,
 
             ptr1 = word_a[n].str + i;
             i++;
-            while ((ptr2 = utf8_next(ptr1)) != NULL)
+
+            if (langinfo->utf8)
+              ptr2 = utf8_next(ptr1);
+            else
             {
-              if (memcmp(ptr2, first_glyph, mb_len) == 0)
+              if (*(ptr1 + 1) != '\0')
+                ptr2 = ptr1 + 1;
+              else
+                ptr2 = NULL;
+            }
+
+            while (ptr2 != NULL)
+            {
+              if (memcmp(ptr2, first_character, mb_len) == 0)
               {
                 if (BIT_ISSET(word_a[n].bitmap, i + word_a[n].offset))
                 {
@@ -1748,6 +1793,16 @@ update_bitmaps(search_mode_t     mode,
                 ptr1 = ptr2;
 
               i++;
+
+              if (langinfo->utf8)
+                ptr2 = utf8_next(ptr1);
+              else
+              {
+                if (*(ptr1 + 1) != '\0')
+                  ptr2 = ptr1 + 1;
+                else
+                  ptr2 = NULL;
+              }
             }
           }
         }
@@ -1772,8 +1827,8 @@ update_bitmaps(search_mode_t     mode,
             j++;
 
           /* Stop here if all the possible bits has been checked as they  */
-          /* cannot be more numerous than the number of UTF-8 glyphs in   */
-          /* the search buffer.                                           */
+          /* cannot be more numerous than the number of UTF-8 characters  */
+          /* in the search buffer.                                        */
           /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
           if (j == data->mb_len)
             break;
@@ -1797,7 +1852,7 @@ update_bitmaps(search_mode_t     mode,
     if (mode == FUZZY)
       free(sb);
 
-    free(first_glyph);
+    free(first_character);
   }
   else if (mode == PREFIX)
   {
@@ -1818,6 +1873,11 @@ update_bitmaps(search_mode_t     mode,
 /* ========================================================= */
 /* Find the next word index in the list of matching words    */
 /* using the bisection search algorithm.                     */
+/*                                                           */
+/* array : array containing the index of matching words.     */
+/* nb    : number of items in array.                         */
+/* value : word_a index to look for.                         */
+/*                                                           */
 /* Set the value of index to -1 and returns -1 if not found. */
 /* ========================================================= */
 long
@@ -1830,13 +1890,41 @@ find_next_matching_word(long *array, long nb, long value, long *index)
 
   if (nb > 0)
   {
-    long left = 0, right = nb;
+    long left, right;
+
+    /* Early failure when value if higher than the highest index in array. */
+    /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+    if (value > array[nb - 1])
+      return -1;
+
+    /* Early success if value is lower than the lowest index in array. */
+    /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+    if (value < array[0])
+    {
+      *index = 0;
+      return array[*index];
+    }
 
     /* Bisection search. */
     /* ''''''''''''''''' */
+    left  = 0;
+    right = nb;
+
     while (left < right)
     {
       long middle = (left + right) / 2;
+
+      if (array[middle] == value)
+      {
+        if (middle < nb - 1)
+        {
+          *index = middle + 1;
+          return array[*index];
+        }
+
+        *index = -1;
+        return -1;
+      }
 
       if (value < array[middle])
         right = middle;
@@ -1846,14 +1934,8 @@ find_next_matching_word(long *array, long nb, long value, long *index)
 
     if (left < nb - 1)
     {
-      *index = left;
+      *index = left + 1;
       return array[*index];
-    }
-
-    if (value > array[nb - 1])
-    {
-      *index = -1;
-      return -1;
     }
 
     *index = nb - 1;
@@ -1879,10 +1961,25 @@ find_prev_matching_word(long *array, long nb, long value, long *index)
 
   if (nb > 0)
   {
+    long left, right;
+
+    /* Early failure when value if lower than the lowset index in array. */
+    /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+    if (value < array[0])
+      return -1;
+
+    /* Early success if value is higher than the highest index in array. */
+    /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+    if (value > array[nb - 1])
+    {
+      *index = nb - 1;
+      return array[*index];
+    }
+
     /* Bisection search. */
     /* ''''''''''''''''' */
-
-    long left = 0, right = nb;
+    left  = 0;
+    right = nb;
 
     while (left < right)
     {
@@ -1992,7 +2089,7 @@ outch(char c)
 outch(int c)
 #endif
 {
-  fputc_safe(c, stdout);
+  fputc(c, stdout);
   return 1;
 }
 
@@ -2005,11 +2102,15 @@ setup_term(int const       fd,
            struct termios *old_in_attrs,
            struct termios *new_in_attrs)
 {
-  int error;
-
-  /* Save the terminal parameters and configure it in row mode. */
+  /* Save the terminal parameters and configure it in raw mode. */
   /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-  tcgetattr(fd, old_in_attrs);
+  if (tcgetattr(fd, old_in_attrs) == -1)
+  {
+    perror("smenu");
+    exit(EXIT_FAILURE);
+  }
+
+  *new_in_attrs = *old_in_attrs;
 
   new_in_attrs->c_iflag = old_in_attrs->c_iflag
                           & ~(IGNBRK | BRKINT | PARMRK | ISTRIP | INLCR | IGNCR
@@ -2022,9 +2123,7 @@ setup_term(int const       fd,
   new_in_attrs->c_cc[VTIME]  = 0;    /* no timeout.               */
   new_in_attrs->c_cc[VERASE] = 0x08; /* ^H.                       */
 
-  error = tcsetattr_safe(fd, TCSADRAIN, new_in_attrs);
-
-  if (error == -1)
+  if (tcsetattr_safe(fd, TCSADRAIN, new_in_attrs) == -1)
   {
     perror("smenu");
     exit(EXIT_FAILURE);
@@ -2054,7 +2153,7 @@ restore_term(int const fd, struct termios *old_in_attrs)
 /* Defaults to 80x24.                             */
 /* ============================================== */
 void
-get_terminal_size(int * const r, int * const c, term_t *term)
+get_terminal_size(int * const r, int * const c)
 {
   struct winsize ws;
 
@@ -2105,7 +2204,7 @@ get_cursor_position(int * const r, int * const c)
 
   /* Report cursor location. */
   /* """"""""""""""""""""""" */
-  while ((v = write(STDOUT_FILENO, "\x1b[6n", 4)) == -1 && attempts)
+  while ((v = write_safe(STDOUT_FILENO, "\x1b[6n", 4)) == -1 && attempts)
   {
     if (errno == EINTR)
       attempts--;
@@ -2130,7 +2229,7 @@ read:
   do
   {
     ask = buf_size - 1 - (s - buf);
-    got = read(STDIN_FILENO, s, ask);
+    got = read_safe(STDIN_FILENO, s, ask);
 
     if (got < 0 && errno == EINTR)
       got = 0;
@@ -2164,8 +2263,8 @@ parse_regex_selector_part(char *str, ll_t **regex_list)
 {
   regex_t *regex;
 
-  /* Remove the last character of str (the delimiter).*/
-  /* """""""""""""""""""""""""""""""""""""""""""""""" */
+  /* Remove the last character of str (the delimiter). */
+  /* """"""""""""""""""""""""""""""""""""""""""""""""" */
   str[strlen(str) - 1] = '\0';
 
   /* Ignore the first character of str (the delimiter).       */
@@ -2281,7 +2380,7 @@ parse_selectors(char        *str,
                 ll_t       **at_regex_list,
                 alignment_t *default_alignment,
                 win_t       *win,
-                misc_t      *misc,
+                langinfo_t  *langinfo,
                 term_t      *term)
 {
   char         c;
@@ -2293,11 +2392,22 @@ parse_selectors(char        *str,
   char        *attr_str = NULL;
   attrib_t    *attr;
   attr_elem_t *attr_elem;
+  char        *str_orig;
 
   /* Replace the UTF-8 string representation in the selector by */
   /* their binary values.                                       */
   /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-  utf8_interpret(str, misc->invalid_char_substitute);
+  str_orig = xstrdup(str);
+
+  if (!utf8_interpret(str, langinfo->utf8, '\0', iso_charset))
+  {
+    fprintf(stderr,
+            "A pattern in %s is invalid or incompatible "
+            "with the current character set.\n",
+            str_orig);
+    free(str_orig);
+    exit(EXIT_FAILURE);
+  }
 
   /* Get the first character to see if this is */
   /* an additive or restrictive operation.     */
@@ -2386,6 +2496,7 @@ parse_selectors(char        *str,
   ptr = str + start;
 
   if (*ptr == '\0' && *default_alignment == AL_NONE)
+  {
     switch (type)
     {
       case ALEFT:
@@ -2401,6 +2512,7 @@ parse_selectors(char        *str,
         *unparsed = xstrdup(str);
         return;
     }
+  }
 
   /* Scan the comma separated ranges. */
   /* '\' can be used to escape a ','. */
@@ -2858,17 +2970,28 @@ parse_al_selectors(char        *str,
                    ll_t       **ar_regex_list,
                    ll_t       **ac_regex_list,
                    alignment_t *default_alignment,
-                   misc_t      *misc)
+                   langinfo_t  *langinfo)
 {
   char   c;
   size_t start = 1; /* column string offset in the parsed string. */
   char  *ptr;       /* pointer to the remaining string to parse.  */
   int    type;
+  char  *str_orig;
 
   /* Replace the UTF-8 string representation in the selector by */
   /* their binary values.                                       */
   /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-  utf8_interpret(str, misc->invalid_char_substitute);
+  str_orig = xstrdup(str);
+
+  if (!utf8_interpret(str, langinfo->utf8, '\0', iso_charset))
+  {
+    fprintf(stderr,
+            "A pattern in %s is invalid or incompatible "
+            "with the current character set.\n",
+            str_orig);
+    free(str_orig);
+    exit(EXIT_FAILURE);
+  }
 
   /* Get the first character to see if this is */
   /* an additive or restrictive operation.     */
@@ -3135,7 +3258,7 @@ build_repl_string(char    *orig,
                   long     match,
                   int     *error)
 {
-  char *str;     /*string to return */
+  char *str;     /* string to return. */
   int   special; /* 1 if the next character is protected. */
   long  offset;  /* offset of the 1st sub corresponding to the match. */
 
@@ -3258,23 +3381,26 @@ build_repl_string(char    *orig,
 /* orig: original string                                                  */
 /* sed:      composite variable containing the regular expression, a      */
 /*           substitution string and various other information.           */
-/* output:   destination buffer.                                          */
+/* langinfo: used to check for UTF-8 compatibility.                       */
 /*                                                                        */
 /* return 1 if the replacement has been successful else 0.                */
 /*                                                                        */
 /* NOTE:                                                                  */
-/* uses the global variable word_buffer.                                  */
+/* Modifies the global variable word_buffer.                              */
 /* ====================================================================== */
 int
 replace(char *orig, sed_t *sed)
 {
-  size_t match_nb   = 0; /* number of matches in the original string. */
-  int    sub_nb     = 0; /* number of remembered matches in the       *
-                          | original string.                          */
-  size_t target_len = 0; /* length of the resulting string.           */
+  size_t match_nb = 0; /* number of matches in the original string. */
+  int    sub_nb   = 0; /* number of remembered matches in the       *
+                        | original string.                          */
+
+  size_t target_len = 0; /* length of the resulting string. */
   size_t subs_max   = 0;
 
-  if (*orig == '\0')
+  size_t dl; /* Dummy variable for temporary use. */
+
+  if (*orig == '\0') /* Empty string, noting to do. */
     return 1;
 
   range_t *matches_a = xmalloc(strlen(orig) * sizeof(range_t));
@@ -3382,7 +3508,9 @@ replace(char *orig, sed_t *sed)
         matches_a[match_nb].end   = finish;
         match_nb++;
 
-        if (match_nb > utf8_strlen(orig))
+        dl = my_strlen(orig);
+
+        if (match_nb > dl)
           goto fail;
       }
       else
@@ -3528,9 +3656,11 @@ tst_search_cb(void *elem)
 /* The length of the scancode cannot reach max which must be lower of    */
 /* equal than 63 which is the size minus one of the buffer array defined */
 /* in main.                                                              */
+/* The value of is_utf8 must be 0 or 1, depending on the current         */
+/* character set.                                                        */
 /* ===================================================================== */
 int
-get_scancode(unsigned char *s, size_t max)
+get_scancode(unsigned char *s, size_t max, int is_utf8)
 {
   int            c;
   size_t         i = 1;
@@ -3548,10 +3678,13 @@ get_scancode(unsigned char *s, size_t max)
   memset(s, '\0', max);
   s[0] = c;
 
-  /* 0x1b (ESC) has been found, proceed to check if additional codes */
-  /* are available.                                                  */
-  /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-  if (c == 0x1b || c > 0x80)
+  /* 0x1b (ESC) has been found, or the current charset is UTF-8. */
+  /* proceed to check if additional codes                        */
+  /* are available.                                              */
+  /* As a reminder, the only supported multibyte character set   */
+  /* is UTF-8.                                                   */
+  /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+  if (c == 0x1b || is_utf8)
   {
     /* Save the terminal parameters and configure getchar() */
     /* to return immediately.                               */
@@ -3606,14 +3739,14 @@ buffer_cmp(const void *a, const void *b)
 
 /* ===================================================================== */
 /* Get bytes from stdin. If the first byte is the leading character of a */
-/* UTF-8 glyph, the following ones are also read.                        */
+/* UTF-8 character, the following ones are also read.                    */
 /* The utf8_get_length function is used to get the number of bytes of    */
 /* the character.                                                        */
 /* ===================================================================== */
 int
 read_bytes(FILE       *input,
            char       *buffer,
-           ll_t       *zapped_glyphs_list,
+           ll_t       *zapped_characters_list,
            langinfo_t *langinfo,
            misc_t     *misc)
 {
@@ -3637,7 +3770,12 @@ read_bytes(FILE       *input,
     /* Check if we need to read more bytes to form a sequence */
     /* and put the number of bytes of the sequence in last.   */
     /* """""""""""""""""""""""""""""""""""""""""""""""""""""" */
-    if (langinfo->utf8 && ((n = utf8_get_length(byte)) > 1))
+    if (langinfo->utf8)
+      n = utf8_get_length(byte);
+    else
+      n = 1;
+
+    if (n > 1)
     {
       while (last < n && (byte = my_fgetc(input)) != EOF
              && (byte & 0xc0) == 0x80)
@@ -3653,12 +3791,12 @@ read_bytes(FILE       *input,
     /* In this case the original sequence is lost (unsupported  */
     /* encoding).                                               */
     /* """""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-    if (langinfo->utf8 && utf8_validate(buffer) != NULL)
+    if (langinfo->utf8 && utf8_validate((unsigned char *)buffer) != NULL)
     {
       byte = buffer[0] = misc->invalid_char_substitute;
       buffer[1]        = '\0';
     }
-  } while (ll_find(zapped_glyphs_list, buffer, buffer_cmp) != NULL);
+  } while (ll_find(zapped_characters_list, buffer, buffer_cmp) != NULL);
 
   return byte;
 }
@@ -3669,58 +3807,71 @@ read_bytes(FILE       *input,
 /*                                                                        */
 /* dest must be long enough to contain the expanded string.               */
 /*                                                                        */
-/* Replace also UTF-8 glyphs by the substitution character if the         */
-/* current locale if not UTF-8.                                           */
+/* Replace also UTF-8 characters by the substitution character if the     */
+/* current character set if not UTF-8 (langinfo->utf8).                   */
 /*                                                                        */
-/* Return the number of resulting glyphs.                                 */
+/* Return the number of resulting bytes.                                  */
 /* ====================================================================== */
 size_t
 expand(char       *src,
        char       *dest,
+       char       *all_spaces,
        langinfo_t *langinfo,
        toggle_t   *toggles,
        misc_t     *misc)
 {
   char   c;
   int    n;
-  int    all_spaces = 1;
-  char  *ptr        = dest;
-  size_t len        = 0;
+  char  *ptr = dest;
+  size_t len = 0;
+
+  /* Ignore the possible direct access leader. */
+  /* """"""""""""""""""""""""""""""""""""""""" */
+  if (daccess.length > 0)
+  {
+    int skip;
+
+    if (daccess.padding == 'i')
+      skip = 0;
+    else
+      skip = daccess.length + 2;
+
+    strncpy(dest, src, skip);
+
+    ptr += skip;
+    src += skip;
+    len += skip;
+  }
+
+  *all_spaces = 1;
 
   while ((c = *(src++)))
   {
-    /* UTF-8 codepoints may take more than on character. */
-    /* """"""""""""""""""""""""""""""""""""""""""""""""" */
-    if ((n = utf8_get_length(c)) > 1)
+    /* UTF-8 code points may take more than on character. */
+    /* """""""""""""""""""""""""""""""""""""""""""""""""" */
+    if (langinfo->utf8)
+      n = utf8_get_length(c);
+    else
+      n = 1; /* non UTF-8 character set are considered single-byte. */
+
+    if (n > 1)
     {
-      all_spaces = 0;
+      *all_spaces = 0;
 
       if (langinfo->utf8)
-        /* If the locale is UTF-8 aware, copy src into ptr. */
-        /* """""""""""""""""""""""""""""""""""""""""""""""" */
+      {
+        /* If the character set is UTF-8 aware, copy src into ptr. */
+        /* """"""""""""""""""""""""""""""""""""""""""""""""""""""" */
         do
         {
           *(ptr++) = c;
           len++;
         } while (--n && (c = *(src++)));
-      else
-      {
-        /* If not, ignore the bytes composing the UTF-8 glyph and replace */
-        /* them with the substitution character.                          */
-        /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-        do
-        {
-          /* Skip this byte. */
-          /* ''''''''''''''' */
-        } while (--n && ('\0' != *(src++)));
-
-        *(ptr++) = misc->invalid_char_substitute;
-        len++;
       }
     }
     else
-      /* This is not a multibyte UTF-8 glyph. */
-      /* """""""""""""""""""""""""""""""""""" */
+      /* This is not a multibyte UTF-8 character. */
+      /* """""""""""""""""""""""""""""""""""""""" */
       switch (c)
       {
         case '\a':
@@ -3758,14 +3909,14 @@ expand(char       *src,
 
         common_code:
           len += 2;
-          all_spaces = 0;
+          *all_spaces = 0;
           break;
 
         default:
           if (my_isprint(c))
           {
             if (c != ' ')
-              all_spaces = 0;
+              *all_spaces = 0;
 
             *(ptr++) = c;
           }
@@ -3775,19 +3926,13 @@ expand(char       *src,
               *(ptr++) = ' '; /* Non printable character -> ' '. */
             else
             {
-              *(ptr++)   = misc->invalid_char_substitute;
-              all_spaces = 0;
+              *(ptr++)    = misc->invalid_char_substitute;
+              *all_spaces = 0;
             }
           }
           len++;
       }
   }
-
-  /* If the word contains only spaces, replace them */
-  /* by underscores so that it can be seen.         */
-  /* """""""""""""""""""""""""""""""""""""""""""""" */
-  if (toggles->show_blank_words && all_spaces)
-    memset(dest, misc->blank_char_substitute, len);
 
   *ptr = '\0'; /* Ensure that dest has a nul terminator. */
 
@@ -3806,13 +3951,12 @@ char *
 read_word(FILE          *input,
           ll_t          *word_delims_list,
           ll_t          *line_delims_list,
-          ll_t          *zapped_glyphs_list,
+          ll_t          *zapped_characters_list,
           char          *buffer,
           unsigned char *is_last,
           toggle_t      *toggles,
           langinfo_t    *langinfo,
           win_t         *win,
-          limit_t       *limits,
           misc_t        *misc)
 {
   char         *temp = NULL;
@@ -3826,7 +3970,7 @@ read_word(FILE          *input,
   /* Skip leading delimiters. */
   /* """""""""""""""""""""""" */
   do
-    byte = read_bytes(input, buffer, zapped_glyphs_list, langinfo, misc);
+    byte = read_bytes(input, buffer, zapped_characters_list, langinfo, misc);
   while (byte != EOF && ll_find(word_delims_list, buffer, buffer_cmp) != NULL);
 
   if (byte == EOF)
@@ -3857,6 +4001,7 @@ read_word(FILE          *input,
     /* Parse special characters. */
     /* """"""""""""""""""""""""" */
     if (is_special)
+    {
       switch (byte)
       {
         case 'a':
@@ -3911,6 +4056,7 @@ read_word(FILE          *input,
           buffer[1]        = '\0';
           break;
       }
+    }
     else
     {
       if (!misc->ignore_quotes)
@@ -3957,7 +4103,7 @@ read_word(FILE          *input,
     is_special = 0;
 
   next:
-    byte = read_bytes(input, buffer, zapped_glyphs_list, langinfo, misc);
+    byte = read_bytes(input, buffer, zapped_characters_list, langinfo, misc);
   }
 
   /* Nul-terminate the word to make it a string. */
@@ -3967,17 +4113,20 @@ read_word(FILE          *input,
   /* Replace the UTF-8 ASCII representations in the word just */
   /* read by their binary values.                             */
   /* """""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-  utf8_interpret(temp, misc->invalid_char_substitute);
+  utf8_interpret(temp,
+                 langinfo->utf8,
+                 misc->invalid_char_substitute,
+                 iso_charset);
 
   /* Skip all field delimiters before a record delimiter. */
   /* """""""""""""""""""""""""""""""""""""""""""""""""""" */
   if (ll_find(line_delims_list, buffer, buffer_cmp) == NULL)
   {
-    byte = read_bytes(input, buffer, zapped_glyphs_list, langinfo, misc);
+    byte = read_bytes(input, buffer, zapped_characters_list, langinfo, misc);
 
     while (byte != EOF && ll_find(word_delims_list, buffer, buffer_cmp) != NULL
            && ll_find(line_delims_list, buffer, buffer_cmp) == NULL)
-      byte = read_bytes(input, buffer, zapped_glyphs_list, langinfo, misc);
+      byte = read_bytes(input, buffer, zapped_characters_list, langinfo, misc);
 
     if (byte != EOF)
     {
@@ -4089,7 +4238,7 @@ left_margin_putp(char *s, term_t *term, win_t *win)
   /* We won't print this symbol when not in column mode. */
   /* """"""""""""""""""""""""""""""""""""""""""""""""""" */
   if (*s != '\0')
-    fputs_safe(s, stdout);
+    fputs(s, stdout);
 
   (void)tputs(TPARM1(exit_attribute_mode), 1, outch);
 }
@@ -4118,7 +4267,7 @@ right_margin_putp(char       *s1,
                 outch);
   else if (term->has_parm_right_cursor)
   {
-    fputc_safe('\r', stdout);
+    fputc('\r', stdout);
     (void)tputs(TPARM2(parm_right_cursor, offset + win->max_width + 1),
                 1,
                 outch);
@@ -4127,15 +4276,15 @@ right_margin_putp(char       *s1,
   {
     long i;
 
-    fputc_safe('\r', stdout);
+    fputc('\r', stdout);
     for (i = 0; i < offset + win->max_width + 1; i++)
       (void)tputs(TPARM1(cursor_right), 1, outch);
   }
 
   if (langinfo->utf8)
-    fputs_safe(s1, stdout);
+    fputs(s1, stdout);
   else
-    fputs_safe(s2, stdout);
+    fputs(s2, stdout);
 
   (void)tputs(TPARM1(exit_attribute_mode), 1, outch);
 }
@@ -4161,16 +4310,16 @@ disp_hbar(win_t *win, term_t *term, langinfo_t *langinfo, int pos1, int pos2)
   if (langinfo->utf8)
   {
     if (pos1 == 0)
-      fputs_safe(hbar_begin, stdout);
+      fputs(hbar_begin, stdout);
     else
-      fputs_safe(hbar_left, stdout);
+      fputs(hbar_left, stdout);
   }
   else
   {
     if (pos1 == 0)
-      fputc_safe('<', stdout);
+      fputc('<', stdout);
     else
-      fputc_safe('\\', stdout);
+      fputc('\\', stdout);
   }
 
   /* Draw the line in the horizontal bar. */
@@ -4187,7 +4336,7 @@ disp_hbar(win_t *win, term_t *term, langinfo_t *langinfo, int pos1, int pos2)
       s = "-";
 
     for (i = 0; i < term->ncolumns - 3; i++)
-      fputs_safe(s, stdout);
+      fputs(s, stdout);
   }
 
   /* Draw the cursor. */
@@ -4203,7 +4352,7 @@ disp_hbar(win_t *win, term_t *term, langinfo_t *langinfo, int pos1, int pos2)
 
     (void)tputs(TPARM2(column_address, pos1 + 1), 1, outch);
     for (i = pos1 + 1; i <= pos2 + 1; i++)
-      fputs_safe(s, stdout);
+      fputs(s, stdout);
 
     (void)tputs(TPARM2(column_address, term->ncolumns - 2), 1, outch);
   }
@@ -4216,13 +4365,13 @@ disp_hbar(win_t *win, term_t *term, langinfo_t *langinfo, int pos1, int pos2)
     else
       s = "#";
 
-    fputs_safe("\r", stdout);
+    fputs("\r", stdout);
     (void)tputs(TPARM2(parm_right_cursor, pos1 + 1), 1, outch);
 
     for (i = pos1; i <= pos2; i++)
-      fputs_safe(s, stdout);
+      fputs(s, stdout);
 
-    fputs_safe("\r", stdout);
+    fputs("\r", stdout);
     (void)tputs(TPARM2(parm_right_cursor, term->ncolumns - 2), 1, outch);
   }
   else
@@ -4234,13 +4383,13 @@ disp_hbar(win_t *win, term_t *term, langinfo_t *langinfo, int pos1, int pos2)
     else
       s = "#";
 
-    fputs_safe("\r", stdout);
+    fputs("\r", stdout);
     (void)tputs(TPARM2(cursor_right, 1), 1, outch);
     for (i = 0; i < pos1; i++)
       (void)tputs(TPARM1(cursor_right), 1, outch);
 
     for (i = pos1 + 2; i <= pos2 + 1; i++)
-      fputs_safe(s, stdout);
+      fputs(s, stdout);
 
     for (i = pos1; i < term->ncolumns - 3 - pos2 - 2; i++)
       (void)tputs(TPARM1(cursor_right), 1, outch);
@@ -4251,16 +4400,16 @@ disp_hbar(win_t *win, term_t *term, langinfo_t *langinfo, int pos1, int pos2)
   if (langinfo->utf8)
   {
     if (pos2 == term->ncolumns - 4)
-      fputs_safe(hbar_end, stdout);
+      fputs(hbar_end, stdout);
     else
-      fputs_safe(hbar_right, stdout);
+      fputs(hbar_right, stdout);
   }
   else
   {
     if (pos2 == term->ncolumns - 4)
-      fputc_safe('>', stdout);
+      fputc('>', stdout);
     else
-      fputc_safe('/', stdout);
+      fputc('/', stdout);
   }
 
   (void)tputs(TPARM1(exit_attribute_mode), 1, outch);
@@ -4277,23 +4426,24 @@ disp_hbar(win_t *win, term_t *term, langinfo_t *langinfo, int pos1, int pos2)
 /* of bytes of the longest line.                                  */
 /* ============================================================== */
 void
-get_message_lines(char *message,
-                  ll_t *message_lines_list,
-                  long *message_max_width,
-                  long *message_max_len)
+get_message_lines(char       *message,
+                  ll_t       *message_lines_list,
+                  long       *message_max_width,
+                  long       *message_max_len,
+                  langinfo_t *langinfo)
 {
-  char    *str;
-  char    *ptr;
-  char    *cr_ptr;
-  long     n;
-  wchar_t *w = NULL;
-  char    *p;
-  char     dummy[33]    = { '\0' }; /* 32 chars is large enough. */
-  int      len          = 0;
-  int      patterns_len = 0;
-  *message_max_width    = 0;
-  *message_max_len      = 0;
-  ptr                   = message;
+  char *str;
+  char *ptr;
+  char *cr_ptr;
+  long  n;
+  char *p;
+  char  dummy[33]    = { '\0' }; /* 32 chars is large enough. */
+  int   len          = 0;
+  int   patterns_len = 0;
+
+  *message_max_width = 0;
+  *message_max_len   = 0;
+  ptr                = message;
 
   /* For each line terminated with a EOL character. */
   /* """""""""""""""""""""""""""""""""""""""""""""" */
@@ -4326,10 +4476,17 @@ get_message_lines(char *message,
 
     /* If needed, update the message maximum width. */
     /* """""""""""""""""""""""""""""""""""""""""""" */
-    n = my_wcswidth((w = utf8_strtowcs(str)), utf8_strlen(str));
-    free(w);
+    if (langinfo->utf8)
+      n = utf8_strwidth((unsigned char *)str, strlen(str));
+    else
+      n = strlen(str); /* assume that the width of non utf8 and non mb *
+                        | charset chars is 1.                          */
 
     n -= patterns_len;
+
+    /* If needed, update the message maximum width */
+    /* of the longest line.                        */
+    /* """"""""""""""""""""""""""""""""""""""""""" */
     if (n > *message_max_width)
       *message_max_width = n;
 
@@ -4361,8 +4518,11 @@ get_message_lines(char *message,
       else
         p++;
 
-    n = my_wcswidth((w = utf8_strtowcs(ptr)), utf8_strlen(ptr));
-    free(w);
+    if (langinfo->utf8)
+      n = utf8_strwidth((unsigned char *)ptr, strlen(ptr));
+    else
+      n = strlen(ptr); /* assume that the width of non utf8 and non mb *
+                        | charset chars is 1.                          */
 
     n -= patterns_len;
     if (n > *message_max_width)
@@ -4421,17 +4581,16 @@ set_win_start_end(win_t *win, long current, long last)
 /* Returns the number of the last line built.                               */
 /* ======================================================================== */
 long
-build_metadata(term_t *term, long count, win_t *win)
+build_metadata(term_t *term, long count, win_t *win, langinfo_t *langinfo)
 {
-  long     i = 0;
-  long     word_len;   /* Apparent length of the current word on the    *
-                        | terminal.                                     */
-  long     len  = 0;   /* Current line length.                          */
-  long     last = 0;   /* Number of the last line built.                */
-  long     word_width; /* Number of screen positions taken by the word. */
-  long     tab_count;  /* Current number of words in the line, used in  *
-                        | tab_mode.                                     */
-  wchar_t *w;
+  long i = 0;
+  long word_len;   /* Apparent length of the current word on the    *
+                    | terminal.                                     */
+  long len  = 0;   /* Current line length.                          */
+  long last = 0;   /* Number of the last line built.                */
+  long word_width; /* Number of screen positions taken by the word. */
+  long tab_count;  /* Current number of words in the line, used in  *
+                    | tab_mode.                                     */
 
   line_nb_of_word_a[0]    = 0;
   first_word_in_line_a[0] = 0;
@@ -4448,20 +4607,45 @@ build_metadata(term_t *term, long count, win_t *win)
   tab_count = 0;
   while (i < count)
   {
+    word_len = my_strlen(word_a[i].str);
+
     /* Determine the number of screen positions taken by the word. */
-    /* Note: mbstowcs will always succeed here as word_a[i].str    */
-    /*       has already been utf8_validated/repaired.             */
     /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-    word_len   = mbstowcs(NULL, word_a[i].str, 0);
-    word_width = my_wcswidth((w = utf8_strtowcs(word_a[i].str)), word_len);
+    if (langinfo->utf8)
+    {
+      size_t bl = strlen(word_a[i].str);
+      long   lastword_width;
+      char  *old_p = word_a[i].str + bl;
+      char  *p;
 
-    /* Manage the case where the word is larger than the terminal width: */
-    /* Shorten the word until it fits.                                   */
-    /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-    while (word_width >= term->ncolumns - 2 && word_len > 0)
-      word_width = my_wcswidth(w, word_len--);
+      word_width = utf8_strwidth((unsigned char *)(word_a[i].str), bl);
 
-    free(w);
+      /* Manage the case where the word is larger than the terminal width: */
+      /* Shorten the word until it fits.                                   */
+      /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+      while (word_width >= term->ncolumns - 2 && word_len > 0)
+      {
+        p = utf8_prev(word_a[i].str, old_p);
+
+        if (p == NULL)
+          break;
+
+        lastword_width = utf8_width((unsigned char *)p);
+        word_width -= lastword_width;
+        word_len--;
+        old_p = p;
+      }
+    }
+    else
+    {
+      word_width = word_len;
+
+      /* Manage the case where the word is larger than the terminal width: */
+      /* Shorten the word until it fits.                                   */
+      /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+      while (word_width >= term->ncolumns - 2 && word_len > 0)
+        word_width = word_len--;
+    }
 
     /* Look if there is enough remaining place on the line when not in   */
     /* column mode. Force a break if the 'is_last' flag is set in all    */
@@ -4540,11 +4724,15 @@ build_metadata(term_t *term, long count, win_t *win)
 /* characters of the word highlighted.                                     */
 /* ======================================================================= */
 void
-disp_cursor_word(long pos, win_t *win, term_t *term, int err)
+disp_matching_word_cursor(long        pos,
+                          win_t      *win,
+                          term_t     *term,
+                          langinfo_t *langinfo,
+                          int         err)
 {
   size_t i;
   int    att_set = 0;
-  char  *p       = word_a[pos].str + daccess.flength;
+  char  *p       = tmp_base_word;
   char  *np;
 
   /* Set the cursor attribute. */
@@ -4624,11 +4812,19 @@ disp_cursor_word(long pos, win_t *win, term_t *term, int err)
         }
       }
     }
-    np = utf8_next(p);
+
+    if (langinfo->utf8)
+      np = utf8_next(p);
+    else if (p && *(p + 1) != '\0')
+      np = p + 1;
+    else
+      np = NULL;
+
     if (np == NULL)
-      fputs_safe(p, stdout);
+      fputs(p, stdout);
     else
       printf("%.*s", (int)(np - p), p);
+
     p = np;
   }
 }
@@ -4638,11 +4834,16 @@ disp_cursor_word(long pos, win_t *win, term_t *term, int err)
 /* with the matching characters of the word highlighted.      */
 /* ========================================================== */
 void
-disp_matching_word(long pos, win_t *win, term_t *term, int is_current, int err)
+disp_matching_word(long        pos,
+                   win_t      *win,
+                   term_t     *term,
+                   langinfo_t *langinfo,
+                   int         is_current,
+                   int         err)
 {
   size_t        i;
   int           att_set = 0;
-  char         *p       = word_a[pos].str + daccess.flength;
+  char         *p       = tmp_base_word;
   char         *np;
   unsigned char level = 0;
 
@@ -4734,9 +4935,15 @@ disp_matching_word(long pos, win_t *win, term_t *term, int is_current, int err)
       }
     }
 
-    np = utf8_next(p);
+    if (langinfo->utf8)
+      np = utf8_next(p);
+    else if (p && *(p + 1) != '\0')
+      np = p + 1;
+    else
+      np = NULL;
+
     if (np == NULL)
-      fputs_safe(p, stdout);
+      fputs(p, stdout);
     else
       printf("%.*s", (int)(np - p), p);
     p = np;
@@ -4757,19 +4964,63 @@ disp_word(long           pos,
           term_t        *term,
           win_t         *win,
           toggle_t      *toggles,
-          char          *tmp_word)
+          langinfo_t    *langinfo,
+          misc_t        *misc,
+          unsigned char  filler)
 {
   long s = word_a[pos].start;
   long e = word_a[pos].end;
-  long p;
+  long dummy;
 
   char *buffer = search_data->buf;
+
+  if (daccess.padding == 'a' || word_a[pos].is_selectable)
+  {
+    if (langinfo->utf8)
+      utf8_strhead(tmp_base_word,
+                   word_a[pos].str + daccess.flength,
+                   word_a[pos].mb - daccess.flength,
+                   &dummy);
+    else
+    {
+      strncpy(tmp_base_word,
+              word_a[pos].str + daccess.flength,
+              word_a[pos].mb - daccess.flength);
+
+      tmp_base_word[word_a[pos].mb - daccess.flength] = '\0';
+    }
+  }
+  else
+  {
+    if (langinfo->utf8)
+      utf8_strhead(tmp_base_word, word_a[pos].str, word_a[pos].mb, &dummy);
+    else
+    {
+      strncpy(tmp_base_word, word_a[pos].str, word_a[pos].mb);
+      tmp_base_word[word_a[pos].mb] = '\0';
+    }
+  }
+
+  if (word_a[pos].all_spaces && toggles->show_blank_words)
+    strrep(tmp_base_word, ' ', misc->blank_char_substitute);
+
+  strrep(tmp_base_word, filler, ' ');
 
   if (pos == current)
   {
     if (search_mode != NONE)
     {
-      utf8_strprefix(tmp_word, word_a[pos].str, (long)word_a[pos].mb, &p);
+      if (langinfo->utf8)
+        utf8_strhead(tmp_full_word,
+                     word_a[pos].str,
+                     (long)word_a[pos].mb,
+                     &dummy);
+      else
+      {
+        strncpy(tmp_full_word, word_a[pos].str, (long)word_a[pos].mb);
+        tmp_full_word[(long)word_a[pos].mb] = '\0';
+      }
+
       if (word_a[pos].is_numbered)
       {
         /* Set the direct access number attribute. */
@@ -4778,18 +5029,18 @@ disp_word(long           pos,
 
         /* And print it. */
         /* """"""""""""" */
-        fputs_safe(daccess.left, stdout);
-        printf("%.*s", daccess.length, tmp_word + 1);
-        fputs_safe(daccess.right, stdout);
+        fputs(daccess.left, stdout);
+        printf("%.*s", daccess.length, tmp_full_word + 1);
+        fputs(daccess.right, stdout);
         (void)tputs(TPARM1(exit_attribute_mode), 1, outch);
-        fputc_safe(' ', stdout);
+        fputc(' ', stdout);
       }
       else if (daccess.length > 0)
       {
         /* Prints the leading spaces. */
         /* """""""""""""""""""""""""" */
         (void)tputs(TPARM1(exit_attribute_mode), 1, outch);
-        printf("%.*s", daccess.flength, tmp_word);
+        printf("%.*s", daccess.flength, tmp_full_word);
       }
 
       /* Set the search cursor attribute. */
@@ -4806,7 +5057,7 @@ disp_word(long           pos,
 
       /* Print the word part. */
       /* """""""""""""""""""" */
-      fputs_safe(tmp_word + daccess.flength, stdout);
+      fputs(tmp_base_word, stdout);
 
       if (buffer[0] != '\0')
       {
@@ -4826,7 +5077,7 @@ disp_word(long           pos,
         else
           apply_attr(term, win->search_field_attr);
 
-        disp_matching_word(pos, win, term, 1, search_data->err);
+        disp_matching_word(pos, win, term, langinfo, 1, search_data->err);
       }
     }
     else
@@ -4843,7 +5094,7 @@ disp_word(long           pos,
           (void)tputs(TPARM1(exit_attribute_mode), 1, outch);
           printf("%.*s", daccess.flength - 1, word_a[pos].str);
           (void)tputs(TPARM1(exit_attribute_mode), 1, outch);
-          fputc_safe(' ', stdout);
+          fputc(' ', stdout);
         }
         else
         {
@@ -4851,19 +5102,29 @@ disp_word(long           pos,
 
           /* Print the non significant part of the word. */
           /* """"""""""""""""""""""""""""""""""""""""""" */
-          fputs_safe(daccess.left, stdout);
+          fputs(daccess.left, stdout);
           printf("%.*s", daccess.length, word_a[pos].str + 1);
-          fputs_safe(daccess.right, stdout);
+          fputs(daccess.right, stdout);
           (void)tputs(TPARM1(exit_attribute_mode), 1, outch);
-          fputc_safe(' ', stdout);
+          fputc(' ', stdout);
         }
       }
 
       /* If we are not in search mode, display a normal cursor. */
       /* """""""""""""""""""""""""""""""""""""""""""""""""""""" */
-      utf8_strprefix(tmp_word, word_a[pos].str, (long)word_a[pos].mb, &p);
+      if (langinfo->utf8)
+        utf8_strhead(tmp_full_word,
+                     word_a[pos].str,
+                     (long)word_a[pos].mb,
+                     &dummy);
+      else
+      {
+        strncpy(tmp_full_word, word_a[pos].str, (long)word_a[pos].mb);
+        tmp_full_word[(long)word_a[pos].mb] = '\0';
+      }
+
       if (word_a[pos].is_matching)
-        disp_cursor_word(pos, win, term, search_data->err);
+        disp_matching_word_cursor(pos, win, term, langinfo, search_data->err);
       else
       {
         if (word_a[pos].tag_id > 0)
@@ -4891,7 +5152,7 @@ disp_word(long           pos,
           }
         }
 
-        fputs_safe(tmp_word + daccess.flength, stdout);
+        fputs(tmp_base_word, stdout);
       }
     }
     (void)tputs(TPARM1(exit_attribute_mode), 1, outch);
@@ -4900,7 +5161,16 @@ disp_word(long           pos,
   {
     /* Display a normal word without any attribute. */
     /* """""""""""""""""""""""""""""""""""""""""""" */
-    utf8_strprefix(tmp_word, word_a[pos].str, (long)word_a[pos].mb, &p);
+    if (langinfo->utf8)
+      utf8_strhead(tmp_full_word,
+                   word_a[pos].str,
+                   (long)word_a[pos].mb,
+                   &dummy);
+    else
+    {
+      strncpy(tmp_full_word, word_a[pos].str, (long)word_a[pos].mb);
+      tmp_full_word[(long)word_a[pos].mb] = '\0';
+    }
 
     /* If words are numbered, emphasis their numbers. */
     /* """""""""""""""""""""""""""""""""""""""""""""" */
@@ -4908,12 +5178,12 @@ disp_word(long           pos,
     {
       apply_attr(term, win->daccess_attr);
 
-      fputs_safe(daccess.left, stdout);
-      printf("%.*s", daccess.length, tmp_word + 1);
-      fputs_safe(daccess.right, stdout);
+      fputs(daccess.left, stdout);
+      printf("%.*s", daccess.length, tmp_full_word + 1);
+      fputs(daccess.right, stdout);
 
       (void)tputs(TPARM1(exit_attribute_mode), 1, outch);
-      fputc_safe(' ', stdout);
+      fputc(' ', stdout);
     }
     else if (daccess.length > 0)
     {
@@ -4925,7 +5195,7 @@ disp_word(long           pos,
       (void)tputs(TPARM1(exit_attribute_mode), 1, outch);
       if (daccess.padding == 'a')
         for (i = 0; i < daccess.flength; i++)
-          fputc_safe(' ', stdout);
+          fputc(' ', stdout);
     }
 
     if (!word_a[pos].is_selectable)
@@ -4947,7 +5217,7 @@ disp_word(long           pos,
     }
 
     if (word_a[pos].is_matching)
-      disp_matching_word(pos, win, term, 0, search_data->err);
+      disp_matching_word(pos, win, term, langinfo, 0, search_data->err);
     else
     {
       if (word_a[pos].tag_id > 0)
@@ -4955,9 +5225,9 @@ disp_word(long           pos,
 
       if ((daccess.length > 0 && daccess.padding == 'a')
           || word_a[pos].is_numbered)
-        fputs_safe(tmp_word + daccess.flength, stdout);
+        fputs(tmp_base_word, stdout);
       else
-        fputs_safe(tmp_word, stdout);
+        fputs(tmp_base_word, stdout);
     }
 
     (void)tputs(TPARM1(exit_attribute_mode), 1, outch);
@@ -5024,7 +5294,6 @@ disp_message(ll_t       *message_lines_list,
   size_t     len, blen;
   long       size;
   long       offset;
-  wchar_t   *w;
   int        n   = 0; /* Counter used to display message lines. */
   int        cut = 0; /* Will be 1 if the message is shortened. */
 
@@ -5070,9 +5339,15 @@ disp_message(ll_t       *message_lines_list,
     long i;
 
     line = node->data;
-    len  = utf8_strlen(line);
     blen = strlen(line);
-    w    = utf8_strtowcs(line);
+
+    /* We do not use my_strlen here as its non UTF-8 version is slower */
+    /* then a single assignment.                                       */
+    /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+    if (langinfo->utf8)
+      len = utf8_strlen(line);
+    else
+      len = blen;
 
     char        *ptr         = line;
     char         pattern[33] = { '\0' }; /* 32 chars is large enough. */
@@ -5161,11 +5436,33 @@ disp_message(ll_t       *message_lines_list,
 
     /* Adjust size and len if the terminal is not large enough. */
     /* """""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-    size = my_wcswidth(w, len);
-    while (len > 0 && size > term->ncolumns)
-      size = my_wcswidth(w, --len);
+    if (langinfo->utf8)
+      size = utf8_strwidth((unsigned char *)line, blen);
+    else
+      size = len;
 
-    free(w);
+    char *old_p, *p;
+    int   lastword_width;
+
+    old_p = line + blen;
+
+    while (len > 0 && size > term->ncolumns)
+    {
+      if (langinfo->utf8)
+      {
+        p              = utf8_prev(line, old_p);
+        lastword_width = utf8_width((unsigned char *)p);
+        old_p          = p;
+
+        size -= lastword_width;
+        len--;
+      }
+      else
+      {
+        size--;
+        len--;
+      }
+    }
 
     /* Compute the offset from the left screen border if -M option is set. */
     /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
@@ -5173,22 +5470,29 @@ disp_message(ll_t       *message_lines_list,
 
     if (win->center && offset > 0)
       for (i = 0; i < offset; i++)
-        fputc_safe(' ', stdout);
+        fputc(' ', stdout);
 
     apply_attr(term, win->message_attr);
 
     /* Only print the start of a line if the screen width if too small. */
     /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-    utf8_strprefix(buf, line, len, &size);
+    if (langinfo->utf8)
+      utf8_strhead(buf, line, len, &size);
+    else
+    {
+      strncpy(buf, line, len);
+      buf[len] = '\0';
+      size     = len;
+    }
 
     /* Print the line without the ending \n. */
     /* ''''''''''''''''''''''''''''''''''''' */
     if (n > 1 && cut && n == win->message_lines - 1)
     {
       if (langinfo->utf8)
-        fputs_safe(msg_arr_down, stdout);
+        fputs(msg_arr_down, stdout);
       else
-        fputc_safe('v', stdout);
+        fputc('v', stdout);
     }
     else
       disp_message_line(win, term, buf, attr_a);
@@ -5208,7 +5512,7 @@ disp_message(ll_t       *message_lines_list,
       if (i + (offset < 0 ? 0 : offset) >= term->ncolumns)
         break;
 
-      fputc_safe(' ', stdout);
+      fputc(' ', stdout);
     }
 
     /* Drop the attributes and print a \n. */
@@ -5246,8 +5550,9 @@ disp_lines(win_t         *win,
            search_data_t *search_data,
            term_t        *term,
            long           last_line,
-           char          *tmp_word,
-           langinfo_t    *langinfo)
+           langinfo_t    *langinfo,
+           misc_t        *misc,
+           unsigned char  filler)
 {
   long lines_disp;
   long i;
@@ -5351,7 +5656,7 @@ disp_lines(win_t         *win,
   {
     long i;
     for (i = 0; i < win->offset; i++)
-      fputc_safe(' ', stdout);
+      fputc(' ', stdout);
   }
 
   left_margin_putp(left_margin_symbol, term, win);
@@ -5368,7 +5673,15 @@ disp_lines(win_t         *win,
       if (first_start < 0)
         first_start = word_a[i].start;
 
-      disp_word(i, search_mode, search_data, term, win, toggles, tmp_word);
+      disp_word(i,
+                search_mode,
+                search_data,
+                term,
+                win,
+                toggles,
+                langinfo,
+                misc,
+                filler);
 
       /* Calculate the start offset of the last word of the line */
       /* containing the cursor in column or line mode.           */
@@ -5415,9 +5728,9 @@ disp_lines(win_t         *win,
         apply_attr(term, win->shift_attr);
 
         if (langinfo->utf8)
-          fputs_safe(shift_right_sym, stdout);
+          fputs(shift_right_sym, stdout);
         else
-          fputc_safe('>', stdout);
+          fputc('>', stdout);
 
         (void)tputs(TPARM1(exit_attribute_mode), 1, outch);
 
@@ -5441,14 +5754,14 @@ disp_lines(win_t         *win,
           pos = i - first_word_in_line_a[line_nb_of_word_a[i]];
 
           if (pos >= win->gutter_nb) /* Use the last gutter character. */
-            fputs_safe(win->gutter_a[win->gutter_nb - 1], stdout);
+            fputs(win->gutter_a[win->gutter_nb - 1], stdout);
           else
-            fputs_safe(win->gutter_a[pos], stdout);
+            fputs(win->gutter_a[pos], stdout);
         }
         else
           /* Else just display a space. */
           /* """""""""""""""""""""""""" */
-          fputc_safe(' ', stdout);
+          fputc(' ', stdout);
     }
 
     /* Mark the line as the current line, the line containing the cursor. */
@@ -5547,13 +5860,13 @@ disp_lines(win_t         *win,
         /* """"""""""""""""""""""""""""""""""""""""""""""""""""" */
         if (i < count - 1 && lines_disp < win->max_lines)
         {
-          fputc_safe('\n', stdout);
+          fputc('\n', stdout);
 
           if (win->offset > 0)
           {
             long i;
             for (i = 0; i < win->offset; i++)
-              fputc_safe(' ', stdout);
+              fputc(' ', stdout);
           }
 
           left_margin_putp(left_margin_symbol, term, win);
@@ -5654,7 +5967,7 @@ disp_lines(win_t         *win,
         pos2 = term->ncolumns
                - 4; /* just to make sure but should not happen. */
 
-      fputs_safe("\n", stdout);
+      fputs("\n", stdout);
       disp_hbar(win, term, langinfo, pos1, pos2);
 
       /* Mark the fact that an horizontal scroll bar has been displayed */
@@ -5667,7 +5980,7 @@ disp_lines(win_t         *win,
                                    | been displayed, keep this space empty *
                                    | to not disturb the display.           */
     {
-      fputs_safe("\n", stdout);
+      fputs("\n", stdout);
       (void)tputs(TPARM1(clr_eol), 1, outch);
     }
 
@@ -5828,7 +6141,9 @@ void
 select_ending_matches(win_t         *win,
                       term_t        *term,
                       search_data_t *search_data,
-                      long          *last_line)
+                      long          *last_line,
+                      langinfo_t    *langinfo,
+                      unsigned char  filler)
 {
   if (BUF_LEN(matching_words_da) > 0)
   {
@@ -5837,7 +6152,7 @@ select_ending_matches(win_t         *win,
     long  nb;
     long *tmp;
     char *ptr;
-    char *last_glyph;
+    char *last_character;
     long  mb_len;
 
     /* Creation of an alternate array which will      */
@@ -5858,11 +6173,27 @@ select_ending_matches(win_t         *win,
       ptr = str + strlen(str);
 
       nb = 0;
-      while ((ptr = utf8_prev(str, ptr)) != NULL && isblank(*ptr))
-        if (ptr - str > 0)
+      if (langinfo->utf8)
+        ptr = utf8_prev(str, ptr);
+      else if (ptr > str)
+        ptr--;
+      else
+        ptr = NULL;
+
+      while (ptr != NULL && *ptr == filler)
+      {
+        if (ptr > str)
           nb++;
         else
           break;
+
+        if (langinfo->utf8)
+          ptr = utf8_prev(str, ptr);
+        else if (ptr > str)
+          ptr--;
+        else
+          ptr = NULL;
+      }
 
       if (ptr == NULL) /* str is blank or contain an invalid uft8 sequence. */
         ptr = str;
@@ -5872,10 +6203,10 @@ select_ending_matches(win_t         *win,
       /* sequence, so does ptr.                                  */
       /* """"""""""""""""""""""""""""""""""""""""""""""""""""""" */
 
-      /* Check the bit corresponding to the last non blank glyph  */
-      /* If set we add the index to an alternate array, if not we */
-      /* clear the bitmap of the corresponding word.              */
-      /* """""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+      /* Check the bit corresponding to the last non blank character */
+      /* If set we add the index to an alternate array, if not we    */
+      /* clear the bitmap of the corresponding word.                 */
+      /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
       if (BIT_ISSET(word_a[index].bitmap,
                     word_a[index].mb - nb - daccess.flength - 1))
         BUF_PUSH(alt_matching_words_da, index);
@@ -5886,12 +6217,16 @@ select_ending_matches(win_t         *win,
         /* """""""""""""""""""""""""""""""""""""""""""""""""" */
         if (search_mode == FUZZY)
         {
-          mb_len     = mblen(ptr, 4);
-          last_glyph = search_data->buf + search_data->len - mb_len;
+          mb_len = mblen(ptr, MB_CUR_MAX);
 
-          /* in fuzzy search mode we only look the last glyph. */
-          /* """"""""""""""""""""""""""""""""""""""""""""""""" */
-          if (memcmp(ptr, last_glyph, mb_len) == 0)
+          if (mb_len == -1)
+            break; /* invalid character in the current character set found. */
+
+          last_character = search_data->buf + search_data->len - mb_len;
+
+          /* in fuzzy search mode we only look the last character. */
+          /* """"""""""""""""""""""""""""""""""""""""""""""""""""" */
+          if (memcmp(ptr, last_character, mb_len) == 0)
             BUF_PUSH(alt_matching_words_da, index);
           else
             clear_bitmap(&word_a[index]);
@@ -5900,8 +6235,12 @@ select_ending_matches(win_t         *win,
         {
           /* in not fuzzy search mode use all the pattern. */
           /* """"""""""""""""""""""""""""""""""""""""""""" */
-          for (nb = 0; nb < search_data->mb_len - 1; nb++)
-            ptr = utf8_prev(str, ptr);
+          if (langinfo->utf8)
+            for (nb = 0; nb < search_data->mb_len - 1; nb++)
+              ptr = utf8_prev(str, ptr);
+          else
+            ptr -= (search_data->len - 1);
+
           if (memcmp(ptr, search_data->buf, search_data->len) == 0)
             BUF_PUSH(alt_matching_words_da, index);
           else
@@ -5920,12 +6259,12 @@ select_ending_matches(win_t         *win,
     {
       /* Adjust the bitmap to the ending version. */
       /* """""""""""""""""""""""""""""""""""""""" */
-      update_bitmaps(search_mode, search_data, END_AFFINITY);
+      update_bitmaps(search_mode, search_data, langinfo, END_AFFINITY);
 
       current = matching_words_da[0];
 
       if (current < win->start || current > win->end)
-        *last_line = build_metadata(term, count, win);
+        *last_line = build_metadata(term, count, win, langinfo);
 
       /* Set new first column to display. */
       /* """""""""""""""""""""""""""""""" */
@@ -5941,7 +6280,9 @@ void
 select_starting_matches(win_t         *win,
                         term_t        *term,
                         search_data_t *search_data,
-                        long          *last_line)
+                        long          *last_line,
+                        langinfo_t    *langinfo,
+                        unsigned char  filler)
 {
   if (BUF_LEN(matching_words_da) > 0)
   {
@@ -5950,20 +6291,20 @@ select_starting_matches(win_t         *win,
     size_t nb;
     long  *tmp;
     long   pos;
-    char  *first_glyph;
+    char  *first_character;
     int    mb_len;
 
     BUF_FREE(alt_matching_words_da);
     BUF_FIT(alt_matching_words_da, BUF_LEN(matching_words_da));
 
-    first_glyph = xmalloc(5);
+    first_character = xmalloc(5);
 
     for (i = 0; i < (long)BUF_LEN(matching_words_da); i++)
     {
       index = matching_words_da[i];
 
       for (nb = 0; nb < word_a[index].mb; nb++)
-        if (!isblank(*(word_a[index].str + daccess.flength + nb)))
+        if (*(word_a[index].str + daccess.flength + nb) != filler)
           break;
 
       if (BIT_ISSET(word_a[index].bitmap, nb))
@@ -5973,16 +6314,17 @@ select_starting_matches(win_t         *win,
 
         if (search_mode == FUZZY)
         {
-          first_glyph = utf8_strprefix(first_glyph,
-                                       word_a[index].str + nb + daccess.flength,
-                                       1,
-                                       &pos);
+          first_character = utf8_strhead(first_character,
+                                         word_a[index].str + nb
+                                           + daccess.flength,
+                                         1,
+                                         &pos);
 
           mb_len = pos;
 
-          /* in fuzzy search mode we only look the first glyph. */
-          /* """""""""""""""""""""""""""""""""""""""""""""""""" */
-          if (memcmp(search_data->buf, first_glyph, mb_len) == 0)
+          /* in fuzzy search mode we only look the first character. */
+          /* """""""""""""""""""""""""""""""""""""""""""""""""""""" */
+          if (memcmp(search_data->buf, first_character, mb_len) == 0)
             BUF_PUSH(alt_matching_words_da, index);
           else
             clear_bitmap(&word_a[index]);
@@ -6002,7 +6344,7 @@ select_starting_matches(win_t         *win,
       }
     }
 
-    free(first_glyph);
+    free(first_character);
 
     /* Swap the normal and alt array. */
     /* """""""""""""""""""""""""""""" */
@@ -6014,12 +6356,12 @@ select_starting_matches(win_t         *win,
     {
       /* Adjust the bitmap to the starting version. */
       /* """""""""""""""""""""""""""""""""""""""""" */
-      update_bitmaps(search_mode, search_data, START_AFFINITY);
+      update_bitmaps(search_mode, search_data, langinfo, START_AFFINITY);
 
       current = matching_words_da[0];
 
       if (current < win->start || current > win->end)
-        *last_line = build_metadata(term, count, win);
+        *last_line = build_metadata(term, count, win, langinfo);
 
       /* Set new first column to display. */
       /* """""""""""""""""""""""""""""""" */
@@ -6037,9 +6379,10 @@ move_left(win_t         *win,
           toggle_t      *toggles,
           search_data_t *search_data,
           langinfo_t    *langinfo,
+          misc_t        *misc,
+          unsigned char  filler,
           long          *nl,
-          long           last_line,
-          char          *tmp_word)
+          long           last_line)
 {
   long old_current      = current;
   long old_start        = win->start;
@@ -6123,8 +6466,9 @@ move_left(win_t         *win,
                      search_data,
                      term,
                      last_line,
-                     tmp_word,
-                     langinfo);
+                     langinfo,
+                     misc,
+                     filler);
 }
 
 /* ============================================ */
@@ -6137,9 +6481,10 @@ shift_left(win_t         *win,
            toggle_t      *toggles,
            search_data_t *search_data,
            langinfo_t    *langinfo,
+           misc_t        *misc,
+           unsigned char  filler,
            long          *nl,
            long           last_line,
-           char          *tmp_word,
            long           line)
 {
   long pos;
@@ -6183,8 +6528,9 @@ shift_left(win_t         *win,
                    search_data,
                    term,
                    last_line,
-                   tmp_word,
-                   langinfo);
+                   langinfo,
+                   misc,
+                   filler);
 }
 
 /* ============================== */
@@ -6196,9 +6542,10 @@ move_right(win_t         *win,
            toggle_t      *toggles,
            search_data_t *search_data,
            langinfo_t    *langinfo,
+           misc_t        *misc,
+           unsigned char  filler,
            long          *nl,
-           long           last_line,
-           char          *tmp_word)
+           long           last_line)
 {
   long old_current      = current;
   long old_start        = win->start;
@@ -6295,8 +6642,9 @@ move_right(win_t         *win,
                      search_data,
                      term,
                      last_line,
-                     tmp_word,
-                     langinfo);
+                     langinfo,
+                     misc,
+                     filler);
 }
 
 /* =========================================== */
@@ -6309,9 +6657,10 @@ shift_right(win_t         *win,
             toggle_t      *toggles,
             search_data_t *search_data,
             langinfo_t    *langinfo,
+            misc_t        *misc,
+            unsigned char  filler,
             long          *nl,
             long           last_line,
-            char          *tmp_word,
             long           line)
 {
   long pos;
@@ -6374,8 +6723,9 @@ shift_right(win_t         *win,
                    search_data,
                    term,
                    last_line,
-                   tmp_word,
-                   langinfo);
+                   langinfo,
+                   misc,
+                   filler);
 }
 
 /* ================================================================== */
@@ -6555,11 +6905,12 @@ move_up(win_t         *win,
         toggle_t      *toggles,
         search_data_t *search_data,
         langinfo_t    *langinfo,
+        misc_t        *misc,
+        unsigned char  filler,
         long          *nl,
         long           page,
         long           first_selectable,
-        long           last_line,
-        char          *tmp_word)
+        long           last_line)
 {
   long line;                  /* The line being processed (target line).    */
   long start_line;            /* The first line of the window.              */
@@ -6720,8 +7071,9 @@ move_up(win_t         *win,
                    search_data,
                    term,
                    last_line,
-                   tmp_word,
-                   langinfo);
+                   langinfo,
+                   misc,
+                   filler);
 }
 
 /* =========================== */
@@ -6733,11 +7085,12 @@ move_down(win_t         *win,
           toggle_t      *toggles,
           search_data_t *search_data,
           langinfo_t    *langinfo,
+          misc_t        *misc,
+          unsigned char  filler,
           long          *nl,
           long           page,
           long           last_selectable,
-          long           last_line,
-          char          *tmp_word)
+          long           last_line)
 {
   long line;                 /* The line being processed (target line).     */
   long start_line;           /* The first line of the window.               */
@@ -6900,8 +7253,9 @@ move_down(win_t         *win,
                    search_data,
                    term,
                    last_line,
-                   tmp_word,
-                   langinfo);
+                   langinfo,
+                   misc,
+                   filler);
 }
 
 /* ========================================= */
@@ -7014,6 +7368,7 @@ init_main_ds(attrib_t  *init_attr,
   toggles->incremental_search  = 0;
   toggles->no_mouse            = 0;
   toggles->show_blank_words    = 0;
+  toggles->number_blank_words  = 0;
   toggles->cols_first          = 0;
   toggles->rows_first          = 0;
 
@@ -7186,11 +7541,18 @@ set_pattern_action(char  *ctx_name,
                    int    nb_ctx_data,
                    void **ctx_data)
 {
-  char  **pattern = opt_data[0];
-  misc_t *misc    = opt_data[1];
+  char      **pattern  = opt_data[0];
+  langinfo_t *langinfo = opt_data[1];
 
   *pattern = xstrdup(values[0]);
-  utf8_interpret(*pattern, misc->invalid_char_substitute);
+  if (!utf8_interpret(*pattern, langinfo->utf8, '\0', iso_charset))
+  {
+    fprintf(stderr,
+            "The pattern: %s is invalid or "
+            "incompatible with the current character set.\n",
+            values[0]);
+    exit(EXIT_FAILURE);
+  }
 }
 
 void
@@ -7212,33 +7574,37 @@ int_action(char  *ctx_name,
   if (nb_values == 1)
   {
     *string = xstrdup(values[0]);
-    if (!langinfo->utf8)
-      utf8_sanitize(*string, misc->invalid_char_substitute);
-    utf8_interpret(*string, misc->invalid_char_substitute);
+
+    utf8_interpret(*string,
+                   langinfo->utf8,
+                   misc->invalid_char_substitute,
+                   iso_charset);
   }
 
   *shell_like = 0;
 }
 
 void
-set_string_action(char  *ctx_name,
-                  char  *opt_name,
-                  char  *param,
-                  int    nb_values,
-                  char **values,
-                  int    nb_opt_data,
-                  void **opt_data,
-                  int    nb_ctx_data,
-                  void **ctx_data)
+set_title_action(char  *ctx_name,
+                 char  *opt_name,
+                 char  *param,
+                 int    nb_values,
+                 char **values,
+                 int    nb_opt_data,
+                 void **opt_data,
+                 int    nb_ctx_data,
+                 void **ctx_data)
 {
   char      **string   = opt_data[0];
   langinfo_t *langinfo = opt_data[1];
   misc_t     *misc     = opt_data[2];
 
   *string = xstrdup(values[0]);
-  if (!langinfo->utf8)
-    utf8_sanitize(*string, misc->invalid_char_substitute);
-  utf8_interpret(*string, misc->invalid_char_substitute);
+
+  utf8_interpret(*string,
+                 langinfo->utf8,
+                 misc->invalid_char_substitute,
+                 iso_charset);
 }
 
 void
@@ -7442,11 +7808,26 @@ show_blank_action(char  *ctx_name,
   {
     bc = (unsigned char)*values[0];
 
-    if (isprint(bc))
+    if (isgraph(bc))
       misc->blank_char_substitute = bc;
     else
       misc->blank_char_substitute = '_';
   }
+}
+
+void
+number_blank_action(char  *ctx_name,
+                    char  *opt_name,
+                    char  *param,
+                    int    nb_values,
+                    char **values,
+                    int    nb_opt_data,
+                    void **opt_data,
+                    int    nb_ctx_data,
+                    void **ctx_data)
+{
+  toggle_t *toggles           = opt_data[0];
+  toggles->number_blank_words = 1;
 }
 
 void
@@ -7462,7 +7843,6 @@ gutter_action(char  *ctx_name,
 {
   win_t      *win      = opt_data[0];
   langinfo_t *langinfo = opt_data[1];
-  misc_t     *misc     = opt_data[2];
 
   if (nb_values == 0)
   {
@@ -7483,40 +7863,51 @@ gutter_action(char  *ctx_name,
     /* The argument is used to feed the gutter array, each of its character */
     /* Will serve as gutter in a round-robin way.                           */
     /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-    long     n;
-    wchar_t *w;
-    long     i, offset;
-    char    *gutter;
+    long  n;
+    long  i, offset;
+    char *gutter;
 
     gutter = xstrdup(values[0]);
 
     utf8_interpret(gutter,
-                   misc->invalid_char_substitute); /* Guarantees a well    *
-                                                    | formed UTF-8 string. */
+                   langinfo->utf8,
+                   '|',
+                   iso_charset); /* Guarantees a well formed UTF-8 string. */
 
-    win->gutter_nb = utf8_strlen(gutter);
+    win->gutter_nb = my_strlen(gutter);
     win->gutter_a  = xmalloc(win->gutter_nb * sizeof(char *));
 
     offset = 0;
 
-    for (i = 0; i < win->gutter_nb; i++)
-    {
-      int mblength;
-
-      mblength         = utf8_get_length(*(gutter + offset));
-      win->gutter_a[i] = xcalloc(1, mblength + 1);
-      memcpy(win->gutter_a[i], gutter + offset, mblength);
-
-      n = my_wcswidth((w = utf8_strtowcs(win->gutter_a[i])), 1);
-      free(w);
-
-      if (n > 1)
+    if (langinfo->utf8)
+      for (i = 0; i < win->gutter_nb; i++)
       {
-        fprintf(stderr, "%s: A multi columns gutter is not allowed.\n", param);
-        fatal_ctx(ctx_name);
+        int mblength;
+
+        mblength         = utf8_get_length(*(gutter + offset));
+        win->gutter_a[i] = xcalloc(1, mblength + 1);
+        memcpy(win->gutter_a[i], gutter + offset, mblength);
+
+        n = utf8_width((unsigned char *)(win->gutter_a[i]));
+
+        if (n < 1 || n > 1)
+        {
+          fprintf(stderr,
+                  "%s: A non-printable or multi-column gutter character is "
+                  "not allowed.\n",
+                  param);
+          fatal_ctx(ctx_name);
+        }
+        offset += mblength;
       }
-      offset += mblength;
-    }
+    else
+      for (i = 0; i < win->gutter_nb; i++)
+      {
+        win->gutter_a[i] = xcalloc(1, 2);
+        memcpy(win->gutter_a[i], gutter + offset, 1);
+        offset++;
+      }
+
     free(gutter);
   }
   win->col_sep = 1; /* Activate the gutter. */
@@ -7571,9 +7962,9 @@ include_re_action(char  *ctx_name,
                   int    nb_ctx_data,
                   void **ctx_data)
 {
-  int    *pattern_def_include = opt_data[0];
-  char  **include_pattern     = opt_data[1];
-  misc_t *misc                = opt_data[2];
+  int        *pattern_def_include = opt_data[0];
+  char      **include_pattern     = opt_data[1];
+  langinfo_t *langinfo            = opt_data[2];
 
   /* Set the default behaviour if not already set. */
   /* """"""""""""""""""""""""""""""""""""""""""""" */
@@ -7583,16 +7974,23 @@ include_re_action(char  *ctx_name,
   if (*include_pattern == NULL)
     *include_pattern = concat("(", values[0], ")", (char *)0);
   else
-    *include_pattern = concat(*include_pattern,
-                              "|(",
-                              values[0],
-                              ")",
-                              (char *)0);
+  {
+    char *tmp;
+    tmp = concat(*include_pattern, "|(", values[0], ")", (char *)0);
+    free(*include_pattern);
+    *include_pattern = tmp;
+  }
 
   /* Replace the UTF-8 ASCII representations by their binary values in */
   /* inclusion patterns.                                               */
   /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-  utf8_interpret(*include_pattern, misc->invalid_char_substitute);
+  if (!utf8_interpret(*include_pattern, langinfo->utf8, '\0', iso_charset))
+  {
+    fprintf(stderr,
+            "The include pattern is invalid or incompatible "
+            "with the current character set.\n");
+    exit(EXIT_FAILURE);
+  }
 }
 
 void
@@ -7606,9 +8004,9 @@ exclude_re_action(char  *ctx_name,
                   int    nb_ctx_data,
                   void **ctx_data)
 {
-  int    *pattern_def_include = opt_data[0];
-  char  **exclude_pattern     = opt_data[1];
-  misc_t *misc                = opt_data[2];
+  int        *pattern_def_include = opt_data[0];
+  char      **exclude_pattern     = opt_data[1];
+  langinfo_t *langinfo            = opt_data[2];
 
   /* Set the default behaviour if not already set. */
   /* """"""""""""""""""""""""""""""""""""""""""""" */
@@ -7618,16 +8016,23 @@ exclude_re_action(char  *ctx_name,
   if (*exclude_pattern == NULL)
     *exclude_pattern = concat("(", values[0], ")", (char *)0);
   else
-    *exclude_pattern = concat(*exclude_pattern,
-                              "|(",
-                              values[0],
-                              ")",
-                              (char *)0);
+  {
+    char *tmp;
+    tmp = concat(*exclude_pattern, "|(", values[0], ")", (char *)0);
+    free(*exclude_pattern);
+    *exclude_pattern = tmp;
+  }
 
   /* Replace the UTF-8 ASCII representations by their binary values in */
   /* exclusion patterns.                                               */
   /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-  utf8_interpret(*exclude_pattern, misc->invalid_char_substitute);
+  if (!utf8_interpret(*exclude_pattern, langinfo->utf8, '\0', iso_charset))
+  {
+    fprintf(stderr,
+            "The exclude pattern is invalid or incompatible "
+            "with the current character set.\n");
+    exit(EXIT_FAILURE);
+  }
 }
 
 void
@@ -7641,8 +8046,8 @@ post_subst_action(char  *ctx_name,
                   int    nb_ctx_data,
                   void **ctx_data)
 {
-  ll_t  **list = opt_data[0];
-  misc_t *misc = opt_data[1];
+  ll_t      **list     = opt_data[0];
+  langinfo_t *langinfo = opt_data[1];
 
   int i;
 
@@ -7655,7 +8060,16 @@ post_subst_action(char  *ctx_name,
 
     sed_node          = xmalloc(sizeof(sed_t));
     sed_node->pattern = xstrdup(values[i]);
-    utf8_interpret(sed_node->pattern, misc->invalid_char_substitute);
+
+    if (!utf8_interpret(sed_node->pattern, langinfo->utf8, '\0', iso_charset))
+    {
+      fprintf(stderr,
+              "The given substitution pattern: %s is invalid or "
+              "incompatible with the current character set.\n",
+              values[i]);
+      exit(EXIT_FAILURE);
+    }
+
     sed_node->stop = 0;
     ll_append(*list, sed_node);
   }
@@ -7672,18 +8086,28 @@ special_level_action(char  *ctx_name,
                      int    nb_ctx_data,
                      void **ctx_data)
 {
-  char    **special_pattern = opt_data[0];
-  win_t    *win             = opt_data[1];
-  term_t   *term            = opt_data[2];
-  attrib_t *init_attr       = opt_data[3];
-  misc_t   *misc            = opt_data[4];
+  char      **special_pattern = opt_data[0];
+  win_t      *win             = opt_data[1];
+  term_t     *term            = opt_data[2];
+  attrib_t   *init_attr       = opt_data[3];
+  langinfo_t *langinfo        = opt_data[4];
 
   attrib_t attr = *init_attr;
   char     opt  = param[strlen(param) - 1]; /* last character of param. */
   int      i;
 
   special_pattern[opt - '1'] = xstrdup(values[0]);
-  utf8_interpret(special_pattern[opt - '1'], misc->invalid_char_substitute);
+  if (!utf8_interpret(special_pattern[opt - '1'],
+                      langinfo->utf8,
+                      '\0',
+                      iso_charset))
+  {
+    fprintf(stderr,
+            "The special level pattern: %s is invalid or "
+            "incompatible with the current character set.\n",
+            values[0]);
+    exit(EXIT_FAILURE);
+  }
 
   /* Parse optional additional arguments. */
   /* """""""""""""""""""""""""""""""""""" */
@@ -7867,8 +8291,8 @@ attributes_action(char  *ctx_name,
         if (*attr_infos[i].flag)
         {
           fprintf(stderr, "%s: ", param);
-          fputs_safe(attr_infos[i].msg, stderr);
-          fputs_safe("\n", stderr);
+          fputs(attr_infos[i].msg, stderr);
+          fputs("\n", stderr);
           fatal_ctx(ctx_name);
         }
 
@@ -8001,9 +8425,9 @@ copyright_action(char  *ctx_name,
                  int    nb_ctx_data,
                  void **ctx_data)
 {
-  fputs_safe("Copyright 2015 - Pierre Gentile <p.gen.progs@gmail.com> - "
-             "MPL-2.0\n",
-             stdout);
+  fputs("Copyright 2015 - Pierre Gentile <p.gen.progs@gmail.com> - "
+        "MPL-2.0\n",
+        stdout);
 
   exit(EXIT_SUCCESS);
 }
@@ -8019,7 +8443,7 @@ version_action(char  *ctx_name,
                int    nb_ctx_data,
                void **ctx_data)
 {
-  fputs_safe("Version: " VERSION "\n", stdout);
+  fputs("Version: " VERSION "\n", stdout);
 
   exit(EXIT_SUCCESS);
 }
@@ -8035,7 +8459,8 @@ timeout_action(char  *ctx_name,
                int    nb_ctx_data,
                void **ctx_data)
 {
-  misc_t *misc = opt_data[0];
+  langinfo_t *langinfo = opt_data[0];
+  misc_t     *misc     = opt_data[1];
 
   if (strcmp(opt_name, "hidden_timeout") == 0)
     quiet_timeout = 1;
@@ -8050,7 +8475,10 @@ timeout_action(char  *ctx_name,
     {
       timeout.mode = WORD;
       timeout_word = xstrdup(values[1]);
-      utf8_interpret(timeout_word, misc->invalid_char_substitute);
+      utf8_interpret(timeout_word,
+                     langinfo->utf8,
+                     misc->invalid_char_substitute,
+                     iso_charset);
     }
     else
     {
@@ -8082,16 +8510,23 @@ tag_mode_action(char  *ctx_name,
                 int    nb_ctx_data,
                 void **ctx_data)
 {
-  toggle_t *toggles = opt_data[0];
-  win_t    *win     = opt_data[1];
-  misc_t   *misc    = opt_data[2];
+  toggle_t   *toggles  = opt_data[0];
+  win_t      *win      = opt_data[1];
+  langinfo_t *langinfo = opt_data[2];
 
   toggles->taggable = 1;
 
   if (nb_values == 1)
   {
     win->sel_sep = xstrdup(values[0]);
-    utf8_interpret(win->sel_sep, misc->invalid_char_substitute);
+    if (!utf8_interpret(win->sel_sep, langinfo->utf8, '\0', iso_charset))
+    {
+      fprintf(stderr,
+              "The output separator: %s is invalid or "
+              "incompatible with the current character set.\n",
+              values[0]);
+      exit(EXIT_FAILURE);
+    }
   }
 }
 
@@ -8106,9 +8541,9 @@ pin_mode_action(char  *ctx_name,
                 int    nb_ctx_data,
                 void **ctx_data)
 {
-  toggle_t *toggles = opt_data[0];
-  win_t    *win     = opt_data[1];
-  misc_t   *misc    = opt_data[2];
+  toggle_t   *toggles  = opt_data[0];
+  win_t      *win      = opt_data[1];
+  langinfo_t *langinfo = opt_data[2];
 
   toggles->taggable = 1;
   toggles->pinable  = 1;
@@ -8116,7 +8551,14 @@ pin_mode_action(char  *ctx_name,
   if (nb_values == 1)
   {
     win->sel_sep = xstrdup(values[0]);
-    utf8_interpret(win->sel_sep, misc->invalid_char_substitute);
+    if (!utf8_interpret(win->sel_sep, langinfo->utf8, '\0', iso_charset))
+    {
+      fprintf(stderr,
+              "The output separator: %s is invalid or "
+              "incompatible with the current character set.\n",
+              values[0]);
+      exit(EXIT_FAILURE);
+    }
   }
 }
 
@@ -8170,7 +8612,12 @@ auto_da_action(char  *ctx_name,
         daccess.mode |= DA_TYPE_AUTO; /* Auto. */
       }
       else
-        *daccess_pattern = concat(*daccess_pattern, "|(.)", (char *)0);
+      {
+        char *tmp;
+        tmp = concat(*daccess_pattern, "|(.)", (char *)0);
+        free(*daccess_pattern);
+        *daccess_pattern = tmp;
+      }
     }
   }
   else
@@ -8190,11 +8637,12 @@ auto_da_action(char  *ctx_name,
         daccess.mode |= DA_TYPE_AUTO; /* Auto. */
       }
       else
-        *daccess_pattern = concat(*daccess_pattern,
-                                  "|(",
-                                  value,
-                                  ")",
-                                  (char *)0);
+      {
+        char *tmp;
+        tmp = concat(*daccess_pattern, "|(", value, ")", (char *)0);
+        free(*daccess_pattern);
+        *daccess_pattern = tmp;
+      }
     }
 
   if (daccess.def_number < 0)
@@ -8231,13 +8679,12 @@ da_options_action(char  *ctx_name,
                   int    nb_ctx_data,
                   void **ctx_data)
 {
-  long   *daccess_index = opt_data[0];
-  misc_t *misc          = opt_data[1];
+  long       *daccess_index = opt_data[0];
+  langinfo_t *langinfo      = opt_data[1];
 
-  int      pos;
-  wchar_t *w;
-  int      n;
-  int      i;
+  int pos;
+  int n;
+  int i;
 
   /* Parse optional additional arguments.                              */
   /* The syntax of the arguments has already been pre validated by the */
@@ -8245,7 +8692,8 @@ da_options_action(char  *ctx_name,
   /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
   for (i = 0; i < nb_values; i++)
   {
-    char *value = values[i];
+    char  *value = values[i];
+    size_t dl;
 
     switch (*value)
     {
@@ -8253,22 +8701,34 @@ da_options_action(char  *ctx_name,
         free(daccess.left);
 
         daccess.left = xstrdup(value + 2);
-        utf8_interpret(daccess.left, misc->invalid_char_substitute);
 
-        if (utf8_strlen(daccess.left) != 1)
+        if (!utf8_interpret(daccess.left, langinfo->utf8, '\0', iso_charset))
+        {
+          fprintf(stderr,
+                  "The left symbol: %s is invalid or "
+                  "incompatible with the current character set.\n",
+                  value + 2);
+          exit(EXIT_FAILURE);
+        }
+
+        dl = my_strlen(daccess.left);
+
+        if (dl != 1)
         {
           fprintf(stderr, "%s: Too many characters after l:\n", param);
           fatal_ctx(ctx_name);
         }
 
-        n = my_wcswidth((w = utf8_strtowcs(daccess.left)), 1);
-        free(w);
+        if (langinfo->utf8)
+          n = utf8_width((unsigned char *)daccess.left);
+        else
+          n = dl;
 
-        if (n > 1)
+        if (n < 1 || n > 1)
         {
           fprintf(stderr,
-                  "%s: A multi columns character is not allowed "
-                  "after l:\n",
+                  "%s: A non-printable or multi-column character "
+                  "is not allowed after l:\n",
                   param);
           fatal_ctx(ctx_name);
         }
@@ -8278,22 +8738,34 @@ da_options_action(char  *ctx_name,
         free(daccess.right);
 
         daccess.right = xstrdup(value + 2);
-        utf8_interpret(daccess.right, misc->invalid_char_substitute);
 
-        if (utf8_strlen(daccess.right) != 1)
+        if (!utf8_interpret(daccess.right, langinfo->utf8, '\0', iso_charset))
+        {
+          fprintf(stderr,
+                  "The right symbol: %s is invalid or "
+                  "incompatible with the current character set.\n",
+                  value + 2);
+          exit(EXIT_FAILURE);
+        }
+
+        dl = my_strlen(daccess.right);
+
+        if (dl != 1)
         {
           fprintf(stderr, "%s: Too many characters after r:\n", param);
           fatal_ctx(ctx_name);
         }
 
-        n = my_wcswidth((w = utf8_strtowcs(daccess.right)), 1);
-        free(w);
+        if (langinfo->utf8)
+          n = utf8_width((unsigned char *)daccess.right);
+        else
+          n = dl;
 
-        if (n > 1)
+        if (n < 1 || n > 1)
         {
           fprintf(stderr,
-                  "%s: A multi columns character is not allowed "
-                  "after r:\n",
+                  "%s: A non-printable or multi-column character "
+                  "is not allowed after r:\n",
                   param);
           fatal_ctx(ctx_name);
         }
@@ -8389,7 +8861,7 @@ da_options_action(char  *ctx_name,
         }
         break;
 
-      case 'i': /* Number of UTF-8 glyphs to ignore after the *
+      case 'i': /* Number of UTF-8 characters to ignore after the *
                  | selector to extract.                       */
         if (sscanf(value + 2, "%zu%n", &daccess.ignore, &pos) != 1)
         {
@@ -8431,22 +8903,34 @@ da_options_action(char  *ctx_name,
         free(daccess.num_sep);
 
         daccess.num_sep = xstrdup(value + 2);
-        utf8_interpret(daccess.num_sep, misc->invalid_char_substitute);
 
-        if (utf8_strlen(daccess.num_sep) != 1)
+        if (!utf8_interpret(daccess.num_sep, langinfo->utf8, '\0', iso_charset))
+        {
+          fprintf(stderr,
+                  "The decoration symbol: %s is invalid or "
+                  "incompatible with the current character set.\n",
+                  value + 2);
+          exit(EXIT_FAILURE);
+        }
+
+        dl = my_strlen(daccess.num_sep);
+
+        if (dl != 1)
         {
           fprintf(stderr, "%s: Too many characters after d:\n", param);
           fatal_ctx(ctx_name);
         }
 
-        n = my_wcswidth((w = utf8_strtowcs(daccess.num_sep)), 1);
-        free(w);
+        if (langinfo->utf8)
+          n = utf8_width((unsigned char *)daccess.num_sep);
+        else
+          n = dl;
 
-        if (n > 1)
+        if (n < 1 || n > 1)
         {
           fprintf(stderr,
-                  "%s: A multi columns separator is not allowed "
-                  "after d:\n",
+                  "%s: A non-printable or multi-column separator is "
+                  "not allowed after d:\n",
                   param);
           fatal_ctx(ctx_name);
         }
@@ -8582,7 +9066,7 @@ button_action(char  *ctx_name,
   mouse->button[1] = 0;
   mouse->button[2] = 0;
 
-  for (int i = 0; i < nb_values; i++)
+  for (int i = 0; i < 2; i++)
   {
     ind   = index[i];
     errno = 0;
@@ -8635,10 +9119,10 @@ reset_search_buffer(win_t         *win,
                     ticker_t      *timers,
                     toggle_t      *toggles,
                     term_t        *term,
-                    daccess_t     *daccess,
                     langinfo_t    *langinfo,
+                    misc_t        *misc,
+                    unsigned char  filler,
                     long           last_line,
-                    char          *tmp_word,
                     long           word_real_max_size)
 {
   /* ESC key has been pressed. */
@@ -8662,8 +9146,9 @@ reset_search_buffer(win_t         *win,
                search_data,
                term,
                last_line,
-               tmp_word,
-               langinfo);
+               langinfo,
+               misc,
+               filler);
 
   /* Reset the direct access selector stack. */
   /* """"""""""""""""""""""""""""""""""""""" */
@@ -8687,8 +9172,9 @@ reset_search_buffer(win_t         *win,
                search_data,
                term,
                last_line,
-               tmp_word,
-               langinfo);
+               langinfo,
+               misc,
+               filler);
   }
 }
 
@@ -8853,162 +9339,146 @@ main(int argc, char *argv[])
 {
   /* Mapping of supported charsets and the number of bits used in them. */
   /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-  charsetinfo_t all_supported_charsets[] = {
-    { "UTF-8", 8 },
+  char *seven_bit_charsets[] = {
+    "ANSI_X3.4-1968", "ANSI_X3.4-1986", "646",           "ASCII",
+    "cp367",          "IBM367",         "ISO_646.BASIC", "ISO_646.IRV:1991",
+    "ISO_646.IRV",    "ISO646-US",      "iso-ir-6",      "US",
+    "US-ASCII",       "csASCII"
+  };
 
-    { "ANSI_X3.4-1968", 7 },
-    { "ANSI_X3.4-1986", 7 },
-    { "646", 7 },
-    { "ASCII", 7 },
-    { "CP367", 7 },
-    { "IBM367", 7 },
-    { "ISO_646.BASIC", 7 },
-    { "ISO_646.IRV:1991", 7 },
-    { "ISO_646.IRV", 7 },
-    { "ISO646-US", 7 },
-    { "ISO-IR-6", 7 },
-    { "US", 7 },
-    { "US-ASCII", 7 },
+  typedef struct charset_s charset_t;
 
-    { "hp-roman8", 8 },
-    { "roman8", 8 },
-    { "r8", 8 },
+  struct charset_s
+  {
+    int   charset;
+    char *names[20];
+  };
 
-    { "ISO8859-1", 8 },
-    { "ISO-8859-1", 8 },
-    { "ISO-IR-100", 8 },
-    { "ISO_8859-1:1987", 8 },
-    { "ISO_8859-1", 8 },
-    { "LATIN1", 8 },
-    { "L1", 8 },
-    { "IBM819", 8 },
-    { "CP819", 8 },
-
-    { "ISO8859-2", 8 },
-    { "ISO-8859-2", 8 },
-    { "ISO-IR-101", 8 },
-    { "ISO_8859-2:1987", 8 },
-    { "ISO_8859-2", 8 },
-    { "LATIN2", 8 },
-    { "L2", 8 },
-    { "CP28592", 8 },
-
-    { "ISO8859-3", 8 },
-    { "ISO-8859-3", 8 },
-    { "ISO-IR-109", 8 },
-    { "ISO_8859-3:1988", 8 },
-    { "ISO_8859-3", 8 },
-    { "LATIN3", 8 },
-    { "L3", 8 },
-    { "CP28593", 8 },
-
-    { "ISO8859-4", 8 },
-    { "ISO-8859-4", 8 },
-    { "ISO-IR-110", 8 },
-    { "ISO_8859-4:1988", 8 },
-    { "LATIN4", 8 },
-    { "L4", 8 },
-    { "CP28594", 8 },
-
-    { "ISO8859-5", 8 },
-    { "ISO-8859-5", 8 },
-    { "ISO-IR-144", 8 },
-    { "ISO_8859-5:1988", 8 },
-    { "CYRILLIC", 8 },
-    { "CP28595", 8 },
-
-    { "KOI8-R", 8 },
-    { "KOI8-RU", 8 },
-    { "KOI8-U", 8 },
-
-    { "ISO8859-6", 8 },
-    { "ISO-8859-6", 8 },
-    { "ISO-IR-127", 8 },
-    { "ISO_8859-6:1987", 8 },
-    { "ECMA-114", 8 },
-    { "ASMO-708", 8 },
-    { "ARABIC", 8 },
-    { "CP28596", 8 },
-
-    { "ISO8859-7", 8 },
-    { "ISO-8859-7", 8 },
-    { "ISO-IR-126", 8 },
-    { "ISO_8859-7:2003", 8 },
-    { "ISO_8859-7:1987", 8 },
-    { "ELOT_928", 8 },
-    { "ECMA-118", 8 },
-    { "GREEK", 8 },
-    { "GREEK8", 8 },
-    { "CP28597", 8 },
-
-    { "ISO8859-8", 8 },
-    { "ISO-8859-8", 8 },
-    { "ISO-IR-138", 8 },
-    { "ISO_8859-8:1988", 8 },
-    { "HEBREW", 8 },
-    { "CP28598", 8 },
-
-    { "ISO8859-9", 8 },
-    { "ISO-8859-9", 8 },
-    { "ISO-IR-148", 8 },
-    { "ISO_8859-9:1989", 8 },
-    { "LATIN5", 8 },
-    { "L5", 8 },
-    { "CP28599", 8 },
-
-    { "ISO8859-10", 8 },
-    { "ISO-8859-10", 8 },
-    { "ISO-IR-157", 8 },
-    { "ISO_8859-10:1992", 8 },
-    { "LATIN6", 8 },
-    { "L6", 8 },
-    { "CP28600", 8 },
-
-    { "ISO8859-11", 8 },
-    { "ISO-8859-11", 8 },
-    { "ISO-8859-11:2001", 8 },
-    { "ISO-IR-166", 8 },
-    { "CP474", 8 },
-
-    { "TIS-620", 8 },
-    { "TIS620", 8 },
-    { "TIS620-0", 8 },
-    { "TIS620.2529-1", 8 },
-    { "TIS620.2533-0", 8 },
-
-    /* ISO-8859-12 was abandoned in 1997. */
-    /* """""""""""""""""""""""""""""""""" */
-
-    { "ISO8859-13", 8 },
-    { "ISO-8859-13", 8 },
-    { "ISO-IR-179", 8 },
-    { "LATIN7", 8 },
-    { "L7", 8 },
-    { "CP28603", 8 },
-
-    { "ISO8859-14", 8 },
-    { "ISO-8859-14", 8 },
-    { "LATIN8", 8 },
-    { "L8", 8 },
-
-    { "ISO8859-15", 8 },
-    { "ISO-8859-15", 8 },
-    { "LATIN-9", 8 },
-    { "CP28605", 8 },
-
-    { "ISO8859-16", 8 },
-    { "ISO-8859-16", 8 },
-    { "ISO-IR-226", 8 },
-    { "ISO_8859-16:2001", 8 },
-    { "LATIN10", 8 },
-    { "L10", 8 },
-
-    { "CP1250", 8 },
-    { "CP1251", 8 },
-
-    { "CP1252", 8 },
-    { "MS-ANSI", 8 },
-    { NULL, 0 }
+  /* Names and aliases for iso-8859-* all supported character sets. */
+  /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+  charset_t charsets[] = {
+    { 1,
+      { "ISO-8859-1",
+        "CP819",
+        "IBM819",
+        "ISO_8859-1",
+        "ISO_8859-1:1987",
+        "csISOLatin1",
+        "iso-ir-100",
+        "l1",
+        "latin1",
+        NULL } },
+    { 2,
+      { "ISO-8859-2",
+        "ISO_8859-2",
+        "ISO_8859-2:1987",
+        "csISOLatin2",
+        "iso-ir-101",
+        "l2",
+        "latin2",
+        NULL } },
+    { 3,
+      { "ISO-8859-3",
+        "ISO_8859-3",
+        "ISO_8859-3:1988",
+        "csISOLatin3",
+        "iso-ir-109",
+        "l3",
+        "latin3",
+        NULL } },
+    { 4,
+      { "ISO-8859-4",
+        "ISO_8859-2:1988",
+        "ISO_8859-4",
+        "csISOLatin4",
+        "iso-ir-110",
+        "l4",
+        "latin4",
+        NULL } },
+    { 5,
+      { "ISO-8859-5",
+        "ISO_8859-5",
+        "ISO_8859-5:1988",
+        "csISOLatinCyrillic",
+        "cyrillic",
+        "iso-ir-144",
+        NULL } },
+    { 6,
+      { "ISO-8859-6",
+        "ASMO-708",
+        "ECMA-114",
+        "ISO_8859-6",
+        "ISO_8859-6:1987",
+        "arabic",
+        "csISOLatinArabic",
+        "iso-ir-127",
+        NULL } },
+    { 7,
+      { "ISO-8859-7",
+        "ECMA-118",
+        "ELOT_928",
+        "ISO_8859-7",
+        "ISO_8859-7:1987",
+        "csISOLatinGreek",
+        "greek",
+        "greek8",
+        "iso-ir-126",
+        NULL } },
+    { 8,
+      { "ISO-8859-8",
+        "ISO_8859-8",
+        "ISO_8859-8:1988",
+        "csISOLatinHebrew",
+        "hebrew",
+        "iso-ir-138",
+        NULL } },
+    { 9,
+      { "ISO-8859-9",
+        "ISO_8859-9",
+        "ISO_8859-9:1989",
+        "csISOLatin5",
+        "iso-ir-148",
+        "l5",
+        "latin5",
+        NULL } },
+    { 10,
+      { "ISO-8859-10",
+        "ISO_8859-10",
+        "ISO_8859-10:1992",
+        "csISOLatin6",
+        "iso-ir-157",
+        "l6",
+        "latin6",
+        NULL } },
+    { 11, { "ISO-8859-11", "ISO_8859-11", "TIS-620", "csTIS620", NULL } },
+    { 13,
+      { "ISO-8859-13",
+        "Latin7",
+        "csISO885913",
+        "csISOLatin7",
+        "iso-ir-179",
+        "l7",
+        NULL } },
+    { 14,
+      { "ISO-8859-14",
+        "ISO_8859-14:1998",
+        "csISO885914",
+        "iso-celtic",
+        "iso-ir-199",
+        "l8",
+        "latin8",
+        NULL } },
+    { 15, { "ISO-8859-15", "ISO_8859-15", "Latin-9", "csISO885915", NULL } },
+    { 16,
+      { "ISO_8859-16",
+        "ISO_8859-16",
+        "ISO_8859-16:2001",
+        "csISO885916",
+        "iso-ir-226",
+        "l10",
+        "latin10",
+        NULL } },
+    { 0, { NULL } }
   };
 
   /* Terminal setting variables. */
@@ -9018,7 +9488,7 @@ main(int argc, char *argv[])
 
   /* Interval timers used. */
   /* """"""""""""""""""""" */
-  struct itimerval periodic_itv; /* refresh rate for the timeout counter.    */
+  struct itimerval periodic_itv; /* refresh rate for the timeout counter. */
 
   /* Used by the internal help system. */
   /* """"""""""""""""""""""""""""""""" */
@@ -9046,7 +9516,8 @@ main(int argc, char *argv[])
   char *int_string      = NULL; /* String to be output when typing ^C.       */
   int   int_as_in_shell = 1; /* CTRL-C mimics the shell behaviour.           */
 
-  FILE *input_file; /* The name of the file passed as argument if any.       */
+  FILE *input_file = NULL; /* The name of the file passed as argument        *
+                            * if any.                                        */
 
   long index; /* generic counter.                                            */
 
@@ -9113,7 +9584,7 @@ main(int argc, char *argv[])
   ll_t *ar_word_regex_list = NULL;
   ll_t *ac_word_regex_list = NULL;
 
-  unsigned char al_delim = 0x05; /* Alignment delimiter.                     */
+  unsigned char filler = 0x05; /* Alignment delimiter.                     */
 
   alignment_t default_alignment = AL_NONE;
 
@@ -9151,10 +9622,8 @@ main(int argc, char *argv[])
   tst_node_t *tst_word    = NULL; /* TST used by the search function.        */
   tst_node_t *tst_daccess = NULL; /* TST used by the direct access system.   */
 
-  long  page;     /* Step for the vertical cursor moves.                     */
-  char *word;     /* Temporary variable to work on words.                    */
-  char *tmp_word; /* Temporary variable able to contain  the beginning of    *
-                   | the word to be displayed.                               */
+  long  page; /* Step for the vertical cursor moves.                         */
+  char *word; /* Temporary variable to work on words.                        */
 
   long     last_line = 0; /* last logical line number (from 0).              */
   win_t    win;
@@ -9226,23 +9695,23 @@ main(int argc, char *argv[])
   struct sigaction sa; /* Signal structure.                                  */
 
   char *iws = NULL, *ils = NULL, *zg = NULL; /* words/lines delimiters and   *
-                                              | zapped glyphs strings.       */
+                                              | zapped characters strings.   */
 
-  ll_t *word_delims_list   = NULL; /* and associated linked lists.           */
-  ll_t *line_delims_list   = NULL;
-  ll_t *zapped_glyphs_list = NULL;
+  ll_t *word_delims_list = NULL; /* and associated linked lists.             */
+  ll_t *line_delims_list = NULL;
+  ll_t *zapped_characters_list = NULL;
 
-  char utf8_buffer[5]; /* buffer to store the bytes of a UTF-8 glyph         *
+  char utf8_buffer[5]; /* buffer to store the bytes of a UTF-8 character     *
                         | (4 chars max).                                     */
+
   unsigned char is_last;
   char         *charset;
 
   char *home_ini_file;  /* init file full path.                              */
   char *local_ini_file; /* init file full path.                              */
 
-  charsetinfo_t *charset_ptr;
-  langinfo_t     langinfo;
-  int            is_supported_charset;
+  langinfo_t langinfo;
+  int        is_supported_charset;
 
   long line_count = 0; /* Only used when -R is selected.                     */
 
@@ -9332,48 +9801,103 @@ main(int argc, char *argv[])
   setlocale(LC_ALL, "");
   charset = nl_langinfo(CODESET);
 
-  /* Check if the local charset is supported. */
-  /* """""""""""""""""""""""""""""""""""""""" */
+  /* Check if the local character set is supported. */
+  /* """""""""""""""""""""""""""""""""""""""""""""" */
   is_supported_charset = 0;
-  charset_ptr          = all_supported_charsets;
 
-  while (charset_ptr->name != NULL)
+  langinfo.bits = 8; /* Default character set used bits. */
+  langinfo.utf8 = 0;
+
+  if (MB_CUR_MAX == 1)
   {
-    if (my_strcasecmp(charset, charset_ptr->name) == 0)
+    /* The current character set is single-byte encoded. */
+    /* ''''''''''''''''''''''''''''''''''''''''''''''''' */
+
+    /* Look if the current character set is in the list of iso-8859 */
+    /* character sets.                                              */
+    /* '''''''''''''''''''''''''''''''''''''''''''''''''''''''''''' */
+    charset_t *charset_ptr = charsets;
+
+    while (charset_ptr->charset != 0 && !iso_charset)
     {
-      is_supported_charset = 1;
-      langinfo.bits        = charset_ptr->bits;
-      break;
+      unsigned long offset = 0;
+      while (charset_ptr->names[offset] != NULL)
+      {
+        if (my_strcasecmp(charset, charset_ptr->names[offset]) == 0)
+        {
+          iso_charset          = charset_ptr->charset;
+          is_supported_charset = 1;
+          break;
+        }
+        offset++;
+      }
+      charset_ptr++;
     }
-    charset_ptr++;
+
+    /* Look if the current character set is in the list of 7-bit */
+    /* character set.                                            */
+    /* ''''''''''''''''''''''''''''''''''''''''''''''''''''''''' */
+    if (!iso_charset)
+      for (unsigned long offset = 0;
+           offset < sizeof(seven_bit_charsets) / sizeof(seven_bit_charsets[0]);
+           offset++)
+      {
+        if (my_strcasecmp(charset, seven_bit_charsets[offset]) == 0)
+        {
+          langinfo.bits        = 7;
+          is_supported_charset = 1;
+          break;
+        }
+      }
+  }
+  else if (my_strcasecmp(charset, "UTF-8") == 0)
+  {
+    is_supported_charset = 1;
+    langinfo.bits        = 8;
+    langinfo.utf8        = 1;
   }
 
   if (!is_supported_charset)
   {
-    fprintf(stderr, "%s is not a supported charset.", charset);
+    if (MB_CUR_MAX > 1)
+      fprintf(stderr,
+              "The current character set is %s but only UTF-8 "
+              "is allowed for multibyte encoding.\n",
+              charset);
+    else
+      fprintf(stderr, "%s is not a supported character set.\n", charset);
 
     exit(EXIT_FAILURE);
   }
 
-  /* Remember the fact that the charset is UTF-8. */
-  /* """""""""""""""""""""""""""""""""""""""""""" */
-  if (strcmp(charset, "UTF-8") == 0)
-    langinfo.utf8 = 1;
+  /* stol is a function pointer that points to the UTF-8 or non UTF-8    */
+  /* version of strtolower respectively implemented n utf8.c and utils.c */
+  /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+  if (langinfo.utf8)
+    stol = utf8_strtolower;
   else
-    langinfo.utf8 = 0;
+    stol = strtolower;
+
+  /* my_strlen is a function pointer that points to the UTF-8 or non UTF-8 */
+  /* version of strlen respectively implemented in utf8.c and utils.c      */
+  /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+  if (langinfo.utf8)
+    my_strlen = utf8_strlen;
+  else
+    my_strlen = strlen;
 
   /* my_isprint is a function pointers that points to   */
   /* the 7 or 8-bit version of isprint according to the */
-  /* current locale.                                    */
+  /* current character set.                             */
   /* """""""""""""""""""""""""""""""""""""""""""""""""" */
   if (langinfo.utf8 || langinfo.bits == 8)
-    my_isprint = isprint8;
+    my_isprint = isprint;
   else
     my_isprint = isprint7;
 
   /* my_isempty is a function pointers that points to         */
   /* the utf8 or non_utf8 version of isprint according to the */
-  /* current locale.                                          */
+  /* current character set.                                   */
   /* """""""""""""""""""""""""""""""""""""""""""""""""""""""" */
   if (langinfo.utf8)
     my_isempty = isempty_utf8;
@@ -9437,7 +9961,7 @@ main(int argc, char *argv[])
 
   /* Get the number of lines/columns of the terminal. */
   /* """""""""""""""""""""""""""""""""""""""""""""""" */
-  get_terminal_size(&term.nlines, &term.ncolumns, &term);
+  get_terminal_size(&term.nlines, &term.ncolumns);
 
   /* Restore the old stdin and stdout. */
   /* """"""""""""""""""""""""""""""""" */
@@ -9494,7 +10018,7 @@ main(int argc, char *argv[])
                    "[special_level_7 #...<3] "
                    "[special_level_8 #...<3] "
                    "[special_level_9 #...<3] "
-                   "[zapped_glyphs #bytes] "
+                   "[zapped_characters #bytes] "
                    "[lines [#height]] "
                    "[blank_nonprintable] "
                    "[*invalid_character #invalid_char_subst] "
@@ -9519,9 +10043,9 @@ main(int argc, char *argv[])
                    "[forgotten_timeout #timeout] "
                    "[double_click_delay #delay] "
                    "[button_remapping #mapping...] "
-                   "[no_mouse] "
-                   "[show_blank_words [#blank_char]] "; /* <- don't remove *
-                                                         | this space!     */
+                   "[show_blank_words [#blank_char]] "
+                   "[no_mouse] "; /* <- don't remove *
+                                  |    this space!  */
 
   main_spec_options = "[*copyright] "
                       "[*version] "
@@ -9534,7 +10058,8 @@ main(int argc, char *argv[])
                       "[line_mode>Lines] "
                       "[tab_mode>Tabulations [#cols]] "
                       "[tag_mode>Tagging [#delim]] "
-                      "[pin_mode>Tagging [#delim]]";
+                      "[pin_mode>Tagging [#delim]] "
+                      "[number_blank_words]";
 
   col_spec_options = "[wide_mode] "
                      "[columns_select... #selector...] "
@@ -9551,7 +10076,8 @@ main(int argc, char *argv[])
                      "[no_hor_scroll_bar] "
                      "[hor_scroll_bar] "
                      "[force_first_column #regex] "
-                     "[force_last_column #regex]";
+                     "[force_last_column #regex] "
+                     "[number_blank_words]";
 
   line_spec_options = "[rows_select... #selector...] "
                       "[line_separators #bytes] "
@@ -9564,7 +10090,8 @@ main(int argc, char *argv[])
                       "[no_hor_scroll_bar] "
                       "[hor_scroll_bar] "
                       "[force_first_column #regex] "
-                      "[force_last_column #regex]";
+                      "[force_last_column #regex] "
+                      "[number_blank_words]";
 
   tab_spec_options = "[wide_mode] "
                      "[gutter [#string]] "
@@ -9576,7 +10103,8 @@ main(int argc, char *argv[])
                      "[tag_mode>Tagging [#delim]] "
                      "[pin_mode>Tagging [#delim]] "
                      "[force_first_column #regex] "
-                     "[force_last_column #regex]";
+                     "[force_last_column #regex] "
+                     "[number_blank_words]";
 
   tag_spec_options = "[auto_tag] "
                      "[no_auto_tag] "
@@ -9675,7 +10203,9 @@ main(int argc, char *argv[])
   ctxopt_add_opt_settings(parameters,
                           "line_separators",
                           "-L -ls -ld -line-delimiters -line_separators");
-  ctxopt_add_opt_settings(parameters, "zapped_glyphs", "-z -zap -zap-glyphs");
+  ctxopt_add_opt_settings(parameters,
+                          "zapped_characters",
+                          "-z -zap -zap-characters");
   ctxopt_add_opt_settings(parameters,
                           "no_scroll_bar",
                           "-q -no_bar -no_scroll_bar");
@@ -9723,6 +10253,9 @@ main(int argc, char *argv[])
   ctxopt_add_opt_settings(parameters,
                           "show_blank_words",
                           "-sb -sbw -show_blank_words");
+  ctxopt_add_opt_settings(parameters,
+                          "number_blank_words",
+                          "-nb -nbw -number_blank_words");
 
   /* ctxopt options incompatibilities. */
   /* """"""""""""""""""""""""""""""""" */
@@ -9758,6 +10291,42 @@ main(int argc, char *argv[])
   ctxopt_add_ctx_settings(requirements,
                           "Tabulations",
                           "da_options "
+                          "field_da_number auto_da_number auto_da_unnumber");
+
+  ctxopt_add_ctx_settings(requirements,
+                          "Main",
+                          "number_blank_words "
+                          "show_blank_words");
+  ctxopt_add_ctx_settings(requirements,
+                          "Main",
+                          "number_blank_words "
+                          "field_da_number auto_da_number auto_da_unnumber");
+
+  ctxopt_add_ctx_settings(requirements,
+                          "Columns",
+                          "number_blank_words "
+                          "show_blank_words");
+  ctxopt_add_ctx_settings(requirements,
+                          "Columns",
+                          "number_blank_words "
+                          "field_da_number auto_da_number auto_da_unnumber");
+
+  ctxopt_add_ctx_settings(requirements,
+                          "Lines",
+                          "number_blank_words "
+                          "show_blank_words");
+  ctxopt_add_ctx_settings(requirements,
+                          "Lines",
+                          "number_blank_words "
+                          "field_da_number auto_da_number auto_da_unnumber");
+
+  ctxopt_add_ctx_settings(requirements,
+                          "Tabulations",
+                          "number_blank_words "
+                          "show_blank_words");
+  ctxopt_add_ctx_settings(requirements,
+                          "Tabulations",
+                          "number_blank_words "
                           "field_da_number auto_da_number auto_da_unnumber");
 
   /* ctxopt actions. */
@@ -9827,21 +10396,20 @@ main(int argc, char *argv[])
                           include_re_action,
                           &pattern_def_include,
                           &include_pattern,
-                          &misc,
+                          &langinfo,
                           (char *)0);
   ctxopt_add_opt_settings(actions,
                           "exclude_re",
                           exclude_re_action,
                           &pattern_def_include,
                           &exclude_pattern,
-                          &misc,
+                          &langinfo,
                           (char *)0);
   ctxopt_add_opt_settings(actions,
                           "gutter",
                           gutter_action,
                           &win,
                           &langinfo,
-                          &misc,
                           (char *)0);
   ctxopt_add_opt_settings(actions, "help", help_action, (char *)0);
   ctxopt_add_opt_settings(actions, "long_help", long_help_action, (char *)0);
@@ -9871,11 +10439,11 @@ main(int argc, char *argv[])
                           "start_pattern",
                           set_pattern_action,
                           &pre_selection_index,
-                          &misc,
+                          &langinfo,
                           (char *)0);
   ctxopt_add_opt_settings(actions,
                           "title",
-                          set_string_action,
+                          set_title_action,
                           &message,
                           &langinfo,
                           &misc,
@@ -9914,25 +10482,25 @@ main(int argc, char *argv[])
                           "early_subst_all",
                           post_subst_action,
                           &early_sed_list,
-                          &misc,
+                          &langinfo,
                           (char *)0);
   ctxopt_add_opt_settings(actions,
                           "post_subst_all",
                           post_subst_action,
                           &sed_list,
-                          &misc,
+                          &langinfo,
                           (char *)0);
   ctxopt_add_opt_settings(actions,
                           "post_subst_included",
                           post_subst_action,
                           &include_sed_list,
-                          &misc,
+                          &langinfo,
                           (char *)0);
   ctxopt_add_opt_settings(actions,
                           "post_subst_excluded",
                           post_subst_action,
                           &exclude_sed_list,
-                          &misc,
+                          &langinfo,
                           (char *)0);
   ctxopt_add_opt_settings(actions,
                           "special_level_1",
@@ -9941,7 +10509,7 @@ main(int argc, char *argv[])
                           &win,
                           &term,
                           &init_attr,
-                          &misc,
+                          &langinfo,
                           (char *)0);
   ctxopt_add_opt_settings(actions,
                           "special_level_2",
@@ -9950,7 +10518,7 @@ main(int argc, char *argv[])
                           &win,
                           &term,
                           &init_attr,
-                          &misc,
+                          &langinfo,
                           (char *)0);
   ctxopt_add_opt_settings(actions,
                           "special_level_3",
@@ -9959,7 +10527,7 @@ main(int argc, char *argv[])
                           &win,
                           &term,
                           &init_attr,
-                          &misc,
+                          &langinfo,
                           (char *)0);
   ctxopt_add_opt_settings(actions,
                           "special_level_4",
@@ -9968,7 +10536,7 @@ main(int argc, char *argv[])
                           &win,
                           &term,
                           &init_attr,
-                          &misc,
+                          &langinfo,
                           (char *)0);
   ctxopt_add_opt_settings(actions,
                           "special_level_5",
@@ -9977,7 +10545,7 @@ main(int argc, char *argv[])
                           &win,
                           &term,
                           &init_attr,
-                          &misc,
+                          &langinfo,
                           (char *)0);
   ctxopt_add_opt_settings(actions,
                           "special_level_6",
@@ -9986,7 +10554,7 @@ main(int argc, char *argv[])
                           &win,
                           &term,
                           &init_attr,
-                          &misc,
+                          &langinfo,
                           (char *)0);
   ctxopt_add_opt_settings(actions,
                           "special_level_7",
@@ -9995,7 +10563,7 @@ main(int argc, char *argv[])
                           &win,
                           &term,
                           &init_attr,
-                          &misc,
+                          &langinfo,
                           (char *)0);
   ctxopt_add_opt_settings(actions,
                           "special_level_8",
@@ -10004,7 +10572,7 @@ main(int argc, char *argv[])
                           &win,
                           &term,
                           &init_attr,
-                          &misc,
+                          &langinfo,
                           (char *)0);
   ctxopt_add_opt_settings(actions,
                           "special_level_9",
@@ -10013,7 +10581,7 @@ main(int argc, char *argv[])
                           &win,
                           &term,
                           &init_attr,
-                          &misc,
+                          &langinfo,
                           (char *)0);
   ctxopt_add_opt_settings(actions,
                           "attributes",
@@ -10022,55 +10590,61 @@ main(int argc, char *argv[])
                           &term,
                           &init_attr,
                           (char *)0);
-  ctxopt_add_opt_settings(actions, "timeout", timeout_action, &misc, (char *)0);
+  ctxopt_add_opt_settings(actions,
+                          "timeout",
+                          timeout_action,
+                          &langinfo,
+                          &misc,
+                          (char *)0);
   ctxopt_add_opt_settings(actions,
                           "hidden_timeout",
                           timeout_action,
+                          &langinfo,
                           &misc,
                           (char *)0);
   ctxopt_add_opt_settings(actions,
                           "force_first_column",
                           set_pattern_action,
                           &first_word_pattern,
-                          &misc,
+                          &langinfo,
                           (char *)0);
   ctxopt_add_opt_settings(actions,
                           "force_last_column",
                           set_pattern_action,
                           &last_word_pattern,
-                          &misc,
+                          &langinfo,
                           (char *)0);
   ctxopt_add_opt_settings(actions,
                           "word_separators",
                           set_pattern_action,
                           &iws,
-                          &misc,
+                          &langinfo,
                           (char *)0);
   ctxopt_add_opt_settings(actions,
                           "line_separators",
                           set_pattern_action,
                           &ils,
-                          &misc,
+                          &langinfo,
                           (char *)0);
   ctxopt_add_opt_settings(actions,
-                          "zapped_glyphs",
+                          "zapped_characters",
                           set_pattern_action,
                           &zg,
-                          &misc,
+                          &langinfo,
                           (char *)0);
   ctxopt_add_opt_settings(actions,
                           "tag_mode",
                           tag_mode_action,
                           &toggles,
                           &win,
-                          &misc,
+                          &langinfo,
                           (char *)0);
   ctxopt_add_opt_settings(actions,
                           "pin_mode",
                           pin_mode_action,
                           &toggles,
                           &win,
-                          &misc,
+                          &langinfo,
                           (char *)0);
   ctxopt_add_opt_settings(actions,
                           "search_method",
@@ -10095,7 +10669,7 @@ main(int argc, char *argv[])
                           "da_options",
                           da_options_action,
                           &daccess_index,
-                          &misc,
+                          &langinfo,
                           (char *)0);
   ctxopt_add_opt_settings(actions,
                           "ignore_quotes",
@@ -10129,6 +10703,11 @@ main(int argc, char *argv[])
                           show_blank_action,
                           &toggles,
                           &misc,
+                          (char *)0);
+  ctxopt_add_opt_settings(actions,
+                          "number_blank_words",
+                          number_blank_action,
+                          &toggles,
                           (char *)0);
 
   /* ctxopt constraints. */
@@ -10706,7 +11285,8 @@ main(int argc, char *argv[])
       get_message_lines(message,
                         message_lines_list,
                         &message_max_width,
-                        &message_max_len);
+                        &message_max_len,
+                        &langinfo);
       ll_append(message_lines_list, timeout_message);
 
       if ((len = strlen(timeout_message)) > message_max_len)
@@ -10724,7 +11304,8 @@ main(int argc, char *argv[])
     get_message_lines(message,
                       message_lines_list,
                       &message_max_width,
-                      &message_max_len);
+                      &message_max_len,
+                      &langinfo);
   }
 
   /* Force the maximum number of window's line if -n is used. */
@@ -10759,58 +11340,76 @@ main(int argc, char *argv[])
   tab_max_size      = 0;
   min_size          = 0;
 
-  /* Parse the list of glyphs to be zapped (option -z). */
-  /* """""""""""""""""""""""""""""""""""""""""""""""""" */
-  zapped_glyphs_list = ll_new();
+  /* Parse the list of characters to be zapped (option -z). */
+  /* """""""""""""""""""""""""""""""""""""""""""""""""""""" */
+  zapped_characters_list = ll_new();
   if (zg != NULL)
   {
     int   len;
     char *zg_ptr = zg;
     char *tmp;
 
-    zg_ptr = concat(zg_ptr,
-                    "\xe2\x80\x8b", /* Zero Width Space (ZWSP).      */
-                    "\xe2\x80\x8c", /* Zero Width Non-Joiner (ZWNJ). */
-                    "\xe2\x80\x8d", /* Zero Width Joiner (ZWJ).      */
-                    "\xe2\x80\x8e", /* Left-to-Right Mark (LRM).     */
-                    "\xe2\x80\x8f", /* Right-to-Left Mark (RLM).     */
-                    (char *)0);
+    if (langinfo.utf8)
+    {
+      char *tmp;
+      tmp = concat(zg_ptr,
+                   "\xe2\x80\x8b", /* Zero Width Space (ZWSP).      */
+                   "\xe2\x80\x8c", /* Zero Width Non-Joiner (ZWNJ). */
+                   "\xe2\x80\x8d", /* Zero Width Joiner (ZWJ).      */
+                   "\xe2\x80\x8e", /* Left-to-Right Mark (LRM).     */
+                   "\xe2\x80\x8f", /* Right-to-Left Mark (RLM).     */
+                   (char *)0);
+      free(zg_ptr);
+      zg_ptr = tmp;
+    }
 
-    len = mblen(zg_ptr, MB_CUR_MAX);
+    len = mblen(zg_ptr, MB_CUR_MAX); /* MB is assumed to be UTF-8. */
 
     while (len != 0)
     {
+      if (len == -1)
+      {
+        /* Ignore the invalid character. */
+        /* """"""""""""""""""""""""""""" */
+        len = 1;
+        goto next1;
+      }
+
       tmp = xmalloc(len + 1);
       memcpy(tmp, zg_ptr, len);
       tmp[len] = '\0';
-      ll_append(zapped_glyphs_list, tmp);
+      ll_append(zapped_characters_list, tmp);
 
+    next1:
       zg_ptr += len;
-      len = mblen(zg_ptr, 4);
+      len = mblen(zg_ptr, MB_CUR_MAX); /* MB is assumed to be UTF-8. */
     }
   }
   else
   {
-    /* Zero Width Space (ZWSP). */
-    /* """""""""""""""""""""""" */
-    ll_append(zapped_glyphs_list, xstrdup("\xe2\x80\x8b"));
+    if (langinfo.utf8)
+    {
+      /* Zero Width Space (ZWSP). */
+      /* """""""""""""""""""""""" */
+      ll_append(zapped_characters_list, xstrdup("\xe2\x80\x8b"));
 
-    /* Zero Width Non-Joiner (ZWNJ). */
-    /* """"""""""""""""""""""""""""" */
+      /* Zero Width Non-Joiner (ZWNJ). */
+      /* """"""""""""""""""""""""""""" */
 
-    ll_append(zapped_glyphs_list, xstrdup("\xe2\x80\x8c"));
-    /* Zero Width Joiner (ZWJ). */
-    /* """""""""""""""""""""""" */
+      ll_append(zapped_characters_list, xstrdup("\xe2\x80\x8c"));
+      /* Zero Width Joiner (ZWJ). */
+      /* """""""""""""""""""""""" */
 
-    ll_append(zapped_glyphs_list, xstrdup("\xe2\x80\x8d"));
+      ll_append(zapped_characters_list, xstrdup("\xe2\x80\x8d"));
 
-    /* Left-to-Right Mark (LRM). */
-    /* """"""""""""""""""""""""" */
-    ll_append(zapped_glyphs_list, xstrdup("\xe2\x80\x8e"));
+      /* Left-to-Right Mark (LRM). */
+      /* """"""""""""""""""""""""" */
+      ll_append(zapped_characters_list, xstrdup("\xe2\x80\x8e"));
 
-    /* Right-to-Right Mark (RRM). */
-    /* """""""""""""""""""""""""" */
-    ll_append(zapped_glyphs_list, xstrdup("\xe2\x80\x8f"));
+      /* Right-to-Right Mark (RRM). */
+      /* """""""""""""""""""""""""" */
+      ll_append(zapped_characters_list, xstrdup("\xe2\x80\x8f"));
+    }
   }
 
   /* Parse the word separators string (option -W). If it is empty then  */
@@ -10831,17 +11430,26 @@ main(int argc, char *argv[])
     char *iws_ptr = iws;
     char *tmp;
 
-    len = mblen(iws_ptr, MB_CUR_MAX);
+    len = mblen(iws_ptr, MB_CUR_MAX); /* MB is assumed to be UTF-8. */
 
     while (len != 0)
     {
+      if (len == -1)
+      {
+        /* Ignore the invalid character. */
+        /* """"""""""""""""""""""""""""" */
+        len = 1;
+        goto next2;
+      }
+
       tmp = xmalloc(len + 1);
       memcpy(tmp, iws_ptr, len);
       tmp[len] = '\0';
       ll_append(word_delims_list, tmp);
 
+    next2:
       iws_ptr += len;
-      len = mblen(iws_ptr, 4);
+      len = mblen(iws_ptr, MB_CUR_MAX); /* MB is assumed to be UTF-8. */
     }
   }
 
@@ -10862,10 +11470,16 @@ main(int argc, char *argv[])
     char *ils_ptr = ils;
     char *tmp;
 
-    len = mblen(ils_ptr, MB_CUR_MAX);
+    len = mblen(ils_ptr, MB_CUR_MAX); /* MB is assumed to be UTF-8. */
 
     while (len != 0)
     {
+      if (len == -1)
+      {
+        len = 1;
+        goto next3;
+      }
+
       tmp = xmalloc(len + 1);
       memcpy(tmp, ils_ptr, len);
       tmp[len] = '\0';
@@ -10876,8 +11490,9 @@ main(int argc, char *argv[])
       if (ll_find(word_delims_list, tmp, buffer_cmp) == NULL)
         ll_append(word_delims_list, tmp);
 
+    next3:
       ils_ptr += len;
-      len = mblen(ils_ptr, 4);
+      len = mblen(ils_ptr, MB_CUR_MAX); /* MB is assumed to be UTF-8. */
     }
   }
 
@@ -11084,7 +11699,7 @@ main(int argc, char *argv[])
                       &at_row_regex_list,
                       &default_alignment,
                       &win,
-                      &misc,
+                      &langinfo,
                       &term);
 
       if (*unparsed != '\0')
@@ -11134,7 +11749,9 @@ main(int argc, char *argv[])
 
     cols_filter = xmalloc(limits.cols);
 
+    filter_type      = UNKNOWN_FILTER;
     cols_filter_type = UNKNOWN_FILTER;
+
     while (node_selector != NULL)
     {
       char *unparsed;
@@ -11158,7 +11775,7 @@ main(int argc, char *argv[])
                       &at_col_regex_list,
                       &default_alignment,
                       &win,
-                      &misc,
+                      &langinfo,
                       &term);
 
       if (*unparsed != '\0')
@@ -11260,7 +11877,7 @@ main(int argc, char *argv[])
                          &ar_word_regex_list,
                          &ac_word_regex_list,
                          &default_alignment,
-                         &misc);
+                         &langinfo);
 
       if (*unparsed != '\0')
       {
@@ -11328,13 +11945,12 @@ main(int argc, char *argv[])
   while ((word = read_word(input_file,
                            word_delims_list,
                            line_delims_list,
-                           zapped_glyphs_list,
+                           zapped_characters_list,
                            utf8_buffer,
                            &is_last,
                            &toggles,
                            &langinfo,
                            &win,
-                           &limits,
                            &misc))
          != NULL)
   {
@@ -11343,15 +11959,18 @@ main(int argc, char *argv[])
     unsigned char special_level;
     int           row_inc_matched = 0;
     ll_node_t    *node;
+    size_t        wl;
 
     if (*word == '\0')
       continue;
 
-    if (utf8_strlen(word) > limits.word_length)
+    wl = my_strlen(word);
+
+    if (wl > limits.word_length)
     {
       fprintf(stderr,
               "The length of a word exceeds the word length limit of "
-              "%ld glyphs.\n",
+              "%ld characters.\n",
               limits.word_length);
 
       exit(EXIT_FAILURE);
@@ -11459,10 +12078,10 @@ main(int argc, char *argv[])
         }
       }
 
-      /* Look if the line is in an excluded or included line.             */
-      /* The included line intervals are only checked if the word didn't  */
-      /* belong to an excluded line interval before.                      */
-      /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+      /* Look if the line is in an excluded or included line.            */
+      /* The included line intervals are only checked if the word didn't */
+      /* belong to an excluded line interval before.                     */
+      /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
       if (exc_interval && line_count >= exc_interval->low
           && line_count <= exc_interval->high)
         selectable = EXCLUDE_MARK;
@@ -11751,6 +12370,7 @@ main(int argc, char *argv[])
     word_a[count].special_level = special_level;
     word_a[count].is_matching   = 0;
     word_a[count].is_numbered   = 0;
+    word_a[count].all_spaces    = 0;
     word_a[count].tag_order     = 0;
     word_a[count].tag_id        = 0;
     word_a[count].iattr         = NULL;
@@ -11813,20 +12433,19 @@ main(int argc, char *argv[])
   /* - Replace unprintable characters in the word by mnemonics              */
   /* - Remember the max size of the words/columns/tabs                      */
   /* - Insert the word in a TST (Ternary Search Tree) index to facilitate   */
-  /*   word search (each node pf the TST will contain an UTF-8 glyph).      */
+  /*   word search (each node pf the TST will contain an UTF-8 character).  */
   /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
   col_index = 0;
   for (wi = 0; wi < count; wi++)
   {
-    char    *unaltered_word;
-    long     size;
-    long     word_len;
-    wchar_t *tmpw;
-    word_t  *word;
-    long     s;
-    long     len;
-    char    *expanded_word;
-    long     i;
+    char   *unaltered_word;
+    long    size;
+    long    word_len;
+    word_t *word;
+    long    s;
+    long    len;
+    char   *expanded_word;
+    long    i;
 
     /* If the column section argument is set, then adjust the final        */
     /* selectable attribute  according to the already set words and column */
@@ -11906,7 +12525,8 @@ main(int argc, char *argv[])
         wlen = strlen(word->str) + 4 + daccess.length;
         tmp  = xmalloc(wlen);
 
-        if (!my_isempty((unsigned char *)word->str))
+        if (toggles.number_blank_words
+            || !my_isempty((unsigned char *)word->str))
         {
           *word_pos = wi;
 
@@ -11940,10 +12560,13 @@ main(int argc, char *argv[])
           /* """""""" */
           if (may_number)
           {
+            size_t wl;
+
+            wl = my_strlen(word->str);
+
             if ((daccess.mode & DA_TYPE_POS) && !word->is_numbered
                 && daccess.size > 0
-                && (daccess.offset + daccess.size + daccess.ignore)
-                     <= utf8_strlen(word->str))
+                && (daccess.offset + daccess.size + daccess.ignore) <= wl)
             {
               long  selector_value;  /* numerical value of the         *
                                       | extracted selector.            */
@@ -11955,7 +12578,10 @@ main(int argc, char *argv[])
                                       | of a number in word->str after *
                                       | the offset given.              */
 
-              selector_offset = utf8_offset(word->str, daccess.offset);
+              if (langinfo.utf8)
+                selector_offset = utf8_offset(word->str, daccess.offset);
+              else
+                selector_offset = daccess.offset;
 
               if (daccess.plus)
               {
@@ -11987,9 +12613,13 @@ main(int argc, char *argv[])
                 /* Overwrite the end of the word to erase */
                 /* the selector.                          */
                 /* """""""""""""""""""""""""""""""""""""" */
-                my_strcpy(ptr,
-                          ptr + daccess.size
-                            + utf8_offset(ptr + daccess.size, daccess.ignore));
+                if (langinfo.utf8)
+                  my_strcpy(ptr,
+                            ptr + daccess.size
+                              + utf8_offset(ptr + daccess.size,
+                                            daccess.ignore));
+                else
+                  my_strcpy(ptr, ptr + daccess.size + daccess.ignore);
 
                 /* Modify the word according to the 'h' directive */
                 /* of -D.                                         */
@@ -12016,16 +12646,15 @@ main(int argc, char *argv[])
                 ltrim(selector, " ");
                 rtrim(selector, " ", 0);
 
-                tst_daccess = tst_insert(tst_daccess,
-                                         utf8_strtowcs(selector),
-                                         word_pos);
+                tst_daccess = tst_insert(tst_daccess, selector, word_pos);
 
                 if (daccess.follow == 'y')
                   daccess_index = selector_value + 1;
 
                 word->is_numbered = 1;
               }
-              free(selector);
+              else
+                free(selector);
             }
 
             /* Try to number this word if it is still non numbered and */
@@ -12047,12 +12676,9 @@ main(int argc, char *argv[])
               /* Insert it in the tst tree containing the selector's */
               /* digits.                                             */
               /* ''''''''''''''''''''''''''''''''''''''''''''''''''' */
-              tst_daccess = tst_insert(tst_daccess,
-                                       utf8_strtowcs(selector),
-                                       word_pos);
-              daccess_index++;
+              tst_daccess = tst_insert(tst_daccess, selector, word_pos);
 
-              free(selector);
+              daccess_index++;
 
               word->is_numbered = 1;
             }
@@ -12197,7 +12823,6 @@ main(int argc, char *argv[])
 
     /* A substitution leading to an empty word is invalid in column mode. */
     /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-    if (win.col_mode)
     {
       long len;
 
@@ -12207,16 +12832,31 @@ main(int argc, char *argv[])
         len = 0;
 
       if (*(word->str + len) == '\0')
-        exit(EXIT_FAILURE);
+      {
+        if (win.col_mode)
+        {
+          fprintf(stderr,
+                  "Substitutions leading to empty words are not "
+                  "allowed in column mode.\n");
+
+          exit(EXIT_FAILURE);
+        }
+      }
     }
 
-    /* Alter the word just read be replacing special chars  by their */
-    /* escaped equivalents.                                          */
-    /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+    /* Alter the word just read be replacing special chars by their */
+    /* escaped equivalents.                                         */
+    /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
     word_len = strlen(word->str);
 
     expanded_word = xmalloc(5 * word_len + 1);
-    len = expand(word->str, expanded_word, &langinfo, &toggles, &misc);
+
+    len = expand(word->str,
+                 expanded_word,
+                 &(word->all_spaces),
+                 &langinfo,
+                 &toggles,
+                 &misc);
 
     /* Update it if needed. */
     /* '''''''''''''''''''' */
@@ -12229,7 +12869,13 @@ main(int argc, char *argv[])
 
     free(expanded_word);
 
-    word->len_mb = utf8_strlen(word->str);
+    /* We do not use my_strlen here as its non UTF-8 version is slower */
+    /* then a single assignment.                                       */
+    /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+    if (langinfo.utf8)
+      word->len_mb = utf8_strlen(word->str);
+    else
+      word->len_mb = len;
 
     if (win.col_mode)
     {
@@ -12246,9 +12892,10 @@ main(int argc, char *argv[])
           cols_real_max_size = s;
       }
 
-      s = (long)mbstowcs(NULL, word->str, 0);
-      s = my_wcswidth((tmpw = utf8_strtowcs(word->str)), s);
-      free(tmpw);
+      if (langinfo.utf8)
+        s = utf8_strwidth((unsigned char *)(word->str), strlen(word->str));
+      else
+        s = (long)strlen(word->str);
 
       if (s > col_max_size[col_index])
       {
@@ -12276,13 +12923,20 @@ main(int argc, char *argv[])
 
       /* Store the new max word width. */
       /* """"""""""""""""""""""""""""" */
-      size = (long)mbstowcs(NULL, word->str, 0);
+      if (langinfo.utf8)
+      {
+        size = utf8_strwidth((unsigned char *)(word->str), strlen(word->str));
 
-      if ((size = my_wcswidth((tmpw = utf8_strtowcs(word->str)), size))
-          > tab_max_size)
-        tab_max_size = size;
+        if (size > tab_max_size)
+          tab_max_size = size;
+      }
+      else
+      {
+        size = (long)strlen(word->str);
 
-      free(tmpw);
+        if (size > tab_max_size)
+          tab_max_size = size;
+      }
     }
     else if (word_real_max_size < word_len)
       /* Update the size of the longest expanded word. */
@@ -12374,6 +13028,11 @@ main(int argc, char *argv[])
             || word_a[wi + offset].is_selectable == EXCLUDE_MARK)
           break;
 
+        /* Keep blank (non empty) words when asked to with -sb. */
+        /* """""""""""""""""""""""""""""""""""""""""""""""""""" */
+        if (toggles.show_blank_words && *(word_a[wi].str + len) != '\0')
+          break;
+
         offset++;
       }
 
@@ -12427,8 +13086,6 @@ main(int argc, char *argv[])
     for (wi = 0; wi < count; wi++)
     {
       long        s1, s2;
-      long        word_width;
-      wchar_t    *w;
       regex_t     re;
       ll_node_t  *node;
       interval_t *interval;
@@ -12566,20 +13223,22 @@ main(int argc, char *argv[])
         }
       }
 
-      s1         = (long)strlen(word_a[wi].str);
-      word_width = mbstowcs(NULL, word_a[wi].str, 0);
-      s2         = my_wcswidth((w = utf8_strtowcs(word_a[wi].str)), word_width);
-      free(w);
+      s1 = (long)strlen(word_a[wi].str);
 
-      /* Use the al_delim (0x05) character as a placeholder to preserve  */
-      /* the internal spaces of the word if there are any.               */
+      if (langinfo.utf8)
+        s2 = utf8_strwidth((unsigned char *)(word_a[wi].str), s1);
+      else
+        s2 = s1;
+
+      /* Use the filler character as a placeholder to preserve the       */
+      /* internal spaces of the word if there are any.                   */
       /* This value has been chosen because it cannot be part of a UTF-8 */
       /* sequence and is very unlikely to be part of a normal word from  */
       /* the input stream.                                               */
       /* This placeholder will be removed during the alignment phase.    */
       /*"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
       temp = xcalloc(1, col_real_max_size[col_index] + s1 - s2 + 1);
-      memset(temp, al_delim, col_max_size[col_index] + s1 - s2);
+      memset(temp, filler, col_max_size[col_index] + s1 - s2);
       memcpy(temp, word_a[wi].str, s1);
       temp[col_real_max_size[col_index] + s1 - s2] = '\0';
       free(word_a[wi].str);
@@ -12607,14 +13266,14 @@ main(int argc, char *argv[])
 
     for (wi = 0; wi < count; wi++)
     {
-      long     s1, s2;
-      long     word_width;
-      wchar_t *w;
+      long s1, s2;
 
-      s1         = (long)strlen(word_a[wi].str);
-      word_width = mbstowcs(NULL, word_a[wi].str, 0);
-      s2         = my_wcswidth((w = utf8_strtowcs(word_a[wi].str)), word_width);
-      free(w);
+      s1 = (long)strlen(word_a[wi].str);
+      if (langinfo.utf8)
+        s2 = utf8_strwidth((unsigned char *)(word_a[wi].str), s1);
+      else
+        s2 = s1;
+
       temp = xcalloc(1, tab_real_max_size + s1 - s2 + 1);
       memset(temp, ' ', tab_max_size + s1 - s2);
       memcpy(temp, word_a[wi].str, s1);
@@ -12629,9 +13288,8 @@ main(int argc, char *argv[])
   /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
   for (wi = 0; wi < count; wi++)
   {
-    long    *data;
-    wchar_t *w;
-    ll_t    *list;
+    long *data;
+    ll_t *list;
 
     if (word_a[wi].is_selectable == SOFT_EXCLUDE_MARK)
       word_a[wi].is_selectable = EXCLUDE_MARK;
@@ -12643,6 +13301,7 @@ main(int argc, char *argv[])
     {
       data  = xmalloc(sizeof(long));
       *data = wi;
+      char *ptr;
 
       /* Create a wide characters string from the word screen */
       /* representation to be able to store in in the TST.    */
@@ -12650,23 +13309,24 @@ main(int argc, char *argv[])
       /* stored.                                              */
       /* """""""""""""""""""""""""""""""""""""""""""""""""""" */
       if (word_a[wi].is_numbered)
-        w = utf8_strtowcs(word_a[wi].str + daccess.flength);
+        ptr = word_a[wi].str + daccess.flength;
       else
-        w = utf8_strtowcs(word_a[wi].str);
+        ptr = word_a[wi].str;
 
       /* If we didn't already encounter this word, then create a new */
       /* entry in the TST for it and store its index in its list.    */
       /* Otherwise, add its index in its index list.                 */
       /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-      if (tst_word && (list = tst_search(tst_word, w)) != NULL)
+      if (tst_word && (list = tst_search(tst_word, ptr)) != NULL)
+      {
         ll_append(list, data);
+      }
       else
       {
         list = ll_new();
         ll_append(list, data);
-        tst_word = tst_insert(tst_word, w, list);
+        tst_word = tst_insert(tst_word, ptr, list);
       }
-      free(w);
     }
   }
 
@@ -12702,7 +13362,7 @@ main(int argc, char *argv[])
                                      ar_col_interval_list,
                                      ac_col_interval_list };
 
-    ll_node_t *cur_col_node_a[3] = {
+    ll_node_t *cur_col_interval_node_a[3] = {
       al_col_interval_list != NULL ? al_col_interval_list->head : NULL,
       ar_col_interval_list != NULL ? ar_col_interval_list->head : NULL,
       ac_col_interval_list != NULL ? ac_col_interval_list->head : NULL
@@ -12741,9 +13401,6 @@ main(int argc, char *argv[])
 
       str  = xstrdup(word_a[wi].str + daccess.flength);
       tstr = xstrdup(str);
-
-      rtrim(tstr, "\x05", 0);
-      ltrim(tstr, "\x05");
 
       /* First check if the current word is matched by a word specified */
       /* regular expression set by the * alignment option.              */
@@ -12795,19 +13452,19 @@ main(int argc, char *argv[])
         }
       }
 
-      /* Process the alignment lists for columns and increment     */
-      /* their current pointers when needed.                       */
-      /* The current interval pointer cur_col_node_a[i] is only    */
-      /* modified to point to the next one of the list is the      */
-      /* current column is greater than the  max column in the     */
-      /* pointed interval.                                         */
-      /* An already aligned column will not be realigned.          */
-      /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+      /* Process the alignment lists for columns and increment    */
+      /* their current pointers when needed.                      */
+      /* The current interval pointer cur_col_interval_node_a[i]  */
+      /* is only modified to point to the next one of the list if */
+      /* the current column is greater than the max column in the */
+      /* pointed interval.                                        */
+      /* An already aligned column will not be realigned.         */
+      /* """""""""""""""""""""""""""""""""""""""""""""""""""""""" */
       for (int i = 0; i < 3; i++)
       {
-        if (cur_col_node_a[i] != NULL)
+        if (cur_col_interval_node_a[i] != NULL)
         {
-          interval = *(interval_t *)(cur_col_node_a[i]->data);
+          interval = *(interval_t *)(cur_col_interval_node_a[i]->data);
           if (aligned_a[col_index] == 'N' && col_index >= interval.low
               && col_index <= interval.high)
           {
@@ -12820,10 +13477,10 @@ main(int argc, char *argv[])
             alignment = alignment_a[i];
           }
           else if (col_index > interval.high)
-            cur_col_node_a[i] = cur_col_node_a[i]->next;
+            cur_col_interval_node_a[i] = cur_col_interval_node_a[i]->next;
         }
         if (word_a[wi].is_last && col_interval_list_a[i] != NULL)
-          cur_col_node_a[i] = col_interval_list_a[i]->head;
+          cur_col_interval_node_a[i] = col_interval_list_a[i]->head;
       }
 
       /* Process row interval and regex alignment lists. */
@@ -12879,7 +13536,7 @@ main(int argc, char *argv[])
                   align_word(&word_a[j],
                              alignment_a[i],
                              daccess.flength,
-                             al_delim);
+                             filler);
               }
 
               break; /* Early exit of the while loop. */
@@ -12899,7 +13556,7 @@ main(int argc, char *argv[])
 
       /* Do the alignment. */
       /* """"""""""""""""" */
-      align_word(&word_a[wi], alignment, daccess.flength, al_delim);
+      align_word(&word_a[wi], alignment, daccess.flength, filler);
 
       /* Adjusts things before a row change. */
       /* """"""""""""""""""""""""""""""""""" */
@@ -12911,15 +13568,7 @@ main(int argc, char *argv[])
         /* as this is a new row.                  */
         /* """""""""""""""""""""""""""""""""""""" */
         for (int i = 0; i < cols_number; i++)
-        {
           aligned_a[i] = 'N';
-
-          /* We can restore the spaces which are not part of the word */
-          /* now that the row is fully processed.                     */
-          /* """""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-          if (wi - i >= 0)
-            strrep(word_a[wi - i].str + daccess.flength, al_delim, ' ');
-        }
 
         col_index     = 0; /* Restart the columns counter. */
         row_alignment = AL_NONE;
@@ -13076,15 +13725,21 @@ main(int argc, char *argv[])
   /* """"""""""""""""""""""""""""""""""""""""""" */
   word_a[count].str = NULL;
 
-  /* We can now allocate the space for our tmp_word work variable        */
+  /* We can now allocate the space for our tmp_full_word work variable   */
   /* augmented by the number of tabulation columns or the size of the    */
   /* largest column in column mode. This is not optimal but the loss is  */
   /* tiny and we have the guarantee that enough place will be allocated. */
   /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
   if (!win.col_mode)
-    tmp_word = xcalloc(1, word_real_max_size + tab_max_size + 1);
+  {
+    tmp_full_word = xcalloc(1, word_real_max_size + tab_max_size + 1);
+    tmp_base_word = xcalloc(1, word_real_max_size + tab_max_size + 1);
+  }
   else
-    tmp_word = xcalloc(1, word_real_max_size + max_cols_size + 1);
+  {
+    tmp_full_word = xcalloc(1, word_real_max_size + max_cols_size + 1);
+    tmp_base_word = xcalloc(1, word_real_max_size + max_cols_size + 1);
+  }
 
   search_data.off_a = xmalloc(word_real_max_size * sizeof(long));
   search_data.len_a = xmalloc(word_real_max_size * sizeof(long));
@@ -13094,7 +13749,7 @@ main(int argc, char *argv[])
 
   /* We can now build the first metadata. */
   /* """""""""""""""""""""""""""""""""""" */
-  last_line = build_metadata(&term, count, &win);
+  last_line = build_metadata(&term, count, &win, &langinfo);
 
   /* Adjust the max number of lines in the windows */
   /* if it has not be explicitly set.              */
@@ -13207,12 +13862,10 @@ main(int argc, char *argv[])
   {
     /* An exact match is expected. */
     /* """"""""""""""""""""""""""" */
-    wchar_t *w;
-
     ll_t      *list;
     ll_node_t *node;
 
-    list = tst_search(tst_word, w = utf8_strtowcs(pre_selection_index + 1));
+    list = tst_search(tst_word, pre_selection_index + 1);
     if (list != NULL)
     {
       long target;
@@ -13235,8 +13888,6 @@ main(int argc, char *argv[])
     }
     else
       current = first_selectable;
-
-    free(w);
   }
   else if (*pre_selection_index != '\0')
   {
@@ -13331,8 +13982,19 @@ main(int argc, char *argv[])
     exit(EXIT_FAILURE);
   }
 
-  old_fd1    = dup(1);
+  old_fd1 = dup(1);
+  if (old_fd1 == -1)
+  {
+    fprintf(stderr, "%s\n", strerror(errno));
+    exit(EXIT_FAILURE);
+  }
+
   old_stdout = fdopen(old_fd1, "w");
+  if (old_stdout == NULL)
+  {
+    fprintf(stderr, "%s\n", strerror(errno));
+    exit(EXIT_FAILURE);
+  }
 
   setbuf(old_stdout, NULL);
 
@@ -13370,9 +14032,9 @@ main(int argc, char *argv[])
     exit(EXIT_FAILURE);
   }
 
-  /* Initialize the search buffer with tab_real_max_size+1 NULs  */
-  /* It will never be reallocated, only cleared.                 */
-  /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+  /* Initialize the search buffer with tab_real_max_size+1 NULs */
+  /* It will never be reallocated, only cleared.                */
+  /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
   search_data.buf = xcalloc(1, word_real_max_size + 1 - daccess.flength);
 
   /* Hide the cursor. */
@@ -13430,8 +14092,9 @@ main(int argc, char *argv[])
                   &search_data,
                   &term,
                   last_line,
-                  tmp_word,
-                  &langinfo);
+                  &langinfo,
+                  &misc,
+                  filler);
 
   /* Assert the presence of an early display of the horizontal bar. */
   /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
@@ -13519,7 +14182,7 @@ main(int argc, char *argv[])
     /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
     if (got_sigsegv)
     {
-      fputs_safe("SIGSEGV received!\n", stderr);
+      fputs("SIGSEGV received!\n", stderr);
       (void)tputs(TPARM1(carriage_return), 1, outch);
       (void)tputs(TPARM1(cursor_normal), 1, outch);
       restore_term(fileno(stdin), &old_in_attrs);
@@ -13532,7 +14195,7 @@ main(int argc, char *argv[])
     /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
     if (got_sigterm || got_sighup)
     {
-      fputs_safe("Interrupted!\n", stderr);
+      fputs("Interrupted!\n", stderr);
       (void)tputs(TPARM1(carriage_return), 1, outch);
       (void)tputs(TPARM1(cursor_normal), 1, outch);
       restore_term(fileno(stdin), &old_in_attrs);
@@ -13563,19 +14226,20 @@ main(int argc, char *argv[])
 
       /* Calculate the new metadata and draw the window again. */
       /* """"""""""""""""""""""""""""""""""""""""""""""""""""" */
-      last_line = build_metadata(&term, count, &win);
+      last_line = build_metadata(&term, count, &win, &langinfo);
 
       help_mode = 0;
       nl        = disp_lines(&win,
-                      &toggles,
-                      current,
-                      count,
-                      search_mode,
-                      &search_data,
-                      &term,
-                      last_line,
-                      tmp_word,
-                      &langinfo);
+                             &toggles,
+                             current,
+                             count,
+                             search_mode,
+                             &search_data,
+                             &term,
+                             last_line,
+                             &langinfo,
+                             &misc,
+                             filler);
     }
 
     /* Reset the direct access selector if the direct access alarm rang. */
@@ -13602,7 +14266,7 @@ main(int argc, char *argv[])
 
       /* Calculate the new metadata and draw the window again. */
       /* """"""""""""""""""""""""""""""""""""""""""""""""""""" */
-      last_line = build_metadata(&term, count, &win);
+      last_line = build_metadata(&term, count, &win, &langinfo);
 
       search_mode = NONE;
 
@@ -13614,8 +14278,9 @@ main(int argc, char *argv[])
                       &search_data,
                       &term,
                       last_line,
-                      tmp_word,
-                      &langinfo);
+                      &langinfo,
+                      &misc,
+                      filler);
     }
 
     if (got_winch)
@@ -13645,7 +14310,7 @@ main(int argc, char *argv[])
       else
         original_message_lines = 0;
 
-      get_terminal_size(&nlines, &ncolumns, &term);
+      get_terminal_size(&nlines, &ncolumns);
 
       /* Update term with the new number of lines and columns */
       /* of the real terminal.                                */
@@ -13715,7 +14380,7 @@ main(int argc, char *argv[])
 
       /* Calculate the new metadata and draw the window again. */
       /* """"""""""""""""""""""""""""""""""""""""""""""""""""" */
-      last_line = build_metadata(&term, count, &win);
+      last_line = build_metadata(&term, count, &win, &langinfo);
 
       if (win.col_mode || win.line_mode)
       {
@@ -13769,8 +14434,9 @@ main(int argc, char *argv[])
                       &search_data,
                       &term,
                       last_line,
-                      tmp_word,
-                      &langinfo);
+                      &langinfo,
+                      &misc,
+                      filler);
 
       /* Determine the number of lines to move the cursor up if the window  */
       /* display needed a terminal scrolling.                               */
@@ -13862,7 +14528,7 @@ main(int argc, char *argv[])
     page = 1; /* Default number of lines to do down/up *
                | with PgDn/PgUp.                       */
 
-    sc = get_scancode(buffer, 64);
+    sc = get_scancode(buffer, 64, langinfo.utf8);
 
     if (sc && winch_timer < 0) /* Do not allow input when a window *
                                 | refresh is scheduled.            */
@@ -13955,19 +14621,19 @@ main(int argc, char *argv[])
             mb_index        = len_mb - 1 + offset - daccess.flength;
             shortest_mb_seq = len_mb - 1 + offset - daccess.flength;
 
-            /* Get the position of the latest selected glyph. */
-            /* """""""""""""""""""""""""""""""""""""""""""""" */
+            /* Get the position of the latest selected character. */
+            /* """""""""""""""""""""""""""""""""""""""""""""""""" */
             while (!BIT_ISSET(word_a[current].bitmap, mb_index))
               mb_index--;
 
             /* Array to contain the offset (in bytes) of the last  */
-            /* significant bit in the glyph selection bitmap.      */
+            /* significant bit in the character selection bitmap.  */
             /* """"""""""""""""""""""""""""""""""""""""""""""""""" */
             work_a = xmalloc(matching_nb * sizeof(long));
 
-            /* Array to contain the offset (in mb) of the last  */
-            /* significant bit in the glyph selection bitmap.   */
-            /* """""""""""""""""""""""""""""""""""""""""""""""" */
+            /* Array to contain the offset (in mb) of the last    */
+            /* significant bit in the character selection bitmap. */
+            /* """""""""""""""""""""""""""""""""""""""""""""""""" */
             work_mb_a = xmalloc(matching_nb * sizeof(long));
 
             /* Word index in matching_words_da which be become the      */
@@ -13985,23 +14651,28 @@ main(int argc, char *argv[])
 
               mb_index = len_mb - 1 + offset - daccess.flength;
 
-              /* Determine the index of the first non selected glyph */
-              /* after the last selected one.                        */
-              /* """"""""""""""""""""""""""""""""""""""""""""""""""" */
+              /* Determine the index of the first non selected character */
+              /* after the last selected one.                            */
+              /* """"""""""""""""""""""""""""""""""""""""""""""""""""""" */
               while (!BIT_ISSET(word_a[matching_words_da[i]].bitmap, mb_index))
                 mb_index--;
               mb_index++;
 
-              /* ptr will point to the first non selected glyph */
-              /* after the last one.                            */
-              /* """""""""""""""""""""""""""""""""""""""""""""" */
+              /* ptr will point to the first non selected character */
+              /* after the last one.                                */
+              /* """""""""""""""""""""""""""""""""""""""""""""""""" */
               ptr = word_a[matching_words_da[i]].str + daccess.flength + offset;
 
               for (long j = 0; j < mb_index - offset; j++)
-                ptr = utf8_next(ptr);
+                if (langinfo.utf8)
+                  ptr = utf8_next(ptr);
+                else if (*(ptr + 1) != '\0')
+                  ptr++;
+                else
+                  ptr = NULL;
 
               /* Store the offsets in mb and bytes on the first */
-              /* glyph to consider.                             */
+              /* character to consider.                         */
               /* """""""""""""""""""""""""""""""""""""""""""""" */
               if (ptr != NULL)
               {
@@ -14031,24 +14702,33 @@ main(int argc, char *argv[])
                               - word_a[matching_words_da[ref_word]].offset)
                      < word_a[matching_words_da[ref_word]].len)
               {
-                char glyph[5];
-                int  l    = utf8_get_length(*(ptr));
+                char character[5];
+                int  l;
                 int  stop = 0;
 
-                memcpy(glyph, ptr, l);
-                glyph[l] = '\0';
+                if (langinfo.utf8)
+                {
+                  l = utf8_get_length(*(ptr));
+                  memcpy(character, ptr, l);
+                }
+                else
+                {
+                  l          = 1;
+                  *character = *ptr;
+                }
+                character[l] = '\0';
 
                 ptr += l;
 
-                /* Compare the right glyph of ref_word to the right */
-                /* glyph in the other word in matching_words_da.    */
-                /* set the stop variable if a difference was seen.  */
-                /* """""""""""""""""""""""""""""""""""""""""""""""" */
+                /* Compare the right character of ref_word to the right */
+                /* character in the other word in matching_words_da.    */
+                /* set the stop variable if a difference was seen.      */
+                /* """""""""""""""""""""""""""""""""""""""""""""""""""" */
                 for (long i = 0; i < matching_nb; i++)
                 {
                   if (i != ref_word)
                   {
-                    if (memcmp(glyph,
+                    if (memcmp(character,
                                word_a[matching_words_da[i]].str + work_a[i],
                                l)
                         != 0)
@@ -14084,23 +14764,23 @@ main(int argc, char *argv[])
                 {
                   /* Update the search data. */
                   /* """"""""""""""""""""""" */
-                  memcpy(search_data.buf + search_data.len, glyph, l);
+                  memcpy(search_data.buf + search_data.len, character, l);
                   search_data.len_a[search_data.mb_len] = l;
                   search_data.off_a[search_data.mb_len] = search_data.len;
                   search_data.len += l;
                   search_data.mb_len++;
                   search_data.buf[search_data.len] = '\0';
 
-                  /* Mark the remaining glyphs as selected. */
-                  /* """""""""""""""""""""""""""""""""""""" */
+                  /* Mark the remaining characters as selected. */
+                  /* """""""""""""""""""""""""""""""""""""""""" */
                   for (long i = 0; i < matching_nb; i++)
                     BIT_ON(word_a[matching_words_da[i]].bitmap,
                            work_mb_a[i] - 1);
 
-                  /* In fuzzy mode, each glyph in search_data.buf is */
-                  /* added to the end of tst_search_list, so we need */
-                  /* to do the same thing here.                      */
-                  /* """"""""""""""""""""""""""""""""""""""""""""""" */
+                  /* In fuzzy mode, each character in search_data.buf is */
+                  /* added to the end of tst_search_list, so we need to  */
+                  /* do the same thing here.                             */
+                  /* """"""""""""""""""""""""""""""""""""""""""""""""""" */
                   if (search_mode == FUZZY)
                     append_tst_search_list(ptr, l);
                 }
@@ -14118,8 +14798,9 @@ main(int argc, char *argv[])
                             &search_data,
                             &term,
                             last_line,
-                            tmp_word,
-                            &langinfo);
+                            &langinfo,
+                            &misc,
+                            filler);
           }
         }
 
@@ -14179,7 +14860,12 @@ main(int argc, char *argv[])
             khome:
               search_data.only_starting = 1;
               search_data.only_ending   = 0;
-              select_starting_matches(&win, &term, &search_data, &last_line);
+              select_starting_matches(&win,
+                                      &term,
+                                      &search_data,
+                                      &last_line,
+                                      &langinfo,
+                                      filler);
             }
             else
             {
@@ -14206,8 +14892,9 @@ main(int argc, char *argv[])
                             &search_data,
                             &term,
                             last_line,
-                            tmp_word,
-                            &langinfo);
+                            &langinfo,
+                            &misc,
+                            filler);
             break;
           }
 
@@ -14236,7 +14923,12 @@ main(int argc, char *argv[])
               {
                 search_data.only_starting = 0;
                 search_data.only_ending   = 1;
-                select_ending_matches(&win, &term, &search_data, &last_line);
+                select_ending_matches(&win,
+                                      &term,
+                                      &search_data,
+                                      &last_line,
+                                      &langinfo,
+                                      filler);
               }
             }
             else
@@ -14263,8 +14955,9 @@ main(int argc, char *argv[])
                             &search_data,
                             &term,
                             last_line,
-                            tmp_word,
-                            &langinfo);
+                            &langinfo,
+                            &misc,
+                            filler);
             break;
           }
 
@@ -14393,10 +15086,10 @@ main(int argc, char *argv[])
                                   &timers,
                                   &toggles,
                                   &term,
-                                  &daccess,
                                   &langinfo,
+                                  &misc,
+                                  filler,
                                   last_line,
-                                  tmp_word,
                                   word_real_max_size);
 
             nl = disp_lines(&win,
@@ -14407,8 +15100,9 @@ main(int argc, char *argv[])
                             &search_data,
                             &term,
                             last_line,
-                            tmp_word,
-                            &langinfo);
+                            &langinfo,
+                            &misc,
+                            filler);
 
             /* Unmark the marked word. */
             /* """"""""""""""""""""""" */
@@ -14491,7 +15185,7 @@ main(int argc, char *argv[])
           /* Form feed (^L) is a traditional method to redraw a screen. */
           /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
           if (current < win.start || current > win.end)
-            last_line = build_metadata(&term, count, &win);
+            last_line = build_metadata(&term, count, &win, &langinfo);
 
           nl = disp_lines(&win,
                           &toggles,
@@ -14501,8 +15195,9 @@ main(int argc, char *argv[])
                           &search_data,
                           &term,
                           last_line,
-                          tmp_word,
-                          &langinfo);
+                          &langinfo,
+                          &misc,
+                          filler);
 
           if (help_mode)
             disp_help(&win, &term, help_lines_da, fst_disp_help_line);
@@ -14528,7 +15223,7 @@ main(int argc, char *argv[])
               current = pos;
 
             if (current < win.start || current > win.end)
-              last_line = build_metadata(&term, count, &win);
+              last_line = build_metadata(&term, count, &win, &langinfo);
 
             /* Set new first column to display. */
             /* """""""""""""""""""""""""""""""" */
@@ -14542,8 +15237,9 @@ main(int argc, char *argv[])
                             &search_data,
                             &term,
                             last_line,
-                            tmp_word,
-                            &langinfo);
+                            &langinfo,
+                            &misc,
+                            filler);
           }
           break;
 
@@ -14567,7 +15263,7 @@ main(int argc, char *argv[])
           }
 
           if (current < win.start || current > win.end)
-            last_line = build_metadata(&term, count, &win);
+            last_line = build_metadata(&term, count, &win, &langinfo);
 
           /* Set new first column to display. */
           /* """""""""""""""""""""""""""""""" */
@@ -14581,8 +15277,9 @@ main(int argc, char *argv[])
                           &search_data,
                           &term,
                           last_line,
-                          tmp_word,
-                          &langinfo);
+                          &langinfo,
+                          &misc,
+                          filler);
           break;
 
         case 's':
@@ -14613,7 +15310,7 @@ main(int argc, char *argv[])
               current = pos;
 
             if (current < win.start || current > win.end)
-              last_line = build_metadata(&term, count, &win);
+              last_line = build_metadata(&term, count, &win, &langinfo);
 
             /* Set new first column to display. */
             /* """""""""""""""""""""""""""""""" */
@@ -14627,8 +15324,9 @@ main(int argc, char *argv[])
                             &search_data,
                             &term,
                             last_line,
-                            tmp_word,
-                            &langinfo);
+                            &langinfo,
+                            &misc,
+                            filler);
           }
           break;
 
@@ -14661,7 +15359,7 @@ main(int argc, char *argv[])
           }
 
           if (current < win.start || current > win.end)
-            last_line = build_metadata(&term, count, &win);
+            last_line = build_metadata(&term, count, &win, &langinfo);
 
           /* Set new first column to display. */
           /* """""""""""""""""""""""""""""""" */
@@ -14675,8 +15373,9 @@ main(int argc, char *argv[])
                           &search_data,
                           &term,
                           last_line,
-                          tmp_word,
-                          &langinfo);
+                          &langinfo,
+                          &misc,
+                          filler);
           break;
 
         enter:
@@ -14691,22 +15390,22 @@ main(int argc, char *argv[])
 
           int width = 0;
 
-          wchar_t *w;
-          long     i; /* Generic index in this block. */
+          long i; /* Generic index in this block. */
 
           if (help_mode || marked >= 0)
           {
             marked = -1; /* Disable the marked mode unconditionally. */
             nl     = disp_lines(&win,
-                            &toggles,
-                            current,
-                            count,
-                            search_mode,
-                            &search_data,
-                            &term,
-                            last_line,
-                            tmp_word,
-                            &langinfo);
+                                &toggles,
+                                current,
+                                count,
+                                search_mode,
+                                &search_data,
+                                &term,
+                                last_line,
+                                &langinfo,
+                                &misc,
+                                filler);
           }
 
           if (search_mode != NONE)
@@ -14727,8 +15426,9 @@ main(int argc, char *argv[])
                             &search_data,
                             &term,
                             last_line,
-                            tmp_word,
-                            &langinfo);
+                            &langinfo,
+                            &misc,
+                            filler);
 
             if (!toggles.enter_val_in_search)
               break;
@@ -14830,15 +15530,26 @@ main(int argc, char *argv[])
 
                   output_node->order = word_a[wi].tag_order;
 
+                  ltrim(output_node->output_str, "\x05");
+                  rtrim(output_node->output_str, "\x05", 0);
+
                   /* Trim the spaces if -k is not given. */
                   /* """"""""""""""""""""""""""""""""""" */
-                  if (!toggles.keep_spaces)
+                  if (!toggles.keep_spaces && !word_a[current].all_spaces)
                   {
                     ltrim(output_node->output_str, " \t");
                     rtrim(output_node->output_str, " \t", 0);
                   }
 
-                  ll_append(output_list, output_node);
+                  if (*(output_node->output_str) != '\0')
+                    ll_append(output_list, output_node);
+                  else
+                  {
+                    /* Empty words cannot be tagged in column mode. */
+                    /* """""""""""""""""""""""""""""""""""""""""""" */
+                    free(output_node->output_str);
+                    free(output_node);
+                  }
                 }
               }
 
@@ -14859,17 +15570,26 @@ main(int argc, char *argv[])
               {
                 str = ((output_t *)(node->data))->output_str;
 
+                strrep(str, filler, ' ');
                 fprintf(old_stdout, "%s", str);
-                width += my_wcswidth((w = utf8_strtowcs(str)), 65535);
-                free(w);
+
+                if (langinfo.utf8)
+                  width += utf8_strwidth((unsigned char *)str, strlen(str));
+                else
+                  width = 1;
+
                 free(str);
                 free(node->data);
 
                 if (win.sel_sep != NULL)
                 {
                   fprintf(old_stdout, "%s", win.sel_sep);
-                  width += my_wcswidth((w = utf8_strtowcs(win.sel_sep)), 65535);
-                  free(w);
+
+                  if (langinfo.utf8)
+                    width += utf8_strwidth((unsigned char *)(win.sel_sep),
+                                           strlen(win.sel_sep));
+                  else
+                    width = 1;
                 }
                 else
                 {
@@ -14881,9 +15601,14 @@ main(int argc, char *argv[])
               }
 
               str = ((output_t *)(node->data))->output_str;
+              strrep(str, filler, ' ');
               fprintf(old_stdout, "%s", str);
-              width += my_wcswidth((w = utf8_strtowcs(str)), 65535);
-              free(w);
+
+              if (langinfo.utf8)
+                width += utf8_strwidth((unsigned char *)str, strlen(str));
+              else
+                width = 1;
+
               free(str);
               free(node->data);
             }
@@ -14917,14 +15642,20 @@ main(int argc, char *argv[])
 
               /* Trim the spaces if -k is not given. */
               /* """"""""""""""""""""""""""""""""""" */
-              if (!toggles.keep_spaces)
+              ltrim(output_str, "\x05");
+              rtrim(output_str, "\x05", 0);
+
+              if (!toggles.keep_spaces && !word_a[current].all_spaces)
               {
                 ltrim(output_str, " \t");
                 rtrim(output_str, " \t", 0);
               }
 
-              width = my_wcswidth((w = utf8_strtowcs(output_str)), 65535);
-              free(w);
+              if (langinfo.utf8)
+                width = utf8_strwidth((unsigned char *)output_str,
+                                      strlen(output_str));
+              else
+                width = 1;
 
               /* And print it. */
               /* """"""""""""" */
@@ -15030,8 +15761,9 @@ main(int argc, char *argv[])
                               &search_data,
                               &term,
                               last_line,
-                              tmp_word,
-                              &langinfo);
+                              &langinfo,
+                              &misc,
+                              filler);
             }
           }
           else
@@ -15060,9 +15792,10 @@ main(int argc, char *argv[])
                       &toggles,
                       &search_data,
                       &langinfo,
+                      &misc,
+                      filler,
                       &nl,
-                      last_line,
-                      tmp_word);
+                      last_line);
           else
             goto special_cmds_when_searching;
 
@@ -15080,9 +15813,10 @@ main(int argc, char *argv[])
                        &toggles,
                        &search_data,
                        &langinfo,
+                       &misc,
+                       filler,
                        &nl,
                        last_line,
-                       tmp_word,
                        line_nb_of_word_a[current]);
           else
             goto special_cmds_when_searching;
@@ -15137,8 +15871,9 @@ main(int argc, char *argv[])
                               &search_data,
                               &term,
                               last_line,
-                              tmp_word,
-                              &langinfo);
+                              &langinfo,
+                              &misc,
+                              filler);
             }
           }
           else
@@ -15167,9 +15902,10 @@ main(int argc, char *argv[])
                        &toggles,
                        &search_data,
                        &langinfo,
+                       &misc,
+                       filler,
                        &nl,
-                       last_line,
-                       tmp_word);
+                       last_line);
           else
             goto special_cmds_when_searching;
 
@@ -15187,9 +15923,10 @@ main(int argc, char *argv[])
                         &toggles,
                         &search_data,
                         &langinfo,
+                        &misc,
+                        filler,
                         &nl,
                         last_line,
-                        tmp_word,
                         line_nb_of_word_a[current]);
           else
             goto special_cmds_when_searching;
@@ -15245,8 +15982,10 @@ main(int argc, char *argv[])
                                 &search_data,
                                 &term,
                                 last_line,
-                                tmp_word,
-                                &langinfo);
+                                &langinfo,
+                                &misc,
+                                filler);
+
                 disp_help(&win, &term, help_lines_da, fst_disp_help_line);
               }
             }
@@ -15256,11 +15995,12 @@ main(int argc, char *argv[])
                       &toggles,
                       &search_data,
                       &langinfo,
+                      &misc,
+                      filler,
                       &nl,
                       page,
                       first_selectable,
-                      last_line,
-                      tmp_word);
+                      last_line);
           }
           else
             goto special_cmds_when_searching;
@@ -15283,7 +16023,7 @@ main(int argc, char *argv[])
             current++;
 
           if (current < win.start || current > win.end)
-            last_line = build_metadata(&term, count, &win);
+            last_line = build_metadata(&term, count, &win, &langinfo);
 
           /* In column mode we need to take care of the */
           /* horizontal scrolling.                      */
@@ -15311,8 +16051,9 @@ main(int argc, char *argv[])
                           &search_data,
                           &term,
                           last_line,
-                          tmp_word,
-                          &langinfo);
+                          &langinfo,
+                          &misc,
+                          filler);
           break;
 
         case 0x0a:
@@ -15365,8 +16106,10 @@ main(int argc, char *argv[])
                                 &search_data,
                                 &term,
                                 last_line,
-                                tmp_word,
-                                &langinfo);
+                                &langinfo,
+                                &misc,
+                                filler);
+
                 disp_help(&win, &term, help_lines_da, fst_disp_help_line);
               }
             }
@@ -15376,11 +16119,12 @@ main(int argc, char *argv[])
                         &toggles,
                         &search_data,
                         &langinfo,
+                        &misc,
+                        filler,
                         &nl,
                         page,
                         last_selectable,
-                        last_line,
-                        tmp_word);
+                        last_line);
           }
           else
             goto special_cmds_when_searching;
@@ -15403,7 +16147,7 @@ main(int argc, char *argv[])
             current--;
 
           if (current < win.start || current > win.end)
-            last_line = build_metadata(&term, count, &win);
+            last_line = build_metadata(&term, count, &win, &langinfo);
 
           /* In column mode we need to take care of the */
           /* horizontal scrolling.                      */
@@ -15430,8 +16174,9 @@ main(int argc, char *argv[])
                           &search_data,
                           &term,
                           last_line,
-                          tmp_word,
-                          &langinfo);
+                          &langinfo,
+                          &misc,
+                          filler);
           break;
 
         case '/':
@@ -15467,10 +16212,10 @@ main(int argc, char *argv[])
                                   &timers,
                                   &toggles,
                                   &term,
-                                  &daccess,
                                   &langinfo,
+                                  &misc,
+                                  filler,
                                   last_line,
-                                  tmp_word,
                                   word_real_max_size);
 
             /* Set the search timer. */
@@ -15493,8 +16238,9 @@ main(int argc, char *argv[])
                             &search_data,
                             &term,
                             last_line,
-                            tmp_word,
-                            &langinfo);
+                            &langinfo,
+                            &misc,
+                            filler);
           }
           else
             goto special_cmds_when_searching;
@@ -15519,10 +16265,10 @@ main(int argc, char *argv[])
                                   &timers,
                                   &toggles,
                                   &term,
-                                  &daccess,
                                   &langinfo,
+                                  &misc,
+                                  filler,
                                   last_line,
-                                  tmp_word,
                                   word_real_max_size);
 
             /* Set the search timer. */
@@ -15545,8 +16291,9 @@ main(int argc, char *argv[])
                             &search_data,
                             &term,
                             last_line,
-                            tmp_word,
-                            &langinfo);
+                            &langinfo,
+                            &misc,
+                            filler);
           }
           else
             goto special_cmds_when_searching;
@@ -15571,10 +16318,10 @@ main(int argc, char *argv[])
                                   &timers,
                                   &toggles,
                                   &term,
-                                  &daccess,
                                   &langinfo,
+                                  &misc,
+                                  filler,
                                   last_line,
-                                  tmp_word,
                                   word_real_max_size);
 
             /* Set the search timer. */
@@ -15597,8 +16344,9 @@ main(int argc, char *argv[])
                             &search_data,
                             &term,
                             last_line,
-                            tmp_word,
-                            &langinfo);
+                            &langinfo,
+                            &misc,
+                            filler);
             break;
           }
           else
@@ -15629,8 +16377,9 @@ main(int argc, char *argv[])
                             &search_data,
                             &term,
                             last_line,
-                            tmp_word,
-                            &langinfo);
+                            &langinfo,
+                            &misc,
+                            filler);
           }
           break;
 
@@ -15659,8 +16408,9 @@ main(int argc, char *argv[])
                             &search_data,
                             &term,
                             last_line,
-                            tmp_word,
-                            &langinfo);
+                            &langinfo,
+                            &misc,
+                            filler);
           }
           break;
 
@@ -15697,8 +16447,9 @@ main(int argc, char *argv[])
                               &search_data,
                               &term,
                               last_line,
-                              tmp_word,
-                              &langinfo);
+                              &langinfo,
+                              &misc,
+                              filler);
             }
           }
           else
@@ -15729,8 +16480,9 @@ main(int argc, char *argv[])
                                 &search_data,
                                 &term,
                                 last_line,
-                                tmp_word,
-                                &langinfo);
+                                &langinfo,
+                                &misc,
+                                filler);
               }
             }
           }
@@ -15766,8 +16518,9 @@ main(int argc, char *argv[])
                               &search_data,
                               &term,
                               last_line,
-                              tmp_word,
-                              &langinfo);
+                              &langinfo,
+                              &misc,
+                              filler);
             }
           }
           else
@@ -15885,8 +16638,9 @@ main(int argc, char *argv[])
                               &search_data,
                               &term,
                               last_line,
-                              tmp_word,
-                              &langinfo);
+                              &langinfo,
+                              &misc,
+                              filler);
             }
           }
           else
@@ -16016,8 +16770,9 @@ main(int argc, char *argv[])
                               &search_data,
                               &term,
                               last_line,
-                              tmp_word,
-                              &langinfo);
+                              &langinfo,
+                              &misc,
+                              filler);
             }
           }
           else
@@ -16069,8 +16824,9 @@ main(int argc, char *argv[])
                               &search_data,
                               &term,
                               last_line,
-                              tmp_word,
-                              &langinfo);
+                              &langinfo,
+                              &misc,
+                              filler);
             }
           }
           else
@@ -16098,8 +16854,9 @@ main(int argc, char *argv[])
                               &search_data,
                               &term,
                               last_line,
-                              tmp_word,
-                              &langinfo);
+                              &langinfo,
+                              &misc,
+                              filler);
             }
           }
           else
@@ -16212,8 +16969,9 @@ main(int argc, char *argv[])
                               &search_data,
                               &term,
                               last_line,
-                              tmp_word,
-                              &langinfo);
+                              &langinfo,
+                              &misc,
+                              filler);
             }
           }
           else
@@ -16267,8 +17025,9 @@ main(int argc, char *argv[])
                             &search_data,
                             &term,
                             last_line,
-                            tmp_word,
-                            &langinfo);
+                            &langinfo,
+                            &misc,
+                            filler);
           }
           else
             goto special_cmds_when_searching;
@@ -16310,8 +17069,9 @@ main(int argc, char *argv[])
                               &search_data,
                               &term,
                               last_line,
-                              tmp_word,
-                              &langinfo);
+                              &langinfo,
+                              &misc,
+                              filler);
             }
           }
           else
@@ -16337,8 +17097,7 @@ main(int argc, char *argv[])
           {
             if (search_mode == NONE && daccess.mode != DA_TYPE_NONE)
             {
-              wchar_t *w;
-              long    *pos;
+              long *pos;
 
               /* Set prev_current to the initial current word to be    */
               /* able to return here if the first direct access fails. */
@@ -16351,16 +17110,14 @@ main(int argc, char *argv[])
 
               daccess_stack[daccess_stack_head] = buffer[0];
               daccess_stack_head++;
-              w   = utf8_strtowcs(daccess_stack);
-              pos = tst_search(tst_daccess, w);
-              free(w);
+              pos = tst_search(tst_daccess, daccess_stack);
 
               if (pos != NULL)
               {
                 current = *pos;
 
                 if (current < win.start || current > win.end)
-                  last_line = build_metadata(&term, count, &win);
+                  last_line = build_metadata(&term, count, &win, &langinfo);
 
                 /* Set new first column to display. */
                 /* """""""""""""""""""""""""""""""" */
@@ -16374,8 +17131,9 @@ main(int argc, char *argv[])
                                 &search_data,
                                 &term,
                                 last_line,
-                                tmp_word,
-                                &langinfo);
+                                &langinfo,
+                                &misc,
+                                filler);
               }
               else
               {
@@ -16384,7 +17142,7 @@ main(int argc, char *argv[])
                   current = prev_current;
 
                   if (current < win.start || current > win.end)
-                    last_line = build_metadata(&term, count, &win);
+                    last_line = build_metadata(&term, count, &win, &langinfo);
 
                   /* Set new first column to display. */
                   /* """""""""""""""""""""""""""""""" */
@@ -16398,8 +17156,9 @@ main(int argc, char *argv[])
                                   &search_data,
                                   &term,
                                   last_line,
-                                  tmp_word,
-                                  &langinfo);
+                                  &langinfo,
+                                  &misc,
+                                  filler);
                 }
               }
 
@@ -16426,8 +17185,11 @@ main(int argc, char *argv[])
               {
                 char *prev;
 
-                prev = utf8_prev(search_data.buf,
-                                 search_data.buf + search_data.len);
+                if (langinfo.utf8)
+                  prev = utf8_prev(search_data.buf,
+                                   search_data.buf + search_data.len);
+                else
+                  prev = search_data.buf + search_data.len - 1;
 
                 /* Reset the error indicator if we erase the first non */
                 /* matching element of the search buffer.              */
@@ -16440,14 +17202,18 @@ main(int argc, char *argv[])
                 }
                 search_data.mb_len--;
 
-                /* Remove la last glyph in search_data.buf. */
-                /* """""""""""""""""""""""""""""""""""""""" */
+                /* Remove the last character in search_data.buf. */
+                /* """"""""""""""""""""""""""""""""""""""""""""" */
                 if (search_data.mb_len > 0)
                 {
-                  search_data.len -= utf8_get_length(*prev);
+                  if (langinfo.utf8)
+                    search_data.len -= utf8_get_length(*prev);
+                  else
+                    search_data.len--;
+
                   *prev = '\0';
                 }
-                else /* No more glyph to remove. */
+                else /* No more character to remove. */
                 {
                   for (i = 0; i < (long)BUF_LEN(matching_words_da); i++)
                   {
@@ -16472,8 +17238,9 @@ main(int argc, char *argv[])
                                 &search_data,
                                 &term,
                                 last_line,
-                                tmp_word,
-                                &langinfo);
+                                &langinfo,
+                                &misc,
+                                filler);
               }
               else
               {
@@ -16491,8 +17258,9 @@ main(int argc, char *argv[])
                                   &search_data,
                                   &term,
                                   last_line,
-                                  tmp_word,
-                                  &langinfo);
+                                  &langinfo,
+                                  &misc,
+                                  filler);
                 }
               }
 
@@ -16500,7 +17268,7 @@ main(int argc, char *argv[])
                 goto special_cmds_when_searching;
               else
               {
-                /* When there is only one glyph in the search list in       */
+                /* When there is only one character in the search list in   */
                 /* FUZZY and SUBSTRING mode then all is already done except */
                 /* the cleanup of the first level of the tst_search_list.   */
                 /* """""""""""""""""""""""""""""""""""""""""""""""""""""""" */
@@ -16520,22 +17288,19 @@ main(int argc, char *argv[])
             }
             else
             {
-              wchar_t *w;
-              long    *pos;
+              long *pos;
 
               if (daccess_stack_head > 0)
                 daccess_stack[--daccess_stack_head] = '\0';
 
-              w   = utf8_strtowcs(daccess_stack);
-              pos = tst_search(tst_daccess, w);
-              free(w);
+              pos = tst_search(tst_daccess, daccess_stack);
 
               if (pos != NULL)
               {
                 current = *pos;
 
                 if (current < win.start || current > win.end)
-                  last_line = build_metadata(&term, count, &win);
+                  last_line = build_metadata(&term, count, &win, &langinfo);
 
                 /* Set new first column to display. */
                 /* """""""""""""""""""""""""""""""" */
@@ -16549,8 +17314,9 @@ main(int argc, char *argv[])
                                 &search_data,
                                 &term,
                                 last_line,
-                                tmp_word,
-                                &langinfo);
+                                &langinfo,
+                                &misc,
+                                filler);
               }
             }
           }
@@ -16608,16 +17374,16 @@ main(int argc, char *argv[])
             break;
 
           {
-            long          new_current;
-            unsigned int  iCb, iCx, iCy;
-            unsigned char cCb, cCx, cCy;
-            char          action;
+            long new_current;
+            int  iCb, iCx, iCy;
+            char cCb, cCx, cCy;
+            char action;
 
-            unsigned int state;
-            unsigned int button, old_button;
-            unsigned int line_click;
-            unsigned int column_click;
-            int          error;
+            int state;
+            int button, old_button;
+            int line_click;
+            int column_click;
+            int error;
 
             long old_current = current;
 
@@ -16627,7 +17393,7 @@ main(int argc, char *argv[])
             {
               case MOUSE1006:
                 if (sscanf((char *)buffer + 3,
-                           "%u;%u;%u%c",
+                           "%d;%d;%d%c",
                            &iCb,
                            &iCx,
                            &iCy,
@@ -16649,7 +17415,7 @@ main(int argc, char *argv[])
 
               case MOUSE1015:
                 if (sscanf((char *)buffer + 2,
-                           "%u;%u;%u%c",
+                           "%d;%d;%d%c",
                            &iCb,
                            &iCx,
                            &iCy,
@@ -16670,7 +17436,7 @@ main(int argc, char *argv[])
                 break;
 
               case MOUSE1000:
-                if (sscanf((char *)buffer + 3, "%hhu%hhu%hhu", &cCb, &cCx, &cCy)
+                if (sscanf((char *)buffer + 3, "%hhd%hhd%hhd", &cCb, &cCx, &cCy)
                     != 3)
                   goto ignore_mouse_event;
 
@@ -16699,7 +17465,7 @@ main(int argc, char *argv[])
 
             /* Only buttons 0,1 and 2 are considered for clicks. */
             /* """"""""""""""""""""""""""""""""""""""""""""""""" */
-            if (button < 0 || button > 2)
+            if (button > 2)
               goto ignore_mouse_event;
 
             /* Do not do anything if the user has above or below the window. */
@@ -16781,7 +17547,7 @@ main(int argc, char *argv[])
 
                   /* Display the window. */
                   /* """"""""""""""""""" */
-                  last_line = build_metadata(&term, count, &win);
+                  last_line = build_metadata(&term, count, &win, &langinfo);
 
                   set_new_first_column(&win, &term);
 
@@ -16793,8 +17559,9 @@ main(int argc, char *argv[])
                                   &search_data,
                                   &term,
                                   last_line,
-                                  tmp_word,
-                                  &langinfo);
+                                  &langinfo,
+                                  &misc,
+                                  filler);
                 }
               }
             }
@@ -16893,8 +17660,9 @@ main(int argc, char *argv[])
                                     &search_data,
                                     &term,
                                     last_line,
-                                    tmp_word,
-                                    &langinfo);
+                                    &langinfo,
+                                    &misc,
+                                    filler);
                   }
                 }
 
@@ -16920,9 +17688,10 @@ main(int argc, char *argv[])
                                    &toggles,
                                    &search_data,
                                    &langinfo,
+                                   &misc,
+                                   filler,
                                    &nl,
                                    last_line,
-                                   tmp_word,
                                    clicked_line);
                         break;
 
@@ -16932,9 +17701,10 @@ main(int argc, char *argv[])
                                     &toggles,
                                     &search_data,
                                     &langinfo,
+                                    &misc,
+                                    filler,
                                     &nl,
                                     last_line,
-                                    tmp_word,
                                     clicked_line);
                         break;
                     }
@@ -16946,8 +17716,9 @@ main(int argc, char *argv[])
                                   &search_data,
                                   &term,
                                   last_line,
-                                  tmp_word,
-                                  &langinfo);
+                                  &langinfo,
+                                  &misc,
+                                  filler);
                 }
                 else
                 {
@@ -16994,11 +17765,13 @@ main(int argc, char *argv[])
 
                     if ((button == 2 && state == 16)
                         && (toggles.taggable || toggles.pinable))
-                      goto adaptative_tag_to_mark; /* Like 'Z' keyboard command. */
+                      goto adaptative_tag_to_mark; /* Like 'Z' keyboard *
+                                                    | command.          */
 
-                    /* Redisplay the new window if the first button was pressed   */
-                    /* otherwise reset the cursor position to its previous value. */
-                    /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+                    /* Redisplay the new window if the first button was */
+                    /* pressed, otherwise reset the cursor position to  */
+                    /* its previous value.                              */
+                    /* """""""""""""""""""""""""""""""""""""""""""""""" */
                     if (button == 0 || button == 2)
                       nl = disp_lines(&win,
                                       &toggles,
@@ -17008,8 +17781,9 @@ main(int argc, char *argv[])
                                       &search_data,
                                       &term,
                                       last_line,
-                                      tmp_word,
-                                      &langinfo);
+                                      &langinfo,
+                                      &misc,
+                                      filler);
                     else
                       current = old_current;
                   }
@@ -17070,7 +17844,6 @@ main(int argc, char *argv[])
               long       old_len    = search_data.len;
               long       old_mb_len = search_data.mb_len;
               ll_node_t *node;
-              wchar_t   *ws;
 
               /* Copy all the bytes included in the key press to buffer. */
               /* """"""""""""""""""""""""""""""""""""""""""""""""""""""" */
@@ -17087,9 +17860,9 @@ main(int argc, char *argv[])
                      c++)
                   search_data.buf[search_data.len++] = buffer[c];
 
-                /* Update the glyph array with the content of the search */
-                /* buffer.                                               */
-                /* """"""""""""""""""""""""""""""""""""""""""""""""""""" */
+                /* Update the character array with the content of the search */
+                /* buffer.                                                   */
+                /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""" */
                 if (search_data.mb_len < word_real_max_size - daccess.flength)
                 {
                   search_data.off_a[search_data.mb_len] = old_len;
@@ -17105,8 +17878,6 @@ main(int argc, char *argv[])
 
               if (search_mode == PREFIX)
               {
-                ws = utf8_strtowcs(search_data.buf);
-
                 /* Purge the matching words list. */
                 /* """""""""""""""""""""""""""""" */
                 for (i = 0; i < (long)BUF_LEN(matching_words_da); i++)
@@ -17121,7 +17892,7 @@ main(int argc, char *argv[])
                 /* matching_words_da is updated by tst_search_cb. */
                 /* """""""""""""""""""""""""""""""""""""""""""""" */
                 BUF_CLEAR(matching_words_da);
-                tst_prefix_search(tst_word, ws, tst_search_cb);
+                tst_prefix_search(tst_word, search_data.buf, tst_search_cb);
 
                 if (BUF_LEN(matching_words_da) > 0)
                 {
@@ -17133,12 +17904,15 @@ main(int argc, char *argv[])
                   {
                     /* Adjust the bitmap to the ending version. */
                     /* """""""""""""""""""""""""""""""""""""""" */
-                    update_bitmaps(search_mode, &search_data, NO_AFFINITY);
+                    update_bitmaps(search_mode,
+                                   &search_data,
+                                   &langinfo,
+                                   NO_AFFINITY);
 
                     current = matching_words_da[0];
 
                     if (current < win.start || current > win.end)
-                      last_line = build_metadata(&term, count, &win);
+                      last_line = build_metadata(&term, count, &win, &langinfo);
 
                     /* Set new first column to display. */
                     /* """""""""""""""""""""""""""""""" */
@@ -17152,8 +17926,9 @@ main(int argc, char *argv[])
                                     &search_data,
                                     &term,
                                     last_line,
-                                    tmp_word,
-                                    &langinfo);
+                                    &langinfo,
+                                    &misc,
+                                    filler);
                   }
                 }
                 else
@@ -17178,8 +17953,9 @@ main(int argc, char *argv[])
                                   &search_data,
                                   &term,
                                   last_line,
-                                  tmp_word,
-                                  &langinfo);
+                                  &langinfo,
+                                  &misc,
+                                  filler);
                 }
               }
               else if (search_mode == FUZZY)
@@ -17193,7 +17969,7 @@ main(int argc, char *argv[])
                 /* a sorted array to nodes in the words tst.              */
                 /* Each of these node starts a matching candidate.        */
                 /* """""""""""""""""""""""""""""""""""""""""""""""""""""" */
-                wchar_t *w = utf8_strtowcs(search_data.buf + old_len);
+                uint32_t *w = utf8stocps(search_data.buf + old_len);
 
                 /* zero previous matching indicators. */
                 /* """""""""""""""""""""""""""""""""" */
@@ -17319,21 +18095,28 @@ main(int argc, char *argv[])
                     select_starting_matches(&win,
                                             &term,
                                             &search_data,
-                                            &last_line);
+                                            &last_line,
+                                            &langinfo,
+                                            filler);
                   else if (search_data.only_ending)
                     select_ending_matches(&win,
                                           &term,
                                           &search_data,
-                                          &last_line);
+                                          &last_line,
+                                          &langinfo,
+                                          filler);
                   else
                     /* Adjust the bitmap to the ending version. */
                     /* """""""""""""""""""""""""""""""""""""""" */
-                    update_bitmaps(search_mode, &search_data, NO_AFFINITY);
+                    update_bitmaps(search_mode,
+                                   &search_data,
+                                   &langinfo,
+                                   NO_AFFINITY);
 
                   current = matching_words_da[0];
 
                   if (current < win.start || current > win.end)
-                    last_line = build_metadata(&term, count, &win);
+                    last_line = build_metadata(&term, count, &win, &langinfo);
 
                   /* Set new first column to display. */
                   /* """""""""""""""""""""""""""""""" */
@@ -17347,15 +18130,19 @@ main(int argc, char *argv[])
                                   &search_data,
                                   &term,
                                   last_line,
-                                  tmp_word,
-                                  &langinfo);
+                                  &langinfo,
+                                  &misc,
+                                  filler);
                 }
                 else
                   my_beep(&toggles);
               }
               else /* SUBSTRING. */
               {
-                wchar_t *w = utf8_strtowcs(search_data.buf);
+                char b[5] = { 0 };
+                int  l    = 0;
+
+                char *w = search_data.buf;
 
                 /* Purge the matching words list. */
                 /* """""""""""""""""""""""""""""" */
@@ -17376,7 +18163,12 @@ main(int argc, char *argv[])
                   /* searched character as children and store them in   */
                   /* the sub tst array attached to the searched symbol. */
                   /* """""""""""""""""""""""""""""""""""""""""""""""""" */
-                  tst_substring_traverse(tst_word, NULL, 0, w[0]);
+                  l = mblen(w, MB_CUR_MAX);
+                  if (l > 0)
+                  {
+                    memcpy(b, w, l);
+                    tst_substring_traverse(tst_word, NULL, 0, utf8tocp(b));
+                  }
 
                   node         = tst_search_list->tail;
                   sub_tst_data = (sub_tst_t *)(node->data);
@@ -17396,10 +18188,15 @@ main(int argc, char *argv[])
 
                   BUF_CLEAR(matching_words_da);
 
-                  for (index = 0; index < sub_tst_data->count; index++)
-                    tst_prefix_search(sub_tst_data->array[index],
-                                      w + 1,
-                                      tst_search_cb);
+                  l = mblen(w + l, MB_CUR_MAX);
+                  if (l > 0)
+                  {
+                    memcpy(b, w + l, l);
+                    for (index = 0; index < sub_tst_data->count; index++)
+                      tst_prefix_search(sub_tst_data->array[index],
+                                        b,
+                                        tst_search_cb);
+                  }
                 }
 
                 if (BUF_LEN(matching_words_da) > 0)
@@ -17414,19 +18211,26 @@ main(int argc, char *argv[])
                       select_starting_matches(&win,
                                               &term,
                                               &search_data,
-                                              &last_line);
+                                              &last_line,
+                                              &langinfo,
+                                              filler);
                     else if (search_data.only_ending)
                       select_ending_matches(&win,
                                             &term,
                                             &search_data,
-                                            &last_line);
+                                            &last_line,
+                                            &langinfo,
+                                            filler);
                     else
-                      update_bitmaps(search_mode, &search_data, NO_AFFINITY);
+                      update_bitmaps(search_mode,
+                                     &search_data,
+                                     &langinfo,
+                                     NO_AFFINITY);
 
                     current = matching_words_da[0];
 
                     if (current < win.start || current > win.end)
-                      last_line = build_metadata(&term, count, &win);
+                      last_line = build_metadata(&term, count, &win, &langinfo);
 
                     /* Set new first column to display. */
                     /* """""""""""""""""""""""""""""""" */
@@ -17440,8 +18244,9 @@ main(int argc, char *argv[])
                                     &search_data,
                                     &term,
                                     last_line,
-                                    tmp_word,
-                                    &langinfo);
+                                    &langinfo,
+                                    &misc,
+                                    filler);
                   }
                 }
                 else
@@ -17465,8 +18270,9 @@ main(int argc, char *argv[])
                                   &search_data,
                                   &term,
                                   last_line,
-                                  tmp_word,
-                                  &langinfo);
+                                  &langinfo,
+                                  &misc,
+                                  filler);
                 }
               }
             }

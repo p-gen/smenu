@@ -1,8 +1,6 @@
-$ OUT=$(smenu -a m:7/5 -M \
+$ OUT=$(smenu -a m:7/5 -M -m '=\uefbcb4\uefbca5\uefbcb3\uefbcb4=
 
-> -m '=\uefbcb4\uefbca5\uefbcb3\uefbcb4=
-
-> =test=' t0008.in)
+> =test=' t0008.in)||exit 1
 
                                  =ＴＥＳＴ=
 33:252d 34:252d 35:252d 36:252d 37:252d 38:252d 
