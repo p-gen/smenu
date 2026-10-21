@@ -3628,7 +3628,7 @@ ctxopt_analyze(int nb_words, char **words, int *nb_rem_args, char ***rem_args)
     if (strcmp(par_name, "-no_message_on_error") == 0)
     {
       flags.error_messages = 0;
-      usage_on_error_node  = cli_node;
+      no_message_on_error_node  = cli_node;
     }
 
     cli_node = cli_node->next;

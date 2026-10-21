@@ -1015,7 +1015,7 @@ ini_parse_entry(win_t      *win,
         if (v.blink >= (signed char)0)                 \
           win->x##_attr.blink = v.blink;               \
         if (v.reset >= (signed char)0)                 \
-          win->x##_attr.reset = v.blink;               \
+          win->x##_attr.reset = v.reset;               \
       }                                                \
     }                                                  \
   }
@@ -2173,8 +2173,8 @@ get_terminal_size(int * const r, int * const c)
 
   if (*r <= 0 || *c <= 0)
   {
-    *r = 80;
-    *c = 24;
+    *r = 24;
+    *c = 80;
   }
 }
 
