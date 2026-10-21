@@ -264,7 +264,7 @@ my_strcasecmp(const char *str1, const char *str2)
 
   while (1)
   {
-    retval = tolower(*str1++) - tolower(*str2++);
+    retval = tolower((unsigned char)*str1++) - tolower((unsigned char)*str2++);
 
     if (retval)
       break;
@@ -288,11 +288,12 @@ my_strcasecmp(const char *str1, const char *str2)
 void
 strtolower(char *d, char *s)
 {
-  char *p;
-  char *q = d;
+  unsigned char c;
 
-  for (p = s; *p; ++p)
-    *q++ = tolower(*p);
+  while ((c = (unsigned char)*s++) != '\0')
+    *d++ = (char)tolower(c);
+
+  *d = '\0';
 }
 
 /* ============================================= */
@@ -407,7 +408,7 @@ strprint(char const *s)
 
   while (*s)
   {
-    if (isprint(*s))
+    if (isprint((unsigned char)*s))
       *(p++) = *s++;
     else
     {
@@ -445,7 +446,7 @@ hexdump(const char *buf, FILE *fp, const char *prefix, size_t size)
   for (b = 0; b < size; b++)
   {
 
-    d[b % 16] = isprint(buf[b]) ? (unsigned char)buf[b] : '.';
+    d[b % 16] = isprint((unsigned char)buf[b]) ? (unsigned char)buf[b] : '.';
 
     if ((b % 16) == 0)
     {
