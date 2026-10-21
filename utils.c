@@ -327,12 +327,11 @@ is_integer(const char * const s)
   long int n;
   char    *endptr;
 
-  n = strtol(s, &endptr, 10);
+  errno = 0;
+  n     = strtol(s, &endptr, 10);
 
-  if (errno != ERANGE && n >= INT_MIN && n <= INT_MAX && *endptr == '\0')
-    return 1;
-
-  return 0;
+  return (errno != ERANGE && n >= INT_MIN && n <= INT_MAX && endptr != s
+          && *endptr == '\0');
 }
 
 /* ======================================== */

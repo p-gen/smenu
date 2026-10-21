@@ -43,6 +43,11 @@ cptoutf8(char *utf8_str, uint32_t c)
     utf8_str[1] = 0x80 | (c & 0x3f);
     len         = 2;
   }
+  else if (c >= 0xd800 && c <= 0xdfff)
+  {
+    utf8_str[0] = '\0';
+    len         = 0;
+  }
   else if (c < 0x10000)
   {
     utf8_str[0] = 0xe0 | ((c >> 12) & 0x0f);
@@ -566,15 +571,15 @@ utf8_offset(char const *s, size_t n)
 char *
 utf8_prev(const char *str, const char *p)
 {
-  while ((*p & 0xc0) == 0x80)
-    p--;
+  if (str == NULL || p == NULL || p <= str)
+    return NULL;
 
-  for (--p; p >= str; --p)
+  do
   {
-    if ((*p & 0xc0) != 0x80)
-      return (char *)p;
-  }
-  return NULL;
+    p--;
+  } while (p > str && ((unsigned char)*p & 0xc0) == 0x80);
+
+  return (char *)p;
 }
 
 /* ============================================== */

@@ -2637,15 +2637,19 @@ opt_parse(char *s, opt_t **opt)
       if (*s == '<' || *s == '=' || *s == '>')
       {
         unsigned value;
-        int      offset;
+        int      offset = 0;
 
         n = sscanf(s + 1, "%u%n", &value, &offset);
-        if (n == 1)
+        if (n != 1)
         {
-          opt_count_matter = 1;
-          opt_count_oper   = *s;
-          opt_count_mark   = value;
+          free(opt_name);
+          return -(s - s_orig - 1);
         }
+
+        opt_count_matter = 1;
+        opt_count_oper   = *s;
+        opt_count_mark   = value;
+
         s += offset + 1;
       }
     }
@@ -2703,15 +2707,19 @@ opt_parse(char *s, opt_t **opt)
       if (*s == '<' || *s == '=' || *s == '>')
       {
         unsigned value;
-        int      offset;
+        int      offset = 0;
 
         n = sscanf(s + 1, "%u%n", &value, &offset);
-        if (n == 1)
+        if (n != 1)
         {
-          opt_args_count_matter = 1;
-          opt_args_count_oper   = *s;
-          opt_args_count_mark   = value;
+          free(opt_name);
+          return -(s - s_orig - 1);
         }
+
+        opt_args_count_matter = 1;
+        opt_args_count_oper   = *s;
+        opt_args_count_mark   = value;
+
         s += offset + 1;
       }
 
@@ -4647,7 +4655,7 @@ ctxopt_range_constraint(int nb_args, char **args, char *value, char *par)
 
   errno = 0;
   v     = strtol(value, &ptr, 10);
-  if (errno || ptr == value)
+  if (errno == ERANGE || ptr == value || *ptr != '\0')
     return 0;
 
   if (min_only)
