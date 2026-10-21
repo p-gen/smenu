@@ -70,11 +70,11 @@ long *shift_right_sym_pos_a; /* screen column number of the right          *
                               | column mode.                               */
 int   iso_charset = 0;
 
-int forgotten_timer = -1;
-int help_timer      = -1;
-int winch_timer     = -1;
-int daccess_timer   = -1;
-int search_timer    = -1;
+volatile sig_atomic_t forgotten_timer = -1;
+volatile sig_atomic_t help_timer      = -1;
+volatile sig_atomic_t winch_timer     = -1;
+volatile sig_atomic_t daccess_timer   = -1;
+volatile sig_atomic_t search_timer    = -1;
 
 search_mode_t search_mode     = NONE;
 search_mode_t old_search_mode = NONE;
