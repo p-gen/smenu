@@ -2278,6 +2278,8 @@ parse_regex_selector_part(char *str, ll_t **regex_list)
 
     ll_append(*regex_list, regex);
   }
+  else
+    free(regex);
 }
 
 /* ================================================================= */

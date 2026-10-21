@@ -4602,6 +4602,7 @@ ctxopt_re_constraint(int nb_args, char **args, char *value, char *par)
             value,
             par,
             args[0]);
+    regfree(&re);
     return 0;
   }
 
