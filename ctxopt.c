@@ -2961,9 +2961,9 @@ ctxopt_init(char *prog_name, char *init_flags)
 
   ctxopt_initialized = 1;
 
-  /* Initialize current_state.*/
-  /* """""""""""""""""""""""" */
-  cur_state = xcalloc(sizeof(state_t), 0);
+  /* Initialize current_state. */
+  /* """"""""""""""""""""""""" */
+  cur_state = xcalloc(1, sizeof(*cur_state));
 
   /* Initialize custom error function pointers to NULL. */
   /* """""""""""""""""""""""""""""""""""""""""""""""""" */
