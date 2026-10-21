@@ -34,7 +34,7 @@ if [ ! -f $1.in ]; then
 fi
 
 LOG=${PWD}.log
-PTYLIE=${PTYLIE_PATH:+${PTYLIE_PATH}/}ptylie
+PTYREC=${PTYREC_PATH:+${PTYREC_PATH}/}ptyrec
 HVLT=${HLVT_PATH:+${HLVT_PATH}/}hlvt
 BL=$(uname -s).bl
 
@@ -49,7 +49,7 @@ if ! which smenu >/dev/null 2>&1; then
   exit 1
 fi
 
-for PROG in $PTYLIE $HLVT; do
+for PROG in $PTYREC $HLVT; do
   if ! which $PROG >/dev/null 2>&1; then
     echo "The required $PROG program was not found, aborting."
     exit 1
@@ -57,7 +57,7 @@ for PROG in $PTYLIE $HLVT; do
 done
 
 # Ignore blacklisted tests for this OS.
-# These tests probably need a fixed version of ptylie to work
+# These tests probably need a fixed version of ptyrec to work
 # """""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 if [ -f "$BL" ]; then
   grep $1 $BL >/dev/null 2>&1 && exit 0
@@ -66,7 +66,7 @@ fi
 # Launch the test
 # """""""""""""""
 clear
-ENV="" PS1='$ ' $PTYLIE -i $1.tst -l $1.log -w 80 -h 24 bash --posix
+ENV="" PS1='$ ' $PTYREC -i $1.tst -l $1.log -w 80 -h 24 bash --posix
 $HVLT < $1.log | sed '1,/exit 0/!d' > $1.out
 rm -f $1.log $1.bad
 [ -f $LOG ] && touch $LOG
