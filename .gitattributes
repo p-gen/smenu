@@ -1,0 +1,15 @@
+## Standard documentation
+*.rst linguist-documentation
+*.1 linguist-generated
+# Binaries
+*.gif binary
+## autotools
+*.in linguist-vendored
+build-aux/* linguist-vendored
+aclocal.m4 linguist-vendored
+configure linguist-vendored
+configure.ac linguist-vendored
+Makefile.am linguist-vendored
+## My Project files
+build.sh linguist-vendored
+version linguist-vendored
