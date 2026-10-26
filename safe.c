@@ -8,10 +8,12 @@
 
 #include "safe.h"
 
-#include <errno.h>
-#include <limits.h>
-#include <string.h>
-#include <unistd.h>
+#include <errno.h>   /* for errno, EINTR, EIO. */
+#include <fcntl.h>   /* for open.              */
+#include <limits.h>  /* for SSIZE_MAX.         */
+#include <string.h>  /* for strlen.            */
+#include <termios.h> /* for tcsetattr.         */
+#include <unistd.h>  /* for read, write.       */
 
 /* Private helper for functions reporting failure using -1.           */
 /* result must be a plain local variable without side effects.        */

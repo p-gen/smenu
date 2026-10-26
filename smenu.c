@@ -14,26 +14,28 @@
 #error "smenu requires terminfo support."
 #endif
 
-#include <unistd.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <stddef.h>
-#include <limits.h>
-#include <signal.h>
-#include <ctype.h>
-#include <time.h>
-#include <string.h>
-#include <locale.h>
-#include <langinfo.h>
+#include <ctype.h>     /* for isgraph, isdigit, isblank, isprint, isspace.    */
+#include <errno.h>     /* for errno, ERANGE, EINTR.                           */
+#include <langinfo.h>  /* for CODESET, nl_langinfo.                           */
+#include <limits.h>    /* for CHAR_BIT, LONG_MAX, INT_MAX.                    */
+#include <locale.h>    /* for LC_ALL, setlocale.                              */
+#include <regex.h>     /* for regex_t, regexec, REG_EXTENDED, regcomp, REG... */
+#include <signal.h>    /* for sig_atomic_t, sigaction, sigprocmask, sigset_t. */
+#include <stdint.h>    /* for uint32_t.                                       */
+#include <stdio.h>     /* for NULL, fprintf, stderr, stdout, size_t, fputs.   */
+#include <stdlib.h>    /* for free, exit, EXIT_FAILURE, MB_CUR_MAX, mblen.    */
+#include <string.h>    /* for strcmp, memcmp, strlen, memcpy, memset, strchr. */
+#include <sys/ioctl.h> /* for TIOCGWINSZ, ioctl.                              */
+#include <sys/select.h> /* for FD_SET, FD_ZERO, fd_set, select                */
+#include <sys/time.h>   /* for timeval, itimerval, ITIMER_REAL, setitimer.    */
+#include <term.h>       /* for tputs, tigetstr, exit_attribute_mode, clr_eol. */
+#include <termios.h> /* for termios, TCSADRAIN, winsize, ISIG, VMIN, VTIME.   */
+#include <time.h>    /* for timespec, CLOCK_MONOTONIC, clock_gettime.         */
+#include <unistd.h>  /* for STDIN_FILENO, dup, close, dup2, STDOUT_FILENO.    */
+
 #if (defined(__sun) && defined(__SVR4)) || defined(_AIX)
 #include <curses.h>
 #endif
-#include <term.h>
-#include <termios.h>
-#include <regex.h>
-#include <errno.h>
-#include <sys/ioctl.h>
-#include <sys/time.h>
 
 #include "xmalloc.h"
 #include "ini.h"

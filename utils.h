@@ -9,8 +9,8 @@
 #ifndef UTILS_H
 #define UTILS_H
 
-#include <stdio.h>  /* for size_t, FILE */
-#include "list.h"   /* for ll_t         */
+#include <stdio.h> /* for size_t, FILE. */
+#include "list.h"  /* for ll_t.         */
 
 typedef struct interval_s interval_t;
 typedef struct range_s    range_t;

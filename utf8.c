@@ -10,15 +10,15 @@
 /* Various UTF-8 manipulation functions. */
 /* ************************************* */
 
-#include <ctype.h>   /* for isxdigit, tolower       */
-#include <stdint.h>  /* for uint32_t                */
-#include <stdio.h>   /* for sscanf                  */
-#include <stdlib.h>  /* for mbtowc                  */
-#include <string.h>  /* for memmove, strlen, strstr */
-#include "xmalloc.h" /* for xmalloc                 */
-#include "utils.h"
+#include <ctype.h>  /* for tolower.                */
+#include <stdint.h> /* for uint32_t.               */
+#include <stdlib.h> /* for MB_CUR_MAX, mblen.      */
+#include <string.h> /* for memcpy, memset, strlen. */
+
 #include "utf8.h"
-#include "iso8859_tables.h"
+#include "iso8859_tables.h" /* for iso8859_charset, iso8859_map, *
+                             | iso8859_range.                    */
+#include "xmalloc.h"        /* for xmalloc.                      */
 
 /* ============================================================ */
 /* UTF-8 byte sequence generation from a given UCS-4 code point */

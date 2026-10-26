@@ -9,7 +9,8 @@
 #ifndef UTF8_H
 #define UTF8_H
 
-#include <stdint.h> /* for uint32_t        */
+#include <stddef.h> /* for size_t.   */
+#include <stdint.h> /* for uint32_t. */
 
 typedef struct langinfo_s langinfo_t;
 

@@ -9,10 +9,10 @@
 #ifndef SAFE_H
 #define SAFE_H
 
-#include <stdio.h>
-#include <sys/types.h>
-#include <fcntl.h>
-#include <termios.h>
+#include <stdio.h>     /* for size_t, FILE.    */
+#include <sys/types.h> /* for ssize_t, mode_t. */
+
+struct termios;
 
 /* Retry only failures caused by EINTR.                             */
 /* Preserve successful results and all other errors unchanged.      */
