@@ -571,7 +571,7 @@ init_help(win_t               *win,
       if (line > last_line)
         break;
 
-      len = 0;
+      len = forced_nl ? 0 : (*help_items_da)[index]->len;
 
       /* Dynamically push the current items_da in help_lines_da */
       /* And initialize a new items_da.                         */
@@ -590,7 +590,10 @@ init_help(win_t               *win,
     if (first_in_line)
       if (strcmp((*help_items_da)[index]->str, " ") == 0
           || strcmp((*help_items_da)[index]->str, ",") == 0)
+      {
+        len -= (*help_items_da)[index]->len;
         continue;
+      }
 
     first_in_line = 0;
     BUF_PUSH(items_da, (*help_items_da)[index]);
