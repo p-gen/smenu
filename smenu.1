@@ -203,6 +203,76 @@ consists of more than one character.
 A typical example is DOS or Windows files with lines ending with \fICRLF\fP.
 In such a case one might decide to ignore all \fICR\fP characters from the
 input.
+.SS "Attributes and colors"
+Display attributes use one of the following syntax:
+.nf
+  [fg][/bg][[,.+]toggles]
+  toggles
+.fi
+.PP
+The optional \fIfg\fP and \fIbg\fP fields specify the foreground and
+background colors.
+A missing color field leaves that color unspecified.
+.PP
+The toggles, listed below, can be preceded by a comma, a period, or a
+"plus" sign, or used on their own, as in \f(CBrb\fP.
+.PP
+\fBColor formats:\fP
+.IP \(bu 2
+A decimal palette index.
+Extended palette indexes from 0 to 255 use the same syntax, for example
+\f(CB196/234\fP.
+An index outside the number of colors reported by the terminal is ignored.
+.IP \(bu 2
+A truecolor value written as \fB#RRGGBB\fP, with exactly six hexadecimal
+digits.
+Each pair gives the red, green or blue component.
+Palette indexes and truecolor values can be mixed, as in
+\f(CB196/#202020\fP.
+.PP
+Truecolor output first uses the terminal's \fBsetrgbf\fP capability for
+the foreground and \fBsetrgbb\fP for the background, when the
+corresponding capability is available.
+Each capability receives the red, green and blue components as three
+separate values.
+If the required capability is unavailable and \fBCOLORTERM\fP has the
+exact, case-sensitive value \fBtruecolor\fP or \fB24bit\fP, smenu emits
+ANSI truecolor sequences directly.
+Otherwise, RGB values are approximated by the nearest supported palette
+color: conventional ANSI defaults for 8 or 16 colors, or the xterm
+palette for 256 colors.
+Other palette sizes use at most the first 16 default colors.
+Customized terminal palettes may give different results.
+.PP
+The \fBCOLORTERM\fP variable is only used as a hint.
+Some terminals support truecolor without setting \fBCOLORTERM\fP to
+either of these values.
+.PP
+The \fBcolor_method\fP setting controls palette color ordering; it does
+not change truecolor encoding.
+When \fBNO_COLOR\fP is present in the environment, even with an empty
+value, both truecolor and palette color output are disabled.
+.PP
+\fBAttribute toggles:\fP
+\fIb\fP, \fId\fP, \fIr\fP, \fIs\fP, \fIu\fP, \fIi\fP,
+\fIn\fP and \fIl\fP mean bold, dim, reverse, standout, underline,
+italic, invisible and blink, respectively.
+The toggles \fIS\fP, \fIU\fP and \fII\fP leave standout, underline
+and italic mode, respectively; \fB!\fP resets all attributes.
+.PP
+In messages, an attribute specification is enclosed in
+\f(CB\\[\fP and \f(CB]\fP, for example \f(CB\\[1+b]\fP.
+Use \f(CB\\[!]\fP to reset all attributes.
+.PP
+Examples of possible attributes are:
+.nf
+  \f(CB2/0,bu \fPgreen on black bold underline
+  \f(CB/2     \fPgreen background
+  \f(CB5      \fPtext in purple
+  \f(CB196/234,bu \fPextended palette colors, bold underline
+  \f(CB#ff8800/#202020 \fPtruecolor foreground and background
+  \f(CBrb     \fPreverse bold
+.fi
 .SS "Keyboard and mouse usage."
 \fBkeyboard\fP:
 .RS 2
@@ -783,12 +853,7 @@ determines if you want to use the native method (limited to 8 colors) or the
 
 The default value corresponds to \fBansi\fP.
 
-The attributes syntax is [fg][/bg][[,.+]toggles] where \fBfg\fP and
-\fBbg\fP are numbers representing the foreground and background color and
-\fBtoggles\fP is a string which can contain the characters \fIb\fP, \fId\fP,
-\fIr\fP, \fIs\fP, \fIu\fP, \fIi\fP, \fIn\fP and \fIl\fP representing
-respectively \fIb\fPold, \fId\fPim, \fIr\fPeverse, \fIs\fPtandout,
-\fIu\fPnderline, \fIi\fPtalic, i\fIn\fPvisible and b\fIl\fPink.
+See the "Attributes and colors" subsection for the attribute syntax.
 .IP \(bu 2
 Spaces are allowed anywhere in the lines and between them, even around the
 \fB=\fP.
@@ -1039,19 +1104,7 @@ current attribute for parts of the message.
 For example, \f(CB\\[1+b]\fP will change the current color to red and enable
 bold mode.
 
-The content in parentheses must follow the syntax rules described in the
-configuration file documentation above, with the possibility of using the
-following additional attributes:
-
-.PD 0
-\fIS\fP: exits standalone mode entered using \fIs\fP.
-.br
-\fIU\fP: exits underline mode entered using \fIu\fP.
-.br
-\fII\fP: exits italic mode entered using \fIu\fP.
-.PD
-
-In addition, \f(CB\\[!]\fP can be used to reset all attributes.
+The enclosed attributes follow the syntax described in the "Attributes and colors" subsection.
 
 Example:
 
@@ -1140,9 +1193,11 @@ If more than one attribute is given, they must be separated by spaces.
 
 Example: \f(CB-attr i:/5 e:4,br b:7/3,rb c:7/2,b\fP
 
-See the options \fB-\fP\fIn\fP|\fB-l\fP\fIn\fP|\fB-level\fP\fIn\fP below
-for a description of the syntax of attributes after the colon and examples
-of attributes.
+See the "Attributes and colors" subsection for the syntax after the colon and examples.
+.IP "\fB-tc\fP|\fB-truecolor\fP"
+(Allowed in all contexts.)
+
+Specifies that the terminal supports "truecolor" mode.
 .IP "\fB-1\fP|\fB-l1\fP|\fB-level1\fP \fIregex\fP [\fIattr\fP]"
 .IP "\fB-2\fP|\fB-l2\fP|\fB-level2\fP \fIregex\fP [\fIattr\fP]"
 .IP "\fB-3\fP|\fB-l3\fP|\fB-level3\fP \fIregex\fP [\fIattr\fP]"
@@ -1168,21 +1223,7 @@ See the example file above for an example.
 
 The optional second argument (\fIattr\fP) can be used to override the default
 or configured attributes of each class.
-Its syntax is the same as the one used in the configuration file:
-.nf
-[\fIfg\fP][/\fIbg\fP]\
-[,{\fIb\fP|\fId\fP|\fIr\fP|\fIs\fP|\fIu\fP|\fIi\fP|\fIn\fP|\fIl\fP}] \
-| [{\fIb\fP|\fId\fP|\fIr\fP|\fIs\fP|\fIu\fP|\fIi\fP|\fIn\fP|\fIl\fP}]
-.fi
-
-Examples of possible attributes are:
-.nf
-  \f(CB2/0,bu \fPgreen on black bold underline
-  \f(CB/2     \fPgreen background
-  \f(CB5      \fPtext in purple
-  \f(CBrb     \fPreverse bold
-.fi
-
+See the "Attributes and colors" subsection for its syntax and examples.
 \fI\\u\fP and \fI\\U\fP sequences can be used in the pattern.
 .IP "\fB-z\fP|\fB-zap\fP|\fB-zap_glyphs\fP \fIbytes\fP"
 (Allowed in all contexts.)
