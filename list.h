@@ -56,9 +56,7 @@ int
 ll_delete(ll_t *list, ll_node_t *node);
 
 ll_node_t *
-ll_find(ll_t *list,
-        void *data,
-        int (*cmpfunc)(void const *, void const *));
+ll_find(ll_t *list, void *data, int (*cmpfunc)(void const *, void const *));
 
 void
 ll_free(ll_t *list, void (*clean)(void *));

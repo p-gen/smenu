@@ -5,10 +5,10 @@
 
 #define GAP 1
 
-#define MAX(a,b) (((a)>(b))?(a):(b))
+#define MAX(a, b) (((a) > (b)) ? (a) : (b))
 
-typedef struct tst_node_s tst_node_t;
-typedef struct sub_tst_s  sub_tst_t;
+typedef struct tst_node_s         tst_node_t;
+typedef struct sub_tst_s          sub_tst_t;
 typedef struct tst_pretty_block_s tst_pretty_block_t;
 
 struct tst_node_s
@@ -33,10 +33,10 @@ struct sub_tst_s
 /* """"""""""""""""""""""""""""""""""""""""""""""""""""" */
 struct tst_pretty_block_s
 {
-    char **line;
-    int    width;
-    int    height;
-    int    root;
+  char **line;
+  int    width;
+  int    height;
+  int    root;
 };
 
 int

@@ -237,8 +237,8 @@ struct toggle_s
 struct limit_s
 {
   size_t word_length; /* maximum number of bytes in a word. */
-  long words;       /* maximum number of words.           */
-  long cols;        /* maximum number of columns.         */
+  long   words;       /* maximum number of words.           */
+  long   cols;        /* maximum number of columns.         */
 };
 
 /* Structure to store the default or imposed timers. */
@@ -345,32 +345,32 @@ struct term_s
 /* """""""""""""""""""""""""""" */
 struct word_s
 {
-  long          start, end;    /* start/end absolute horiz. word positions *
-                                | on the screen.                           */
-  size_t        mb;            /* number of UTF-8 characters to display.       */
-  size_t        len_mb;        /* number of UTF-8 characters before filling    *
-                                * the column.                              */
-  size_t        len;           /* number of bytes in str (for trimming).   */
-  char         *str;           /* display string associated with this word */
-  char         *orig;          /* NULL or original string if is had been.  *
-                                | shortened for being displayed or altered *
-                                | by is expansion.                         */
-  char         *bitmap;        /* used to store the position of the.       *
-                                | currently searched chars in a word. The  *
-                                | objective is to speed their display.     */
-  attrib_t     *iattr;         /* Specific attribute set with the -Ra/-Ca  *
-                                | options.                                 */
-  long          tag_order;     /* each time a word is tagged, this value.  *
-                                | is increased.                            */
-  int           offset;        /* may be > 0 in case of center or right    *
-                                * alignment (# of spaces added).           */
-  unsigned      tag_id;        /* tag id. 0 means no tag.                  */
-  unsigned char is_matching;   /* word is matching a search ERE.           */
-  unsigned char is_last;       /* 1 if the word is the last of a line.     */
-  unsigned char is_selectable; /* word is selectable.                      */
-  unsigned char is_numbered;   /* word has a direct access index.          */
-  unsigned char special_level; /* can vary from 0 to 9; 0 meaning normal.  */
-  char all_spaces;    /* the word ocntains only spaces.           */
+  long          start, end;    /* start/end absolute horiz. word positions  *
+                                | on the screen.                            */
+  size_t        mb;            /* number of UTF-8 characters to display.    */
+  size_t        len_mb;        /* number of UTF-8 characters before filling *
+                                * the column.                               */
+  size_t        len;           /* number of bytes in str (for trimming).    */
+  char         *str;           /* display string associated with this word  */
+  char         *orig;          /* NULL or original string if is had been.   *
+                                | shortened for being displayed or altered  *
+                                | by is expansion.                          */
+  char         *bitmap;        /* used to store the position of the.        *
+                                | currently searched chars in a word. The   *
+                                | objective is to speed their display.      */
+  attrib_t     *iattr;         /* Specific attribute set with the -Ra/-Ca   *
+                                | options.                                  */
+  long          tag_order;     /* each time a word is tagged, this value.   *
+                                | is increased.                             */
+  int           offset;        /* may be > 0 in case of center or right     *
+                                * alignment (# of spaces added).            */
+  unsigned      tag_id;        /* tag id. 0 means no tag.                   */
+  unsigned char is_matching;   /* word is matching a search ERE.            */
+  unsigned char is_last;       /* 1 if the word is the last of a line.      */
+  unsigned char is_selectable; /* word is selectable.                       */
+  unsigned char is_numbered;   /* word has a direct access index.           */
+  unsigned char special_level; /* can vary from 0 to 9; 0 meaning normal.   */
+  char          all_spaces;    /* the word ocntains only spaces.            */
 };
 
 /* Structure describing the window in which the user  */
@@ -397,8 +397,8 @@ struct win_s
   int      offset;          /* Left margin, used in centered mode.      */
   int      sb_column;       /* scroll bar column (-1) if no scroll bar. */
   char    *sel_sep;         /* output separator when tags are enabled.  */
-  char   **gutter_a;        /* array of UTF-8 gutter characters.            */
-  int      gutter_nb;       /* number of UTF-8 gutter characters.           */
+  char   **gutter_a;        /* array of UTF-8 gutter characters.        */
+  int      gutter_nb;       /* number of UTF-8 gutter characters.       */
   unsigned next_tag_id;     /* Next tag ID, increased on each tagging   *
                              | operation.                               */
 
@@ -481,7 +481,7 @@ struct daccess_s
                          | selector.                                       */
   char     *num_sep;    /* character to separate number and selection.     */
   size_t    offset;     /* offset to the start of the selector.            */
-  size_t    ignore;     /* number of UTF-8 characters to ignore after the      *
+  size_t    ignore;     /* number of UTF-8 characters to ignore after the  *
                          | number.                                         */
   da_mode_t mode;       /* DA_TYPE_NONE (0), DA_TYPE_AUTO, DA_TYPE_POS.    */
   int       length;     /* selector size (5 max).                          */

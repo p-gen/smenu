@@ -49,20 +49,18 @@ open_safe_impl(const char *pathname, int flags, mode_t mode);
 #define SAFE_OPEN_SELECT(a, b, c, selected, ...) selected
 
 #define open_safe(...) \
-  SAFE_OPEN_SELECT(__VA_ARGS__, SAFE_OPEN_3, SAFE_OPEN_2, \
-                   unused)(__VA_ARGS__)
+  SAFE_OPEN_SELECT(__VA_ARGS__, SAFE_OPEN_3, SAFE_OPEN_2, unused)(__VA_ARGS__)
 
 /* ================================================= */
 /* Open pathname using the fopen() mode string mode. */
 /* ================================================= */
 FILE *
-fopen_safe(const char *restrict pathname, const char *restrict mode);
+fopen_safe(const char * restrict pathname, const char * restrict mode);
 
 /* ==================================================== */
 /* Apply attributes to the terminal associated with fd. */
 /* ==================================================== */
 int
-tcsetattr_safe(int fd, int actions,
-               const struct termios *attributes);
+tcsetattr_safe(int fd, int actions, const struct termios *attributes);
 
 #endif /* SAFE_H */

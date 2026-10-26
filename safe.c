@@ -38,6 +38,7 @@ read_safe(int fd, void *buf, size_t count)
   ssize_t res;
 
   SAFE_RETRY_MINUS_ONE(res, read(fd, buf, count));
+
   return res;
 }
 
@@ -50,6 +51,7 @@ write_safe(int fd, const void *buf, size_t count)
   ssize_t res;
 
   SAFE_RETRY_MINUS_ONE(res, write(fd, buf, count));
+
   return res;
 }
 
@@ -62,6 +64,7 @@ open_safe_impl(const char *pathname, int flags, mode_t mode)
   int res;
 
   SAFE_RETRY_MINUS_ONE(res, open(pathname, flags, mode));
+
   return res;
 }
 
@@ -90,10 +93,9 @@ tcsetattr_safe(int fd, int actions, const struct termios *attributes)
   int res;
 
   SAFE_RETRY_MINUS_ONE(res, tcsetattr(fd, actions, attributes));
+
   return res;
 }
-
-#undef SAFE_RETRY_MINUS_ONE
 
 /* =================================================================== */
 /* Write a complete string using descriptor I/O and progress tracking. */
@@ -129,3 +131,5 @@ puts_fd_safe(const char *s, int fd)
 
   return 0;
 }
+
+#undef SAFE_RETRY_MINUS_ONE
