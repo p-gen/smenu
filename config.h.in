@@ -37,6 +37,9 @@
 /* Define to 1 if you have the 'pathconf' function. */
 #undef HAVE_PATHCONF
 
+/* Define to 1 if you have the 'putp' function. */
+#undef HAVE_PUTP
+
 /* Define to 1 if your system has a GNU libc compatible 'realloc' function,
    and to 0 otherwise. */
 #undef HAVE_REALLOC
@@ -46,6 +49,9 @@
 
 /* Define to 1 if you have the 'setlocale' function. */
 #undef HAVE_SETLOCALE
+
+/* Define to 1 if you have the 'setupterm' function. */
+#undef HAVE_SETUPTERM
 
 /* Define to 1 if you have the <stdint.h> header file. */
 #undef HAVE_STDINT_H
@@ -86,8 +92,23 @@
 /* Define to 1 if you have the <sys/types.h> header file. */
 #undef HAVE_SYS_TYPES_H
 
+/* Define to 1 if terminfo support is available */
+#undef HAVE_TERMINFO
+
 /* Define to 1 if you have the <termios.h> header file. */
 #undef HAVE_TERMIOS_H
+
+/* Define to 1 if you have the 'tigetflag' function. */
+#undef HAVE_TIGETFLAG
+
+/* Define to 1 if you have the 'tigetnum' function. */
+#undef HAVE_TIGETNUM
+
+/* Define to 1 if you have the 'tigetstr' function. */
+#undef HAVE_TIGETSTR
+
+/* Define to 1 if you have the 'tparm' function. */
+#undef HAVE_TPARM
 
 /* Define to 1 if you have the <unistd.h> header file. */
 #undef HAVE_UNISTD_H

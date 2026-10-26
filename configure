@@ -1588,6 +1588,70 @@ fi
 
 } # ac_fn_c_try_link
 
+# ac_fn_c_check_func LINENO FUNC VAR
+# ----------------------------------
+# Tests whether FUNC exists, setting the cache variable VAR accordingly
+ac_fn_c_check_func ()
+{
+  as_lineno=${as_lineno-"$1"} as_lineno_stack=as_lineno_stack=$as_lineno_stack
+  { printf '%s\n' "$as_me:${as_lineno-$LINENO}: checking for $2" >&5
+printf %s "checking for $2... " >&6; }
+if eval test \${$3+y}
+then :
+  printf %s "(cached) " >&6
+else case e in #(
+  e) cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+/* Define $2 to an innocuous variant, in case <limits.h> declares $2.
+   For example, HP-UX 11i <limits.h> declares gettimeofday.  */
+#define $2 innocuous_$2
+
+/* System header to define __stub macros and hopefully few prototypes,
+   which can conflict with char $2 (void); below.  */
+
+#include <limits.h>
+#undef $2
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char $2 (void);
+/* The GNU C library defines this for functions which it implements
+    to always fail with ENOSYS.  Some functions are actually named
+    something starting with __ and the normal name is an alias.  */
+#if defined __stub_$2 || defined __stub___$2
+choke me
+#endif
+
+int
+main (void)
+{
+return $2 ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"
+then :
+  eval "$3=yes"
+else case e in #(
+  e) eval "$3=no" ;;
+esac
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext conftest.$ac_ext ;;
+esac
+fi
+eval ac_res=\$$3
+	       { printf '%s\n' "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+printf '%s\n' "$ac_res" >&6; }
+  eval $as_lineno_stack; ${as_lineno_stack:+:} unset as_lineno
+
+} # ac_fn_c_check_func
+
 # ac_fn_c_check_type LINENO TYPE VAR INCLUDES
 # -------------------------------------------
 # Tests whether TYPE exists after having included INCLUDES, setting cache
@@ -1690,70 +1754,6 @@ fi
   as_fn_set_status $ac_retval
 
 } # ac_fn_c_try_run
-
-# ac_fn_c_check_func LINENO FUNC VAR
-# ----------------------------------
-# Tests whether FUNC exists, setting the cache variable VAR accordingly
-ac_fn_c_check_func ()
-{
-  as_lineno=${as_lineno-"$1"} as_lineno_stack=as_lineno_stack=$as_lineno_stack
-  { printf '%s\n' "$as_me:${as_lineno-$LINENO}: checking for $2" >&5
-printf %s "checking for $2... " >&6; }
-if eval test \${$3+y}
-then :
-  printf %s "(cached) " >&6
-else case e in #(
-  e) cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-/* Define $2 to an innocuous variant, in case <limits.h> declares $2.
-   For example, HP-UX 11i <limits.h> declares gettimeofday.  */
-#define $2 innocuous_$2
-
-/* System header to define __stub macros and hopefully few prototypes,
-   which can conflict with char $2 (void); below.  */
-
-#include <limits.h>
-#undef $2
-
-/* Override any GCC internal prototype to avoid an error.
-   Use char because int might match the return type of a GCC
-   builtin and then its argument prototype would still apply.  */
-#ifdef __cplusplus
-extern "C"
-#endif
-char $2 (void);
-/* The GNU C library defines this for functions which it implements
-    to always fail with ENOSYS.  Some functions are actually named
-    something starting with __ and the normal name is an alias.  */
-#if defined __stub_$2 || defined __stub___$2
-choke me
-#endif
-
-int
-main (void)
-{
-return $2 ();
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_link "$LINENO"
-then :
-  eval "$3=yes"
-else case e in #(
-  e) eval "$3=no" ;;
-esac
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.beam \
-    conftest$ac_exeext conftest.$ac_ext ;;
-esac
-fi
-eval ac_res=\$$3
-	       { printf '%s\n' "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
-printf '%s\n' "$ac_res" >&6; }
-  eval $as_lineno_stack; ${as_lineno_stack:+:} unset as_lineno
-
-} # ac_fn_c_check_func
 ac_configure_args_raw=
 for ac_arg
 do
@@ -2689,7 +2689,9 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 
 
+
 ac_config_headers="$ac_config_headers config.h"
+
 
 
 am__api_version='1.16'
@@ -3358,6 +3360,7 @@ AM_BACKSLASH='\'
 
 
 # Checks for programs.
+
 
 
 
@@ -5959,6 +5962,14 @@ printf '%s\n' "no" >&6; }
 fi
 
 
+#
+# Search the library providing tputs().
+#
+# On some systems this is libtinfo.
+# On others it is provided by curses or ncurses.
+# On a few systems it may already be in libc.
+#
+
 { printf '%s\n' "$as_me:${as_lineno-$LINENO}: checking for library containing tputs" >&5
 printf %s "checking for library containing tputs... " >&6; }
 if test ${ac_cv_search_tputs+y}
@@ -5987,7 +5998,7 @@ return tputs ();
   return 0;
 }
 _ACEOF
-for ac_lib in '' tinfo curses ncursesw ncurses
+for ac_lib in '' tinfo terminfo curses ncursesw ncurses
 do
   if test -z "$ac_lib"; then
     ac_res="none required"
@@ -6025,14 +6036,72 @@ then :
   test "$ac_res" = "none required" || LIBS="$ac_res $LIBS"
 
 else case e in #(
-  e)
-  as_fn_error $? "unable to find the tputs() function" "$LINENO" 5
- ;;
+  e) as_fn_error $? "unable to find tputs()" "$LINENO" 5 ;;
 esac
 fi
 
 
-# clock_gettime is in librt on *-*-osf5.1 and on glibc < 2.17, so add -lrt
+#
+# Verify the terminfo API used by smenu.
+#
+
+ac_fn_c_check_func "$LINENO" "setupterm" "ac_cv_func_setupterm"
+if test "x$ac_cv_func_setupterm" = xyes
+then :
+  printf '%s\n' "#define HAVE_SETUPTERM 1" >>confdefs.h
+
+fi
+ac_fn_c_check_func "$LINENO" "tigetstr" "ac_cv_func_tigetstr"
+if test "x$ac_cv_func_tigetstr" = xyes
+then :
+  printf '%s\n' "#define HAVE_TIGETSTR 1" >>confdefs.h
+
+fi
+ac_fn_c_check_func "$LINENO" "tigetnum" "ac_cv_func_tigetnum"
+if test "x$ac_cv_func_tigetnum" = xyes
+then :
+  printf '%s\n' "#define HAVE_TIGETNUM 1" >>confdefs.h
+
+fi
+ac_fn_c_check_func "$LINENO" "tigetflag" "ac_cv_func_tigetflag"
+if test "x$ac_cv_func_tigetflag" = xyes
+then :
+  printf '%s\n' "#define HAVE_TIGETFLAG 1" >>confdefs.h
+
+fi
+ac_fn_c_check_func "$LINENO" "tparm" "ac_cv_func_tparm"
+if test "x$ac_cv_func_tparm" = xyes
+then :
+  printf '%s\n' "#define HAVE_TPARM 1" >>confdefs.h
+
+fi
+ac_fn_c_check_func "$LINENO" "putp" "ac_cv_func_putp"
+if test "x$ac_cv_func_putp" = xyes
+then :
+  printf '%s\n' "#define HAVE_PUTP 1" >>confdefs.h
+
+fi
+
+
+if test "x$ac_cv_func_setupterm" != "xyes" ||
+       test "x$ac_cv_func_tigetstr"  != "xyes" ||
+       test "x$ac_cv_func_tigetnum"  != "xyes" ||
+       test "x$ac_cv_func_tigetflag" != "xyes" ||
+       test "x$ac_cv_func_tparm"     != "xyes" ||
+       test "x$ac_cv_func_putp"      != "xyes"
+then :
+
+  as_fn_error $? "usable terminfo support not found" "$LINENO" 5
+
+fi
+
+
+printf '%s\n' "#define HAVE_TERMINFO 1" >>confdefs.h
+
+
+# clock_gettime is in librt on *-*-osf5.1 and on glibc < 2.17,
+# so add -lrt.
+
 { printf '%s\n' "$as_me:${as_lineno-$LINENO}: checking for library containing clock_gettime" >&5
 printf %s "checking for library containing clock_gettime... " >&6; }
 if test ${ac_cv_search_clock_gettime+y}
@@ -6101,12 +6170,15 @@ then :
 
 printf '%s\n' "#define HAVE_CLOCK_GETTIME 1" >>confdefs.h
 
+
 fi
 
 
 # Checks for libraries.
 
 # Checks for header files.
+
+
 
 { printf '%s\n' "$as_me:${as_lineno-$LINENO}: checking for grep that handles long lines and -e" >&5
 printf %s "checking for grep that handles long lines and -e... " >&6; }
@@ -6332,6 +6404,7 @@ fi
 
 
 # Checks for typedefs, structures, and compiler characteristics.
+
 ac_fn_c_check_type "$LINENO" "size_t" "ac_cv_type_size_t" "$ac_includes_default"
 if test "x$ac_cv_type_size_t" = xyes
 then :
@@ -6345,6 +6418,7 @@ fi
 
 
 # Checks for library functions.
+
 
 
   # Make sure we can run config.sub.
@@ -6568,6 +6642,7 @@ printf '%s\n' "#define realloc rpl_realloc" >>confdefs.h
 esac
 
 
+
 ac_fn_c_check_func "$LINENO" "mblen" "ac_cv_func_mblen"
 if test "x$ac_cv_func_mblen" = xyes
 then :
@@ -6632,26 +6707,26 @@ fi
 
 
 
-# OS-specific tests
+
+# OS-specific tests.
+
 case "${host_os}" in
-*freebsd*|*dragonfly*)
-  CPPFLAGS="-D__BSD_VISIBLE $CPPFLAGS"
-  ;;
-
-*darwin*)
-  CPPFLAGS="-D_DARWIN_C_SOURCE $CPPFLAGS"
-  ;;
-
-*netbsd*)
-  CPPFLAGS="-D_NETBSD_SOURCE $CPPFLAGS"
-  ;;
-
-*openbsd*|*bitrig*)
-  CPPFLAGS="-D_BSD_SOURCE $CPPFLAGS"
-  ;;
+  *freebsd*|*dragonfly*)
+    CPPFLAGS="-D__BSD_VISIBLE $CPPFLAGS"
+    ;;
+  *darwin*)
+    CPPFLAGS="-D_DARWIN_C_SOURCE $CPPFLAGS"
+    ;;
+  *netbsd*)
+    CPPFLAGS="-D_NETBSD_SOURCE $CPPFLAGS"
+    ;;
+  *openbsd*|*bitrig*)
+    CPPFLAGS="-D_BSD_SOURCE $CPPFLAGS"
+    ;;
 esac
 
 ac_config_files="$ac_config_files Makefile"
+
 
 cat >confcache <<\_ACEOF
 # This file is a shell script that caches the results of configure
