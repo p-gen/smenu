@@ -2189,73 +2189,74 @@ get_terminal_size(int * const r, int * const c)
 /* =========================================================== */
 /* Gets the cursor position in the terminal.                   */
 /* Assume that the Escape sequence ESC [ 6 n is available.     */
-/* Retries up to 64 times in case of system call interruption. */
 /* Returns 1 on success and 0 on error, in this case *r and *c */
 /* will contain 0.                                             */
 /* =========================================================== */
 int
-get_cursor_position(int * const r, int * const c)
+get_cursor_position(int *r, int *c)
 {
-  char  buf[32] = { 0 };
-  char *s;
+  char           buf[32];
+  size_t         pos = 0;
+  int            n;
+  fd_set         readset;
+  struct timeval time;
+  sigset_t       set, oldset;
 
-  int attempts = 64;
-  int v;
-  int rc = 1;
+  sigemptyset(&set);
+  sigaddset(&set, SIGALRM);
 
-  int ask; /* Number of asked characters.    */
-  int got; /* Number of characters obtained. */
+  /* Temporarily block SIGALRM while requesting and reading */
+  /* the cursor position response.                          */
+  /* """""""""""""""""""""""""""""""""""""""""""""""""""""" */
+  if (sigprocmask(SIG_BLOCK, &set, &oldset) == -1)
+    goto fail;
 
-  int buf_size = sizeof(buf);
+  /* Ask for the cursor position. */
+  /* """""""""""""""""""""""""""" */
+  if (write_safe(STDOUT_FILENO, "\x1b[6n", 4) != 4)
+    goto fail_restore;
 
-  *r = *c = 0;
-
-  /* Report cursor location. */
-  /* """"""""""""""""""""""" */
-  while ((v = write_safe(STDOUT_FILENO, "\x1b[6n", 4)) == -1 && attempts)
+  /* Safely read the answer in the buffer. */
+  /* """"""""""""""""""""""""""""""""""""" */
+  while (pos < sizeof(buf) - 1)
   {
-    if (errno == EINTR)
-      attempts--;
-    else
-    {
-      rc = 0;
-      goto read;
-    }
+    FD_ZERO(&readset);
+    FD_SET(STDIN_FILENO, &readset);
 
-    errno = 0;
+    time.tv_sec  = 0;
+    time.tv_usec = 100000;
+
+    n = select(STDIN_FILENO + 1, &readset, NULL, NULL, &time);
+
+    if (n != 1)
+      goto fail_restore;
+
+    if (read_safe(STDIN_FILENO, &buf[pos], 1) != 1)
+      goto fail_restore;
+
+    if (buf[pos++] == 'R')
+      break;
   }
 
-  if (v != 4)
-    rc = 0;
+  buf[pos] = '\0';
 
-read:
+  /* Parse the buffer to get the row and column positions of the cursor. */
+  /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+  if (sscanf(buf, "\033[%d;%dR", r, c) != 2)
+    goto fail_restore;
 
-  /* Read the response: ESC [ rows ; cols R. */
-  /* """"""""""""""""""""""""""""""""""""""" */
-  *(s = buf) = 0;
+  sigprocmask(SIG_SETMASK, &oldset, NULL);
 
-  do
-  {
-    ask = buf_size - 1 - (s - buf);
-    got = read_safe(STDIN_FILENO, s, ask);
+  return 1;
 
-    if (got < 0 && errno == EINTR)
-      got = 0;
-    else if (got == 0)
-      break;
+fail_restore:
+  sigprocmask(SIG_SETMASK, &oldset, NULL);
 
-    s += got;
-  } while (strchr(buf, 'R') == NULL);
+fail:
+  *r = 0;
+  *c = 0;
 
-  /* Parse it. */
-  /* """"""""" */
-  if (buf[0] != 0x1b || buf[1] != '[')
-    return 0;
-
-  if (sscanf(buf + 2, "%d;%d", r, c) != 2)
-    rc = 0;
-
-  return rc;
+  return 0;
 }
 
 /* ======================================================================== */
