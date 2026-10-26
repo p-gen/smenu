@@ -1565,6 +1565,12 @@ my_beep(toggle_t *toggles)
 void
 align_word(word_t *word, alignment_t alignment, size_t prefix, char sp)
 {
+  if (prefix >= strlen(word->str))
+  {
+    word->offset = 0;
+    return;
+  }
+
   switch (alignment)
   {
     char  *str;
@@ -2045,13 +2051,7 @@ find_next_matching_word(long *array, long nb, long value, long *index)
         left = middle + 1;
     }
 
-    if (left < nb - 1)
-    {
-      *index = left + 1;
-      return array[*index];
-    }
-
-    *index = nb - 1;
+    *index = left;
     return array[*index];
   }
 
@@ -2595,7 +2595,7 @@ parse_selectors(char        *str,
       break;
 
     default:
-      if (!isgraph(c))
+      if (!isgraph((unsigned char)c))
       {
         *unparsed = strprint(str);
         return;
@@ -2730,8 +2730,9 @@ parse_selectors(char        *str,
     /*      |   |                                                  */
     /* delim1   delim2                                             */
     /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-    if (ptr > str + start + 2 && delim1 == delim2 && isgraph(delim1)
-        && isgraph(delim2) && !isdigit(delim1) && !isdigit(delim2))
+    if (ptr > str + start + 2 && delim1 == delim2
+        && isgraph((unsigned char)delim1) && isgraph((unsigned char)delim2)
+        && !isdigit(delim1) && !isdigit(delim2))
     {
       /* Process the regex. */
       /* """""""""""""""""" */
@@ -2830,7 +2831,14 @@ parse_selectors(char        *str,
 
       if (l_open_range == 0 && r_open_range == 0)
       {
-        rc = sscanf(str + start, "%ld-%ld%n", &first, &second, &pos);
+        pos = -1;
+        rc  = sscanf(str + start, "%ld-%ld%n", &first, &second, &pos);
+
+        if (rc != 2 || pos < 0)
+        {
+          *unparsed = strprint(str + start);
+          return;
+        }
 
         if (type != ATTR)
         {
@@ -2856,7 +2864,14 @@ parse_selectors(char        *str,
       }
       else if (l_open_range == 1 && r_open_range == 0)
       {
-        rc = sscanf(str + start, "-%ld%n", &second, &pos);
+        pos = -1;
+        rc  = sscanf(str + start, "-%ld%n", &second, &pos);
+
+        if (rc != 1 || pos < 0)
+        {
+          *unparsed = strprint(str + start);
+          return;
+        }
 
         if (type != ATTR)
         {
@@ -2884,7 +2899,14 @@ parse_selectors(char        *str,
       }
       else if (l_open_range == 0 && r_open_range == 1)
       {
-        rc = sscanf(str + start, "%ld-%n", &first, &pos);
+        pos = -1;
+        rc  = sscanf(str + start, "%ld-%n", &first, &pos);
+
+        if (rc != 1 || pos < 0)
+        {
+          *unparsed = strprint(str + start);
+          return;
+        }
 
         if (type != ATTR)
         {
@@ -2944,7 +2966,14 @@ parse_selectors(char        *str,
       int rc;
       int pos;
 
-      rc = sscanf(str + start, "%ld%n", &first, &pos);
+      pos = -1;
+      rc  = sscanf(str + start, "%ld%n", &first, &pos);
+
+      if (rc != 1 || pos < 0)
+      {
+        *unparsed = strprint(str + start);
+        return;
+      }
 
       if (type != ATTR)
       {
@@ -3135,7 +3164,7 @@ parse_al_selectors(char        *str,
       break;
 
     default:
-      if (!isgraph(c))
+      if (!isgraph((unsigned char)c))
         return;
 
       start = 0;
@@ -3281,7 +3310,7 @@ parse_sed_like_string(sed_t *sed)
 
   /* Space like separators are not permitted. */
   /* """""""""""""""""""""""""""""""""""""""" */
-  if (isspace(sep))
+  if (isspace((unsigned char)sep))
     goto err;
 
   /* Get the extended regular expression. */
@@ -4029,7 +4058,7 @@ expand(char       *src,
           break;
 
         default:
-          if (my_isprint(c))
+          if (my_isprint((unsigned char)c))
           {
             if (c != ' ')
               *all_spaces = 0;
@@ -6493,7 +6522,8 @@ set_new_first_column(win_t *win, term_t *term)
   {
     pos = current;
 
-    while (win->first_column > 0 && word_a[current].start < win->first_column)
+    while (pos >= 0 && win->first_column > 0
+           && word_a[current].start < win->first_column)
     {
       win->first_column = word_a[pos].start;
       pos--;
@@ -8161,7 +8191,7 @@ invalid_char_action(char  *ctx_name,
 
   char ic = *values[0];
 
-  if (isprint(ic))
+  if (my_isprint((unsigned char)ic))
     misc->invalid_char_substitute = ic;
   else
     misc->invalid_char_substitute = '.';

@@ -740,7 +740,7 @@ utf8_strtolower(char *dst, char *src)
     if (c >= 0x80)
       *dst = c;
     else
-      *dst = tolower(c);
+      *dst = tolower((unsigned char)c);
 
     src++;
     dst++;
