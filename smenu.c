@@ -9,6 +9,11 @@
 #define _XOPEN_SOURCE 700
 
 #include "config.h"
+
+#ifndef HAVE_TERMINFO
+#error "smenu requires terminfo support."
+#endif
+
 #include <unistd.h>
 #include <stdio.h>
 #include <stdlib.h>
