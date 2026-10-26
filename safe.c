@@ -10,7 +10,7 @@
 
 #include <errno.h>   /* for errno, EINTR, EIO. */
 #include <fcntl.h>   /* for open.              */
-#include <limits.h>  /* for SSIZE_MAX.         */
+#include <stdint.h>  /* for SIZE_MAX.          */
 #include <string.h>  /* for strlen.            */
 #include <termios.h> /* for tcsetattr.         */
 #include <unistd.h>  /* for read, write.       */
@@ -110,8 +110,8 @@ puts_fd_safe(const char *s, int fd)
   while (remaining != 0)
   {
     count = remaining;
-    if (count > (size_t)SSIZE_MAX)
-      count = (size_t)SSIZE_MAX;
+    if (count > SIZE_MAX)
+      count = SIZE_MAX;
 
     res = write_safe(fd, s, count);
     if (res == -1)
