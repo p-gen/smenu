@@ -23,6 +23,7 @@
 #define TPARM1(p) tparm(p, 0, 0, 0, 0, 0, 0, 0, 0, 0)
 #define TPARM2(p, q) tparm(p, q, 0, 0, 0, 0, 0, 0, 0, 0)
 #define TPARM3(p, q, r) tparm(p, q, r, 0, 0, 0, 0, 0, 0, 0)
+#define TPARM4(p, q, r, s) tparm(p, q, r, s, 0, 0, 0, 0, 0, 0)
 
 /* Used for timers management. */
 /* """"""""""""""""""""""""""" */
@@ -228,6 +229,7 @@ struct toggle_s
                              | row alignment else 0.                        */
   char rows_first;          /* 1 if row alignment has priority over         *
                              | column alignment else 0.                     */
+  char truecolor;           /* 1 if truecolor is forced on command line.    */
 };
 
 /* Structure to store the default or imposed smenu limits. */
@@ -321,6 +323,8 @@ struct term_s
   char has_setb;              /* has set_background terminfo capability. */
   char has_setaf;             /* idem for set_a_foreground (ANSI).       */
   char has_setab;             /* idem for set_a_background (ANSI).       */
+  char has_setrgbf;           /* has setrgbf (three-channel RGB).        */
+  char has_setrgbb;           /* has setrgbb (three-channel RGB).        */
   char has_hpa;               /* has column_address terminfo capability. */
   char has_bold;              /* has bold mode.                          */
   char has_dim;               /* has dim mode.                           */
@@ -570,6 +574,7 @@ init_help(win_t               *win,
 void
 disp_help(win_t               *win,
           term_t              *term,
+          toggle_t            *trogles,
           help_attr_entry_t ***help_da,
           int                  first_help_line);
 
@@ -646,10 +651,7 @@ int
 color_transcode(int color);
 
 void
-set_foreground_color(term_t *term, int color);
-
-void
-set_background_color(term_t *term, int color);
+set_color(term_t *term, toggle_t *toggles, int color, char type);
 
 void
 set_win_start_end(win_t *win, long current, long last);
@@ -682,6 +684,7 @@ disp_message(ll_t       *message_lines_list,
              long        width,
              long        max_len,
              term_t     *term,
+             toggle_t   *toggles,
              win_t      *win,
              langinfo_t *langinfo);
 
@@ -707,6 +710,7 @@ void
 disp_matching_word_cursor(long        pos,
                           win_t      *win,
                           term_t     *term,
+                          toggle_t   *toggles,
                           langinfo_t *langinfo,
                           int         err);
 
@@ -714,6 +718,7 @@ void
 disp_matching_word(long        pos,
                    win_t      *win,
                    term_t     *term,
+                   toggle_t   *toggles,
                    langinfo_t *langinfo,
                    int         is_cursor,
                    int         err);
@@ -760,13 +765,14 @@ read_word(FILE          *input,
           misc_t        *misc);
 
 void
-left_margin_putp(char *s, term_t *term, win_t *win);
+left_margin_putp(char *s, term_t *term, toggle_t *toggles, win_t *win);
 
 void
 right_margin_putp(char       *s1,
                   char       *s2,
                   langinfo_t *langinfo,
                   term_t     *term,
+                  toggle_t   *toggles,
                   win_t      *win,
                   long        line,
                   long        offset);
@@ -819,7 +825,7 @@ int
 parse_attr(char *str, attrib_t *attr, int max_color);
 
 void
-apply_attr(term_t *term, attrib_t attr);
+apply_attr(term_t *term, toggle_t *toggles, attrib_t attr);
 
 long
 get_line_last_word(long line, long last_line);

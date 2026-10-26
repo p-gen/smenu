@@ -116,6 +116,8 @@ common_help(void)
   printf("  displays a usage text in case of fatal error.\n");
   printf("-no_message_on_error\n");
   printf("  prevents the display of a message in case of a fatal error.\n");
+  printf("-tc|-truecolor\n");
+  printf("  Specifies that the terminal supports \"truecolor\" mode.\n");
 }
 
 void

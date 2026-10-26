@@ -614,6 +614,7 @@ init_help(win_t               *win,
 void
 disp_help(win_t               *win,
           term_t              *term,
+          toggle_t            *toggles,
           help_attr_entry_t ***help_lines_da,
           int                  fst_disp_help_line)
 {
@@ -664,7 +665,7 @@ disp_help(win_t               *win,
       len += entry->len;
 
       (void)tputs(TPARM1(exit_attribute_mode), 1, outch);
-      apply_attr(term, *(entry->attr));
+      apply_attr(term, toggles, *(entry->attr));
 
       fputs(entry->str, stdout);
       (void)tputs(TPARM1(exit_attribute_mode), 1, outch);
@@ -815,6 +816,47 @@ decode_attr_toggles(char *s, attrib_t *attr)
   return rc;
 }
 
+/* Bit 24 distinguishes #RRGGBB from a palette index; -1 stays unchanged. */
+/* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+#define TRUECOLOR_FLAG 0x01000000
+
+/* ======================================================== */
+/* Decode a color in an explicitly truecolor specification. */
+/* ======================================================== */
+static int
+parse_rgb_color(char *s, int colors, int *color)
+{
+  char         *end;
+  unsigned long value;
+  int           base   = *s == '#' ? 16 : 10;
+  char         *digits = s + (base == 16);
+  char         *p;
+
+  *color = -1;
+
+  if (*s == '\0')
+    return 1;
+
+  if (base == 16 && strlen(digits) != 6)
+    return 0;
+
+  for (p = digits; *p; p++)
+    if (base == 16 ? !isxdigit((unsigned char)*p) : !isdigit((unsigned char)*p))
+      return 0;
+
+  errno = 0;
+  value = strtoul(digits, &end, base);
+
+  if (errno || *end || value > (base == 16 ? 0xffffffUL : INT_MAX))
+    return 0;
+
+  if (colors != 0)
+    *color = base == 16 ? TRUECOLOR_FLAG | (int)value
+                        : (value < (unsigned long)colors ? (int)value : -1);
+
+  return 1;
+}
+
 /* =============================================================*/
 /* Parse attributes in str in the form [fg][/bg][[,.+]toggles]  */
 /* where:                                                       */
@@ -828,51 +870,114 @@ parse_attr(char *str, attrib_t *attr, int colors)
 {
   int   n;
   char *pos;
-  char  s1[12] = { (char)0 }; /* For the colors.     */
-  char  s2[9]  = { (char)0 }; /* For the attributes. */
-  int   d1 = -1, d2 = -1;     /* colors. */
-  int   rc = 1;
-  char  c  = '\0';
+  char  s1[12] = { (char)0 }; /* For colors                                *
+                               | 4 type+colon,2x3 for colors, 1 for slash. */
 
-  /* 11: 4 type+colon,2x3 for colors, 1 for slash.     */
-  /* 8 : max size for the concatenation of attributes. */
-  /* ''''''''''''''''''''''''''''''''''''''''''''''''' */
-  n = sscanf(str, "%11[^,.+]%*[,.+]%8s%c", s1, s2, &c);
+  char s2[9] = { (char)0 }; /* For attributes.                       *
+                             | max size if using all the attributes. */
 
-  if (n <= 0 || c != '\0')
-    goto error;
+  int d1 = -1; /* Foreground. */
+  int d2 = -1; /* Background. */
 
-  if ((pos = strchr(s1, '/')))
+  int  rc = 1;
+  char c;
+
+  if (strchr(str, '#') != NULL)
   {
-    if (pos == s1) /* s1 starts with a / */
+    char   rgb[32];
+    char  *toggles = strpbrk(str, ",.+");
+    size_t len     = toggles ? (size_t)(toggles - str) : strlen(str);
+
+    /* Only explicit RGB values take this path. Legacy INI parsing below */
+    /* is untouched, including its scan widths and toggle handling.      */
+    /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+    if (len == 0 || len >= sizeof(rgb))
+      goto error;
+
+    memcpy(rgb, str, len);
+    rgb[len] = '\0';
+    pos      = strchr(rgb, '/');
+
+    if (pos != NULL)
     {
-      d1 = -1;
-      if (sscanf(s1 + 1, "%d", &d2) == 0)
+      *pos++ = '\0';
+
+      if (*rgb == '\0')
+        d1 = -1;
+      else if (!parse_rgb_color(rgb, colors, &d1))
+        goto error;
+
+      if (*pos != '\0')
       {
+        if (!parse_rgb_color(pos, colors, &d2))
+          goto error;
+      }
+      else
         d2 = -1;
+    }
+    else if (!parse_rgb_color(rgb, colors, &d1))
+      goto error;
+
+    /* Reuse the legacy toggle scan, including repeated separators. */
+    /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+    if (toggles != NULL)
+    {
+      c = '\0';
+      n = sscanf(toggles, "%*[,.+]%8s%c", s2, &c);
+
+      if (c != '\0')
+        goto error;
+
+      if (n == 1)
+        rc = decode_attr_toggles(s2, attr);
+    }
+
+    attr->fg = d1;
+    attr->bg = d2;
+
+    return rc;
+  }
+  else
+  {
+    c = '\0';
+    n = sscanf(str, "%11[^,.+]%*[,.+]%8s%c", s1, s2, &c);
+
+    if (n <= 0 || c != '\0')
+      goto error;
+
+    if ((pos = strchr(s1, '/')))
+    {
+      if (pos == s1) /* s1 starts with a / */
+      {
+        d1 = -1;
+        if (sscanf(s1 + 1, "%d", &d2) == 0)
+        {
+          d2 = -1;
+          if (n == 1)
+            goto error;
+        }
+        else if (d2 < 0)
+          goto error;
+      }
+      else if (sscanf(s1, "%d/%d", &d1, &d2) < 2)
+      {
+        d1 = d2 = -1;
         if (n == 1)
           goto error;
       }
-      else if (d2 < 0)
+      else if (d1 < 0 || d2 < 0)
         goto error;
     }
-    else if (sscanf(s1, "%d/%d", &d1, &d2) < 2)
+    else /* no / in the first string. */
     {
-      d1 = d2 = -1;
-      if (n == 1)
-        goto error;
-    }
-    else if (d1 < 0 || d2 < 0)
-      goto error;
-  }
-  else /* no / in the first string. */
-  {
-    d2 = -1;
-    if (sscanf(s1, "%d", &d1) == 0)
-    {
-      d1 = -1;
-      if (n == 2 || decode_attr_toggles(s1, attr) == 0)
-        goto error;
+      d2 = -1;
+
+      if (sscanf(s1, "%d", &d1) == 0)
+      {
+        d1 = -1;
+        if (n == 2 || decode_attr_toggles(s1, attr) == 0)
+          goto error;
+      }
     }
   }
 
@@ -900,13 +1005,13 @@ error:
 /* Set the terminal attributes according to attr. */
 /* ============================================== */
 void
-apply_attr(term_t *term, attrib_t attr)
+apply_attr(term_t *term, toggle_t *toggles, attrib_t attr)
 {
   if (attr.fg >= 0)
-    set_foreground_color(term, attr.fg);
+    set_color(term, toggles, attr.fg, 'f');
 
   if (attr.bg >= 0)
-    set_background_color(term, attr.bg);
+    set_color(term, toggles, attr.bg, 'b');
 
   if (attr.bold > (signed char)0)
     (void)tputs(TPARM1(enter_bold_mode), 1, outch);
@@ -4192,59 +4297,281 @@ color_transcode(int color)
   }
 }
 
-/* ========================================================== */
-/* Set a foreground color according to terminal capabilities. */
-/* ========================================================== */
-void
-set_foreground_color(term_t *term, int color)
+/* ======================================================================== */
+/* Approximate RGB using conventional ANSI/xterm palette values.            */
+/* System colors can be customized; these are defaults, not queried colors. */
+/* Other palette sizes conservatively use at most the first 16 entries.     */
+/* ======================================================================== */
+static int
+rgb_to_palette(int rgb, int colors)
 {
-  if (term->color_method == CLASSIC)
+  static const unsigned char base[16][3] = {
+    { 0, 0, 0 },       { 128, 0, 0 },   { 0, 128, 0 },   { 128, 128, 0 },
+    { 0, 0, 128 },     { 128, 0, 128 }, { 0, 128, 128 }, { 192, 192, 192 },
+    { 128, 128, 128 }, { 255, 0, 0 },   { 0, 255, 0 },   { 255, 255, 0 },
+    { 0, 0, 255 },     { 255, 0, 255 }, { 0, 255, 255 }, { 255, 255, 255 }
+  };
+  static const int levels[6] = { 0, 95, 135, 175, 215, 255 };
+
+  int r = (rgb >> 16) & 255, g = (rgb >> 8) & 255, b = rgb & 255;
+
+  int  limit         = colors == 256 ? 256 : (colors < 16 ? colors : 16);
+  int  best          = -1, i;
+  long best_distance = LONG_MAX;
+
+  for (i = 0; i < limit; i++)
   {
-    if (term->has_setf)
-      (void)tputs(TPARM2(set_foreground, color), 1, outch);
-    if (term->has_setaf)
-      (void)tputs(TPARM2(set_a_foreground, color_transcode(color)), 1, outch);
+    int  pr, pg, pb, n;
+    long dr, dg, db, distance;
+
+    if (i < 16)
+    {
+      pr = base[i][0];
+      pg = base[i][1];
+      pb = base[i][2];
+    }
+    else if (i < 232)
+    {
+      n  = i - 16;
+      pr = levels[n / 36];
+      pg = levels[(n / 6) % 6];
+      pb = levels[n % 6];
+    }
+    else
+      pr = pg = pb = 8 + 10 * (i - 232);
+
+    /* Use long so squared distances also fit on 16-bit-int targets. */
+    /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+    dr = r - pr;
+    dg = g - pg;
+    db = b - pb;
+
+    distance = dr * dr + dg * dg + db * db;
+
+    if (distance < best_distance)
+    {
+      best_distance = distance;
+      best          = i;
+    }
   }
 
-  else if (term->color_method == ANSI)
-  {
-    if (term->has_setaf)
-      (void)tputs(TPARM2(set_a_foreground, color), 1, outch);
-    if (term->has_setf)
-      (void)tputs(TPARM2(set_foreground, color_transcode(color)), 1, outch);
-  }
+  return best;
 }
 
-/* ========================================================== */
-/* Set a background color according to terminal capabilities. */
-/* ========================================================== */
-void
-set_background_color(term_t *term, int color)
+/* =============================================================== */
+/* Expand a terminfo RGB capability using separate color channels. */
+/* =============================================================== */
+static int
+emit_terminfo_rgb(term_t *term, int rgb, char type)
 {
-  if (term->color_method == CLASSIC)
+  char *cap;
+  char *sequence;
+
+  if (!(type == 'b' ? term->has_setrgbb : term->has_setrgbf))
+    return 0;
+
+  cap = tigetstr(type == 'b' ? "setrgbb" : "setrgbf");
+
+  if (cap == NULL || cap == (char *)-1 || *cap == '\0')
+    return 0;
+
+  sequence = TPARM4(cap,
+                    (long)((rgb >> 16) & 255),
+                    (long)((rgb >> 8) & 255),
+                    (long)(rgb & 255));
+
+  return sequence != NULL && *sequence != '\0'
+         && tputs(sequence, 1, outch) != -1;
+}
+
+/* =================================================================== */
+/* Check whether "truecolor" mode is enforced by the -tc or -truecolor */
+/* option; if not, check the COLORTERM environment variable to see if  */
+/* "truecolor" mode is specified there.                                */
+/* =================================================================== */
+static int
+colorterm_has_truecolor(toggle_t *toggles)
+{
+  const char *value;
+
+  if (toggles->truecolor)
+    return 1;
+
+  value = getenv("COLORTERM");
+
+  return value != NULL
+         && (strcmp(value, "truecolor") == 0 || strcmp(value, "24bit") == 0);
+}
+
+/* ================================================== */
+/* Try to generate the right truecolor directive.     */
+/* Attempt terminfo first, then the conventional ANSI */
+/* truecolor sequence.                                */
+/* ================================================== */
+static int
+emit_truecolor(term_t *term, toggle_t *toggles, int rgb, char type)
+{
+  if (emit_terminfo_rgb(term, rgb, type))
+    return 1;
+
+  if (!colorterm_has_truecolor(toggles))
+    return 0;
+
+  (void)printf("\033[%d;2;%d;%d;%dm",
+               (type == 'b') ? 48 : 38,
+               (rgb >> 16) & 255,
+               (rgb >> 8) & 255,
+               rgb & 255);
+
+  return 1;
+}
+
+/* ======================================================= */
+/* Return the usable indexed palette size for setaf/setab. */
+/* ======================================================= */
+static int
+palette_color_count(term_t *term)
+{
+  char *format = tigetstr("RGB");
+  int   reserved;
+
+  if (term->colors <= 256 && tigetflag("RGB") != 1 && tigetnum("RGB") < 0
+      && (format == NULL || format == (char *)-1))
+    return term->colors;
+
+  reserved = tigetnum("CO");
+
+  return reserved > 0 && reserved <= 16 && reserved <= term->colors ? reserved
+                                                                    : 0;
+}
+
+/* ======================================================= */
+/* Return the usable indexed palette size for setaf/setab. */
+/* ======================================================= */
+static int
+emit_palette_color(char *cap, int color)
+{
+  char *sequence;
+
+  if (cap == NULL || cap == (char *)-1 || *cap == '\0')
+    return 0;
+
+  sequence = TPARM2(cap, (long)color);
+
+  return sequence != NULL && *sequence != '\0'
+         && tputs(sequence, 1, outch) != -1;
+}
+
+/* ====================================================================== */
+/* Set a foreground or background color.                                  */
+/*                                                                        */
+/* background is zero for the foreground and non-zero for the background. */
+/* color is either a palette index or a TRUECOLOR_FLAG-tagged RGB value.  */
+/*                                                                        */
+/* The preferred output order is:                                         */
+/*   1. truecolor through terminfo or COLORTERM;                          */
+/*   2. the configured palette method (CLASSIC or ANSI);                  */
+/*   3. the other usable palette method.                                  */
+/*                                                                        */
+/* RGB values are approximated only when truecolor output is unavailable. */
+/* ====================================================================== */
+void
+set_color(term_t *term, toggle_t *toggles, int color, char type)
+{
+  /* Select the foreground or background capabilities once. */
+  /* """""""""""""""""""""""""""""""""""""""""""""""""""""" */
+  char *ansi_cap          = (type == 'b') ? set_a_background : set_a_foreground;
+  char *classic_cap       = (type == 'b') ? set_background : set_foreground;
+  int   ansi_available    = (type == 'b') ? term->has_setab : term->has_setaf;
+  int   classic_available = (type == 'b') ? term->has_setb : term->has_setf;
+
+  int ansi_count;
+  int fallback_count;
+  int ansi_color;
+  int classic_color;
+
+  /* A zero color count also covers NO_COLOR and monochrome terminals. */
+  /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+  if (term->colors <= 0 || color < 0)
+    return;
+
+  /* The cached flags are necessary but the terminfo strings must also be */
+  /* usable.  tigetstr() represents an absent capability by NULL or -1.   */
+  /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+  ansi_available = ansi_available && ansi_cap != NULL && ansi_cap != (char *)-1
+                   && *ansi_cap != '\0';
+
+  classic_available = classic_available && classic_cap != NULL
+                      && classic_cap != (char *)-1 && *classic_cap != '\0';
+
+  /* setaf/setab may expose more than the eight legacy setf/setb colors. */
+  /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+  ansi_count = ansi_available ? palette_color_count(term) : 0;
+
+  if (color >= TRUECOLOR_FLAG && color <= (TRUECOLOR_FLAG | 0xffffff))
   {
-    if (term->has_setb)
-      (void)tputs(TPARM2(set_background, color), 1, outch);
-    if (term->has_setab)
-      (void)tputs(TPARM2(set_a_background, color_transcode(color)), 1, outch);
+    int rgb = color & 0xffffff;
+
+    if (emit_truecolor(term, toggles, rgb, type))
+      return;
+
+    /* Otherwise choose the largest palette that can actually be emitted. */
+    /* A legacy capability contributes at most the base eight colors.     */
+    /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+    fallback_count = ansi_count;
+
+    if (classic_available && fallback_count < 8)
+      fallback_count = term->colors < 8 ? term->colors : 8;
+
+    color = rgb_to_palette(rgb, fallback_count);
+    if (color < 0)
+      return;
+
+    ansi_color    = color;
+    classic_color = color_transcode(color);
+  }
+  else
+  {
+    /* Reject indexes outside the palette advertised by terminfo. */
+    /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+    if (color >= term->colors)
+      return;
+
+    /* User-supplied indexes follow the configured color method.          */
+    /* Prepare both representations so the alternate capability remains a */
+    /* fallback.                                                          */
+    /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+    ansi_color = term->color_method == CLASSIC ? color_transcode(color) : color;
+
+    classic_color = term->color_method == CLASSIC ? color
+                                                  : color_transcode(color);
   }
 
-  else if (term->color_method == ANSI)
-  {
-    if (term->has_setab)
-      (void)tputs(TPARM2(set_a_background, color), 1, outch);
-    if (term->has_setb)
-      (void)tputs(TPARM2(set_background, color_transcode(color)), 1, outch);
-  }
+  /* Honour CLASSIC preference first when its base-eight index is valid. */
+  /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+  if (term->color_method == CLASSIC && classic_available && classic_color < 8
+      && emit_palette_color(classic_cap, classic_color))
+    return;
+
+  /* setaf/setab handles the usable indexed palette, including 256 colors. */
+  /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+  if (ansi_available && ansi_color < ansi_count
+      && emit_palette_color(ansi_cap, ansi_color))
+    return;
+
+  /* Last resort: use setf/setb if the color fits their base palette. */
+  /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+  if (classic_available && classic_color < 8)
+    (void)emit_palette_color(classic_cap, classic_color);
 }
 
 /* ======================================================= */
 /* Put a scrolling symbol at the first column of the line. */
 /* ======================================================= */
 void
-left_margin_putp(char *s, term_t *term, win_t *win)
+left_margin_putp(char *s, term_t *term, toggle_t *toggles, win_t *win)
 {
-  apply_attr(term, win->shift_attr);
+  apply_attr(term, toggles, win->shift_attr);
 
   /* We won't print this symbol when not in column mode. */
   /* """"""""""""""""""""""""""""""""""""""""""""""""""" */
@@ -4262,11 +4589,12 @@ right_margin_putp(char       *s1,
                   char       *s2,
                   langinfo_t *langinfo,
                   term_t     *term,
+                  toggle_t   *toggles,
                   win_t      *win,
                   long        line,
                   long        offset)
 {
-  apply_attr(term, win->bar_attr);
+  apply_attr(term, toggles, win->bar_attr);
 
   if (term->has_hpa)
     (void)tputs(TPARM2(column_address, offset + win->max_width + 1), 1, outch);
@@ -4308,11 +4636,16 @@ right_margin_putp(char       *s1,
 /* mark is the offset of the cursor in the bar.              */
 /* ==========================================================*/
 void
-disp_hbar(win_t *win, term_t *term, langinfo_t *langinfo, int pos1, int pos2)
+disp_hbar(win_t      *win,
+          term_t     *term,
+          toggle_t   *toggles,
+          langinfo_t *langinfo,
+          int         pos1,
+          int         pos2)
 {
   int i;
 
-  apply_attr(term, win->bar_attr);
+  apply_attr(term, toggles, win->bar_attr);
 
   (void)tputs(TPARM1(clr_eol), 1, outch);
 
@@ -4738,6 +5071,7 @@ void
 disp_matching_word_cursor(long        pos,
                           win_t      *win,
                           term_t     *term,
+                          toggle_t   *toggles,
                           langinfo_t *langinfo,
                           int         err)
 {
@@ -4754,16 +5088,16 @@ disp_matching_word_cursor(long        pos,
   if (word_a[pos].tag_id > 0)
   {
     if (marked == -1)
-      apply_attr(term, win->cursor_on_tag_attr);
+      apply_attr(term, toggles, win->cursor_on_tag_attr);
     else
-      apply_attr(term, win->cursor_on_tag_marked_attr);
+      apply_attr(term, toggles, win->cursor_on_tag_marked_attr);
   }
   else
   {
     if (marked == -1)
-      apply_attr(term, win->cursor_attr);
+      apply_attr(term, toggles, win->cursor_attr);
     else
-      apply_attr(term, win->cursor_marked_attr);
+      apply_attr(term, toggles, win->cursor_marked_attr);
   }
 
   for (i = 0; i < word_a[pos].mb - daccess.flength; i++)
@@ -4778,23 +5112,23 @@ disp_matching_word_cursor(long        pos,
         /* """"""""""""""""""""""""""""""""" */
         (void)tputs(TPARM1(exit_attribute_mode), 1, outch);
         if (err)
-          apply_attr(term, win->match_err_text_attr);
+          apply_attr(term, toggles, win->match_err_text_attr);
         else
-          apply_attr(term, win->match_text_attr);
+          apply_attr(term, toggles, win->match_text_attr);
 
         if (word_a[pos].tag_id > 0)
         {
           if (marked == -1)
-            apply_attr(term, win->cursor_on_tag_attr);
+            apply_attr(term, toggles, win->cursor_on_tag_attr);
           else
-            apply_attr(term, win->cursor_on_tag_marked_attr);
+            apply_attr(term, toggles, win->cursor_on_tag_marked_attr);
         }
         else
         {
           if (marked == -1)
-            apply_attr(term, win->cursor_attr);
+            apply_attr(term, toggles, win->cursor_attr);
           else
-            apply_attr(term, win->cursor_marked_attr);
+            apply_attr(term, toggles, win->cursor_marked_attr);
         }
       }
     }
@@ -4810,16 +5144,16 @@ disp_matching_word_cursor(long        pos,
         if (word_a[pos].tag_id > 0)
         {
           if (marked == -1)
-            apply_attr(term, win->cursor_on_tag_attr);
+            apply_attr(term, toggles, win->cursor_on_tag_attr);
           else
-            apply_attr(term, win->cursor_on_tag_marked_attr);
+            apply_attr(term, toggles, win->cursor_on_tag_marked_attr);
         }
         else
         {
           if (marked == -1)
-            apply_attr(term, win->cursor_attr);
+            apply_attr(term, toggles, win->cursor_attr);
           else
-            apply_attr(term, win->cursor_marked_attr);
+            apply_attr(term, toggles, win->cursor_marked_attr);
         }
       }
     }
@@ -4848,6 +5182,7 @@ void
 disp_matching_word(long        pos,
                    win_t      *win,
                    term_t     *term,
+                   toggle_t   *toggles,
                    langinfo_t *langinfo,
                    int         is_current,
                    int         err)
@@ -4867,25 +5202,25 @@ disp_matching_word(long        pos,
   if (!is_current)
   {
     if (err)
-      apply_attr(term, win->match_err_field_attr);
+      apply_attr(term, toggles, win->match_err_field_attr);
     else
     {
       if (level > 0)
-        apply_attr(term, win->special_attr[level - 1]);
+        apply_attr(term, toggles, win->special_attr[level - 1]);
       else
-        apply_attr(term, win->match_field_attr);
+        apply_attr(term, toggles, win->match_field_attr);
     }
   }
   else
   {
     if (err)
-      apply_attr(term, win->search_err_field_attr);
+      apply_attr(term, toggles, win->search_err_field_attr);
     else
-      apply_attr(term, win->search_field_attr);
+      apply_attr(term, toggles, win->search_field_attr);
   }
 
   if (word_a[pos].tag_id > 0)
-    apply_attr(term, win->tag_attr);
+    apply_attr(term, toggles, win->tag_attr);
 
   for (i = 0; i < word_a[pos].mb - daccess.flength; i++)
   {
@@ -4901,15 +5236,15 @@ disp_matching_word(long        pos,
         if (!is_current)
         {
           if (err)
-            apply_attr(term, win->match_err_text_attr);
+            apply_attr(term, toggles, win->match_err_text_attr);
           else
-            apply_attr(term, win->match_text_attr);
+            apply_attr(term, toggles, win->match_text_attr);
         }
         else
-          apply_attr(term, win->search_text_attr);
+          apply_attr(term, toggles, win->search_text_attr);
 
         if (word_a[pos].tag_id > 0)
-          apply_attr(term, win->tag_attr);
+          apply_attr(term, toggles, win->tag_attr);
       }
     }
     else
@@ -4924,25 +5259,25 @@ disp_matching_word(long        pos,
         if (!is_current)
         {
           if (err)
-            apply_attr(term, win->match_err_field_attr);
+            apply_attr(term, toggles, win->match_err_field_attr);
           else
           {
             if (level > 0)
-              apply_attr(term, win->special_attr[level - 1]);
+              apply_attr(term, toggles, win->special_attr[level - 1]);
             else
-              apply_attr(term, win->match_field_attr);
+              apply_attr(term, toggles, win->match_field_attr);
           }
         }
         else
         {
           if (err)
-            apply_attr(term, win->search_err_field_attr);
+            apply_attr(term, toggles, win->search_err_field_attr);
           else
-            apply_attr(term, win->search_field_attr);
+            apply_attr(term, toggles, win->search_field_attr);
         }
 
         if (word_a[pos].tag_id > 0)
-          apply_attr(term, win->tag_attr);
+          apply_attr(term, toggles, win->tag_attr);
       }
     }
 
@@ -5036,7 +5371,7 @@ disp_word(long           pos,
       {
         /* Set the direct access number attribute. */
         /* """"""""""""""""""""""""""""""""""""""" */
-        apply_attr(term, win->daccess_attr);
+        apply_attr(term, toggles, win->daccess_attr);
 
         /* And print it. */
         /* """"""""""""" */
@@ -5057,14 +5392,14 @@ disp_word(long           pos,
       /* Set the search cursor attribute. */
       /* """""""""""""""""""""""""""""""" */
       if (search_data->err)
-        apply_attr(term, win->search_err_field_attr);
+        apply_attr(term, toggles, win->search_err_field_attr);
       else
-        apply_attr(term, win->search_field_attr);
+        apply_attr(term, toggles, win->search_field_attr);
 
       /* The tab attribute must complete the attributes already set. */
       /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
       if (word_a[pos].tag_id > 0)
-        apply_attr(term, win->tag_attr);
+        apply_attr(term, toggles, win->tag_attr);
 
       /* Print the word part. */
       /* """""""""""""""""""" */
@@ -5084,11 +5419,17 @@ disp_word(long           pos,
         /* Set the search cursor attribute. */
         /* """""""""""""""""""""""""""""""" */
         if (search_data->err)
-          apply_attr(term, win->search_err_field_attr);
+          apply_attr(term, toggles, win->search_err_field_attr);
         else
-          apply_attr(term, win->search_field_attr);
+          apply_attr(term, toggles, win->search_field_attr);
 
-        disp_matching_word(pos, win, term, langinfo, 1, search_data->err);
+        disp_matching_word(pos,
+                           win,
+                           term,
+                           toggles,
+                           langinfo,
+                           1,
+                           search_data->err);
       }
     }
     else
@@ -5109,7 +5450,7 @@ disp_word(long           pos,
         }
         else
         {
-          apply_attr(term, win->daccess_attr);
+          apply_attr(term, toggles, win->daccess_attr);
 
           /* Print the non significant part of the word. */
           /* """"""""""""""""""""""""""""""""""""""""""" */
@@ -5135,31 +5476,36 @@ disp_word(long           pos,
       }
 
       if (word_a[pos].is_matching)
-        disp_matching_word_cursor(pos, win, term, langinfo, search_data->err);
+        disp_matching_word_cursor(pos,
+                                  win,
+                                  term,
+                                  toggles,
+                                  langinfo,
+                                  search_data->err);
       else
       {
         if (word_a[pos].tag_id > 0)
         {
           if (marked == -1)
-            apply_attr(term, win->cursor_on_tag_attr);
+            apply_attr(term, toggles, win->cursor_on_tag_attr);
           else
           {
             if (pos == marked)
-              apply_attr(term, win->cursor_on_marked_attr);
+              apply_attr(term, toggles, win->cursor_on_marked_attr);
 
-            apply_attr(term, win->cursor_on_tag_marked_attr);
+            apply_attr(term, toggles, win->cursor_on_tag_marked_attr);
           }
         }
         else
         {
           if (marked == -1)
-            apply_attr(term, win->cursor_attr);
+            apply_attr(term, toggles, win->cursor_attr);
           else
           {
             if (pos == marked)
-              apply_attr(term, win->cursor_on_marked_attr);
+              apply_attr(term, toggles, win->cursor_on_marked_attr);
 
-            apply_attr(term, win->cursor_marked_attr);
+            apply_attr(term, toggles, win->cursor_marked_attr);
           }
         }
 
@@ -5187,7 +5533,7 @@ disp_word(long           pos,
     /* """""""""""""""""""""""""""""""""""""""""""""" */
     if (word_a[pos].is_numbered)
     {
-      apply_attr(term, win->daccess_attr);
+      apply_attr(term, toggles, win->daccess_attr);
 
       fputs(daccess.left, stdout);
       printf("%.*s", daccess.length, tmp_full_word + 1);
@@ -5210,29 +5556,35 @@ disp_word(long           pos,
     }
 
     if (!word_a[pos].is_selectable)
-      apply_attr(term, win->exclude_attr);
+      apply_attr(term, toggles, win->exclude_attr);
     else if (word_a[pos].special_level > 0)
     {
       unsigned char level = word_a[pos].special_level - 1;
 
-      apply_attr(term, win->special_attr[level]);
+      apply_attr(term, toggles, win->special_attr[level]);
     }
     else if (toggles->taggable && pos == marked)
-      apply_attr(term, win->marked_attr);
+      apply_attr(term, toggles, win->marked_attr);
     else
     {
       if (word_a[pos].iattr != NULL) /* is a specific attribute set? */
-        apply_attr(term, *(word_a[pos].iattr));
+        apply_attr(term, toggles, *(word_a[pos].iattr));
       else
-        apply_attr(term, win->include_attr);
+        apply_attr(term, toggles, win->include_attr);
     }
 
     if (word_a[pos].is_matching)
-      disp_matching_word(pos, win, term, langinfo, 0, search_data->err);
+      disp_matching_word(pos,
+                         win,
+                         term,
+                         toggles,
+                         langinfo,
+                         0,
+                         search_data->err);
     else
     {
       if (word_a[pos].tag_id > 0)
-        apply_attr(term, win->tag_attr);
+        apply_attr(term, toggles, win->tag_attr);
 
       if ((daccess.length > 0 && daccess.padding == 'a')
           || word_a[pos].is_numbered)
@@ -5250,11 +5602,15 @@ disp_word(long           pos,
 /* Called by the disp_message function. */
 /* ==================================== */
 void
-disp_message_line(win_t *win, term_t *term, char *string, attrib_ex_t *attr_a)
+disp_message_line(win_t       *win,
+                  term_t      *term,
+                  toggle_t    *toggles,
+                  char        *string,
+                  attrib_ex_t *attr_a)
 {
   char *tmp;
 
-  tmp = strdup(string);
+  tmp = xstrdup(string);
 
   if (BUF_LEN(attr_a) == 0)
     printf("%s", string);
@@ -5275,14 +5631,14 @@ disp_message_line(win_t *win, term_t *term, char *string, attrib_ex_t *attr_a)
 
       memcpy(tmp, string + start, len);
       tmp[len] = '\0';
-      apply_attr(term, *attr_a[i].attr);
+      apply_attr(term, toggles, *attr_a[i].attr);
       printf("%s", tmp);
     }
 
     /* We need to apply the default message attribute after having */
     /* display a line.                                             */
     /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
-    apply_attr(term, win->message_attr);
+    apply_attr(term, toggles, win->message_attr);
   }
 
   free(tmp);
@@ -5296,6 +5652,7 @@ disp_message(ll_t       *message_lines_list,
              long        message_max_width,
              long        message_max_len,
              term_t     *term,
+             toggle_t   *toggles,
              win_t      *win,
              langinfo_t *langinfo)
 {
@@ -5483,7 +5840,7 @@ disp_message(ll_t       *message_lines_list,
       for (i = 0; i < offset; i++)
         fputc(' ', stdout);
 
-    apply_attr(term, win->message_attr);
+    apply_attr(term, toggles, win->message_attr);
 
     /* Only print the start of a line if the screen width if too small. */
     /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
@@ -5506,7 +5863,7 @@ disp_message(ll_t       *message_lines_list,
         fputc('v', stdout);
     }
     else
-      disp_message_line(win, term, buf, attr_a);
+      disp_message_line(win, term, toggles, buf, attr_a);
 
     for (size_t i = 0; i < BUF_LEN(attr_a); i++)
       free(attr_a[i].attr);
@@ -5516,7 +5873,7 @@ disp_message(ll_t       *message_lines_list,
     /* Complete the short line with spaces until it reach the */
     /* message max size.                                      */
     /* '''''''''''''''''''''''''''''''''''''''''''''''''''''' */
-    apply_attr(term, win->message_attr);
+    apply_attr(term, toggles, win->message_attr);
 
     for (i = size; i < message_max_width; i++)
     {
@@ -5670,7 +6027,7 @@ disp_lines(win_t         *win,
       fputc(' ', stdout);
   }
 
-  left_margin_putp(left_margin_symbol, term, win);
+  left_margin_putp(left_margin_symbol, term, toggles, win);
 
   first_line = line_nb_of_word_a[i];
 
@@ -5736,7 +6093,7 @@ disp_lines(win_t         *win,
           win->has_hbar = 1; /* the line containing the cursor is *
                               | truncated in the window.          */
 
-        apply_attr(term, win->shift_attr);
+        apply_attr(term, toggles, win->shift_attr);
 
         if (langinfo->utf8)
           fputs(shift_right_sym, stdout);
@@ -5805,6 +6162,7 @@ disp_lines(win_t         *win,
                                 "\\",
                                 langinfo,
                                 term,
+                                toggles,
                                 win,
                                 lines_disp,
                                 win->offset);
@@ -5813,6 +6171,7 @@ disp_lines(win_t         *win,
                                 "^",
                                 langinfo,
                                 term,
+                                toggles,
                                 win,
                                 lines_disp,
                                 win->offset);
@@ -5822,6 +6181,7 @@ disp_lines(win_t         *win,
                               "^",
                               langinfo,
                               term,
+                              toggles,
                               win,
                               lines_disp,
                               win->offset);
@@ -5832,6 +6192,7 @@ disp_lines(win_t         *win,
                                 "/",
                                 langinfo,
                                 term,
+                                toggles,
                                 win,
                                 lines_disp,
                                 win->offset);
@@ -5840,6 +6201,7 @@ disp_lines(win_t         *win,
                                 "^",
                                 langinfo,
                                 term,
+                                toggles,
                                 win,
                                 lines_disp,
                                 win->offset);
@@ -5853,6 +6215,7 @@ disp_lines(win_t         *win,
                               "#",
                               langinfo,
                               term,
+                              toggles,
                               win,
                               lines_disp,
                               win->offset);
@@ -5861,6 +6224,7 @@ disp_lines(win_t         *win,
                               "|",
                               langinfo,
                               term,
+                              toggles,
                               win,
                               lines_disp,
                               win->offset);
@@ -5880,7 +6244,7 @@ disp_lines(win_t         *win,
               fputc(' ', stdout);
           }
 
-          left_margin_putp(left_margin_symbol, term, win);
+          left_margin_putp(left_margin_symbol, term, toggles, win);
         }
 
         /* We do not increment the number of lines seen after */
@@ -5914,6 +6278,7 @@ disp_lines(win_t         *win,
                                 "/",
                                 langinfo,
                                 term,
+                                toggles,
                                 win,
                                 lines_disp,
                                 win->offset);
@@ -5922,6 +6287,7 @@ disp_lines(win_t         *win,
                                 "^",
                                 langinfo,
                                 term,
+                                toggles,
                                 win,
                                 lines_disp,
                                 win->offset);
@@ -5934,6 +6300,7 @@ disp_lines(win_t         *win,
                               "v",
                               langinfo,
                               term,
+                              toggles,
                               win,
                               lines_disp,
                               win->offset);
@@ -5979,7 +6346,7 @@ disp_lines(win_t         *win,
                - 4; /* just to make sure but should not happen. */
 
       fputs("\n", stdout);
-      disp_hbar(win, term, langinfo, pos1, pos2);
+      disp_hbar(win, term, toggles, langinfo, pos1, pos2);
 
       /* Mark the fact that an horizontal scroll bar has been displayed */
       /* and its space allocated.                                       */
@@ -7382,6 +7749,7 @@ init_main_ds(attrib_t  *init_attr,
   toggles->number_blank_words  = 0;
   toggles->cols_first          = 0;
   toggles->rows_first          = 0;
+  toggles->truecolor           = 0;
 
   /* Misc default values. */
   /* """""""""""""""""""" */
@@ -7774,6 +8142,8 @@ toggle_action(char  *ctx_name,
     toggles->incremental_search = 1;
   else if (strcmp(opt_name, "no_mouse") == 0)
     toggles->no_mouse = 1;
+  else if (strcmp(opt_name, "truecolor") == 0)
+    toggles->truecolor = 1;
 }
 
 void
@@ -10020,6 +10390,7 @@ main(int argc, char *argv[])
                    "[title #message] "
                    "[int [#string]] "
                    "[attributes #prefix:attr...] "
+                   "[truecolor] "
                    "[special_level_1 #...<3] "
                    "[special_level_2 #...<3] "
                    "[special_level_3 #...<3] "
@@ -10159,6 +10530,7 @@ main(int argc, char *argv[])
   ctxopt_add_opt_settings(parameters, "title", "-m -msg -message -title");
   ctxopt_add_opt_settings(parameters, "int", "-! -int -int_string");
   ctxopt_add_opt_settings(parameters, "attributes", "-a -attr -attributes");
+  ctxopt_add_opt_settings(parameters, "truecolor", "-tc -truecolor");
   ctxopt_add_opt_settings(parameters, "special_level_1", "-1 -l1 -level1");
   ctxopt_add_opt_settings(parameters, "special_level_2", "-2 -l2 -level2");
   ctxopt_add_opt_settings(parameters, "special_level_3", "-3 -l3 -level3");
@@ -10602,6 +10974,11 @@ main(int argc, char *argv[])
                           &init_attr,
                           (char *)0);
   ctxopt_add_opt_settings(actions,
+                          "truecolor",
+                          toggle_action,
+                          &toggles,
+                          (char *)0);
+  ctxopt_add_opt_settings(actions,
                           "timeout",
                           timeout_action,
                           &langinfo,
@@ -10839,6 +11216,10 @@ main(int argc, char *argv[])
     term.has_setf              = (str == (char *)-1 || str == NULL) ? 0 : 1;
     str                        = tigetstr("setb");
     term.has_setb              = (str == (char *)-1 || str == NULL) ? 0 : 1;
+    str                        = tigetstr("setrgbf");
+    term.has_setrgbf           = (str == (char *)-1 || str == NULL) ? 0 : 1;
+    str                        = tigetstr("setrgbb");
+    term.has_setrgbb           = (str == (char *)-1 || str == NULL) ? 0 : 1;
     str                        = tigetstr("setaf");
     term.has_setaf             = (str == (char *)-1 || str == NULL) ? 0 : 1;
     str                        = tigetstr("setab");
@@ -14064,6 +14445,7 @@ main(int argc, char *argv[])
                message_max_width,
                message_max_len,
                &term,
+               &toggles,
                &win,
                &langinfo);
 
@@ -14434,6 +14816,7 @@ main(int argc, char *argv[])
                    message_max_width,
                    message_max_len,
                    &term,
+                   &toggles,
                    &win,
                    &langinfo);
 
@@ -14517,6 +14900,7 @@ main(int argc, char *argv[])
                      message_max_width,
                      message_max_len,
                      &term,
+                     &toggles,
                      &win,
                      &langinfo);
       }
@@ -14582,6 +14966,7 @@ main(int argc, char *argv[])
                        message_max_width,
                        message_max_len,
                        &term,
+                       &toggles,
                        &win,
                        &langinfo);
         }
@@ -15211,7 +15596,7 @@ main(int argc, char *argv[])
                           filler);
 
           if (help_mode)
-            disp_help(&win, &term, help_lines_da, fst_disp_help_line);
+            disp_help(&win, &term, &toggles, help_lines_da, fst_disp_help_line);
           break;
 
         case 'n':
@@ -15997,7 +16382,11 @@ main(int argc, char *argv[])
                                 &misc,
                                 filler);
 
-                disp_help(&win, &term, help_lines_da, fst_disp_help_line);
+                disp_help(&win,
+                          &term,
+                          &toggles,
+                          help_lines_da,
+                          fst_disp_help_line);
               }
             }
             else
@@ -16121,7 +16510,11 @@ main(int argc, char *argv[])
                                 &misc,
                                 filler);
 
-                disp_help(&win, &term, help_lines_da, fst_disp_help_line);
+                disp_help(&win,
+                          &term,
+                          &toggles,
+                          help_lines_da,
+                          fst_disp_help_line);
               }
             }
             else
@@ -17369,7 +17762,7 @@ main(int argc, char *argv[])
               init_help_needed = 0;
             }
 
-            disp_help(&win, &term, help_lines_da, fst_disp_help_line);
+            disp_help(&win, &term, &toggles, help_lines_da, fst_disp_help_line);
             help_mode = 1;
 
             /* Arm the help timer. */
