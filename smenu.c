@@ -439,14 +439,17 @@ init_help(win_t               *win,
       { "Prev:", 5, "3", "i", "" },
       { "N", 1, "b", "b", "" },
       { "\n", 0, "", "", "t" },
-      { "Mark:", 5, "5+b", "r", "t" },
+      { "Toggle mark:", 12, "5+b", "r", "t" },
       { "Mouse:", 6, "2", "u", "tm" },
       { "^B1", 3, "b", "b", "tm" },
       { "/", 1, "b", "b", "tm" },
       { "B3", 2, "b", "b", "tm" },
       { " ", 1, "", "", "tm" },
       { "Keyb:", 5, "2", "u", "tm" },
-      { "mM", 2, "b", "b", "t" },
+      { "m", 1, "b", "b", "t" },
+      { ",", 1, "", "", "t" },
+      { "M", 1, "b", "b", "t" },
+      { " (clear)", 8, "", "", "t" },
       { "\n", 0, "", "", "t" },
       { "Tag:", 4, "5+b", "r", "t" },
       { "Mouse:", 6, "2", "u", "tm" },
@@ -17241,8 +17244,8 @@ main(int argc, char *argv[])
 
         mark_word:
         case 'm':
-          /* Mark the current word (ESC clears the mark). */
-          /* """""""""""""""""""""""""""""""""""""""""""" */
+          /* Toggle the mark on the current word (ESC clears the mark). */
+          /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
           if (help_mode)
             break;
 
@@ -17250,7 +17253,10 @@ main(int argc, char *argv[])
           {
             if (toggles.taggable)
             {
-              marked = current;
+              if (marked == current)
+                marked = -1;
+              else
+                marked = current;
 
               nl = disp_lines(&win,
                               &toggles,
@@ -17274,7 +17280,7 @@ main(int argc, char *argv[])
           if (help_mode)
             break;
 
-          /* unmark the current word (ESC clears the mark). */
+          /* Explicitly clear the mark (ESC does the same). */
           /* """""""""""""""""""""""""""""""""""""""""""""" */
           if (search_mode == NONE)
           {
