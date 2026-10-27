@@ -614,32 +614,33 @@ When tagging is enabled by using the command line
 \fB-T\fP|\fB-tm\fP|\fB-tag\fP|\fB-tag_mode\fP or
 \fB-P\fP|\fB-pm\fP|\fB-pin\fP|\fB-pin_mode\fP option, then the keys \fBt\fP,
 \fBu\fP, \fBINS\fP, \fBDEL\fP, \fBc\fP, \fBr\fP, \fBm\fP, \fBM\fP, \fBT\fP,
-\fBC\fP, \fBR\fP and \fBU\fP, can be used to tag/untag some words.
+\fBZ\fP, \fBC\fP, \fBR\fP and \fBU\fP, can be used to tag/untag some words.
 These tagged words will then be sent to the standard output when \fBENTER\fP
 is pressed.
 
 Their meanings are as follows:
-.TP
+.TP 2
 \fBt\fP Tags/untags or pins/unpins the word under the cursor (toggle).
-.TP
+.TP 2
 \fBu\fP Untags or unpins the word under the cursor.
-.TP
+.TP 2
 \fBINS\fP Tags or pins the word under the cursor.
-.TP
+.TP 2
 \fBDEL\fP Untags or unpins the word under the cursor.
-.TP
+.TP 2
 \fBc\fP Tags or pins all the selectable words in the current \fBcolumn\fP when
 no word is marked, otherwise acts like \fBC\fP.
-.TP
+.TP 2
 \fBr\fP Tags or pins all the selectable words in the current \fBrow/line\fP
 when no word is marked, otherwise acts like \fBR\fP.
-.TP
-\fBm\fP Marks the current word, the cursor appearance changes until the word
-is unmarked.
-.TP
-\fBM\fP or \fBESC\fP Unmarks the current word, other actions will also
-automatically unmark the word, see below.
-.TP
+.TP 2
+\fBm\fP Toggles the mark on the current word.
+If the current word is not marked, it becomes the marked word.
+If it is already marked, the mark is removed.
+If another word is marked, the mark is moved to the current word.
+.TP 2
+\fBM\fP or \fBESC\fP Explicitly removes the current mark.
+.TP 2
 \fBT\fP If no word is marked and the result of a search is still displayed
 then tags all words found in this search.
 
@@ -648,14 +649,14 @@ marked, just as if \fBm\fP had been used instead.
 Otherwise all words between the marked word and the current word are tagged.
 .br
 The marked word will no longer be marked after tagging is complete.
-.TP
+.TP 2
 \fBZ\fP Like \fBT\fP when not in search mode and when the marked word is
 not on the same column or line as the cursor in column mode.
 .br
 When in column mode and if the marked word is in the same column or line
 as the cursor, tags only the words in the same column (respectively line)
 bounded by the marked word and the cursor.
-.TP
+.TP 2
 \fBC\fP As for \fBT\fP, \fBC\fP marks the current word if no word is
 currently marked, just as if \fBm\fP had been used instead.
 .br
@@ -663,7 +664,7 @@ If a word is already marked, \fBC\fP tags/pins the words between the current
 and the marked words if they are the \fBsame column\fP.
 .br
 The marked word will no longer be marked after tagging is complete.
-.TP
+.TP 2
 \fBR\fP As for \fBT\fP, \fBR\fP marks the current word if no word is currently
 marked, just as if \fBm\fP had been used instead.
 .br
@@ -681,12 +682,83 @@ from the marked word to the current word.
 .br
 When no words are marked, the pinning order when using \fBc\fP and \fBr\fP
 always proceeds from top to bottom and from left to right, respectively.
-.TP
+.TP 2
 \fBU\fP Untags or unpins the last tagging action.
-.TP
+.TP 2
 \fBCTRL T\fP Untags all the previously tagged/pinned words.
 .br
 The marked word, if any, will no longer be marked after this action.
+.PP
+.PP
+The following diagram summarizes the use of a marked word for range
+tagging/pinning.
+A mark is temporary and is removed after a range operation completes.
+
+.nf
+\f(CR
+            no word marked
+                   |
+       +-----------+-----------+
+       |           |           |
+      \fBC\f(CR/\fBR\f(CR          \fBm\f(CR          \fBT\f(CR/\fBZ\f(CR
+       |           |           |
+       +-----------+-----------+
+                   |
+            a word is marked
+                   |
+       +-----------+-------------------+
+       |           |                   |
+       \fBm\f(CR         \fBC\f(CR/\fBR\f(CR/\fBT\f(CR                 \fBZ\f(CR
+       |           |                   |
+ current word      |               same column
+already marked?    |                or line?
+   /       \\       |              /          \\
+ yes        no     |            yes           no
+  |          |     |             |             |
+unmark   move mark |     +-------+-------+     |
+                   |     |               |     |
+                   | same column     same line |
+                   |     |               |     |
+                   |  like \fBC\f(CR          like \fBR\f(CR   |
+                   |     |               |     |
+                   |     +-------+-------+  like \fBT\f(CR
+                   |             |             |
+                   |             +------+------+
+                   |                    |
+                   +---------+----------+
+                             |
+                       tag/pin range
+                             |
+                         remove mark
+
+\fR
+.fi
+Mouse equivalents when tagging/pinning is enabled:
+.TS
+tab(@);
+lb l.
+\fBright click\fP@tag/untag or pin/unpin word
+\fBCTRL left click\fP@mark/unmark word
+\fBCTRL right click\fP@mark word, or tag/pin the range from the
+@marked word to the clicked word, then unmark
+.TE
+.PP
+\fBC\fP and \fBR\fP constrain the range to the same column and row/line,
+respectively.
+In column mode, \fBZ\fP acts like \fBC\fP when the marked and current words
+are in the same column, like \fBR\fP when they are on the same line, and
+like \fBT\fP otherwise.
+Outside column mode, \fBZ\fP acts like \fBT\fP.
+.PP
+Tagging and pinning differ in the order in which selected words are written:
+.TS
+tab(@);
+lb l.
+Mode@Selection order
+_
+\fB-T\fP, tag mode@Input order
+\fB-P\fP, pin mode@Order in which words were pinned
+.TE
 .PP
 Also note that using some of these keys may be more easily achieved by using
 the third mouse button (usually the right one) when the mouse is available.
