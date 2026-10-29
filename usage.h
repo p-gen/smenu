@@ -24,4 +24,7 @@ tabulations_help(void);
 void
 tagging_help(void);
 
+void
+pinning_help(void);
+
 #endif

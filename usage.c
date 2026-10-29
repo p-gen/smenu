@@ -316,3 +316,24 @@ tagging_help(void)
 
   exit(EXIT_FAILURE);
 }
+
+void
+pinning_help(void)
+{
+  printf("\n----------------------------------------");
+  printf("----------------------------------------\n");
+
+  printf("The following parameters are available in this context:\n\n");
+  common_help();
+
+  printf("-p|-at|-auto_tag\n");
+  printf("  activates the auto-tagging.\n");
+  printf("-0|-noat|-no_auto_tag\n");
+  printf("  do not auto-tag the word under the cursor when in tagged mode\n");
+  printf("  and no other word is selected.\n");
+  printf("-O|-pro|-pin_ranges_order\n");
+  printf("  preserves of not the output order in pinned ranges,\n");
+  printf("  the ranges pinning order is always preserved.\n");
+
+  exit(EXIT_FAILURE);
+}

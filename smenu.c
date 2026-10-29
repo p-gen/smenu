@@ -250,6 +250,11 @@ help_add_entries(win_t               *win,
     if (strchr(entries[index].flags, 'c') && !win->line_mode && !win->col_mode)
       continue;
 
+    /* Rectangular tagging is available in column mode only. */
+    /* """"""""""""""""""""""""""""""""""""""""""""""""""""" */
+    if (strchr(entries[index].flags, 'b') && !win->col_mode)
+      continue;
+
     /* Allocate and initialize a new attribute. */
     /* """""""""""""""""""""""""""""""""""""""" */
     attr_entry = xmalloc(sizeof(help_attr_entry_t));
@@ -455,12 +460,16 @@ init_help(win_t               *win,
       { "Mouse:", 6, "2", "u", "tm" },
       { "B3", 2, "B", "B", "tm" },
       { " ", 1, "", "", "tm" },
-      { "Zone:", 5, "3", "i", "ctm" },
+      { "Zone", 4, "3", "i", "tm" },
       { "/", 1, "b", "b", "ctm" },
-      { "Row:", 4, "3", "i", "ctm" },
+      { "Row", 3, "3", "i", "ctm" },
       { "/", 1, "b", "b", "ctm" },
-      { "Col:", 4, "3", "i", "ctm" },
-      { "^B3", 3, "B", "B", "ctm" },
+      { "Col", 3, "3", "i", "ctm" },
+      { ":", 1, "3", "i", "tm" },
+      { "^B3", 3, "B", "B", "tm" },
+      { " ", 1, "", "", "tm" },
+      { "Rect:", 5, "3", "i", "ctm" },
+      { "^B2", 3, "B", "B", "ctm" },
       { " ", 1, "b", "b", "ct" },
       { "Keyb:", 5, "2", "u", "tm" },
       { "t", 1, "b", "b", "t" },
@@ -476,6 +485,11 @@ init_help(win_t               *win,
       { "...", 3, "", "", "t" },
       { "T", 1, "b", "b", "t" },
       { ",", 1, "", "", "t" },
+      { "Rect:", 5, "3", "i", "bt" },
+      { "B", 1, "b", "b", "bt" },
+      { "...", 3, "", "", "bt" },
+      { "B", 1, "b", "b", "bt" },
+      { ",", 1, "", "", "bt" },
       { "Zone:", 5, "3", "i", "t" },
       { "Z", 1, "b", "b", "t" },
       { "...", 3, "", "", "t" },
@@ -1340,6 +1354,15 @@ ini_parse_entry(win_t      *win,
           misc->default_search_method = SUBSTRING;
       }
     }
+    else if (strcmp(parameter, "pinning_order") == 0)
+    {
+      if (strcmp(value, "selection") == 0)
+        misc->pin_ranges_order = PIN_RANGES_SELECTION;
+      else if (strcmp(value, "input") == 0)
+        misc->pin_ranges_order = PIN_RANGES_INPUT;
+      else
+        error = 1;
+    }
   }
 
 out:
@@ -1495,6 +1518,25 @@ tag_comp(void const *a, void const *b)
   return (oa->order < ob->order) ? -1 : 1;
 }
 
+/* ================================================================= */
+/* Keep pinned blocks in selection order and words inside each block */
+/* in their original input order.                                    */
+/* ================================================================= */
+int
+pin_ranges_input_comp(void const *a, void const *b)
+{
+  output_t *oa = (output_t *)a;
+  output_t *ob = (output_t *)b;
+
+  if (oa->block_order != ob->block_order)
+    return oa->block_order < ob->block_order ? -1 : 1;
+
+  if (oa->input_index != ob->input_index)
+    return oa->input_index < ob->input_index ? -1 : 1;
+
+  return 0;
+}
+
 /* ========================================================= */
 /* Swap the values of two selected words in the output list. */
 /* ========================================================= */
@@ -1503,17 +1545,11 @@ tag_swap(void **a, void **b)
 {
   output_t *oa = (output_t *)*a;
   output_t *ob = (output_t *)*b;
+  output_t  tmp;
 
-  char *tmp_str;
-  long  tmp_order;
-
-  tmp_str        = oa->output_str;
-  oa->output_str = ob->output_str;
-  ob->output_str = tmp_str;
-
-  tmp_order = oa->order;
-  oa->order = ob->order;
-  ob->order = tmp_order;
+  tmp = *oa;
+  *oa = *ob;
+  *ob = tmp;
 }
 
 /* ****************** */
@@ -7745,7 +7781,8 @@ init_main_ds(attrib_t  *init_attr,
   win->daccess_attr              = *init_attr;
 
   win->next_tag_id = 1; /* No word is currently tagged. */
-  win->sel_sep     = NULL;
+  win->sel_sep[0]  = NULL;
+  win->sel_sep[1]  = NULL;
 
   for (i = 0; i < 9; i++)
     win->special_attr[i] = *init_attr;
@@ -7789,6 +7826,7 @@ init_main_ds(attrib_t  *init_attr,
   /* Misc default values. */
   /* """""""""""""""""""" */
   misc->default_search_method   = NONE;
+  misc->pin_ranges_order        = PIN_RANGES_SELECTION;
   misc->ignore_quotes           = 0;
   misc->invalid_char_substitute = '.';
   misc->blank_char_substitute   = '_';
@@ -7854,6 +7892,8 @@ help_action(char  *ctx_name,
     tabulations_help();
   else if (strcmp(ctx_name, "Tagging") == 0)
     tagging_help();
+  else if (strcmp(ctx_name, "Pinning") == 0)
+    pinning_help();
   else
     main_help();
 
@@ -8932,15 +8972,31 @@ tag_mode_action(char  *ctx_name,
 
   toggles->taggable = 1;
 
-  if (nb_values == 1)
+  if (nb_values >= 1)
   {
-    win->sel_sep = xstrdup(values[0]);
-    if (!utf8_interpret(win->sel_sep, langinfo->utf8, '\0', iso_charset))
+    win->sel_sep[0] = xstrdup(values[0]);
+    win->sel_sep[1] = win->sel_sep[0];
+
+    if (!utf8_interpret(win->sel_sep[0], langinfo->utf8, '\0', iso_charset))
     {
       fprintf(stderr,
-              "The output separator: %s is invalid or "
+              "The word output separator: %s is invalid or "
               "incompatible with the current character set.\n",
               values[0]);
+      exit(EXIT_FAILURE);
+    }
+  }
+
+  if (nb_values >= 2)
+  {
+    win->sel_sep[1] = xstrdup(values[1]);
+
+    if (!utf8_interpret(win->sel_sep[1], langinfo->utf8, '\0', iso_charset))
+    {
+      fprintf(stderr,
+              "The multi-word selection output delimiter: %s is invalid or "
+              "incompatible with the current character set.\n",
+              values[1]);
       exit(EXIT_FAILURE);
     }
   }
@@ -8964,17 +9020,57 @@ pin_mode_action(char  *ctx_name,
   toggles->taggable = 1;
   toggles->pinable  = 1;
 
-  if (nb_values == 1)
+  if (nb_values >= 1)
   {
-    win->sel_sep = xstrdup(values[0]);
-    if (!utf8_interpret(win->sel_sep, langinfo->utf8, '\0', iso_charset))
+    win->sel_sep[0] = xstrdup(values[0]);
+    win->sel_sep[1] = win->sel_sep[0];
+
+    if (!utf8_interpret(win->sel_sep[0], langinfo->utf8, '\0', iso_charset))
     {
       fprintf(stderr,
-              "The output separator: %s is invalid or "
+              "The word output separator: %s is invalid or "
               "incompatible with the current character set.\n",
               values[0]);
       exit(EXIT_FAILURE);
     }
+  }
+
+  if (nb_values >= 2)
+  {
+    win->sel_sep[1] = xstrdup(values[1]);
+
+    if (!utf8_interpret(win->sel_sep[1], langinfo->utf8, '\0', iso_charset))
+    {
+      fprintf(stderr,
+              "The multi-word selection output delimiter: %s is invalid or "
+              "incompatible with the current character set.\n",
+              values[1]);
+      exit(EXIT_FAILURE);
+    }
+  }
+}
+
+void
+pin_ranges_order_action(char  *ctx_name,
+                        char  *opt_name,
+                        char  *param,
+                        int    nb_values,
+                        char **values,
+                        int    nb_opt_data,
+                        void **opt_data,
+                        int    nb_ctx_data,
+                        void **ctx_data)
+{
+  pin_ranges_order_t *order = opt_data[0];
+
+  if (nb_values == 0 || strcmp(values[0], "selection") == 0)
+    *order = PIN_RANGES_SELECTION;
+  else if (strcmp(values[0], "input") == 0)
+    *order = PIN_RANGES_INPUT;
+  else
+  {
+    fprintf(stderr, "%s: expected selection or input.\n", param);
+    fatal_ctx(ctx_name);
   }
 }
 
@@ -10151,6 +10247,7 @@ main(int argc, char *argv[])
   char *line_options, *line_spec_options;
   char *tab_options, *tab_spec_options;
   char *tag_options, *tag_spec_options;
+  char *pin_options, *pin_spec_options;
 
   /* Used to check if we can get the cursor position in the terminal. */
   /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
@@ -10474,8 +10571,8 @@ main(int argc, char *argv[])
                       "[column_mode>Columns] "
                       "[line_mode>Lines] "
                       "[tab_mode>Tabulations [#cols]] "
-                      "[tag_mode>Tagging [#delim]] "
-                      "[pin_mode>Tagging [#delim]] "
+                      "[tag_mode>Tagging [#delim...<3]] "
+                      "[pin_mode>Pinning [#delim...<3]] "
                       "[number_blank_words]";
 
   col_spec_options = "[wide_mode] "
@@ -10488,8 +10585,8 @@ main(int argc, char *argv[])
                      "[auto_da_number... [#regex...]] "
                      "[auto_da_unnumber... [#regex...]] "
                      "[field_da_number] "
-                     "[tag_mode>Tagging [#delim]] "
-                     "[pin_mode>Tagging [#delim]] "
+                     "[tag_mode>Tagging [#delim...<3]] "
+                     "[pin_mode>Pinning [#delim...<3]] "
                      "[no_hor_scroll_bar] "
                      "[hor_scroll_bar] "
                      "[force_first_column #regex] "
@@ -10502,8 +10599,8 @@ main(int argc, char *argv[])
                       "[auto_da_number... [#regex...]] "
                       "[auto_da_unnumber... [#regex...]] "
                       "[field_da_number] "
-                      "[tag_mode>Tagging [#delim]] "
-                      "[pin_mode>Tagging [#delim]] "
+                      "[tag_mode>Tagging [#delim...<3]] "
+                      "[pin_mode>Pinning [#delim...<3]] "
                       "[no_hor_scroll_bar] "
                       "[hor_scroll_bar] "
                       "[force_first_column #regex] "
@@ -10517,8 +10614,8 @@ main(int argc, char *argv[])
                      "[auto_da_number... [#regex...]] "
                      "[auto_da_unnumber... [#regex...]] "
                      "[field_da_number] "
-                     "[tag_mode>Tagging [#delim]] "
-                     "[pin_mode>Tagging [#delim]] "
+                     "[tag_mode>Tagging [#delim...<3]] "
+                     "[pin_mode>Pinning [#delim...<3]] "
                      "[force_first_column #regex] "
                      "[force_last_column #regex] "
                      "[number_blank_words]";
@@ -10529,17 +10626,26 @@ main(int argc, char *argv[])
                      "[line_mode>Lines] "
                      "[tab_mode>Tabulations [#cols]]";
 
+  pin_spec_options = "[auto_tag] "
+                     "[no_auto_tag] "
+                     "[pin_ranges_order [#order]] "
+                     "[column_mode>Columns] "
+                     "[line_mode>Lines] "
+                     "[tab_mode>Tabulations [#cols]]";
+
   main_options = concat(common_options, main_spec_options, (char *)0);
   col_options  = concat(common_options, col_spec_options, (char *)0);
   line_options = concat(common_options, line_spec_options, (char *)0);
   tab_options  = concat(common_options, tab_spec_options, (char *)0);
   tag_options  = concat(common_options, tag_spec_options, (char *)0);
+  pin_options  = concat(common_options, pin_spec_options, (char *)0);
 
   ctxopt_new_ctx("Main", main_options);
   ctxopt_new_ctx("Columns", col_options);
   ctxopt_new_ctx("Lines", line_options);
   ctxopt_new_ctx("Tabulations", tab_options);
   ctxopt_new_ctx("Tagging", tag_options);
+  ctxopt_new_ctx("Pinning", pin_options);
 
   free(main_options);
   free(col_options);
@@ -10577,6 +10683,9 @@ main(int argc, char *argv[])
   ctxopt_add_opt_settings(parameters, "special_level_9", "-9 -l9 -level9");
   ctxopt_add_opt_settings(parameters, "tag_mode", "-T -tm -tag -tag_mode");
   ctxopt_add_opt_settings(parameters, "pin_mode", "-P -pm -pin -pin_mode");
+  ctxopt_add_opt_settings(parameters,
+                          "pin_ranges_order",
+                          "-O -pro -pin_ranges_order");
   ctxopt_add_opt_settings(parameters, "auto_tag", "-p -at -auto_tag");
   ctxopt_add_opt_settings(parameters, "no_auto_tag", "-0 -noat -no_auto_tag");
   ctxopt_add_opt_settings(parameters, "auto_da_number", "-N -number");
@@ -11068,6 +11177,11 @@ main(int argc, char *argv[])
                           &toggles,
                           &win,
                           &langinfo,
+                          (char *)0);
+  ctxopt_add_opt_settings(actions,
+                          "pin_ranges_order",
+                          pin_ranges_order_action,
+                          &misc.pin_ranges_order,
                           (char *)0);
   ctxopt_add_opt_settings(actions,
                           "search_method",
@@ -15823,20 +15937,19 @@ main(int argc, char *argv[])
 
           long i; /* Generic index in this block. */
 
-          if (help_mode || marked >= 0)
+          if (help_mode)
           {
-            marked = -1; /* Disable the marked mode unconditionally. */
-            nl     = disp_lines(&win,
-                                &toggles,
-                                current,
-                                count,
-                                search_mode,
-                                &search_data,
-                                &term,
-                                last_line,
-                                &langinfo,
-                                &misc,
-                                filler);
+            nl = disp_lines(&win,
+                            &toggles,
+                            current,
+                            count,
+                            search_mode,
+                            &search_data,
+                            &term,
+                            last_line,
+                            &langinfo,
+                            &misc,
+                            filler);
           }
 
           if (search_mode != NONE)
@@ -15863,6 +15976,22 @@ main(int argc, char *argv[])
 
             if (!toggles.enter_val_in_search)
               break;
+          }
+          else
+          {
+            marked = -1; /* Disable the marked mode unconditionally. */
+
+            nl = disp_lines(&win,
+                            &toggles,
+                            current,
+                            count,
+                            search_mode,
+                            &search_data,
+                            &term,
+                            last_line,
+                            &langinfo,
+                            &misc,
+                            filler);
           }
 
           if (toggles.del_line)
@@ -15942,6 +16071,8 @@ main(int argc, char *argv[])
                   else
                     str = word_a[wi].str;
 
+                  /* Manage numbered words. */
+                  /* """""""""""""""""""""" */
                   if (word_a[wi].is_numbered && daccess.num_sep)
                   {
                     num_str = xstrndup(str + 1, daccess.length);
@@ -15959,7 +16090,9 @@ main(int argc, char *argv[])
                   else
                     output_node->output_str = xstrdup(str + daccess.flength);
 
-                  output_node->order = word_a[wi].tag_order;
+                  output_node->order       = word_a[wi].tag_order;
+                  output_node->block_order = word_a[wi].tag_id;
+                  output_node->input_index = wi;
 
                   ltrim(output_node->output_str, "\x05");
                   rtrim(output_node->output_str, "\x05", 0);
@@ -15992,15 +16125,75 @@ main(int argc, char *argv[])
               /* If -P is in use, then sort the output list. */
               /* """"""""""""""""""""""""""""""""""""""""""" */
               if (toggles.pinable)
-                ll_sort(output_list, tag_comp, tag_swap);
+              {
+                if (misc.pin_ranges_order == PIN_RANGES_INPUT)
+                  ll_sort(output_list, pin_ranges_input_comp, tag_swap);
+                else
+                  ll_sort(output_list, tag_comp, tag_swap);
+              }
 
               /* And print them. */
               /* """"""""""""""" */
               node = output_list->head;
-              while (node->next != NULL)
               {
-                str = ((output_t *)(node->data))->output_str;
+                long multi_word_tag_id = 0;
 
+                while (node->next != NULL)
+                {
+                  char *sep;
+
+                  output_t *output      = (output_t *)node->data;
+                  output_t *next_output = (output_t *)node->next->data;
+
+                  /* Adjacent nodes with the same non-zero tag ID belong to */
+                  /* one multi-word selection made from a marked word.      */
+                  /* """""""""""""""""""""""""""""""""""""""""""""""""""""" */
+                  if (multi_word_tag_id == 0 && output->block_order > 0
+                      && output->block_order == next_output->block_order)
+                    multi_word_tag_id = output->block_order;
+
+                  str = output->output_str;
+
+                  if (multi_word_tag_id != 0
+                      && output->block_order == multi_word_tag_id
+                      && next_output->block_order != multi_word_tag_id)
+                  {
+                    sep               = win.sel_sep[1];
+                    multi_word_tag_id = 0;
+                  }
+                  else
+                    sep = win.sel_sep[0];
+
+                  strrep(str, filler, ' ');
+                  fprintf(old_stdout, "%s", str);
+
+                  if (langinfo.utf8)
+                    width += utf8_strwidth((unsigned char *)str, strlen(str));
+                  else
+                    width = 1;
+
+                  free(str);
+                  free(node->data);
+
+                  if (sep != NULL)
+                  {
+                    fprintf(old_stdout, "%s", sep);
+
+                    if (langinfo.utf8)
+                      width += utf8_strwidth((unsigned char *)sep, strlen(sep));
+                    else
+                      width = 1;
+                  }
+                  else
+                  {
+                    fprintf(old_stdout, " ");
+                    width++;
+                  }
+
+                  node = node->next;
+                }
+
+                str = ((output_t *)(node->data))->output_str;
                 strrep(str, filler, ' ');
                 fprintf(old_stdout, "%s", str);
 
@@ -16011,37 +16204,7 @@ main(int argc, char *argv[])
 
                 free(str);
                 free(node->data);
-
-                if (win.sel_sep != NULL)
-                {
-                  fprintf(old_stdout, "%s", win.sel_sep);
-
-                  if (langinfo.utf8)
-                    width += utf8_strwidth((unsigned char *)(win.sel_sep),
-                                           strlen(win.sel_sep));
-                  else
-                    width = 1;
-                }
-                else
-                {
-                  fprintf(old_stdout, " ");
-                  width++;
-                }
-
-                node = node->next;
               }
-
-              str = ((output_t *)(node->data))->output_str;
-              strrep(str, filler, ' ');
-              fprintf(old_stdout, "%s", str);
-
-              if (langinfo.utf8)
-                width += utf8_strwidth((unsigned char *)str, strlen(str));
-              else
-                width = 1;
-
-              free(str);
-              free(node->data);
             }
             else
             {
@@ -17086,6 +17249,116 @@ main(int argc, char *argv[])
             goto special_cmds_when_searching;
           break;
 
+        start_stop_block_tag:
+        case 'B':
+          /* Tag the rectangle bounded by the marked and current words. */
+          /* This command is deliberately ignored outside column mode.  */
+          /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
+          if (help_mode)
+            break;
+
+          if (search_mode == NONE)
+          {
+            long top, bottom, left, right;
+            long marked_line, current_line;
+            long marked_col, current_col;
+            long line, first, last, selected_nb;
+            int  tagged;
+
+            if (!win.col_mode)
+              break;
+            if (!toggles.taggable && !toggles.pinable)
+              break;
+            if (marked == -1)
+              goto mark_word;
+
+            marked_line  = line_nb_of_word_a[marked];
+            current_line = line_nb_of_word_a[current];
+            marked_col   = marked - first_word_in_line_a[marked_line] + 1;
+            current_col  = current - first_word_in_line_a[current_line] + 1;
+
+            top    = marked_line < current_line ? marked_line : current_line;
+            bottom = marked_line > current_line ? marked_line : current_line;
+            left   = marked_col < current_col ? marked_col : current_col;
+            right  = marked_col > current_col ? marked_col : current_col;
+
+            selected_nb = 0;
+
+            for (line = top; line <= bottom; line++)
+            {
+              long col;
+
+              first = first_word_in_line_a[line];
+              last  = line == line_nb_of_word_a[count - 1]
+                        ? count - 1
+                        : first_word_in_line_a[line + 1] - 1;
+
+              for (col = left; col <= right; col++)
+              {
+                long pos = first + col - 1;
+
+                if (pos <= last && word_a[pos].is_selectable
+                    && word_a[pos].tag_id == 0)
+                  selected_nb++;
+              }
+            }
+
+            if (toggles.pinable && marked > current)
+              tag_nb += selected_nb;
+
+            tagged = 0;
+
+            for (line = top; line <= bottom; line++)
+            {
+              long col;
+
+              first = first_word_in_line_a[line];
+              last  = line == line_nb_of_word_a[count - 1]
+                        ? count - 1
+                        : first_word_in_line_a[line + 1] - 1;
+
+              for (col = left; col <= right; col++)
+              {
+                long pos = first + col - 1;
+
+                if (pos > last || !word_a[pos].is_selectable
+                    || word_a[pos].tag_id != 0)
+                  continue;
+
+                word_a[pos].tag_id = win.next_tag_id;
+                tagged_words++;
+
+                if (toggles.pinable)
+                  word_a[pos].tag_order = marked <= current ? tag_nb++
+                                                            : tag_nb--;
+
+                tagged = 1;
+              }
+            }
+
+            if (tagged)
+              win.next_tag_id++;
+
+            if (toggles.pinable && marked > current)
+              tag_nb += selected_nb;
+
+            marked = -1;
+            nl     = disp_lines(&win,
+                                &toggles,
+                                current,
+                                count,
+                                search_mode,
+                                &search_data,
+                                &term,
+                                last_line,
+                                &langinfo,
+                                &misc,
+                                filler);
+          }
+          else
+            goto special_cmds_when_searching;
+          break;
+
         case 'C':
           /* Allow to tag part of a column, the first invocation marks    */
           /* the starting word and the second marks the words in between. */
@@ -17095,8 +17368,8 @@ main(int argc, char *argv[])
 
           if (search_mode == NONE)
           {
-            /* Mark the first word is not already marked. */
-            /* """""""""""""""""""""""""""""""""""""""""" */
+            /* Mark the first word if it is not already marked. */
+            /* """""""""""""""""""""""""""""""""""""""""""""""" */
             if (!win.col_mode)
               break;
 
@@ -17145,7 +17418,7 @@ main(int argc, char *argv[])
                     first = current;
                     last  = marked;
 
-                    /* Pre-increment tag_nb with is maximum mulue as     */
+                    /* Pre-increment tag_nb with its maximum value ...   */
                     /* it will be decremented in the following loop when */
                     /* marked > current                                  */
                     /* ''''''''''''''''''''''''''''''''''''''''''''''''' */
@@ -17420,7 +17693,7 @@ main(int argc, char *argv[])
             goto special_cmds_when_searching;
           break;
 
-        adaptative_tag_to_mark:
+        start_stop_zone_tag:
         case 'Z':
           /* Z has been pressed to tag consecutive word in a given zone . */
           /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
@@ -18193,6 +18466,14 @@ main(int argc, char *argv[])
                         goto unmark_word;
                     }
 
+                    /* Manage the pinning of a block */
+                    /* (button 1 + CTRL pressed).    */
+                    /* """"""""""""""""""""""""""""" */
+                    if ((button == 1 && state == 16)
+                        && (toggles.taggable || toggles.pinable))
+                      goto start_stop_block_tag; /* Like 'B' keyboard *
+                                                  | command.          */
+
                     /* Manage the tagging of a word.          */
                     /* (button 2 + CTRL or button 2 pressed). */
                     /* """""""""""""""""""""""""""""""""""""" */
@@ -18207,8 +18488,8 @@ main(int argc, char *argv[])
 
                     if ((button == 2 && state == 16)
                         && (toggles.taggable || toggles.pinable))
-                      goto adaptative_tag_to_mark; /* Like 'Z' keyboard *
-                                                    | command.          */
+                      goto start_stop_zone_tag; /* Like 'Z' keyboard *
+                                                 | command.          */
 
                     /* Redisplay the new window if the first button was */
                     /* pressed, otherwise reset the cursor position to  */

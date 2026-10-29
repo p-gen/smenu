@@ -15,53 +15,81 @@
 
 What is it?
 ===========
-**smenu** is a selection filter just like ``sed`` is an editing filter.
+**smenu** is a selection filter, just as ``sed`` is an editing filter.
 
-This tool reads words from standard input or from a file, and presents
+This tool reads words from standard input or from a file and presents
 them to the terminal screen in different layouts in a scrolling window.
 A cursor, easily moved using the **keyboard** and/or the **mouse**,
 makes it possible to select one or more words.
 
-Note that the screen is not cleared at the start and end of **smenu**
+Note that the screen is not cleared at the start or end of **smenu**
 execution.
 The selection window is displayed at the cursor position, and the
 previous contents of the terminal are neither modified nor lost.
 
 I've tried to make it as easy to use as possible.
-It should work on all terminals managed in the ``terminfo`` database.
+It should work on all terminals described in the ``terminfo`` database
+that have sufficient cursor movement capabilities.
 
 ``UTF-8`` encoding is supported.
 This support includes double-width characters and extended grapheme
 clusters. The latter is still experimental, however, and works much
-better if appropriate terminals such as WezTerm or iTerm are used.
+better when appropriate terminals, such as WezTerm or iTerm, are used.
 
-The encoding of ``UTF-8`` glyphs must also be in canonical form, as no
-effort will be made to put them in this form.
+The encoding of ``UTF-8`` characters must also be in canonical form, as no
+effort is made to put them in this form.
+
+**smenu** supports multiple selections with ``-T`` (tag mode) and ``-P``
+(pin mode).
+
+Features
+========
+Among other things, **smenu** supports:
+
+- horizontal, column, line, and tabular layouts;
+- keyboard and mouse navigation;
+- incremental search by prefix, substring or using a fuzzy search method;
+- direct-access numbering;
+- multiple selections using tag and pin modes;
+- customizable colors and display attributes;
+- ``UTF-8`` text, including double-width characters and extended grapheme
+  clusters.
+
+The "multiple selection" mode supported by **smenu** allows you to
+select individual words, columns, or rows/lines (entire or partial),
+as well as sequences of consecutive words and rectangular blocks of words.
+
+All these selection methods can be combined.
+Some are only available when using the ‘column’ layout, such as selecting
+rectangular blocks of text.
+
+Selections can be removed from individual words, undone by selection
+action in reverse order, or cleared completely.
+
+These actions can be performed using the keyboard or the mouse.
 
 Please refer to the included man page to find out more about this little
 program.
 
-The `wiki <https://github.com/p-gen/smenu/wiki>`_ contains screenshots and
-animations that detail some concepts and features of **smenu**.
 
-How to build it?
-================
-Some Linux distributions already provide **smenu** as a package,
-if not, **smenu** can be built on any system on which a functional
+Building
+========
+Some Linux distributions already provide **smenu** as a package.
+If not, **smenu** can be built on any system on which a functional
 ``terminfo`` development platform is available.
 This includes all Unix and Unix-like systems that I know of.
 
 Please use the provided ``build.sh`` script to build the executable.
 This script uses and accepts the same arguments as the GNU ``configure``
-script, type ``build.sh --help`` to see them.
+script. Type ``build.sh --help`` to see them.
 
-How to install it?
-==================
+Installation
+============
 Once the build process is complete, a simple ``make install`` with the
 appropriate privileges will do it.
 
-Issue vs Discussion.
-====================
+Issues and discussions
+======================
 I have enabled `discussions <https://github.com/p-gen/smenu/discussions>`_
 on this repository.
 
@@ -82,11 +110,11 @@ Please `open a discussion <https://github.com/p-gen/smenu/discussions>`_ if:
 - You have achieved something cool with smenu and want to show it off.
 - Anything else!
 
-Some examples.
-==============
+Examples
+========
 
-Linux example.
---------------
+Linux example
+-------------
 This program should work on most Unix but if you are using Linux,
 try to type the following line at a shell prompt (here: ``"$ "`` ):
 
@@ -115,13 +143,13 @@ for commands: (numbers are mine, yours will be different)
 
 A cursor should be under ``"VmHWM "``.
 
-After having moved the cursor to ``"      136 kB"`` and ended the program
+After moving the cursor to ``"      136 kB"`` and terminating the program
 with ``<Enter>``, the shell variable R should contain: ``"      136 kB"``.
 
-Unix example.
--------------
-The following command, which is Unix brand agnostic, should give you a
-scrolling window if you have more than 10 accounts on your Unix with a
+Unix example
+------------
+The following command, which is Unix-platform-agnostic, should give you a
+scrolling window if you have more than 10 accounts on your Unix system with a
 UID lower than 100:
 
 ::
@@ -149,7 +177,7 @@ Note the presence of a scroll bar.
 
 Bash example (CTRL-R replacement)
 ---------------------------------
-Just add the following in your ``.bashrc``
+Add the following to your ``.bashrc``:
 
 ::
 
@@ -159,10 +187,10 @@ Just add the following in your ``.bashrc``
                                    | smenu -Q -l -a c:7/4,b -W"$EOL")
                    READLINE_POINT=${#READLINE_LINE}'
 
-Launch or relaunch **bash** and hit ``CTRL-R`` (``CTRL-C`` or ``q``
+Launch or relaunch **bash** and press ``CTRL-R`` (``CTRL-C`` or ``q``
 to exit), enjoy!
 
-You can also add the parameter **-d** to instruct **smenu** to clean
+You can also add the parameter ``-d`` to instruct **smenu** to clean
 the selection window after selecting an entry.
 
 Warning for post v0.9.15 versions.
@@ -172,28 +200,28 @@ may contain bugs.
 Please report them so they can be fixed in the next release of **smenu**
 or **ctxopt** (https://github.com/p-gen/ctxopt).
 
-Command line arguments may also need to be rearranged in some cases
+Command-line arguments may also need to be rearranged in some cases
 because of this new option management system.
 Sorry for the extra work this might entail.
 
-Bugs.
------
+Known issues
+============
 
 Right-alignment of lines written in right-to-left languages, such as Farsi
 or Hebrew, is not respected.
 
-Testing and reporting.
-----------------------
-The included testing system is relatively young, please be indulgent.
+Testing and reporting
+---------------------
+The included testing system is relatively young, please bear with it.
 
-**IMPORTANT** the testing system has some dependencies, please read the
+**IMPORTANT:** The testing system has some dependencies, please read the
 ``test/README.rst`` before going further.
 
-**NOTE** running all the tests by running ``./tests.sh`` in the
-``tests`` directory will take some time (around 21 min for now).
+**NOTE:** Running all the tests using ``./tests.sh`` in the
+``tests`` directory will take some time (currently around 21 minutes).
 
-**NOTE** on some systems like \*BSD some tests may fail. This can be
-explained by differences in posix/libc/... implementations.  This can
+**NOTE:** On some systems, such as \*BSD some tests may fail. This can be
+explained by differences in POSIX/libc implementations.  This can
 notably occur when some specific regular expressions or uncommon ``UTF-8``
 byte sequences are used.
 
@@ -202,17 +230,17 @@ directory and the corresponding ``.bad`` file.
 
 If you are hit by a bug that no test covers, then you can create a new
 test in the ``tests`` directory in an existing or new directory: read the
-``tests/README.rst`` file, use an existing test as model, create an
+``tests/README.rst`` file, use an existing test as a model, create an
 ``.in`` file and a ``.tst`` file and send them to me as well as the
 produced files.
 
-Contributions.
---------------
-Contributions are welcome but discuss your proposal in an issue first,
+Contributing
+============
+Contributions are welcome, but discuss your proposal in an issue first,
 or with the maintainer.
 
-Special thanks.
----------------
+Acknowledgments
+===============
 I want to thank those who took the time to package **smenu** for their
 preferred operating system or distribution.
 You will find their names here: https://repology.org/project/smenu/information

@@ -1,4 +1,4 @@
-$ OUT=$(smenu -k -P: t0008.in)||exit 1
+$ OUT=$(smenu -k -P: -- t0008.in)||exit 1
 
  a  b   c 
 0:0407 1:0407 2:0407 7:04 8:04 

@@ -1,4 +1,4 @@
-$ OUT=$(smenu -T, t0013.in)||exit 1
+$ OUT=$(smenu -T, -- t0013.in)||exit 1
 
 abc ab ab abcabc bca ba bac 
 0:040723 1:0407 2:040723 10:23 12:23 25:23 26:23 

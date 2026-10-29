@@ -37,9 +37,10 @@ send the selection to STDOUT.
   [\fB-7\fP|\fB-l7\fP|\fB-level7\fP \fIregex\fP [\fIattr\fP]]
   [\fB-8\fP|\fB-l8\fP|\fB-level8\fP \fIregex\fP [\fIattr\fP]]
   [\fB-9\fP|\fB-l9\fP|\fB-level9\fP \fIregex\fP [\fIattr\fP]]
-  [\fB-T\fP|\fB-tm\fP|\fB-tag\fP|\fB-tag_mode\fP [\fIdelim\fP]]
+  [\fB-T\fP|\fB-tm\fP|\fB-tag\fP|\fB-tag_mode\fP [\fIdelim\fP [\fImulti_delim\fP]]]
   [\fB-z\fP|\fB-zap\fP|\fB-zap_glyphs\fP \fIbytes\fP]
-  [\fB-P\fP|\fB-pm\fP|\fB-pin\fP|\fB-pin_mode\fP [\fIdelim\fP]]
+  [\fB-P\fP|\fB-pm\fP|\fB-pin\fP|\fB-pin_mode\fP [\fIdelim\fP [\fImulti_delim\fP]]]
+  [\fB-O\fP|\fB-pro\fP|\fB-pin_ranges_order\fP [\fIselection\fP|\fIinput\fP]]
   [\fB-0\fP|\fB-noat\fP|\fB-no_auto_tag\fP]
   [\fB-p\fP|\fB-at\fP|\fB-auto_tag\fP]
   [\fB-N\fP|\fB-number\fP... [\fIregex\fP...]]
@@ -161,7 +162,7 @@ for end-of-line, \fI\\t\fP for tabulation...) by default.
 smenu strives to support \fBUTF-8\fP encoding, both as input and output.
 \fBUTF-8\fP sequences introduced by \fI\\u\fP and \fI\\U\fP are also
 understood (even if the character set is not set to \fBUTF-8\fP - see the
-ENVIRONMENT section).
+\fBENVIRONMENT\fP section).
 
 \fI\\u\fP can be followed by 2,4,6 or 8 hexadecimal characters composing a
 \fBUTF-8\fP byte string.
@@ -369,6 +370,14 @@ is not always possible as the cursor must remain visible.
 .br
 The keyboard commands \fB<\fP and \fB>\fP can be used in such a case
 because the cursor is already on the current line.
+.RE
+.PP
+\fBSecond (usually middle) mouse button\fP:
+.RS 2
+.IP \(bu 2
+For now, this can only be used with the CTRL key when tagging/pinning and
+column mode is enabled. This does the same thing as pressing the \fBB\fP
+key to start/stop tagging/pinning a rectangular area.
 .RE
 .PP
 \fBThird (usually right) mouse button\fP:
@@ -609,12 +618,13 @@ applicable writes the selected word to stdout when not in search mode;
 otherwise, it exits from this mode and does nothing more.
 If you want to be able to select a word \fIeven\fP when in search mode,
 use the \fB-r\fP|\fB-auto_validate\fP option to change this behavior.
-.SS "Tagging (multiple selections)"
+.SS "Tagging and pinning (multiple selections)"
 When tagging is enabled by using the command line
 \fB-T\fP|\fB-tm\fP|\fB-tag\fP|\fB-tag_mode\fP or
 \fB-P\fP|\fB-pm\fP|\fB-pin\fP|\fB-pin_mode\fP option, then the keys \fBt\fP,
 \fBu\fP, \fBINS\fP, \fBDEL\fP, \fBc\fP, \fBr\fP, \fBm\fP, \fBM\fP, \fBT\fP,
-\fBZ\fP, \fBC\fP, \fBR\fP and \fBU\fP, can be used to tag/untag some words.
+\fBZ\fP, \fBC\fP, \fBR\fP, \fBB\fP and \fBU\fP, can be used to tag/untag
+some words.
 These tagged words will then be sent to the standard output when \fBENTER\fP
 is pressed.
 
@@ -672,8 +682,18 @@ If a word is already marked, \fBR\fP tags/pins the words between the current
 and the marked words if they are the \fBsame row/line\fP.
 .br
 The marked word will no longer be marked after tagging is complete.
+.TP 2
+\fBB\fP In column mode, marks the current word if no word is currently marked,
+just as if \fBm\fP had been used instead.
+.br
+If a word is already marked, \fBB\fP tags/pins all selectable words in the
+rectangular area whose opposite corners are the marked word and the current
+word. Both boundary rows and columns are included.
+.br
+The marked word will no longer be marked after tagging is complete.
+Outside column mode, \fBB\fP is ignored.
 .PP
-Note that when you use \fBT\fP, \fBC\fP or \fBR\fP with pinning enabled, the
+Note that when you use \fBT\fP, \fBC\fP, \fBR\fP or \fBB\fP with pinning enabled, the
 order of word selection depends on whether the marked word is before or after
 the current word.
 .br
@@ -700,7 +720,7 @@ A mark is temporary and is removed after a range operation completes.
                    |
        +-----------+-----------+
        |           |           |
-      \fBC\f(CR/\fBR\f(CR          \fBm\f(CR          \fBT\f(CR/\fBZ\f(CR
+     \fBC\f(CR/\fBR\f(CR/\fBB\f(CR         \fBm\f(CR          \fBT\f(CR/\fBZ\f(CR
        |           |           |
        +-----------+-----------+
                    |
@@ -708,7 +728,7 @@ A mark is temporary and is removed after a range operation completes.
                    |
        +-----------+-------------------+
        |           |                   |
-       \fBm\f(CR         \fBC\f(CR/\fBR\f(CR/\fBT\f(CR                 \fBZ\f(CR
+       \fBm\f(CR        \fBC\f(CR/\fBR\f(CR/\fBT\f(CR/\fBB\f(CR                \fBZ\f(CR
        |           |                   |
  current word      |               same column
 already marked?    |                or line?
@@ -727,6 +747,12 @@ unmark   move mark |     +-------+-------+     |
                    |                    |
                    +---------+----------+
                              |
+             +---------------+---------------+
+             |               |               |
+          \fBC\f(CR: column        \fBR\f(CR: row       \fBB\f(CR: rectangle
+             |               |               |
+             +---------------+---------------+
+                             |
                        tag/pin range
                              |
                          remove mark
@@ -738,13 +764,18 @@ Mouse equivalents when tagging/pinning is enabled:
 tab(@);
 lb l.
 \fBright click\fP@tag/untag or pin/unpin word
-\fBCTRL left click\fP@mark/unmark word
+\fBCTRL left click\fP@mark/unmark word.
+\fBCTRL middle click\fP@in column mode, mark word, or tag/pin the
+@rectangle delimited by the marked word
+@and the clicked word, then unmark.
 \fBCTRL right click\fP@mark word, or tag/pin the range from the
-@marked word to the clicked word, then unmark
+@marked word to the clicked word, then unmark.
 .TE
 .PP
 \fBC\fP and \fBR\fP constrain the range to the same column and row/line,
-respectively.
+respectively. In column mode, \fBB\fP tags/pins the rectangular area whose
+opposite corners are the marked and current words; outside column mode it is
+ignored.
 In column mode, \fBZ\fP acts like \fBC\fP when the marked and current words
 are in the same column, like \fBR\fP when they are on the same line, and
 like \fBT\fP otherwise.
@@ -758,6 +789,7 @@ Mode@Selection order
 _
 \fB-T\fP, tag mode@Input order
 \fB-P\fP, pin mode@Order in which words were pinned
+\fB-P -O input\fP@Pinned blocks in selection order; words within each block in input order
 .TE
 .PP
 Also note that using some of these keys may be more easily achieved by using
@@ -765,12 +797,49 @@ the third mouse button (usually the right one) when the mouse is available.
 .br
 See how to use the right mouse button in the "Keyboard and mouse usage." at
 the beginning of this manual.
-.SS Help
-A small help message can be displayed when hitting the \fB?\fP key.
-This message will last for 30s or until another key or \fBESC\fP is pressed.
-.br
-If the help content is longer than the window, it can be scrolled up or down
-using the vertical arrow keys or the vi direction keys (\fBj\fP and \fBk\fP).
+.SS "Built-in quick help"
+When no search session is active, pressing \fB?\fP displays the built-in
+quick help in place of the selection window.
+The help is generated for the current invocation of smenu: mouse entries are
+omitted when mouse support has been disabled, tagging and pinning entries are
+omitted when neither mode is active, column/line entries are omitted outside
+those display modes, and rectangular tagging entries are shown only in column
+mode.
+.PP
+The quick help summarizes the currently applicable keyboard and mouse
+commands for movement, horizontal shifting, aborting or cancelling, selecting,
+searching, and, when enabled, marking, tagging or pinning ranges and undoing
+those selections.
+The first and last lines identify the beginning and end of the quick help and
+refer the user to \fBsmenu(1)\fP for the complete documentation.
+.PP
+Help text is wrapped to the current terminal width, so long help entries may
+occupy multiple screen lines.
+At most the height of the selection window is displayed at once.
+If the resulting help contains more lines than the window, it can be scrolled
+one line at a time with \fBUp\fP and \fBDown\fP or with the \fBk\fP and
+\fBj\fP keys, respectively.
+Other movement, selection and mouse commands are ignored while the quick help
+is displayed.
+.PP
+Pressing \fBESC\fP closes the quick help and restores the selection window
+without clearing the current search buffer or its matches.
+The help also closes automatically when its timer expires.
+The default timeout is 30 seconds; it can be changed with the \fBhelp\fP
+entry in the \fBtimers\fP section of the optional configuration file.
+Timer values in that section are expressed in tenths of a second.
+.PP
+Pressing \fB?\fP again while help is displayed rearms the help timer.
+If the help has been scrolled, it also returns to the first help line; when the
+first line is already displayed, the help remains unchanged.
+After a terminal resize, the quick help is closed and its wrapped contents are
+rebuilt the next time it is requested.
+.PP
+The \fB?\fP key does not open the quick help during an active search session;
+in that context it is handled as search input.
+This interactive quick help is distinct from the command-line help mechanisms
+\fB-h\fP/\fB-help\fP, \fB-H\fP/\fB-long_help\fP and
+\fB-?\fP/\fB-u\fP/\fB-usage\fP described in the \fBOPTIONS\fP section.
 .SS "Scroll bars"
 The vertical scroll bar is displayed at the right of the scrolling window.
 Its appearance is meant to be conventional, but it has some particularities:
@@ -912,6 +981,8 @@ Here is an example giving the syntax and the names of the keywords allowed:
 
 [misc]
   default_search_method = substring
+  pinning_order = selection ; pinned ranges order (see the -O option):
+                            ; selection (default) or input
 
 [mouse]
   double_click_delay= 200 ; delay in milliseconds
@@ -1307,7 +1378,7 @@ Example: The argument \f(CR'\\u0d\\ue282ac,'\fP means: ignore all commas, Euro
 signs and carriage return characters when reading from stdin or a file.
 
 As shown above \fI\\u\fP and \fI\\U\fP sequences can be used in the bytes set.
-.IP "\fB-T\fP|\fB-tm\fP|\fB-tag\fP|\fB-tag_mode\fP [\fIdelim\fP]"
+.IP "\fB-T\fP|\fB-tm\fP|\fB-tag\fP|\fB-tag_mode\fP [\fIdelim\fP [\fImulti_delim\fP]]"
 (Allowed in the following contexts: "Main", "Columns", "Lines", and
 "Tabulations", switches to the "Tagging" context.)
 
@@ -1337,17 +1408,31 @@ A single space character is used as the default separator if none is given.
 
 \fBCaution\fP: To get exactly the same behavior as in version 0.9.11 and
 earlier, you must also use the \fB-p\fP|\fB-at\fP|\fB-auto_tag\fP option.
-.IP "\fB-P\fP|\fB-pm\fP|\fB-pin\fP|\fB-pin_mode\fP [\fIdelim\fP]"
+.IP "\fB-P\fP|\fB-pm\fP|\fB-pin\fP|\fB-pin_mode\fP [\fIdelim\fP [\fImulti_delim\fP]]"
 (Allowed in the following contexts: "Main", "Columns", "Lines", and
-"Tabulations", switches to the "Tagging" context.)
+"Tabulations", switches to the "Pinning" context.)
 
 Works like \fB-T\fP|\fB-tm\fP|\fB-tag\fP|\fB-tag_mode\fP but, unlike
 \fB-T\fP|\fB-tm\fP|\fB-tag\fP|\fB-tag_mode\fP, the output depends on the order
 in which the words were tagged.
 In other words, the first tagged word comes first in the output, the second
 tagged word comes next, and so on.
+.IP "\fB-O\fP|\fB-pro\fP|\fB-pin_ranges_order\fP [\fIselection\fP|\fIinput\fP]"
+(Allowed in the "Pinning" context.)
+
+Controls the output order of pinned ranges when using
+\fB-P\fP|\fB-pm\fP|\fB-pin\fP|\fB-pin_mode\fP.
+The default is \fBselection\fP, which preserves the normal pinning behavior:
+words are written in the order in which they were pinned.
+.br
+With \fBinput\fP, pinned blocks remain ordered by the order in which the
+blocks were selected, while the words inside each block are written in their
+original input order. A single pinned word forms a one-word block.
+.br
+This option does not change the output ordering of
+\fB-T\fP|\fB-tm\fP|\fB-tag\fP|\fB-tag_mode\fP.
 .IP "\fB-p\fP|\fB-at\fP|\fB-auto_tag\fP"
-(Allowed in the "Tagging" context.)
+(Allowed in the "Tagging" and "Pinning" context.)
 
 This option modifies the default behavior of the
 \fB-T\fP|\fB-tm\fP|\fB-tag\fP|\fB-tag_mode\fP and
@@ -1356,7 +1441,7 @@ This option modifies the default behavior of the
 An untagged word under the cursor will be automatically tagged when
 \fBENTER\fP is pressed.
 .IP "\fB-0\fP|\fB-noat\fP|\fB-no_auto_tag\fP"
-(Allowed in the "Tagging" context.)
+(Allowed in the "Tagging" and "Pinning" context.)
 
 This option modifies the default behavior of the
 \fB-T\fP|\fB-tm\fP|\fB-tag\fP|\fB-tag_mode\fP and
@@ -1703,8 +1788,8 @@ Centers the display if possible.
 Tells the program to clean up the display before quitting by removing the
 selection window after use as if it had never been displayed.
 .IP "\fB-c\fP|\fB-col\fP|\fB-col_mode\fP|\fB-column\fP"
-(Allowed in the "Main" and "Tagging" contexts, switches to the "Columns"
-context.)
+(Allowed in the "Main", "Tagging" and "Pinning" contexts, switches to the
+"Columns" context.)
 
 Sets the column mode.
 In this mode the lines of words do not wrap when the right border of the
@@ -1717,14 +1802,14 @@ right edges of the window to help the user to reach the unseen words.
 In this mode, the width of each column is minimal to keep the maximum
 information visible on the terminal.
 .IP "\fB-l\fP|\fB-line\fP|\fB-line_mode\fP"
-(Allowed in the "Main" and "Tagging" contexts, switches to the "Lines"
-context.)
+(Allowed in the "Main", "Tagging" and "Pinning" contexts, switches to the
+"Lines" context.)
 
 Sets the line mode.
 This mode is the same as column mode but without any column alignment.
 .IP "\fB-t\fP|\fB-tab\fP|\fB-tab_mode\fP|\fB-tabulate_mode\fP [\fIcols\fP]"
-(Allowed in the "Main" and "Tagging" contexts, switches to the "Tabulations"
-context.)
+(Allowed in the "Main", "Tagging" and "Pinning" contexts, switches to the
+"Tabulations" context.)
 
 This option sets the tabulation mode and, if a number is specified, attempts
 to set the number of displayed columns to that number.
@@ -2176,7 +2261,8 @@ words (if any) can be accessed using \fBn\fP/\fBs\fP/\fBSPACE\fP and
 
 These matching words can also be tagged at once if the tagging/pinning
 function is activated.
-See the "Tagging" section for more information.
+See the \fBTagging and pinning (multiple selections)\fP section for more
+information.
 
 \fBESC\fP can be used to disable navigation among matching words.
 

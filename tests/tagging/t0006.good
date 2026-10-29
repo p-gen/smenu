@@ -1,4 +1,4 @@
-$ OUT=$(smenu -P\\ue296b8 t0006.in)||exit 1
+$ OUT=$(smenu -P\\ue296b8 -- t0006.in)||exit 1
 
 a b c d e f g h u j k l 
 0:04 2:07 4:04 6:04 8:04 10:04 

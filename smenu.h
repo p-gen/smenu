@@ -155,6 +155,14 @@ typedef enum alignment
   AL_CENTERED
 } alignment_t;
 
+/* Ordering mode for multi-pinned ranges. */
+/* """""""""""""""""""""""""""""""""""""" */
+typedef enum pin_ranges_orders
+{
+  PIN_RANGES_SELECTION,
+  PIN_RANGES_INPUT
+} pin_ranges_order_t;
+
 /* Used when managing the -C option. */
 /* """"""""""""""""""""""""""""""""" */
 enum
@@ -256,10 +264,11 @@ struct ticker_s
 /* """"""""""""""""""""""""""""""""""""""""""""" */
 struct misc_s
 {
-  search_mode_t default_search_method;
-  char          invalid_char_substitute;
-  char          blank_char_substitute;
-  char          ignore_quotes;
+  search_mode_t      default_search_method;
+  pin_ranges_order_t pin_ranges_order;
+  char               invalid_char_substitute;
+  char               blank_char_substitute;
+  char               ignore_quotes;
 };
 
 /* Structure to store mouse information. */
@@ -370,7 +379,7 @@ struct word_s
   unsigned char is_selectable; /* word is selectable.                       */
   unsigned char is_numbered;   /* word has a direct access index.           */
   unsigned char special_level; /* can vary from 0 to 9; 0 meaning normal.   */
-  char          all_spaces;    /* the word ocntains only spaces.            */
+  char          all_spaces;    /* the word contains only spaces.            */
 };
 
 /* Structure describing the window in which the user  */
@@ -378,29 +387,31 @@ struct word_s
 /* """""""""""""""""""""""""""""""""""""""""""""""""" */
 struct win_s
 {
-  long     start, end;      /* index of the first and last word.        */
-  int      first_column;    /* number of the first character displayed. */
-  int      cur_line;        /* relative number of the cursor line (1+). */
-  int      asked_max_lines; /* requested number of lines in the window. */
-  int      has_hbar;        /* 1 if an horizontal bar must be           *
-                             | displayed else 0.                        */
-  int      hbar_displayed;  /* 1 if an hozizontal bas has ever been     *
-                             | displayed else 0.                        */
-  int      max_lines;       /* effective number of lines in the window. */
-  int      max_cols;        /* max number of words in a single line.    */
-  int      real_max_width;  /* max line length. In column, tab or line  *
-                             | mode it can be greater than the          *
-                             | terminal width.                          */
-  int      message_lines;   /* number of lines taken by the messages    *
-                             | (updated by disp_message.                */
-  int      max_width;       /* max usable line width or the terminal.   */
-  int      offset;          /* Left margin, used in centered mode.      */
-  int      sb_column;       /* scroll bar column (-1) if no scroll bar. */
-  char    *sel_sep;         /* output separator when tags are enabled.  */
-  char   **gutter_a;        /* array of UTF-8 gutter characters.        */
-  int      gutter_nb;       /* number of UTF-8 gutter characters.       */
-  unsigned next_tag_id;     /* Next tag ID, increased on each tagging   *
-                             | operation.                               */
+  long     start, end;      /* index of the first and last word.         */
+  int      first_column;    /* number of the first character displayed.  */
+  int      cur_line;        /* relative number of the cursor line (1+).  */
+  int      asked_max_lines; /* requested number of lines in the window.  */
+  int      has_hbar;        /* 1 if an horizontal bar must be            * 
+                             | displayed else 0.                         */
+  int      hbar_displayed;  /* 1 if an hozizontal bas has ever been      *
+                             | displayed else 0.                         */
+  int      max_lines;       /* effective number of lines in the window.  */
+  int      max_cols;        /* max number of words in a single line.     */
+  int      real_max_width;  /* max line length. In column, tab or line   *
+                             | mode it can be greater than the           *
+                             | terminal width.                           */
+  int      message_lines;   /* number of lines taken by the messages     *
+                             | (updated by disp_message.                 */
+  int      max_width;       /* max usable line width or the terminal.    */
+  int      offset;          /* Left margin, used in centered mode.       */
+  int      sb_column;       /* scroll bar column (-1) if no scroll bar.  */
+  char    *sel_sep[2];      /* Output delimiters between selected words. *
+                             | The second one terminates a marked        *
+                             | multi-word selection.                     */
+  char   **gutter_a;        /* array of UTF-8 gutter characters.         */
+  int      gutter_nb;       /* number of UTF-8 gutter characters.        */
+  unsigned next_tag_id;     /* Next tag ID, increased on each tagging    *
+                             | operation.                                */
 
   unsigned char tab_mode;  /* -t */
   unsigned char col_mode;  /* -c */
@@ -465,9 +476,10 @@ struct timeout_s
 /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
 struct output_s
 {
-  long  order;      /* this field is incremented each time a word is *
-                     | pinned.                                       */
-  char *output_str; /* The pinned word itself.                       */
+  long  order;       /* Per-word pinning order.                         */
+  long  block_order; /* Order in which the containing block was pinned. */
+  long  input_index; /* Original word position in the input.            */
+  char *output_str;  /* The pinned word itself.                          */
 };
 
 /* Structure describing the formatting of the automatic */
@@ -580,6 +592,8 @@ disp_help(win_t               *win,
 
 int
 tag_comp(void const *a, void const *b);
+int
+pin_ranges_input_comp(void const *a, void const *b);
 
 void
 tag_swap(void **a, void **b);
