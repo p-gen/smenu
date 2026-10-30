@@ -37,9 +37,11 @@ send the selection to STDOUT.
   [\fB-7\fP|\fB-l7\fP|\fB-level7\fP \fIregex\fP [\fIattr\fP]]
   [\fB-8\fP|\fB-l8\fP|\fB-level8\fP \fIregex\fP [\fIattr\fP]]
   [\fB-9\fP|\fB-l9\fP|\fB-level9\fP \fIregex\fP [\fIattr\fP]]
-  [\fB-T\fP|\fB-tm\fP|\fB-tag\fP|\fB-tag_mode\fP [\fIdelim\fP [\fImulti_delim\fP]]]
+  [\fB-T\fP|\fB-tm\fP|\fB-tag\fP|\fB-tag_mode\fP [\fIdelim\fP \
+[\fImulti_delim\fP]]]
   [\fB-z\fP|\fB-zap\fP|\fB-zap_glyphs\fP \fIbytes\fP]
-  [\fB-P\fP|\fB-pm\fP|\fB-pin\fP|\fB-pin_mode\fP [\fIdelim\fP [\fImulti_delim\fP]]]
+  [\fB-P\fP|\fB-pm\fP|\fB-pin\fP|\fB-pin_mode\fP [\fIdelim\fP \
+[\fImulti_delim\fP]]]
   [\fB-O\fP|\fB-pro\fP|\fB-pin_ranges_order\fP [\fIselection\fP|\fIinput\fP]]
   [\fB-0\fP|\fB-noat\fP|\fB-no_auto_tag\fP]
   [\fB-p\fP|\fB-at\fP|\fB-auto_tag\fP]
@@ -474,7 +476,8 @@ This can also be done non-permanently by running the command:
 If this is not enough, try to disable buttons 8 to 12.
 
 .RE
-.PP
+.RE
+.RE
 \fBDirect access:\fP
 .RS 2
 If \fB-N\fP|\fB-number\fP, \fB-U\fP|\fB-unnumber\fP or
@@ -693,9 +696,9 @@ word. Both boundary rows and columns are included.
 The marked word will no longer be marked after tagging is complete.
 Outside column mode, \fBB\fP is ignored.
 .PP
-Note that when you use \fBT\fP, \fBC\fP, \fBR\fP or \fBB\fP with pinning enabled, the
-order of word selection depends on whether the marked word is before or after
-the current word.
+Note that when you use \fBT\fP, \fBC\fP, \fBR\fP or \fBB\fP with pinning
+enabled, the order of word selection depends on whether the marked word
+is before or after the current word.
 .br
 When a word is marked, the pinning order using \fBc\fP and \fBr\fP increases
 from the marked word to the current word.
@@ -720,7 +723,8 @@ A mark is temporary and is removed after a range operation completes.
                    |
        +-----------+-----------+
        |           |           |
-     \fBC\f(CR/\fBR\f(CR/\fBB\f(CR         \fBm\f(CR          \fBT\f(CR/\fBZ\f(CR
+     \fBC\f(CR/\fBR\f(CR/\fBB\f(CR         \fBm\f(CR \
+         \fBT\f(CR/\fBZ\f(CR
        |           |           |
        +-----------+-----------+
                    |
@@ -728,7 +732,8 @@ A mark is temporary and is removed after a range operation completes.
                    |
        +-----------+-------------------+
        |           |                   |
-       \fBm\f(CR        \fBC\f(CR/\fBR\f(CR/\fBT\f(CR/\fBB\f(CR                \fBZ\f(CR
+       \fBm\f(CR        \fBC\f(CR/\fBR\f(CR/\fBT\f(CR/\fBB\f(CR \
+               \fBZ\f(CR
        |           |                   |
  current word      |               same column
 already marked?    |                or line?
@@ -745,17 +750,17 @@ unmark   move mark |     +-------+-------+     |
                    |             |             |
                    |             +------+------+
                    |                    |
-                   +---------+----------+
-                             |
-             +---------------+---------------+
-             |               |               |
-          \fBC\f(CR: column        \fBR\f(CR: row       \fBB\f(CR: rectangle
-             |               |               |
-             +---------------+---------------+
-                             |
-                       tag/pin range
-                             |
-                         remove mark
+                   +-------------+------+
+                                 |
+                   +-------------+-------------+
+                   |             |             |
+                 \fBC\f(CR: column     \fBR\f(CR: row        \fBB\f(CR: block
+                   |             |             |
+                   +-------------+-------------+
+                                 |
+                           tag/pin range
+                                 |
+                            remove mark
 
 \fR
 .fi
@@ -789,7 +794,8 @@ Mode@Selection order
 _
 \fB-T\fP, tag mode@Input order
 \fB-P\fP, pin mode@Order in which words were pinned
-\fB-P -O input\fP@Pinned blocks in selection order; words within each block in input order
+\fB-P -O input\fP@Pinned blocks in selection order;
+@words within each block in input order
 .TE
 .PP
 Also note that using some of these keys may be more easily achieved by using
@@ -986,8 +992,7 @@ Here is an example giving the syntax and the names of the keywords allowed:
 
 [mouse]
   double_click_delay= 200 ; delay in milliseconds
---8<------------------------------------------------------------------
-\fP
+--8<------------------------------------------------------------------\fP
 .fi
 .IP \(bu 2
 The \fBmethod\fP keyword can take the two possible values displayed above and
@@ -1020,10 +1025,12 @@ Each option can switch to another context in which only a subset of the
 options is usable.
 
 For each parameter described below, the contexts in which the associated
-option is defined as well as the context to which it leads, if any, are given.
+option is defined as well as the context to which it leads, if any,
+are given.
 
 An option not defined in a context will force the end of the current context
-and will be recursively evaluated in the previous contexts until found (or not).
+and will be recursively evaluated in the previous contexts until found
+(or not).
 If not found, an error message is displayed and smenu is terminated.
 
 The contexts defined in smenu are:
@@ -1100,8 +1107,8 @@ context on stdout.
 .IP Example: 2
 \f(CBsmenu -col -u\fP will only show the usage in the \fBColumns\fP context
 .PP
-The contexts contain all the non-context-changing options so, in practice, the
-usage should be intuitive.
+The contexts contain all the non-context-changing options so, in practice,
+the usage should be intuitive.
 You may nevertheless have to adjust some scripts using the old smenu
 releases as I did in the lvm_menu example.
 .PP
@@ -1247,7 +1254,8 @@ current attribute for parts of the message.
 For example, \f(CB\\[1+b]\fP will change the current color to red and enable
 bold mode.
 
-The enclosed attributes follow the syntax described in the "Attributes and colors" subsection.
+The enclosed attributes follow the syntax described in the "Attributes
+and colors" subsection.
 
 Example:
 
@@ -1336,7 +1344,8 @@ If more than one attribute is given, they must be separated by spaces.
 
 Example: \f(CB-attr i:/5 e:4,br b:7/3,rb c:7/2,b\fP
 
-See the "Attributes and colors" subsection for the syntax after the colon and examples.
+See the "Attributes and colors" subsection for the syntax after the colon
+and examples.
 .IP "\fB-tc\fP|\fB-truecolor\fP"
 (Allowed in all contexts.)
 
@@ -1378,7 +1387,8 @@ Example: The argument \f(CR'\\u0d\\ue282ac,'\fP means: ignore all commas, Euro
 signs and carriage return characters when reading from stdin or a file.
 
 As shown above \fI\\u\fP and \fI\\U\fP sequences can be used in the bytes set.
-.IP "\fB-T\fP|\fB-tm\fP|\fB-tag\fP|\fB-tag_mode\fP [\fIdelim\fP [\fImulti_delim\fP]]"
+.IP "\fB-T\fP|\fB-tm\fP|\fB-tag\fP|\fB-tag_mode\fP [\fIdelim\fP \
+[\fImulti_delim\fP]]"
 (Allowed in the following contexts: "Main", "Columns", "Lines", and
 "Tabulations", switches to the "Tagging" context.)
 
@@ -1408,7 +1418,8 @@ A single space character is used as the default separator if none is given.
 
 \fBCaution\fP: To get exactly the same behavior as in version 0.9.11 and
 earlier, you must also use the \fB-p\fP|\fB-at\fP|\fB-auto_tag\fP option.
-.IP "\fB-P\fP|\fB-pm\fP|\fB-pin\fP|\fB-pin_mode\fP [\fIdelim\fP [\fImulti_delim\fP]]"
+.IP "\fB-P\fP|\fB-pm\fP|\fB-pin\fP|\fB-pin_mode\fP [\fIdelim\fP \
+[\fImulti_delim\fP]]"
 (Allowed in the following contexts: "Main", "Columns", "Lines", and
 "Tabulations", switches to the "Pinning" context.)
 
@@ -1417,7 +1428,8 @@ Works like \fB-T\fP|\fB-tm\fP|\fB-tag\fP|\fB-tag_mode\fP but, unlike
 in which the words were tagged.
 In other words, the first tagged word comes first in the output, the second
 tagged word comes next, and so on.
-.IP "\fB-O\fP|\fB-pro\fP|\fB-pin_ranges_order\fP [\fIselection\fP|\fIinput\fP]"
+.IP "\fB-O\fP|\fB-pro\fP|\fB-pin_ranges_order\fP \
+[\fIselection\fP|\fIinput\fP]"
 (Allowed in the "Pinning" context.)
 
 Controls the output order of pinned ranges when using
@@ -1942,20 +1954,28 @@ column alignments will be protected from any future row alignment directives.
 Otherwise row alignment directives will take precedence.
 For example:
 
-\f(CBecho "a b c\\\\naa bb cc\\\\naaaa bbbb cccc" | smenu -c -g\\| -C c2 -R
-r2\fP
+.nf
+\f(CBecho "a b c\\\\naa bb cc\\\\naaaa bbbb cccc" \\
+| smenu -c -g\\| -C c2 -R r2\fP
+.fi
 .br
 .nf
+
 Gives:
 \f(CRa   | b  |c\fP
-\f(CR  aa| bb |  cc <-- \fPCol. 2 remains centered as \f(CB-C\fP was used first.
+\f(CR  aa| bb |  cc <-- \fPCol#2 remains centered as \f(CB-C\fP was used first.
 \f(CRaaaa|bbbb|cccc\fP
 .fi
 
-But \f(CBecho "a b c\\\\naa bb cc\\\\naaaa bbbb cccc" | smenu -c -g\\| -R r2 -C
-c2\fP
+But
+
+.nf
+\f(CBecho "a b c\\\\naa bb cc\\\\naaaa bbbb cccc" \\
+| smenu -c -g\\| -R r2 -C c2\fP
+.bi
 .br
 .nf
+
 Gives:
 \f(CRa   | b  |c\fP
 \f(CR  aa|  bb|  cc <-- -R\fP takes precedence as it was used first.
@@ -2493,18 +2513,16 @@ or
 In \fBksh\fP:
   \f(CBprint "Yes No Cancel"                \\
   | smenu -d -m "Please choose:" -s /N \\
-  | read R\fP
-\fP
+  | read R\fP\fP
 .fi
 .SS 2
 Get a three-column report about VM statistics for the current process in
 \fBbash\fP/\fBksh\fP on Linux:
 .PP
 .nf
-\f(CBR=$(grep Vm /proc/$$/status | expand | smenu -b -W$'\\n' -t3 -g -d)\fB
-.PP
-\fP
+\f(CBR=$(grep Vm /proc/$$/status | expand | smenu -b -W$'\\n' -t3 -g -d)\fP
 .fi
+.PP
 .SS 3
 Create a one-column selection window containing the list of the first 20 LVM
 physical volumes.
@@ -2512,11 +2530,9 @@ At the end, the selection window will be erased.
 This example is written in \fBksh\fP.
 .PP
 .nf
-\f(CB
-pvs -a -o pv_name --noheadings                 \\
+\f(CBpvs -a -o pv_name --noheadings                 \\
 | smenu -m "PV list" -n20 -t1 -d -s //dev/root \\
-| read R
-\fP
+| read R\fP
 .fi
 
 The display will have a look similar to the following with the cursor set on
@@ -2531,8 +2547,7 @@ the word \fI/dev/root\fP:
 /dev/sdb2            |
 /dev/sdc1            |
 /dev/sdc2            |
-/dev/system/homevol  /
-\fP
+/dev/system/homevol  /\fP
 .fi
 .SS "4 (advanced)"
 Imagine a file named \fBsample.mnu\fP with the following content:
@@ -2544,8 +2559,7 @@ Imagine a file named \fBsample.mnu\fP with the following content:
 @@@ "5 Fifth entry"
 @@@
 "0 Exit menu"
---8<---------------------------------
-\fP
+--8<---------------------------------\fP
 .fi
 
 Then this quite esoteric command will render it (centered on the screen) as:
@@ -2559,8 +2573,7 @@ Then this quite esoteric command will render it (centered on the screen) as:
 |                  5) Fifth entry  |
 |                                  |
 | 0) Exit menu                     |
-+----------------------------------+
-\fP
++----------------------------------+\fP
 .fi
 
 with the cursor on \fIQuit\fP and only the numbers and "Quit" selectable.
@@ -2568,7 +2581,7 @@ with the cursor on \fIQuit\fP and only the numbers and "Quit" selectable.
 \f(CBR=$(smenu -q -d -s/Exit -M -n 30 -c    \\
           -e "@+" -E '/@+/ /'          \\
           -F -D n:1 i:1                \\
-          -m "Test menu" < sample.mnu)
+          -m "Test menu" < sample.mnu)\fP
 
 The selected entry will be available in \f(CBR\fP
 

@@ -60,7 +60,7 @@ select individual words, columns, or rows/lines (entire or partial),
 as well as sequences of consecutive words and rectangular blocks of words.
 
 All these selection methods can be combined.
-Some are only available when using the ‘column’ layout, such as selecting
+Some are only available when using the 'column' layout, such as selecting
 rectangular blocks of text.
 
 Selections can be removed from individual words, undone by selection
