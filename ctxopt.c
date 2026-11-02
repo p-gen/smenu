@@ -676,24 +676,28 @@ ll_free(ll_t * const list, void (*clean)(void *))
 {
   ll_node_t *node;
 
-  if (list)
+  if (list == NULL)
+    return;
+
+  node = list->head;
+
+  while (node != NULL)
   {
-    node = list->head;
+    ll_node_t *next = node->next;
 
-    while (node)
-    {
-      /* Apply a custom cleaner if not NULL. */
-      /* """"""""""""""""""""""""""""""""""" */
-      if (clean)
-        clean(node->data);
+    /* Apply a custom cleaner if not NULL. */
+    /* """"""""""""""""""""""""""""""""""" */
+    if (clean != NULL)
+      clean(node->data);
 
-      ll_delete(list, node);
-
-      node = list->head;
-    }
+    free(node);
+    node = next;
   }
-}
 
+  list->head = NULL;
+  list->tail = NULL;
+  list->len  = 0;
+}
 /* ==================================== */
 /* Destroy a list and all its elements. */
 /* ==================================== */
@@ -845,36 +849,18 @@ ll_insert_after(ll_t * const list, ll_node_t *node, void * const data)
 static int
 ll_delete(ll_t * const list, ll_node_t *node)
 {
-  if (list->head == list->tail)
-  {
-    /* We delete the last remaining element from the list. */
-    /* """"""""""""""""""""""""""""""""""""""""""""""""""" */
-    if (list->head == NULL)
-      return 0;
+  if (list == NULL || node == NULL)
+    return 0;
 
-    list->head = list->tail = NULL;
-  }
-  else if (node->prev == NULL)
-  {
-    /* We delete the first element from the list. */
-    /* """""""""""""""""""""""""""""""""""""""""" */
-    list->head       = node->next;
-    list->head->prev = NULL;
-  }
-  else if (node->next == NULL)
-  {
-    /* We delete the last element from the list. */
-    /* """"""""""""""""""""""""""""""""""""""""" */
-    list->tail       = node->prev;
-    list->tail->next = NULL;
-  }
-  else
-  {
-    /* We delete an element from the list. */
-    /* """"""""""""""""""""""""""""""""""" */
-    node->next->prev = node->prev;
+  if (node->prev != NULL)
     node->prev->next = node->next;
-  }
+  else
+    list->head = node->next;
+
+  if (node->next != NULL)
+    node->next->prev = node->prev;
+  else
+    list->tail = node->prev;
 
   free(node);
 
@@ -882,7 +868,6 @@ ll_delete(ll_t * const list, ll_node_t *node)
 
   return 1;
 }
-
 /* ==================================================================== */
 /* Allocate and fill an array of strings from a list.                   */
 /* WARNINGS:                                                            */
@@ -966,10 +951,13 @@ bst_delete(const void * vkey, void ** vrootp,
     p     = *rootp;
     rootp = (cmp < 0) ? &(*rootp)->llink  /* follow llink branch */
                       : &(*rootp)->rlink; /* follow rlink branch */
+
     if (*rootp == NULL)
       return NULL; /* key not found */
   }
+
   r = (*rootp)->rlink;               /* D1: */
+
   if ((q = (*rootp)->llink) == NULL) /* Left NULL? */
     q = r;
   else if (r != NULL)
@@ -988,9 +976,12 @@ bst_delete(const void * vkey, void ** vrootp,
       q->rlink = (*rootp)->rlink;
     }
   }
+
   if (p != *rootp)
     free(*rootp); /* D4: Free node */
+
   *rootp = q;     /* link parent to new node */
+
   return p;
 }
 #endif
@@ -1036,9 +1027,11 @@ bst_find(const void   *vkey,
 
     if ((r = (*compar)(vkey, (*rootp)->key)) == 0) /* T2: */
       return *rootp;                               /* key found */
+
     rootp = (r < 0) ? &(*rootp)->llink             /* T3: follow left branch */
                     : &(*rootp)->rlink;            /* T4: follow right branch */
   }
+
   return NULL;
 }
 
@@ -1066,12 +1059,14 @@ bst_search(void *vkey, void **vrootp, int (*compar)(const void *, const void *))
   }
 
   q = xmalloc(sizeof(bst_t)); /* T5: key not found */
+
   if (q != 0)
   {                  /* make new node */
     *rootp   = q;    /* link new node to old */
     q->key   = vkey; /* initialize new node */
     q->llink = q->rlink = NULL;
   }
+
   return q;
 }
 
@@ -1088,11 +1083,15 @@ bst_walk_recurse(const bst_t *root,
   else
   {
     (*action)(root, preorder, level);
+
     if (root->llink != NULL)
       bst_walk_recurse(root->llink, action, level + 1);
+
     (*action)(root, postorder, level);
+
     if (root->rlink != NULL)
       bst_walk_recurse(root->rlink, action, level + 1);
+
     (*action)(root, endorder, level);
   }
 }
@@ -1116,6 +1115,7 @@ set_output_stream(usage_output output)
 {
   if (output == output_stderr)
     return stderr;
+
   if (output == output_stdout)
     return stdout;
   else
@@ -1158,6 +1158,7 @@ static void
 rtrim(char *str, const char *trim_str, size_t min)
 {
   size_t len = strlen(str);
+
   while (len > min && strchr(trim_str, str[len - 1]))
     str[--len] = '\0';
 }
@@ -1590,6 +1591,7 @@ strtoken(char *s, char *token, size_t tok_len, char *pattern, int *pos)
   *pos = 0;
 
   n = snprintf(len, 3, "%zu", tok_len);
+
   if (n < 0)
     return NULL;
 
@@ -1862,6 +1864,7 @@ print_before_constraints(ll_t *list)
       before_node = opt->eval_before_list->head;
 
       fprintf(output_stream, "\n  ");
+
       while (before_node != NULL)
       {
         before_opt = before_node->data;
@@ -1874,6 +1877,7 @@ print_before_constraints(ll_t *list)
       }
       fprintf(output_stream, " will be evaluated after %s\n", opt->params);
     }
+
     node = node->next;
   }
 }
@@ -1985,9 +1989,11 @@ print_options(ll_t *list,
 
         *has_ellipsis = 1;
       }
+
       if (opt->optional_args)
         option = strappend(option, "]", (char *)0);
     }
+
     if (opt->optional)
       option = strappend(option, "]", (char *)0);
 
@@ -2037,21 +2043,26 @@ print_explanations(int has_early_eval,
       fprintf(output_stream,
               "*            : the parameters defined for this option will "
               "be evaluated first.\n");
+
     if (has_ctx_change)
       fprintf(output_stream,
               ">            : the context after this symbol will be the new "
               "default context.\n");
+
     if (has_generic_arg)
       fprintf(output_stream,
               "#tag         : argument with a hint about its meaning.\n");
+
     if (has_optional)
       fprintf(output_stream,
               "[...]        : the object between square brackets is "
               "optional.\n");
+
     if (has_ellipsis)
       fprintf(output_stream,
               "...          : several occurrences of the previous object "
               "are possible.\n");
+
     if (has_rule)
       fprintf(output_stream,
               "[<|=|>]number: rules constraining the number of "
@@ -2118,6 +2129,7 @@ bst_print_ctx_cb(const void *node, walk_order_e kind, int level)
       fprintf(output_stream,
               "\nAllowed options in the context %s:\n",
               cur_ctx->name);
+
       print_options(list,
                     &has_optional,
                     &has_ellipsis,
@@ -2125,6 +2137,7 @@ bst_print_ctx_cb(const void *node, walk_order_e kind, int level)
                     &has_generic_arg,
                     &has_ctx_change,
                     &has_early_eval);
+
       print_before_constraints(list);
     }
 }
@@ -2281,6 +2294,7 @@ abbrev_expand(char *par_name, ctx_t *ctx)
         bst_search(opt, &tmp_opt_bst, opt_compare);
         opt_count++;
       }
+
       s = strtok(NULL, " ");
     }
 
@@ -2603,6 +2617,7 @@ opt_parse(char *s, opt_t **opt)
     opt_eval_first = 1;
 
   p++;
+
   while (*p)
   {
     if (!isalnum(*p) && *p != '_' && *p != '>')
@@ -2628,18 +2643,21 @@ opt_parse(char *s, opt_t **opt)
   /* Check if it can appear multiple times by looking for the dots. */
   /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
   p = strtoken(s, token, 3, "[.]", &pos);
+
   if (p)
   {
     if (strcmp(token, "...") == 0)
     {
       opt_multiple = 1;
       s            = p;
+
       if (*s == '<' || *s == '=' || *s == '>')
       {
         unsigned value;
         int      offset = 0;
 
         n = sscanf(s + 1, "%u%n", &value, &offset);
+
         if (n != 1)
         {
           free(opt_name);
@@ -2695,10 +2713,12 @@ opt_parse(char *s, opt_t **opt)
 
     pos = 0;
     n   = sscanf(s, "[%32[^] .\t]%n%3[.]", opt_arg, &pos, dots);
+
     if (pos > 1 && *opt_arg == '#') /* [# has been read. */
     {
       opt_args          = 1;
       opt_optional_args = 1;
+
       if (n == 2)
         opt_multiple_args = 1; /* There were dots. */
 
@@ -2736,9 +2756,11 @@ opt_parse(char *s, opt_t **opt)
     else
     {
       n = sscanf(s, "%32[^] .\t]%n%3[.]", opt_arg, &pos, dots);
+
       if (pos > 0 && *opt_arg == '#') /* # has been read. */
       {
         opt_args = 1;
+
         if (n == 2) /* There were dots. */
           opt_multiple_args = 1;
 
@@ -2811,6 +2833,7 @@ success:
     fatal_internal("The option name is missing in %s.", opt_name);
 
   count = strchrcount(opt_name, '>');
+
   if (count == 1)
   {
     char *tmp = strchr(opt_name, '>');
@@ -2888,11 +2911,9 @@ init_opts(char *spec, ctx_t *ctx)
         if (bst_opt->optional_args != opt->optional_args
             || bst_opt->multiple_args != opt->multiple_args
             || bst_opt->args != opt->args || !same_next_ctx)
-        {
           fatal_internal("The option %s already exists with "
                          "a different arguments signature.\n",
                          opt->name);
-        }
 
         /* The newly created opt is already present in options_bst. */
         /* We can remove it.                                        */
@@ -3073,6 +3094,7 @@ opt_set_parms(char *opt_name, char *par_str)
       ltrim(tmp_par_str, " \t");
       rtrim(tmp_par_str, " \t", 0);
       par_name = xstrtok_r(tmp_par_str, " \t,", &end_tmp_par_str);
+
       if (par_name == NULL)
         fatal_internal("Parameters are missing for option %s.", opt_name);
 
@@ -3084,6 +3106,7 @@ opt_set_parms(char *opt_name, char *par_str)
         tmp_par.name = par_name;
 
         node = bst_find(&tmp_par, &par_bst, par_compare);
+
         if (node != NULL)
         {
           fatal_internal("The parameter %s is already defined in context %s.",
@@ -3109,6 +3132,7 @@ opt_set_parms(char *opt_name, char *par_str)
 
       free(tmp_par_str);
     }
+
     lnode = lnode->next;
   }
 
@@ -3180,6 +3204,7 @@ new_ctx_inst(ctx_t *ctx, ctx_inst_t *prev_ctx_inst)
   /* allowed in this context instance.                                    */
   /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
   node = ctx->opt_list->head;
+
   while (node != NULL)
   {
     opt            = node->data;
@@ -3203,6 +3228,7 @@ new_ctx_inst(ctx_t *ctx, ctx_inst_t *prev_ctx_inst)
   /* At the end the new BST in added to the list incomp_bst_list.          */
   /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
   node = ctx->incomp_list->head;
+
   while (node != NULL)
   {
     bst = NULL;
@@ -3271,6 +3297,7 @@ new_ctx_inst(ctx_t *ctx, ctx_inst_t *prev_ctx_inst)
     {
       req->opt         = opt;
       req->or_opt_list = ll_new();
+
       while ((opt_name = strtok(NULL, " \t")) != NULL)
       {
         if ((opt = locate_opt(opt_name)) != NULL)
@@ -3457,6 +3484,7 @@ build_cmdline_list(int nb_words, char **words)
     /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
     while ((ptr = strchr(word, 0x02)) != NULL)
       *ptr = '{';
+
     while ((ptr = strchr(word, 0x03)) != NULL)
       *ptr = '}';
 
@@ -3499,6 +3527,7 @@ build_cmdline_list(int nb_words, char **words)
   }
 
   node = cmdline_list->tail;
+
   if (node == NULL)
     return 1;
 
@@ -3951,6 +3980,7 @@ ctxopt_analyze(int nb_words, char **words, int *nb_rem_args, char ***rem_args)
             else
               opt_inst_node = opt_inst_node->next;
           }
+
           if (opt_inst_node == NULL)
             ll_append(ctx_inst->opt_inst_list, opt_inst);
         }
@@ -3998,6 +4028,7 @@ ctxopt_analyze(int nb_words, char **words, int *nb_rem_args, char ***rem_args)
             if (bst_node != NULL)
             {
               bst_seen_opt = (seen_opt_t *)(bst_node->key);
+
               if (bst_seen_opt->seen == 0)
                 fatal(CTXOPTINCOPT, (char *)user_object);
             }
@@ -4097,7 +4128,6 @@ ctxopt_analyze(int nb_words, char **words, int *nb_rem_args, char ***rem_args)
                               par_name,
                               cur_state->cur_opt_par_name))
         {
-
           if (flags.disp_usage)
           {
             fputs("\n", stderr);
@@ -4336,10 +4366,12 @@ ctxopt_new_ctx(char *name, char *opts_specs)
   /* ALPHA+(ALPHANUM|_)*         */
   /* """"""""""""""""""""""""""" */
   p = name;
+
   if (*p == '\0' || !isalpha(*p))
     fatal_internal("A context name must start with a letter: %s.", name);
 
   p++;
+
   while (*p)
   {
     if (!isalnum(*p) && *p != '_')
@@ -4562,6 +4594,7 @@ ctxopt_format_constraint(int nb_args, char **args, char *value, char *par)
   format = strappend(format, "%c", (char *)0);
 
   rc = sscanf(value, format, x, &y);
+
   if (rc != 1)
     fprintf(stderr,
             "The argument %s of %s does not respect the imposed format %s.",
@@ -4634,6 +4667,7 @@ ctxopt_range_constraint(int nb_args, char **args, char *value, char *par)
     fatal_internal("Range constraint, invalid number of parameters.");
 
   n = 0;
+
   if (strcmp(args[0], ".") == 0)
     max_only = 1;
   else
@@ -4643,6 +4677,7 @@ ctxopt_range_constraint(int nb_args, char **args, char *value, char *par)
     fatal_internal("Range constraint, min: invalid parameters.");
 
   n = 0;
+
   if (strcmp(args[1], ".") == 0)
     min_only = 1;
   else
@@ -4656,6 +4691,7 @@ ctxopt_range_constraint(int nb_args, char **args, char *value, char *par)
 
   errno = 0;
   v     = strtol(value, &ptr, 10);
+
   if (errno == ERANGE || ptr == value || *ptr != '\0')
     return 0;
 
@@ -4695,6 +4731,7 @@ ctxopt_range_constraint(int nb_args, char **args, char *value, char *par)
             par,
             min,
             max);
+
     return 0;
   }
 
@@ -4937,11 +4974,13 @@ ctxopt_add_opt_settings(settings s, ...)
         /* This list will contain pointers to options.                      */
         /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
         opt_name = xstrtok_r(str, " \t,", &end_str);
+
         if (opt_name != NULL)
         {
           if ((opt_before = locate_opt(opt_name)) != NULL)
           {
             ll_append(opt->eval_before_list, opt_before);
+
             while ((opt_name = xstrtok_r(NULL, " \t,", &end_str)) != NULL)
             {
               if ((opt_before = locate_opt(opt_name)) != NULL)
@@ -4992,11 +5031,13 @@ ctxopt_add_opt_settings(settings s, ...)
         /* This list will contain pointers to options.                       */
         /* """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
         opt_name = xstrtok_r(str, " \t,", &end_str);
+
         if (opt_name != NULL)
         {
           if ((opt_before = locate_opt(opt_name)) != NULL)
           {
             ll_append(opt_before->eval_before_list, opt);
+
             while ((opt_name = xstrtok_r(NULL, " \t,", &end_str)) != NULL)
             {
               if ((opt_before = locate_opt(opt_name)) != NULL)
@@ -5089,6 +5130,7 @@ ctxopt_add_ctx_settings(settings s, ...)
       char  *str;
 
       ptr = va_arg(args, char *);
+
       if ((ctx = locate_ctx(ptr)) != NULL)
       {
         ptr  = va_arg(args, char *);
@@ -5099,6 +5141,7 @@ ctxopt_add_ctx_settings(settings s, ...)
         rtrim(str, " \t", 0);
 
         n = strcspn(str, " \t");
+
         if (n > 0 && n < strlen(str))
           ll_append(list, str);
         else
@@ -5119,6 +5162,7 @@ ctxopt_add_ctx_settings(settings s, ...)
       char  *str;
 
       ptr = va_arg(args, char *);
+
       if ((ctx = locate_ctx(ptr)) != NULL)
       {
         ptr  = va_arg(args, char *);
@@ -5129,6 +5173,7 @@ ctxopt_add_ctx_settings(settings s, ...)
         rtrim(str, " \t", 0);
 
         n = strcspn(str, " \t");
+
         if (n > 0 && n < strlen(str))
           ll_append(list, str);
         else
@@ -5151,6 +5196,7 @@ ctxopt_add_ctx_settings(settings s, ...)
       int nb_data = 0;
 
       ptr = va_arg(args, char *);
+
       if ((ctx = locate_ctx(ptr)) != NULL)
       {
         typedef int fn(char *, int, char *, int, void **);
