@@ -121,11 +121,11 @@ ll_delete(ll_t *list, ll_node_t *node)
   return 1;
 }
 
-/* ====================================================== */
-/* Partition code for the quicksort function.             */
-/* Based on code found here:                              */
+/* ======================================================= */
+/* Partition code for the quicksort function.              */
+/* Based on code found here:                               */
 /* https://www.geeksforgeeks.org/quicksort-for-linked-list */
-/* ====================================================== */
+/* ======================================================= */
 static ll_node_t *
 ll_partition(ll_node_t *l,
              ll_node_t *h,
@@ -135,10 +135,10 @@ ll_partition(ll_node_t *l,
   /* Considers last element as pivot, places the pivot element at its       */
   /* correct position in sorted array, and places all smaller (smaller than */
   /* pivot) to left of pivot and all greater elements to right of pivot.    */
-  /* """""""""""""""""""""""""""""""""""""""""""""""""""" */
+  /* """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" */
 
   /* Set pivot as h element. */
-  /* """"""""""""""""""""""""" */
+  /* """"""""""""""""""""""" */
   void *x = h->data;
 
   ll_node_t *i = l->prev;
@@ -163,7 +163,7 @@ ll_partition(ll_node_t *l,
 /* ======================================================== */
 /* A recursive implementation of quicksort for linked list. */
 /* Based on code found here:                                */
-/* https://www.geeksforgeeks.org/quicksort-for-linked-list   */
+/* https://www.geeksforgeeks.org/quicksort-for-linked-list  */
 /* ======================================================== */
 static void
 ll_quicksort(ll_node_t *l,
@@ -188,7 +188,7 @@ ll_sort(ll_t *list,
         void (*swap)(void **, void **))
 {
   /* Call the recursive ll_quicksort function. */
-  /* """"""""""""""""""""""""""""""""""""" */
+  /* """"""""""""""""""""""""""""""""""""""""" */
   ll_quicksort(list->head, list->tail, comp, swap);
 }
 
